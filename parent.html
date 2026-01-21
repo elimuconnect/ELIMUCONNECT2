@@ -1,19 +1,25 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Parent Dashboard</title>
+  <title>Parent Results</title>
   <meta charset="UTF-8" />
 </head>
 <body>
 
-<h2>My Children</h2>
+<h2>View Student Results</h2>
 
-<div id="childrenTabs"></div>
+<label>Admission Number</label><br>
+<input id="admissionInput" placeholder="Enter admission number" />
+<button id="loadBtn">View Results</button>
+
+<p id="status"></p>
 
 <hr>
 
 <label>Academic Year</label>
-<select id="yearSelect"></select>
+<select id="yearSelect">
+  <option value="">All Years</option>
+</select>
 
 <label>Term</label>
 <select id="termSelect">
@@ -26,7 +32,6 @@
 <hr>
 
 <div id="results"></div>
-<p id="status"></p>
 
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
@@ -36,108 +41,86 @@ const supabase = createClient(
   "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
 );
 
-/* ───────── AUTH ───────── */
+/* Auth */
 const { data: { user } } = await supabase.auth.getUser();
 if (!user) location.href = "index.html";
 
-/* ───────── LOAD DATA ───────── */
-const { data, error } = await supabase
-  .from("parent_assessment_dashboard")
-  .select("*");
+let records = [];
 
-if (error) {
-  document.getElementById("status").innerText = error.message;
-  throw error;
-}
+/* Load results by admission number */
+document.getElementById("loadBtn").onclick = async () => {
+  const admission = document.getElementById("admissionInput").value.trim();
+  if (!admission) return;
 
-/* ───────── NORMALIZE DATA ───────── */
-data.forEach(r => {
-  r.academic_year = String(r.academic_year); // force string once
-});
+  document.getElementById("status").innerText = "Loading...";
 
-/* ───────── GROUP BY CHILD ───────── */
-const children = {};
-data.forEach(r => {
-  if (!children[r.student_id]) {
-    children[r.student_id] = {
-      name: r.student_name,
-      records: []
-    };
+  const { data, error } = await supabase
+    .from("parent_assessment_dashboard")
+    .select("*")
+    .eq("admission_number", admission);
+
+  if (error || !data.length) {
+    document.getElementById("status").innerText =
+      "No records found for this admission number.";
+    return;
   }
-  children[r.student_id].records.push(r);
-});
 
-/* ───────── STATE ───────── */
-let currentStudentId = null;
+  // Normalize academic_year
+  records = data.map(r => ({
+    ...r,
+    academic_year: String(r.academic_year)
+  }));
 
-/* ───────── CHILD TABS ───────── */
-const tabs = document.getElementById("childrenTabs");
-
-Object.entries(children).forEach(([id, child], index) => {
-  const btn = document.createElement("button");
-  btn.textContent = child.name;
-
-  btn.onclick = () => {
-    currentStudentId = id;
-    renderResults();
-  };
-
-  tabs.appendChild(btn);
-
-  if (index === 0) currentStudentId = id;
-});
-
-/* ───────── YEAR SELECT ───────── */
-const yearSelect = document.getElementById("yearSelect");
-const years = [...new Set(data.map(r => r.academic_year))].sort().reverse();
-
-yearSelect.innerHTML =
-  `<option value="">All Years</option>` +
-  years.map(y => `<option value="${y}">${y}</option>`).join("");
-
-/* ───────── FILTER EVENTS ───────── */
-yearSelect.onchange =
-document.getElementById("termSelect").onchange = () => {
+  populateYears();
   renderResults();
+
+  document.getElementById("status").innerText =
+    `Showing results for ${records[0].student_name}`;
 };
 
-/* ───────── RENDER ───────── */
+/* Populate academic years */
+function populateYears() {
+  const years = [...new Set(records.map(r => r.academic_year))]
+    .sort()
+    .reverse();
+
+  const yearSelect = document.getElementById("yearSelect");
+  yearSelect.innerHTML =
+    `<option value="">All Years</option>` +
+    years.map(y => `<option value="${y}">${y}</option>`).join("");
+}
+
+/* Filters */
+document.getElementById("yearSelect").onchange =
+document.getElementById("termSelect").onchange = renderResults;
+
+/* Render */
 function renderResults() {
-  if (!currentStudentId) return;
-
-  // Highlight active tab
-  [...tabs.children].forEach(b => b.classList.remove("active"));
-  [...tabs.children]
-    .find(b => b.textContent === children[currentStudentId].name)
-    ?.classList.add("active");
-
-  const year = yearSelect.value;
+  const year = document.getElementById("yearSelect").value;
   const term = document.getElementById("termSelect").value;
 
-  const records = children[currentStudentId].records.filter(r =>
+  const filtered = records.filter(r =>
     (!year || r.academic_year === year) &&
     (!term || r.term === term)
   );
 
   const container = document.getElementById("results");
 
-  if (!records.length) {
-    container.innerHTML = "<p>No records found.</p>";
+  if (!filtered.length) {
+    container.innerHTML = "<p>No records for selected filters.</p>";
     return;
   }
 
-  container.innerHTML = records.map(r => `
+  container.innerHTML = filtered.map(r => `
     <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
       <strong>${r.learning_area}</strong><br>
       ${r.competency}<br>
       <b>${r.achievement_level}</b><br>
-      <i>${r.remarks || ""}</i>
+      <i>${r.remarks || ""}</i><br>
+      <small>${r.term} – ${r.academic_year}</small>
     </div>
   `).join("");
 }
-
-/* Initial render */
-renderResults();
 </script>
 
 </body>
