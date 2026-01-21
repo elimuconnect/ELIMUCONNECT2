@@ -141,8 +141,16 @@
     return;
   }
 
-  document.getElementById("status").innerText =
-    "Results saved. You may assess another competency.";
+ document.getElementById("status").innerText =
+  "Results saved. Select another competency to continue.";
+
+competencySelect.selectedIndex = 0;
+achievementSelect.selectedIndex = 0;
+document.getElementById("remark").value = "";
+
+/* Optional: visual cue */
+competencySelect.focus();
+
 };
 
 
