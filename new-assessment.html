@@ -76,17 +76,25 @@
     const term = document.getElementById("term").value;
     const academic_year = document.getElementById("academicYear").value;
 
-    const { data, error } = await supabase
-      .from("assessments")
-      .insert({
-        class_id: classId,
-        learning_area_id,
-        assessment_type_id,
-        term,
-        academic_year
-      })
-      .select()
-      .single();
+    // get teacher profile (for school_id)
+const { data: profile } = await supabase
+  .from("profiles")
+  .select("school_id")
+  .eq("auth_id", user.id)
+  .single();
+
+const { data, error } = await supabase
+  .from("assessments")
+  .insert({
+    class_id: classId,
+    school_id: profile.school_id,
+    learning_area_id,
+    assessment_type_id,
+    term,
+    academic_year
+  })
+  .select()
+  .single();
 
     if (error) {
       document.getElementById("status").innerText = error.message;
