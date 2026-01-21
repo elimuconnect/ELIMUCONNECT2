@@ -2,6 +2,7 @@
 <html>
 <head>
   <title>New Assessment</title>
+  <meta charset="UTF-8" />
 </head>
 <body>
 
@@ -13,8 +14,8 @@
 <label>Assessment Type</label><br>
 <select id="assessmentType"></select><br><br>
 
-<select id="term"></select>
-<br><br>
+<label>Term</label><br>
+<select id="term"></select><br><br>
 
 <label>Academic Year</label><br>
 <input id="academicYear" value="2025" /><br><br>
@@ -22,6 +23,7 @@
 <button id="createAssessment">Create Assessment</button>
 
 <p id="status"></p>
+
 <script type="module">
   import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -34,12 +36,14 @@
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     window.location.href = "index.html";
+    throw new Error("Not logged in");
   }
 
   /* 1️⃣ Get class from previous step */
   const classId = localStorage.getItem("class_id");
   if (!classId) {
     window.location.href = "teacher.html";
+    throw new Error("No class selected");
   }
 
   /* 2️⃣ Load learning areas */
@@ -47,62 +51,57 @@
     .from("learning_areas")
     .select("id, name");
 
-  if (laError) {
-    document.getElementById("status").innerText = laError.message;
+  if (laError || !learningAreas.length) {
+    document.getElementById("status").innerText = "Failed to load learning areas";
     throw laError;
   }
 
-  document.getElementById("learningArea").innerHTML =
-    `<option value="">Select learning area</option>` +
-    learningAreas.map(la =>
-      `<option value="${la.id}">${la.name}</option>`
-    ).join("");
+  const learningAreaSelect = document.getElementById("learningArea");
+  learningAreaSelect.innerHTML = learningAreas
+    .map(la => `<option value="${la.id}">${la.name}</option>`)
+    .join("");
+  learningAreaSelect.value = learningAreas[0].id;
 
   /* 3️⃣ Load assessment types */
   const { data: assessmentTypes, error: atError } = await supabase
     .from("assessment_types")
     .select("id, name");
 
-  if (atError) {
-    document.getElementById("status").innerText = atError.message;
+  if (atError || !assessmentTypes.length) {
+    document.getElementById("status").innerText = "Failed to load assessment types";
     throw atError;
   }
 
-  document.getElementById("assessmentType").innerHTML =
-    `<option value="">Select assessment type</option>` +
-    assessmentTypes.map(at =>
-      `<option value="${at.id}">${at.name}</option>`
-    ).join("");
+  const assessmentTypeSelect = document.getElementById("assessmentType");
+  assessmentTypeSelect.innerHTML = assessmentTypes
+    .map(at => `<option value="${at.id}">${at.name}</option>`)
+    .join("");
+  assessmentTypeSelect.value = assessmentTypes[0].id;
 
   /* 4️⃣ Load terms */
   const { data: terms, error: termError } = await supabase
     .from("terms")
     .select("id, name");
 
-  if (termError) {
-    document.getElementById("status").innerText = termError.message;
+  if (termError || !terms.length) {
+    document.getElementById("status").innerText = "Failed to load terms";
     throw termError;
   }
 
-  document.getElementById("term").innerHTML =
-    `<option value="">Select term</option>` +
-    terms.map(t =>
-      `<option value="${t.id}">${t.name}</option>`
-    ).join("");
+  const termSelect = document.getElementById("term");
+  termSelect.innerHTML = terms
+    .map(t => `<option value="${t.id}">${t.name}</option>`)
+    .join("");
+  termSelect.value = terms[0].id;
 
   /* 5️⃣ Create assessment */
   document.getElementById("createAssessment").onclick = async () => {
-    const learning_area_id = document.getElementById("learningArea").value;
-    const assessment_type_id = document.getElementById("assessmentType").value;
-    const term_id = document.getElementById("term").value;
-    const academic_year = document.getElementById("academicYear").value;
+    document.getElementById("status").innerText = "";
 
-    /* Validation (UUID safety) */
-    if (!learning_area_id || !assessment_type_id || !term_id) {
-      document.getElementById("status").innerText =
-        "Please select learning area, assessment type, and term.";
-      return;
-    }
+    const learning_area_id = learningAreaSelect.value;
+    const assessment_type_id = assessmentTypeSelect.value;
+    const term_id = termSelect.value;
+    const academic_year = document.getElementById("academicYear").value;
 
     /* Fetch teacher profile */
     const { data: profile, error: profileError } = await supabase
@@ -112,7 +111,7 @@
       .single();
 
     if (profileError || !profile) {
-      document.getElementById("status").innerText = "Profile not found";
+      document.getElementById("status").innerText = "Teacher profile not found";
       return;
     }
 
