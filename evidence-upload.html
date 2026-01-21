@@ -103,17 +103,18 @@
     const fileUrl = urlData.publicUrl;
 
     /* ✅ FIX: normalize file type */
-    const file_type = getFileType(file);
+    const file_type: getFileType(file),
 
     /* 3️⃣ Save DB records */
-    const rows = studentIds.map(student_id => ({
-      assessment_id: assessmentId,
-      student_id,
-      competency_id: competencyId,
-      file_url: fileUrl,
-      file_type,          // ✅ NOW MATCHES DB CHECK
-      uploaded_by: user.id
-    }));
+  
+const rows = studentIds.map(student_id => ({
+  assessment_id: assessmentId,
+  student_id,
+  competency_id: competencyId,
+  file_url: fileUrl,
+  file_type: getFileType(file), // ✅ GUARANTEED VALID
+  uploaded_by: user.id
+}));
 
     const { error: dbError } = await supabase
       .from("assessment_evidence")
@@ -128,13 +129,17 @@
     fileInput.value = "";
   };
 
-  /* 🔧 CBC-safe file type mapping */
-  function getFileType(file) {
-    if (file.type.startsWith("image/")) return "image";
-    if (file.type.startsWith("video/")) return "video";
-    if (file.type.startsWith("audio/")) return "audio";
-    return "document"; // PDFs, DOCX, PPT, etc
-  }
+ function getFileType(file) {
+  const mime = file.type.toLowerCase();
+
+  if (mime.startsWith("image/")) return "image";
+  if (mime.startsWith("video/")) return "video";
+  if (mime.startsWith("audio/")) return "audio";
+
+  // EVERYTHING else → document
+  return "document";
+}
+
 </script>
 
 </body>
