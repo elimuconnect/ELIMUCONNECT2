@@ -193,16 +193,19 @@
     /* ===============================
        ENSURE competency_assessment
     =============================== */
-    const { error: caUpsertError } = await supabase
-      .from("competency_assessments")
-      .upsert({
-        assessment_id: assessmentId,
-        student_id: studentIds[0],
-        competency_id,
-        created_by: user.id
-      }, {
-        onConflict: "assessment_id,student_id,competency_id"
-      });
+   await supabase
+  .from("competency_assessments")
+  .upsert({
+    assessment_id: assessmentId,
+    student_id: studentIds[0],
+    competency_id,
+    term: assessment.term_id,
+    academic_year: assessment.academic_year,
+    created_by: user.id
+  }, {
+    onConflict: "assessment_id,student_id,competency_id"
+  });
+
 
     if (caUpsertError) {
       status.innerText = caUpsertError.message;
