@@ -51,6 +51,13 @@
     throw error;
   }
 
+
+
+let currentStudentId = null;
+
+
+
+  
   /* Group by child */
   const children = {};
   data.forEach(r => {
@@ -68,8 +75,19 @@
   Object.entries(children).forEach(([id, child], index) => {
     const btn = document.createElement("button");
     btn.innerText = child.name;
-    btn.onclick = (e) => renderResults(id, e);
-    if (index === 0) btn.click();
+
+btn.onclick = () => {
+  currentStudentId = id;
+  renderResults();
+};
+
+if (index === 0) {
+  currentStudentId = id;
+  renderResults();
+}
+
+
+    
     tabs.appendChild(btn);
   });
 
@@ -78,42 +96,51 @@
   document.getElementById("yearSelect").innerHTML =
     years.map(y => `<option value="${y}">${y}</option>`).join("");
 
-  document.getElementById("yearSelect").onchange =
-  document.getElementById("termSelect").onchange = () => {
-    const active = document.querySelector("#childrenTabs button.active");
-    if (active) active.click();
-  };
-
-  function renderResults(studentId, event) {
-    document.querySelectorAll("#childrenTabs button")
-      .forEach(b => b.classList.remove("active"));
-
-    if (event) event.target.classList.add("active");
-
-    const year = document.getElementById("yearSelect").value;
-    const term = document.getElementById("termSelect").value;
-
-    const records = children[studentId].records.filter(r =>
-      (!year || r.academic_year === year) &&
-      (!term || r.term === term)
-    );
-
-    const container = document.getElementById("results");
-
-    if (!records.length) {
-      container.innerHTML = "<p>No records found.</p>";
-      return;
-    }
-
-    container.innerHTML = records.map(r => `
-      <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
-        <strong>${r.learning_area}</strong><br>
-        ${r.competency}<br>
-        <b>${r.achievement_level}</b><br>
-        <i>${r.remarks || ""}</i>
-      </div>
-    `).join("");
+ document.getElementById("yearSelect").onchange =
+document.getElementById("termSelect").onchange = () => {
+  if (currentStudentId) {
+    renderResults();
   }
+};
+
+
+  function renderResults() {
+  document.querySelectorAll("#childrenTabs button")
+    .forEach(b => b.classList.remove("active"));
+
+  [...document.querySelectorAll("#childrenTabs button")]
+    .find(b => b.innerText === children[currentStudentId].name)
+    ?.classList.add("active");
+
+  const year = document.getElementById("yearSelect").value;
+  const term = document.getElementById("termSelect").value;
+
+
+
+const records = children[currentStudentId].records.filter(r =>
+  (!year || String(r.academic_year) === year) &&
+  (!term || r.term === term)
+);
+
+
+    
+  const container = document.getElementById("results");
+
+  if (!records.length) {
+    container.innerHTML = "<p>No records found.</p>";
+    return;
+  }
+
+  container.innerHTML = records.map(r => `
+    <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
+      <strong>${r.learning_area}</strong><br>
+      ${r.competency}<br>
+      <b>${r.achievement_level}</b><br>
+      <i>${r.remarks || ""}</i>
+    </div>
+  `).join("");
+}
+
 </script>
 
 </body>
