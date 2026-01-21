@@ -68,11 +68,16 @@
   /* ===============================
      2️⃣ LOAD ASSESSMENT
   =============================== */
-  const { data: assessment } = await supabase
+  const { data: assessment, error: assessmentError } = await supabase
     .from("assessments")
     .select("term_id, academic_year")
     .eq("id", assessmentId)
-    .single();
+    .maybeSingle();
+
+  if (assessmentError || !assessment) {
+    status.innerText = "Assessment not found.";
+    throw new Error("Invalid assessment_id");
+  }
 
   /* ===============================
      3️⃣ LOAD COMPETENCIES
@@ -103,7 +108,6 @@
   =============================== */
   competencySelect.onchange = async () => {
     const competency_id = competencySelect.value;
-
     uploadBtn.disabled = true;
     status.innerText = "";
 
@@ -143,16 +147,21 @@
 
     const existing = await loadExistingRemark(studentIds[0], competency_id);
 
-    // CASE 1: Update remarks only
+    // UPDATE
     if (existing) {
-      await supabase
+      const { error } = await supabase
         .from("assessment_results")
         .update({ remarks })
         .eq("id", existing.id);
 
+      if (error) {
+        status.innerText = error.message;
+        return;
+      }
+
       status.innerText = "Remarks updated successfully.";
-    } 
-    // CASE 2: Insert new results
+    }
+    // INSERT
     else {
       if (!achievement_level_id) {
         status.innerText = "Select achievement level.";
@@ -169,36 +178,49 @@
         academic_year: assessment.academic_year
       }));
 
-      await supabase.from("assessment_results").insert(rows);
+      const { error } = await supabase
+        .from("assessment_results")
+        .insert(rows);
+
+      if (error) {
+        status.innerText = error.message;
+        return;
+      }
 
       status.innerText = "Results saved successfully.";
     }
 
+    /* ===============================
+       ENSURE competency_assessment
+    =============================== */
+    const { error: caUpsertError } = await supabase
+      .from("competency_assessments")
+      .upsert({
+        assessment_id: assessmentId,
+        student_id: studentIds[0],
+        competency_id,
+        created_by: user.id
+      }, {
+        onConflict: "assessment_id,student_id,competency_id"
+      });
 
+    if (caUpsertError) {
+      status.innerText = caUpsertError.message;
+      return;
+    }
 
-// ✅ ENSURE competency_assessment exists
-await supabase
-  .from("competency_assessments")
-  .upsert({
-    assessment_id: assessmentId,
-    student_id: studentIds[0],
-    competency_id
-  }, {
-    onConflict: "assessment_id,student_id,competency_id"
-  });
-
-
-    
-    /* 🔑 FETCH competency_assessments ID (REQUIRED FOR EVIDENCE) */
-    const { data: ca, error } = await supabase
+    /* ===============================
+       FETCH competency_assessment ID
+    =============================== */
+    const { data: ca, error: caFetchError } = await supabase
       .from("competency_assessments")
       .select("id")
       .eq("assessment_id", assessmentId)
       .eq("student_id", studentIds[0])
       .eq("competency_id", competency_id)
-      .single();
+      .maybeSingle();
 
-    if (error || !ca) {
+    if (caFetchError || !ca) {
       status.innerText = "Results saved, but competency assessment missing.";
       return;
     }
@@ -230,10 +252,11 @@ await supabase
       .eq("assessment_id", assessmentId)
       .eq("student_id", student_id)
       .eq("competency_id", competency_id)
-      .single();
+      .maybeSingle();
 
     return data || null;
   }
 </script>
+
 </body>
 </html>
