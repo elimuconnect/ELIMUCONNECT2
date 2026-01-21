@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Parent Dashboard</title>
+  <meta charset="UTF-8" />
+</head>
+<body>
+
+<h2>My Children</h2>
+
+<!-- Child tabs -->
+<div id="childrenTabs"></div>
+
+<hr>
+
+<!-- Filters -->
+<label>Academic Year</label>
+<select id="yearSelect"></select>
+
+<label>Term</label>
+<select id="termSelect">
+  <option value="">All Terms</option>
+  <option value="Term 1">Term 1</option>
+  <option value="Term 2">Term 2</option>
+  <option value="Term 3">Term 3</option>
+</select>
+
+<hr>
+
+<!-- Results -->
+<div id="results"></div>
+
+<p id="status"></p>
+
+<script type="module" src="parent.js"></script>
+</body>
+</html>
