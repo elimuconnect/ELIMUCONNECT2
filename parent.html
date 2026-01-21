@@ -1,126 +1,113 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Parent Results</title>
   <meta charset="UTF-8" />
+  <title>Student Results Lookup</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+    }
+    input, button {
+      padding: 8px;
+      margin: 5px 0;
+      width: 100%;
+    }
+    button {
+      cursor: pointer;
+    }
+    .card {
+      border: 1px solid #ccc;
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+    }
+    .muted {
+      color: #666;
+      font-size: 0.9em;
+    }
+  </style>
 </head>
 <body>
 
 <h2>View Student Results</h2>
 
-<label>Admission Number</label><br>
-<input id="admissionInput" placeholder="Enter admission number" />
-<button id="loadBtn">View Results</button>
+<p class="muted">
+  Enter the <b>Admission Number</b>, <b>First Name</b>, and <b>Last Name</b> exactly as registered.
+</p>
+
+<label>Admission Number</label>
+<input id="admission" placeholder="e.g. ADM123">
+
+<label>First Name</label>
+<input id="firstName" placeholder="e.g. John">
+
+<label>Last Name</label>
+<input id="lastName" placeholder="e.g. Doe">
+
+<button id="checkBtn">View Results</button>
 
 <p id="status"></p>
-
-<hr>
-
-<label>Academic Year</label>
-<select id="yearSelect">
-  <option value="">All Years</option>
-</select>
-
-<label>Term</label>
-<select id="termSelect">
-  <option value="">All Terms</option>
-  <option value="Term 1">Term 1</option>
-  <option value="Term 2">Term 2</option>
-  <option value="Term 3">Term 3</option>
-</select>
-
 <hr>
 
 <div id="results"></div>
 
 <script type="module">
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-const supabase = createClient(
-  "https://zcmzuetusvpmvubbjlmx.supabase.co",
-  "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
-);
-
-/* Auth */
-const { data: { user } } = await supabase.auth.getUser();
-if (!user) location.href = "index.html";
-
-let records = [];
-
-/* Load results by admission number */
-document.getElementById("loadBtn").onclick = async () => {
-  const admission = document.getElementById("admissionInput").value.trim();
-  if (!admission) return;
-
-  document.getElementById("status").innerText = "Loading...";
-
-  const { data, error } = await supabase
-    .from("parent_assessment_dashboard")
-    .select("*")
-    .eq("admission_number", admission);
-
-  if (error || !data.length) {
-    document.getElementById("status").innerText =
-      "No records found for this admission number.";
-    return;
-  }
-
-  // Normalize academic_year
-  records = data.map(r => ({
-    ...r,
-    academic_year: String(r.academic_year)
-  }));
-
-  populateYears();
-  renderResults();
-
-  document.getElementById("status").innerText =
-    `Showing results for ${records[0].student_name}`;
-};
-
-/* Populate academic years */
-function populateYears() {
-  const years = [...new Set(records.map(r => r.academic_year))]
-    .sort()
-    .reverse();
-
-  const yearSelect = document.getElementById("yearSelect");
-  yearSelect.innerHTML =
-    `<option value="">All Years</option>` +
-    years.map(y => `<option value="${y}">${y}</option>`).join("");
-}
-
-/* Filters */
-document.getElementById("yearSelect").onchange =
-document.getElementById("termSelect").onchange = renderResults;
-
-/* Render */
-function renderResults() {
-  const year = document.getElementById("yearSelect").value;
-  const term = document.getElementById("termSelect").value;
-
-  const filtered = records.filter(r =>
-    (!year || r.academic_year === year) &&
-    (!term || r.term === term)
+  const supabase = createClient(
+    "https://zcmzuetusvpmvubbjlmx.supabase.co",
+    "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
   );
 
-  const container = document.getElementById("results");
+  const status = document.getElementById("status");
+  const results = document.getElementById("results");
 
-  if (!filtered.length) {
-    container.innerHTML = "<p>No records for selected filters.</p>";
-    return;
-  }
+  document.getElementById("checkBtn").onclick = async () => {
+    status.innerText = "Checking results...";
+    results.innerHTML = "";
 
-  container.innerHTML = filtered.map(r => `
-    <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
-      <strong>${r.learning_area}</strong><br>
-      ${r.competency}<br>
-      <b>${r.achievement_level}</b><br>
-      <i>${r.remarks || ""}</i><br>
-      <small>${r.term} – ${r.academic_year}</small>
-    </div>
-  `).join("");
-}
+    const admission = document.getElementById("admission").value.trim();
+    const firstName = document.getElementById("firstName").value.trim();
+    const lastName = document.getElementById("lastName").value.trim();
+
+    if (!admission || !firstName || !lastName) {
+      status.innerText = "Please fill in all fields.";
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("public_parent_results")
+      .select("*")
+      .ilike("admission_number", admission)
+      .ilike("first_name", firstName)
+      .ilike("last_name", lastName)
+      .order("academic_year", { ascending: false });
+
+    if (error) {
+      status.innerText = error.message;
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      status.innerText = "No results found. Please confirm the details.";
+      return;
+    }
+
+    status.innerText = "";
+
+    results.innerHTML = data.map(r => `
+      <div class="card">
+        <strong>${r.first_name} ${r.last_name}</strong><br>
+        <span class="muted">${r.learning_area}</span><br>
+        ${r.competency}<br>
+        <b>${r.achievement_level}</b><br>
+        <i>${r.remarks || ""}</i><br>
+        <span class="muted">${r.term} · ${r.academic_year}</span>
+      </div>
+    `).join("");
+  };
 </script>
 
 </body>
