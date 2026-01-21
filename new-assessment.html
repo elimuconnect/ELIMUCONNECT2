@@ -105,6 +105,7 @@ const { data, error } = await supabase
   .insert({
     title,
     assessment_date,
+    created_by: user.id,
     class_id: classId,
     school_id: profile.school_id,
     learning_area_id,
