@@ -70,12 +70,10 @@
   =============================== */
   const { data: assessment, error: assessmentError } = await supabase
   .from("assessments")
-  .select(`
-    academic_year,
-    term:terms(name)
-  `)
+  .select("academic_year, term")
   .eq("id", assessmentId)
   .single();
+
 
 if (assessmentError || !assessment) {
   status.innerText = "Assessment not found.";
@@ -177,7 +175,8 @@ if (assessmentError || !assessment) {
         competency_id,
         achievement_level_id,
         remarks,
-        term: assessment.term.name,
+       term: assessment.term
+
         academic_year: assessment.academic_year
       }));
 
@@ -215,7 +214,8 @@ if (!finalAchievementLevelId) {
     student_id: studentIds[0],
     competency_id,
     achievement_level_id: finalAchievementLevelId, // ✅ ALWAYS SET
-    term: assessment.term.name,                     // ✅ CHECK OK
+        term: assessment.term
+                 // ✅ CHECK OK
     academic_year: assessment.academic_year,
     teacher_id: user.id,
     created_by: user.id
