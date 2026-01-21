@@ -93,15 +93,18 @@
       return;
     }
 
-    const learningAreaName =
+   const learningAreaName =
   learningAreas.find(la => la.id === learning_area_id)?.name || "Assessment";
 
 const title = `${learningAreaName} – ${term} ${academic_year}`;
+
+const assessment_date = new Date().toISOString().split("T")[0];
 
 const { data, error } = await supabase
   .from("assessments")
   .insert({
     title,
+    assessment_date,
     class_id: classId,
     school_id: profile.school_id,
     learning_area_id,
