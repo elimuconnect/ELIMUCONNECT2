@@ -73,11 +73,11 @@
     .map(c => `<option value="${c.id}">${c.name}</option>`)
     .join("");
 
-  /* 4️⃣ Load achievement levels */
-  const { data: levels, error: levelError } = await supabase
+    const { data: levels, error: levelError } = await supabase
     .from("achievement_levels")
     .select("id, label")
-    .order("sort_order");
+    .order("order_rank", { ascending: true });
+
 
   if (levelError || !levels.length) {
     document.getElementById("status").innerText = "No achievement levels found";
