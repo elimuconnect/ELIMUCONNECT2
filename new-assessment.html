@@ -13,12 +13,8 @@
 <label>Assessment Type</label><br>
 <select id="assessmentType"></select><br><br>
 
-<label>Term</label><br>
-<select id="term">
-  <option value="Term 1">Term 1</option>
-  <option value="Term 2">Term 2</option>
-  <option value="Term 3">Term 3</option>
-</select><br><br>
+<select id="term"></select>
+<br><br>
 
 <label>Academic Year</label><br>
 <input id="academicYear" value="2025" /><br><br>
@@ -74,11 +70,30 @@
       ).join("");
   }
 
+
+// Load terms
+const { data: terms, error: termError } = await supabase
+  .from("terms")
+  .select("id, name");
+
+if (termError) {
+  document.getElementById("status").innerText = termError.message;
+} else {
+  document.getElementById("term").innerHTML =
+    terms.map(t =>
+      `<option value="${t.id}">${t.name}</option>`
+    ).join("");
+}
+
+
+
+  
   /* 4️⃣ Create assessment */
   document.getElementById("createAssessment").onclick = async () => {
     const learning_area_id = document.getElementById("learningArea").value;
     const assessment_type_id = document.getElementById("assessmentType").value;
-    const term = document.getElementById("term").value;
+   const term_id = document.getElementById("term").value;
+
     const academic_year = document.getElementById("academicYear").value;
 
     const { data: profile, error: profileError } = await supabase
@@ -96,7 +111,10 @@
    const learningAreaName =
   learningAreas.find(la => la.id === learning_area_id)?.name || "Assessment";
 
-const title = `${learningAreaName} – ${term} ${academic_year}`;
+const termName =
+  terms.find(t => t.id === term_id)?.name || "Term";
+
+const title = `${learningAreaName} – ${termName} ${academic_year}`;
 
 const assessment_date = new Date().toISOString().split("T")[0];
 
@@ -111,7 +129,8 @@ const { data, error } = await supabase
   school_id: profile.school_id,
   learning_area_id,
   assessment_type_id,
-  term,
+term_id,
+ 
   academic_year
 })
 
