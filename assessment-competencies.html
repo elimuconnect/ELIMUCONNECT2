@@ -91,38 +91,39 @@
 
   /* 5️⃣ Save results */
   document.getElementById("saveResults").onclick = async () => {
-    const competency_id = competencySelect.value;
-    const achievement_level_id = achievementSelect.value;
-    const remarks = document.getElementById("remark").value;
+  const competency_id = competencySelect.value;
+  const achievement_level_id = achievementSelect.value;
+  const remarks = document.getElementById("remark").value;
 
-    if (!competency_id || !achievement_level_id) {
-      document.getElementById("status").innerText =
-        "Select competency and achievement level.";
-      return;
-    }
-
-    const rows = studentIds.map(student_id => ({
-      assessment_id: assessmentId,
-      student_id,
-      competency_id,
-      achievement_level_id,
-      remark,
-      term: assessment.term_id,
-      academic_year: assessment.academic_year
-    }));
-
-    const { error } = await supabase
-      .from("assessment_results")
-      .insert(rows);
-
-    if (error) {
-      document.getElementById("status").innerText = error.message;
-      return;
-    }
-
+  if (!competency_id || !achievement_level_id) {
     document.getElementById("status").innerText =
-      "Results saved. You may assess another competency.";
-  };
+      "Select competency and achievement level.";
+    return;
+  }
+
+  const rows = studentIds.map(student_id => ({
+    assessment_id: assessmentId,
+    student_id,
+    competency_id,
+    achievement_level_id,
+    remarks,
+    term: assessment.term_id,
+    academic_year: assessment.academic_year
+  }));
+
+  const { error } = await supabase
+    .from("assessment_results")
+    .insert(rows);
+
+  if (error) {
+    document.getElementById("status").innerText = error.message;
+    return;
+  }
+
+  document.getElementById("status").innerText =
+    "Results saved. You may assess another competency.";
+};
+
 </script>
 
 </body>
