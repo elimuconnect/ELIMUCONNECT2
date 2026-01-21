@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Select Students</title>
+  <meta charset="UTF-8" />
+</head>
+<body>
+
+<h2>Select Students for Assessment</h2>
+
+<div id="studentList">Loading students...</div>
+<br>
+<button id="confirmStudents">Confirm Students</button>
+
+<p id="status"></p>
+
+<script type="module">
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+  const supabase = createClient(
+    "https://zcmzuetusvpmvubbjlmx.supabase.co",
+    "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
+  );
+
+  /* 0️⃣ Auth check */
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    window.location.href = "index.html";
+    throw new Error("Not logged in");
+  }
+
+  /* 1️⃣ Get assessment + class */
+  const assessmentId = localStorage.getItem("assessment_id");
+  const classId = localStorage.getItem("class_id");
+
+  if (!assessmentId || !classId) {
+    window.location.href = "teacher.html";
+    throw new Error("Missing assessment or class");
+  }
+
+  /* 2️⃣ Load students in class */
+  const { data: students, error: studentError } = await supabase
+    .from("students")
+    .select("id, first_name, last_name")
+    .eq("class_id", classId)
+    .order("last_name");
+
+  if (studentError) {
+    document.getElementById("status").innerText = studentError.message;
+    throw studentError;
+  }
+
+  if (!students.length) {
+    document.getElementById("studentList").innerText =
+      "No students found in this class.";
+    throw new Error("No students");
+  }
+
+  /* Render checklist */
+  document.getElementById("studentList").innerHTML =
+    students.map(s => `
+      <label>
+        <input type="checkbox" value="${s.id}">
+        ${s.first_name} ${s.last_name}
+      </label><br>
+    `).join("");
+
+  /* 3️⃣ Confirm students */
+  document.getElementById("confirmStudents").onclick = async () => {
+    const checked = Array.from(
+      document.querySelectorAll("input[type=checkbox]:checked")
+    );
+
+    if (!checked.length) {
+      document.getElementById("status").innerText =
+        "Please select at least one student.";
+      return;
+    }
+
+    /* Fetch assessment info (term & year) */
+    const { data: assessment, error: assessError } = await supabase
+      .from("assessments")
+      .select("term_id, academic_year")
+      .eq("id", assessmentId)
+      .single();
+
+    if (assessError || !assessment) {
+      document.getElementById("status").innerText =
+        "Failed to load assessment info";
+      return;
+    }
+
+    /* Build rows for assessment_results */
+    const rows = checked.map(cb => ({
+      assessment_id: assessmentId,
+      student_id: cb.value,
+      term: assessment.term_id,        // storing text/identifier as per your schema
+      academic_year: assessment.academic_year
+    }));
+
+    const { error } = await supabase
+      .from("assessment_results")
+      .insert(rows);
+
+    if (error) {
+      document.getElementById("status").innerText = error.message;
+      return;
+    }
+
+    /* Proceed to competency assessment */
+    window.location.href = "assessment-competencies.html";
+  };
+</script>
+
+</body>
+</html>
