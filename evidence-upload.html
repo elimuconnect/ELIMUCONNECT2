@@ -42,6 +42,7 @@
 <button onclick="window.location.href='assessment-competencies.html'">
   ⬅ Back to Assessment
 </button>
+
 <script type="module">
   import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -52,6 +53,7 @@
 
   const status = document.getElementById("status");
   const fileInput = document.getElementById("fileInput");
+  const uploadBtn = document.getElementById("uploadBtn");
 
   /* 🔐 Auth check */
   const { data: { user } } = await supabase.auth.getUser();
@@ -60,29 +62,29 @@
     throw new Error("Not logged in");
   }
 
-  /* 📦 Context */
-  const assessmentId = localStorage.getItem("assessment_id");
-  const competencyId = localStorage.getItem("current_competency_id");
-  const studentIds = JSON.parse(localStorage.getItem("selected_students") || "[]");
+  /* 📦 REQUIRED CONTEXT */
+  const competencyAssessmentId =
+    localStorage.getItem("competency_assessment_id");
 
-  if (!assessmentId || !competencyId || !studentIds.length) {
-    status.innerText = "Missing assessment context.";
-    throw new Error("Missing context");
+  if (!competencyAssessmentId) {
+    status.innerText =
+      "Missing competency assessment context. Save results first.";
+    throw new Error("Missing competency_assessment_id");
   }
 
   /* ⬆ Upload handler */
-  document.getElementById("uploadBtn").onclick = async () => {
+  uploadBtn.onclick = async () => {
     const file = fileInput.files[0];
     if (!file) {
       status.innerText = "Please select a file first.";
       return;
     }
 
-    status.innerText = "Uploading evidence...";
+    status.innerText = "Uploading evidence…";
 
     const fileExt = file.name.split(".").pop();
     const filePath =
-      `evidence/${assessmentId}/${competencyId}/${crypto.randomUUID()}.${fileExt}`;
+      `evidence/${competencyAssessmentId}/${crypto.randomUUID()}.${fileExt}`;
 
     /* 1️⃣ Upload to storage */
     const { error: uploadError } = await supabase.storage
@@ -101,19 +103,15 @@
 
     const fileUrl = urlData.publicUrl;
 
-    /* 3️⃣ Insert DB rows */
-    const rows = studentIds.map(student_id => ({
-      assessment_id: assessmentId,
-      student_id,
-      competency_id: competencyId,
-      file_url: fileUrl,
-      file_type: getFileType(file), // ✅ matches DB CHECK
-      uploaded_by: user.id
-    }));
-
+    /* 3️⃣ Insert evidence row (FK-safe ✅) */
     const { error: dbError } = await supabase
       .from("assessment_evidence")
-      .insert(rows);
+      .insert({
+        competency_assessment_id: competencyAssessmentId, // ✅ CORRECT FK
+        file_url: fileUrl,
+        file_type: getFileType(file),                     // ✅ CHECK OK
+        uploaded_by: user.id
+      });
 
     if (dbError) {
       status.innerText = dbError.message;
@@ -124,7 +122,7 @@
     fileInput.value = "";
   };
 
-  /* 🔧 Helper — MUST match DB constraint */
+  /* 🔧 MUST MATCH DB CHECK */
   function getFileType(file) {
     const mime = file.type.toLowerCase();
 
@@ -135,6 +133,6 @@
   }
 </script>
 
-
+  
 </body>
 </html>
