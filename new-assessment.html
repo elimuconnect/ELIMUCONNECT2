@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>New Assessment</title>
+</head>
+<body>
+
+<h2>Create New Assessment</h2>
+
+<label>Learning Area</label><br>
+<select id="learningArea"></select><br><br>
+
+<label>Assessment Type</label><br>
+<select id="assessmentType"></select><br><br>
+
+<label>Term</label><br>
+<select id="term">
+  <option value="Term 1">Term 1</option>
+  <option value="Term 2">Term 2</option>
+  <option value="Term 3">Term 3</option>
+</select><br><br>
+
+<label>Academic Year</label><br>
+<input id="academicYear" value="2025" /><br><br>
+
+<button id="createAssessment">Create Assessment</button>
+
+<p id="status"></p>
+
+<script type="module">
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+  const supabase = createClient(
+    "https://zcmzuetusvpmvubbjlmx.supabase.co",
+    "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
+  );
+
+  // 1️⃣ Get class from previous step
+  const classId = localStorage.getItem("class_id");
+  if (!classId) {
+    window.location.href = "teacher.html";
+  }
+
+  // 2️⃣ Load learning areas
+  const { data: learningAreas, error: laError } = await supabase
+    .from("learning_areas")
+    .select("id, name");
+
+  if (laError) {
+    document.getElementById("status").innerText = laError.message;
+  } else {
+    document.getElementById("learningArea").innerHTML =
+      learningAreas.map(la =>
+        `<option value="${la.id}">${la.name}</option>`
+      ).join("");
+  }
+
+  // 3️⃣ Load assessment types
+  const { data: assessmentTypes, error: atError } = await supabase
+    .from("assessment_types")
+    .select("id, name");
+
+  if (atError) {
+    document.getElementById("status").innerText = atError.message;
+  } else {
+    document.getElementById("assessmentType").innerHTML =
+      assessmentTypes.map(at =>
+        `<option value="${at.id}">${at.name}</option>`
+      ).join("");
+  }
+
+  // 4️⃣ Create assessment
+  document.getElementById("createAssessment").onclick = async () => {
+    const learning_area_id = document.getElementById("learningArea").value;
+    const assessment_type_id = document.getElementById("assessmentType").value;
+    const term = document.getElementById("term").value;
+    const academic_year = document.getElementById("academicYear").value;
+
+    const { data, error } = await supabase
+      .from("assessments")
+      .insert({
+        class_id: classId,
+        learning_area_id,
+        assessment_type_id,
+        term,
+        academic_year
+      })
+      .select()
+      .single();
+
+    if (error) {
+      document.getElementById("status").innerText = error.message;
+    } else {
+      localStorage.setItem("assessment_id", data.id);
+      window.location.href = "assessment-students.html";
+    }
+  };
+</script>
+
+</body>
+</html>
