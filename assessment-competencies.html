@@ -19,8 +19,12 @@
 
 <button id="saveResults">Save Results</button>
 
-<p id="status"></p>
+  <button id="uploadEvidence" disabled>
+  Proceed to Evidence Upload
+</button>
 
+
+<p id="status"></p>
 <script type="module">
   import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -45,30 +49,28 @@
     throw new Error("Missing context");
   }
 
+  /* Elements */
+  const competencySelect = document.getElementById("competency");
+  const achievementSelect = document.getElementById("achievement");
+  const remarkInput = document.getElementById("remark");
+  const uploadBtn = document.getElementById("uploadEvidence");
+  const status = document.getElementById("status");
+
+  uploadBtn.disabled = true;
+
   /* 2️⃣ Load assessment */
-  const { data: assessment, error: assessError } = await supabase
+  const { data: assessment } = await supabase
     .from("assessments")
     .select("term_id, academic_year")
     .eq("id", assessmentId)
     .single();
 
-  if (assessError || !assessment) {
-    document.getElementById("status").innerText = "Failed to load assessment";
-    throw assessError;
-  }
-
   /* 3️⃣ Load competencies */
-  const { data: competencies, error: compError } = await supabase
+  const { data: competencies } = await supabase
     .from("competencies")
     .select("id, name")
     .order("name");
 
-  if (compError || !competencies.length) {
-    document.getElementById("status").innerText = "No competencies found";
-    throw compError;
-  }
-
-  const competencySelect = document.getElementById("competency");
   competencySelect.innerHTML =
     `<option value="">Select competency</option>` +
     competencies.map(c =>
@@ -76,41 +78,44 @@
     ).join("");
 
   /* 4️⃣ Load achievement levels */
-  const { data: levels, error: levelError } = await supabase
+  const { data: levels } = await supabase
     .from("achievement_levels")
     .select("id, label")
-    .order("order_rank", { ascending: true });
+    .order("order_rank");
 
-  if (levelError || !levels.length) {
-    document.getElementById("status").innerText = "No achievement levels found";
-    throw levelError;
-  }
-
-  const achievementSelect = document.getElementById("achievement");
   achievementSelect.innerHTML =
     `<option value="">Select achievement</option>` +
     levels.map(l =>
       `<option value="${l.id}">${l.label}</option>`
     ).join("");
 
-  /* 5️⃣ Load existing result when competency changes */
+  /* 5️⃣ Handle competency change (ONE handler) */
   competencySelect.onchange = async () => {
     const competency_id = competencySelect.value;
-    if (!competency_id) return;
+
+    uploadBtn.disabled = true;
+    status.innerText = "";
+
+    if (!competency_id) {
+      achievementSelect.disabled = false;
+      achievementSelect.selectedIndex = 0;
+      remarkInput.value = "";
+      return;
+    }
+
+    uploadBtn.disabled = false;
 
     const existing = await loadExistingRemark(studentIds[0], competency_id);
 
     if (existing) {
       achievementSelect.value = existing.achievement_level_id;
       achievementSelect.disabled = true;
-      document.getElementById("remark").value = existing.remarks || "";
-      document.getElementById("status").innerText =
-        "Existing result found. You may edit remarks only.";
+      remarkInput.value = existing.remarks || "";
+      status.innerText = "Existing result found. You may edit remarks only.";
     } else {
       achievementSelect.disabled = false;
       achievementSelect.selectedIndex = 0;
-      document.getElementById("remark").value = "";
-      document.getElementById("status").innerText = "";
+      remarkInput.value = "";
     }
   };
 
@@ -118,37 +123,28 @@
   document.getElementById("saveResults").onclick = async () => {
     const competency_id = competencySelect.value;
     const achievement_level_id = achievementSelect.value;
-    const remarks = document.getElementById("remark").value;
+    const remarks = remarkInput.value;
 
     if (!competency_id) {
-      document.getElementById("status").innerText =
-        "Select a competency first.";
+      status.innerText = "Select a competency first.";
       return;
     }
 
     const existing = await loadExistingRemark(studentIds[0], competency_id);
 
-    /* CASE 1️⃣ Update remarks only */
+    /* Update remarks only */
     if (existing) {
-      const { error } = await supabase
+      await supabase
         .from("assessment_results")
         .update({ remarks })
         .eq("id", existing.id);
 
-      if (error) {
-        document.getElementById("status").innerText = error.message;
-        return;
-      }
-
-      document.getElementById("status").innerText =
-        "Remarks updated successfully.";
+      status.innerText = "Remarks updated successfully.";
       return;
     }
 
-    /* CASE 2️⃣ New result */
     if (!achievement_level_id) {
-      document.getElementById("status").innerText =
-        "Select achievement level.";
+      status.innerText = "Select achievement level.";
       return;
     }
 
@@ -162,28 +158,20 @@
       academic_year: assessment.academic_year
     }));
 
-    const { error } = await supabase
-      .from("assessment_results")
-      .insert(rows);
+    await supabase.from("assessment_results").insert(rows);
 
-    if (error) {
-      document.getElementById("status").innerText = error.message;
-      return;
-    }
-
-    document.getElementById("status").innerText =
-      "Results saved. Select another competency to continue.";
-
-    competencySelect.selectedIndex = 0;
-    achievementSelect.selectedIndex = 0;
-    achievementSelect.disabled = false;
-    document.getElementById("remark").value = "";
-    competencySelect.focus();
+    status.innerText = "Results saved. You may upload evidence.";
   };
 
-  /* 🔧 Helper */
+  /* 7️⃣ Evidence upload redirect */
+  uploadBtn.onclick = () => {
+    localStorage.setItem("current_competency_id", competencySelect.value);
+    window.location.href = "evidence-upload.html";
+  };
+
+  /* Helper */
   async function loadExistingRemark(student_id, competency_id) {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("assessment_results")
       .select("id, remarks, achievement_level_id")
       .eq("assessment_id", assessmentId)
@@ -191,8 +179,7 @@
       .eq("competency_id", competency_id)
       .single();
 
-    if (error || !data) return null;
-    return data;
+    return data || null;
   }
 </script>
 
