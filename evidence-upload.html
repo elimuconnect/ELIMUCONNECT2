@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Upload Evidence</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 700px; margin: 40px auto; }
+    label { font-weight: bold; display: block; margin-top: 12px; }
+    select, input, textarea, button {
+      width: 100%;
+      padding: 8px;
+      margin-top: 4px;
+    }
+    button { margin-top: 15px; cursor: pointer; }
+    .status { margin-top: 10px; color: #333; }
+  </style>
+</head>
+<body>
+
+<h2>Upload Evidence</h2>
+
+<label>Student</label>
+<select id="studentSelect"></select>
+
+<label>Competency</label>
+<select id="competencySelect"></select>
+
+<label>Evidence File</label>
+<input type="file" id="fileInput" />
+
+<label>Description (optional)</label>
+<textarea id="description" rows="3"></textarea>
+
+<button id="uploadBtn">Upload Evidence</button>
+
+<p id="status" class="status"></p>
+
+<script type="module">
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+  const supabase = createClient(
+    "https://zcmzuetusvpmvubbjlmx.supabase.co",
+    "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
+  );
+
+  const status = document.getElementById("status");
+
+  /* 🔐 Auth */
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) location.href = "index.html";
+
+  /* 📦 Context */
+  const assessmentId = localStorage.getItem("assessment_id");
+  const studentIds = JSON.parse(localStorage.getItem("selected_students") || "[]");
+
+  if (!assessmentId || !studentIds.length) {
+    status.innerText = "Missing assessment context.";
+    throw new Error("Missing context");
+  }
+
+  /* 👤 Load students */
+  const { data: students } = await supabase
+    .from("students")
+    .select("id, first_name, last_name")
+    .in("id", studentIds);
+
+  const studentSelect = document.getElementById("studentSelect");
+  studentSelect.innerHTML =
+    `<option value="">Select student</option>` +
+    students.map(s =>
+      `<option value="${s.id}">${s.first_name} ${s.last_name}</option>`
+    ).join("");
+
+  /* 📘 Load competencies */
+  const { data: competencies } = await supabase
+    .from("competencies")
+    .select("id, name")
+    .order("name");
+
+  const competencySelect = document.getElementById("competencySelect");
+  competencySelect.innerHTML =
+    `<option value="">Select competency</option>` +
+    competencies.map(c =>
+      `<option value="${c.id}">${c.name}</option>`
+    ).join("");
+
+  /* ⬆️ Upload logic */
+  document.getElementById("uploadBtn").onclick = async () => {
+    const studentId = studentSelect.value;
+    const competencyId = competencySelect.value;
+    const file = document.getElementById("fileInput").files[0];
+    const description = document.getElementById("description").value;
+
+    if (!studentId || !competencyId || !file) {
+      status.innerText = "Select student, competency, and file.";
+      return;
+    }
+
+    /* 🔎 Find assessment_result */
+    const { data: result, error: resultError } = await supabase
+      .from("assessment_results")
+      .select("id")
+      .eq("assessment_id", assessmentId)
+      .eq("student_id", studentId)
+      .eq("competency_id", competencyId)
+      .single();
+
+    if (resultError || !result) {
+      status.innerText = "Assessment result not found. Assess first.";
+      return;
+    }
+
+    /* ☁️ Upload file */
+    const filePath = `${assessmentId}/${studentId}/${Date.now()}_${file.name}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("evidence")
+      .upload(filePath, file);
+
+    if (uploadError) {
+      status.innerText = uploadError.message;
+      return;
+    }
+
+    /* 👤 Profile */
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("auth_id", user.id)
+      .single();
+
+    /* 💾 Save evidence */
+    const { error } = await supabase
+      .from("assessment_evidence")
+      .insert({
+        student_competency_record_id: result.id,
+        assessment_id: assessmentId,
+        student_id: studentId,
+        competency_id: competencyId,
+        file_url: filePath,
+        file_type: file.type,
+        uploaded_by: profile.id
+      });
+
+    if (error) {
+      status.innerText = error.message;
+      return;
+    }
+
+    status.innerText = "Evidence uploaded successfully.";
+    document.getElementById("fileInput").value = "";
+    document.getElementById("description").value = "";
+  };
+</script>
+
+</body>
+</html>
