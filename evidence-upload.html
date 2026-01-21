@@ -53,6 +53,7 @@
 
   const status = document.getElementById("status");
   const fileInput = document.getElementById("fileInput");
+  const uploadBtn = document.getElementById("uploadBtn");
 
   /* 🔐 Auth check */
   const { data: { user } } = await supabase.auth.getUser();
@@ -67,12 +68,27 @@
   const studentIds = JSON.parse(localStorage.getItem("selected_students") || "[]");
 
   if (!assessmentId || !competencyId || !studentIds.length) {
-    status.innerText = "Missing assessment context.";
+    status.innerText = "Missing assessment context. Please restart assessment.";
+    uploadBtn.disabled = true;
     throw new Error("Missing context");
   }
 
+  /* ✅ CRITICAL FIX: verify assessment exists (FK safety) */
+  const { data: assessmentExists, error: assessCheckError } = await supabase
+    .from("assessments")
+    .select("id")
+    .eq("id", assessmentId)
+    .single();
+
+  if (assessCheckError || !assessmentExists) {
+    status.innerText = "Assessment not found. Please restart assessment.";
+    localStorage.removeItem("assessment_id");
+    uploadBtn.disabled = true;
+    throw new Error("Invalid assessment_id");
+  }
+
   /* ⬆ Upload handler */
-  document.getElementById("uploadBtn").onclick = async () => {
+  uploadBtn.onclick = async () => {
     const file = fileInput.files[0];
     if (!file) {
       status.innerText = "Please select a file first.";
@@ -111,7 +127,7 @@
       student_id,
       competency_id: competencyId,
       file_url: fileUrl,
-      file_type,              // ✅ FIXED
+      file_type,
       uploaded_by: user.id
     }));
 
@@ -133,10 +149,9 @@
     if (file.type.startsWith("image/")) return "image";
     if (file.type.startsWith("video/")) return "video";
     if (file.type.startsWith("audio/")) return "audio";
-    return "document"; // pdf, docx, etc
+    return "document";
   }
 </script>
-
 
 </body>
 </html>
