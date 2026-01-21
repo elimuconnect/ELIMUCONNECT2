@@ -30,7 +30,7 @@
     "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
   );
 
-  /* 0️⃣ Get logged-in user (FIX) */
+  /* 0️⃣ Get logged-in user */
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     window.location.href = "index.html";
@@ -49,12 +49,14 @@
 
   if (laError) {
     document.getElementById("status").innerText = laError.message;
-  } else {
-    document.getElementById("learningArea").innerHTML =
-      learningAreas.map(la =>
-        `<option value="${la.id}">${la.name}</option>`
-      ).join("");
+    throw laError;
   }
+
+  document.getElementById("learningArea").innerHTML =
+    `<option value="">Select learning area</option>` +
+    learningAreas.map(la =>
+      `<option value="${la.id}">${la.name}</option>`
+    ).join("");
 
   /* 3️⃣ Load assessment types */
   const { data: assessmentTypes, error: atError } = await supabase
@@ -63,90 +65,95 @@
 
   if (atError) {
     document.getElementById("status").innerText = atError.message;
-  } else {
-    document.getElementById("assessmentType").innerHTML =
-      assessmentTypes.map(at =>
-        `<option value="${at.id}">${at.name}</option>`
-      ).join("");
+    throw atError;
   }
 
+  document.getElementById("assessmentType").innerHTML =
+    `<option value="">Select assessment type</option>` +
+    assessmentTypes.map(at =>
+      `<option value="${at.id}">${at.name}</option>`
+    ).join("");
 
-// Load terms
-const { data: terms, error: termError } = await supabase
-  .from("terms")
-  .select("id, name");
+  /* 4️⃣ Load terms */
+  const { data: terms, error: termError } = await supabase
+    .from("terms")
+    .select("id, name");
 
-if (termError) {
-  document.getElementById("status").innerText = termError.message;
-} else {
+  if (termError) {
+    document.getElementById("status").innerText = termError.message;
+    throw termError;
+  }
+
   document.getElementById("term").innerHTML =
+    `<option value="">Select term</option>` +
     terms.map(t =>
       `<option value="${t.id}">${t.name}</option>`
     ).join("");
-}
 
-
-
-  
-  /* 4️⃣ Create assessment */
+  /* 5️⃣ Create assessment */
   document.getElementById("createAssessment").onclick = async () => {
     const learning_area_id = document.getElementById("learningArea").value;
     const assessment_type_id = document.getElementById("assessmentType").value;
-   const term_id = document.getElementById("term").value;
-
+    const term_id = document.getElementById("term").value;
     const academic_year = document.getElementById("academicYear").value;
 
-    const { data: profile, error: profileError } = await supabase
-  .from("profiles")
-  .select("id, school_id")
-  .eq("auth_id", user.id)
-  .single();
+    /* Validation (UUID safety) */
+    if (!learning_area_id || !assessment_type_id || !term_id) {
+      document.getElementById("status").innerText =
+        "Please select learning area, assessment type, and term.";
+      return;
+    }
 
+    /* Fetch teacher profile */
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("id, school_id")
+      .eq("auth_id", user.id)
+      .single();
 
     if (profileError || !profile) {
       document.getElementById("status").innerText = "Profile not found";
       return;
     }
 
-   const learningAreaName =
-  learningAreas.find(la => la.id === learning_area_id)?.name || "Assessment";
+    /* Build title */
+    const learningAreaName =
+      learningAreas.find(la => la.id === learning_area_id)?.name || "Assessment";
 
-const termName =
-  terms.find(t => t.id === term_id)?.name || "Term";
+    const termName =
+      terms.find(t => t.id === term_id)?.name || "Term";
 
-const title = `${learningAreaName} – ${termName} ${academic_year}`;
+    const title = `${learningAreaName} – ${termName} ${academic_year}`;
 
-const assessment_date = new Date().toISOString().split("T")[0];
+    const assessment_date = new Date().toISOString().split("T")[0];
 
-const { data, error } = await supabase
-  .from("assessments")
- .insert({
-  title,
-  assessment_date,
-  created_by: user.id,
-  teacher_id: profile.id,
-  class_id: classId,
-  school_id: profile.school_id,
-  learning_area_id,
-  assessment_type_id,
-term_id,
- 
-  academic_year
-})
-
-  .select()
-  .single();
-
+    /* Insert assessment */
+    const { data, error } = await supabase
+      .from("assessments")
+      .insert({
+        title,
+        assessment_date,
+        created_by: user.id,
+        teacher_id: profile.id,
+        class_id: classId,
+        school_id: profile.school_id,
+        learning_area_id,
+        assessment_type_id,
+        term_id,
+        academic_year
+      })
+      .select()
+      .single();
 
     if (error) {
       document.getElementById("status").innerText = error.message;
-    } else {
-      localStorage.setItem("assessment_id", data.id);
-      window.location.href = "assessment-students.html";
+      return;
     }
+
+    localStorage.setItem("assessment_id", data.id);
+    window.location.href = "assessment-students.html";
   };
 </script>
-
 
 </body>
 </html>
