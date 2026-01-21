@@ -77,30 +77,15 @@
       return;
     }
 
-    /* Fetch assessment info (term & year) */
-    const { data: assessment, error: assessError } = await supabase
-      .from("assessments")
-      .select("term_id, academic_year")
-      .eq("id", assessmentId)
-      .single();
+  const studentIds = checked.map(cb => cb.value);
 
-    if (assessError || !assessment) {
-      document.getElementById("status").innerText =
-        "Failed to load assessment info";
-      return;
-    }
+localStorage.setItem(
+  "selected_students",
+  JSON.stringify(studentIds)
+);
 
-    /* Build rows for assessment_results */
-    const rows = checked.map(cb => ({
-      assessment_id: assessmentId,
-      student_id: cb.value,
-      term: assessment.term_id,        // storing text/identifier as per your schema
-      academic_year: assessment.academic_year
-    }));
+window.location.href = "assessment-competencies.html";
 
-    const { error } = await supabase
-      .from("assessment_results")
-      .insert(rows);
 
     if (error) {
       document.getElementById("status").innerText = error.message;
