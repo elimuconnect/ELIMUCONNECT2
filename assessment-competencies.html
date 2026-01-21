@@ -68,10 +68,13 @@
   /* ===============================
      2️⃣ LOAD ASSESSMENT
   =============================== */
-  const { data: assessment, error: assessmentError } = await supabase
-    .from("assessments")
-    .select("term_id, academic_year")
-    .eq("id", assessmentId)
+  const { data: assessment } = await supabase
+  .from("assessments")
+  .select(`
+    academic_year,
+    term:terms(name)
+  `)
+  .eq("id", assessmentId)
     .maybeSingle();
 
   if (assessmentError || !assessment) {
@@ -200,7 +203,7 @@
     student_id: studentIds[0],
     competency_id,
     achievement_level_id,          // 🔥 REQUIRED
-    term: assessment.term_id,       // 🔥 REQUIRED
+   term: assessment.term.name,      // 🔥 REQUIRED
     academic_year: assessment.academic_year,
       teacher_id: user.id,    
     created_by: user.id
