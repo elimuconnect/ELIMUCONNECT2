@@ -102,13 +102,16 @@
 
     const fileUrl = urlData.publicUrl;
 
+    /* ✅ Normalize file type (MATCHES DB CHECK) */
+    const file_type = normalizeFileType(file);
+
     /* 3️⃣ Save DB records (one per student) */
     const rows = studentIds.map(student_id => ({
       assessment_id: assessmentId,
       student_id,
       competency_id: competencyId,
       file_url: fileUrl,
-      file_type: file.type,
+      file_type,              // ✅ FIXED
       uploaded_by: user.id
     }));
 
@@ -124,7 +127,16 @@
     status.innerText = "✅ Evidence uploaded successfully.";
     fileInput.value = "";
   };
+
+  /* 🔧 Helper — CBC-safe mapping */
+  function normalizeFileType(file) {
+    if (file.type.startsWith("image/")) return "image";
+    if (file.type.startsWith("video/")) return "video";
+    if (file.type.startsWith("audio/")) return "audio";
+    return "document"; // pdf, docx, etc
+  }
 </script>
+
 
 </body>
 </html>
