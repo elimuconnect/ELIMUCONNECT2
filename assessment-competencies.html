@@ -93,7 +93,7 @@
   document.getElementById("saveResults").onclick = async () => {
     const competency_id = competencySelect.value;
     const achievement_level_id = achievementSelect.value;
-    const remark = document.getElementById("remark").value;
+    const remarks = document.getElementById("remark").value;
 
     if (!competency_id || !achievement_level_id) {
       document.getElementById("status").innerText =
