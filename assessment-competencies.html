@@ -73,6 +73,33 @@
     .map(c => `<option value="${c.id}">${c.name}</option>`)
     .join("");
 
+
+
+competencySelect.onchange = async () => {
+  const competency_id = competencySelect.value;
+  if (!competency_id) return;
+
+  // Use first student as reference (CBC rule)
+  const existing = await loadExistingRemark(studentIds[0], competency_id);
+
+  if (existing) {
+    achievementSelect.value = existing.achievement_level_id;
+    achievementSelect.disabled = true;
+    document.getElementById("remark").value = existing.remarks || "";
+    document.getElementById("status").innerText =
+      "Existing result found. You may edit remarks only.";
+  } else {
+    achievementSelect.disabled = false;
+    document.getElementById("remark").value = "";
+    document.getElementById("status").innerText = "";
+  }
+};
+
+
+
+
+  
+
     const { data: levels, error: levelError } = await supabase
     .from("achievement_levels")
     .select("id, label")
@@ -90,37 +117,43 @@
     .join("");
 
   /* 5️⃣ Save results */
- document.getElementById("saveResults").onclick = async () => {
+document.getElementById("saveResults").onclick = async () => {
   const competency_id = competencySelect.value;
   const achievement_level_id = achievementSelect.value;
   const remarks = document.getElementById("remark").value;
 
-  if (!competency_id || !achievement_level_id) {
+  if (!competency_id) {
     document.getElementById("status").innerText =
-      "Select competency and achievement level.";
+      "Select a competency first.";
     return;
   }
 
-  /* 1️⃣ Prevent duplicate competency entries */
-  const { data: existing, error: checkError } = await supabase
-    .from("assessment_results")
-    .select("id")
-    .eq("assessment_id", assessmentId)
-    .eq("competency_id", competency_id)
-    .in("student_id", studentIds);
+  const existing = await loadExistingRemark(studentIds[0], competency_id);
 
-  if (checkError) {
-    document.getElementById("status").innerText = checkError.message;
-    return;
-  }
+  /* CASE 1️⃣: EXISTING RESULT → UPDATE REMARKS ONLY */
+  if (existing) {
+    const { error } = await supabase
+      .from("assessment_results")
+      .update({ remarks })
+      .eq("id", existing.id);
 
-  if (existing.length > 0) {
+    if (error) {
+      document.getElementById("status").innerText = error.message;
+      return;
+    }
+
     document.getElementById("status").innerText =
-      "This competency has already been assessed for one or more selected students.";
+      "Remarks updated successfully.";
     return;
   }
 
-  /* 2️⃣ Build rows AFTER passing check */
+  /* CASE 2️⃣: NEW RESULT → INSERT (same as before) */
+  if (!achievement_level_id) {
+    document.getElementById("status").innerText =
+      "Select achievement level.";
+    return;
+  }
+
   const rows = studentIds.map(student_id => ({
     assessment_id: assessmentId,
     student_id,
@@ -131,7 +164,6 @@
     academic_year: assessment.academic_year
   }));
 
-  /* 3️⃣ Insert */
   const { error } = await supabase
     .from("assessment_results")
     .insert(rows);
@@ -140,6 +172,7 @@
     document.getElementById("status").innerText = error.message;
     return;
   }
+
 
  document.getElementById("status").innerText =
   "Results saved. Select another competency to continue.";
@@ -154,6 +187,25 @@ competencySelect.focus();
 };
 
 
+
+
+
+async function loadExistingRemark(student_id, competency_id) {
+  const { data, error } = await supabase
+    .from("assessment_results")
+    .select("id, remarks, achievement_level_id")
+    .eq("assessment_id", assessmentId)
+    .eq("student_id", student_id)
+    .eq("competency_id", competency_id)
+    .single();
+
+  if (error || !data) return null;
+
+  return data;
+}
+
+
+  
 </script>
 
 </body>
