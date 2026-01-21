@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Assess Competency</title>
+  <meta charset="UTF-8" />
+</head>
+<body>
+
+<h2>Assess Competency</h2>
+
+<label>Competency</label><br>
+<select id="competency"></select><br><br>
+
+<label>Achievement Level</label><br>
+<select id="achievement"></select><br><br>
+
+<label>Remark (optional)</label><br>
+<textarea id="remark" rows="3" cols="40"></textarea><br><br>
+
+<button id="saveResults">Save Results</button>
+
+<p id="status"></p>
+
+<script type="module">
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+  const supabase = createClient(
+    "https://zcmzuetusvpmvubbjlmx.supabase.co",
+    "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
+  );
+
+  /* 0️⃣ Auth check */
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    window.location.href = "index.html";
+    throw new Error("Not logged in");
+  }
+
+  /* 1️⃣ Load context */
+  const assessmentId = localStorage.getItem("assessment_id");
+  const studentIds = JSON.parse(localStorage.getItem("selected_students") || "[]");
+
+  if (!assessmentId || !studentIds.length) {
+    window.location.href = "teacher.html";
+    throw new Error("Missing context");
+  }
+
+  /* 2️⃣ Load assessment (term & year) */
+  const { data: assessment, error: assessError } = await supabase
+    .from("assessments")
+    .select("term_id, academic_year")
+    .eq("id", assessmentId)
+    .single();
+
+  if (assessError || !assessment) {
+    document.getElementById("status").innerText = "Failed to load assessment";
+    throw assessError;
+  }
+
+  /* 3️⃣ Load competencies */
+  const { data: competencies, error: compError } = await supabase
+    .from("competencies")
+    .select("id, name")
+    .order("name");
+
+  if (compError || !competencies.length) {
+    document.getElementById("status").innerText = "No competencies found";
+    throw compError;
+  }
+
+  const competencySelect = document.getElementById("competency");
+  competencySelect.innerHTML = competencies
+    .map(c => `<option value="${c.id}">${c.name}</option>`)
+    .join("");
+
+  /* 4️⃣ Load achievement levels */
+  const { data: levels, error: levelError } = await supabase
+    .from("achievement_levels")
+    .select("id, label")
+    .order("sort_order");
+
+  if (levelError || !levels.length) {
+    document.getElementById("status").innerText = "No achievement levels found";
+    throw levelError;
+  }
+
+  const achievementSelect = document.getElementById("achievement");
+  achievementSelect.innerHTML = levels
+    .map(l => `<option value="${l.id}">${l.label}</option>`)
+    .join("");
+
+  /* 5️⃣ Save results */
+  document.getElementById("saveResults").onclick = async () => {
+    const competency_id = competencySelect.value;
+    const achievement_level_id = achievementSelect.value;
+    const remark = document.getElementById("remark").value;
+
+    if (!competency_id || !achievement_level_id) {
+      document.getElementById("status").innerText =
+        "Select competency and achievement level.";
+      return;
+    }
+
+    const rows = studentIds.map(student_id => ({
+      assessment_id: assessmentId,
+      student_id,
+      competency_id,
+      achievement_level_id,
+      remark,
+      term: assessment.term_id,
+      academic_year: assessment.academic_year
+    }));
+
+    const { error } = await supabase
+      .from("assessment_results")
+      .insert(rows);
+
+    if (error) {
+      document.getElementById("status").innerText = error.message;
+      return;
+    }
+
+    document.getElementById("status").innerText =
+      "Results saved. You may assess another competency.";
+  };
+</script>
+
+</body>
+</html>
