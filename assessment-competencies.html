@@ -68,19 +68,19 @@
   /* ===============================
      2️⃣ LOAD ASSESSMENT
   =============================== */
-  const { data: assessment } = await supabase
+  const { data: assessment, error: assessmentError } = await supabase
   .from("assessments")
   .select(`
     academic_year,
     term:terms(name)
   `)
   .eq("id", assessmentId)
-    .maybeSingle();
+  .single();
 
-  if (assessmentError || !assessment) {
-    status.innerText = "Assessment not found.";
-    throw new Error("Invalid assessment_id");
-  }
+if (assessmentError || !assessment) {
+  status.innerText = "Assessment not found.";
+  throw new Error(assessmentError?.message || "Invalid assessment_id");
+}
 
   /* ===============================
      3️⃣ LOAD COMPETENCIES
@@ -177,7 +177,7 @@
         competency_id,
         achievement_level_id,
         remarks,
-        term: assessment.term_id,
+        term: assessment.term.name,
         academic_year: assessment.academic_year
       }));
 
@@ -193,6 +193,18 @@
       status.innerText = "Results saved successfully.";
     }
 
+
+
+const finalAchievementLevelId =
+  achievement_level_id || existing?.achievement_level_id;
+
+if (!finalAchievementLevelId) {
+  status.innerText = "Achievement level missing.";
+  return;
+}
+
+
+    
     /* ===============================
        ENSURE competency_assessment
     =============================== */
@@ -202,14 +214,15 @@
     assessment_id: assessmentId,
     student_id: studentIds[0],
     competency_id,
-    achievement_level_id,          // 🔥 REQUIRED
-   term: assessment.term.name,      // 🔥 REQUIRED
+    achievement_level_id: finalAchievementLevelId, // ✅ ALWAYS SET
+    term: assessment.term.name,                     // ✅ CHECK OK
     academic_year: assessment.academic_year,
-      teacher_id: user.id,    
+    teacher_id: user.id,
     created_by: user.id
   }, {
     onConflict: "assessment_id,student_id,competency_id"
   });
+
 
 if (caUpsertError) {
   status.innerText = caUpsertError.message;
