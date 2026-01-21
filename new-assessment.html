@@ -102,17 +102,19 @@ const assessment_date = new Date().toISOString().split("T")[0];
 
 const { data, error } = await supabase
   .from("assessments")
-  .insert({
-    title,
-    assessment_date,
-    created_by: user.id,
-    class_id: classId,
-    school_id: profile.school_id,
-    learning_area_id,
-    assessment_type_id,
-    term,
-    academic_year
-  })
+ .insert({
+  title,
+  assessment_date,
+  created_by: user.id,
+  teacher_id: profile.id,
+  class_id: classId,
+  school_id: profile.school_id,
+  learning_area_id,
+  assessment_type_id,
+  term,
+  academic_year
+})
+
   .select()
   .single();
 
