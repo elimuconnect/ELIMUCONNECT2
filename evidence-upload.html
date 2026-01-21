@@ -53,7 +53,6 @@
 
   const status = document.getElementById("status");
   const fileInput = document.getElementById("fileInput");
-  const uploadBtn = document.getElementById("uploadBtn");
 
   /* 🔐 Auth check */
   const { data: { user } } = await supabase.auth.getUser();
@@ -68,27 +67,12 @@
   const studentIds = JSON.parse(localStorage.getItem("selected_students") || "[]");
 
   if (!assessmentId || !competencyId || !studentIds.length) {
-    status.innerText = "Missing assessment context. Please restart assessment.";
-    uploadBtn.disabled = true;
+    status.innerText = "Missing assessment context.";
     throw new Error("Missing context");
   }
 
-  /* ✅ CRITICAL FIX: verify assessment exists (FK safety) */
-  const { data: assessmentExists, error: assessCheckError } = await supabase
-    .from("assessments")
-    .select("id")
-    .eq("id", assessmentId)
-    .single();
-
-  if (assessCheckError || !assessmentExists) {
-    status.innerText = "Assessment not found. Please restart assessment.";
-    localStorage.removeItem("assessment_id");
-    uploadBtn.disabled = true;
-    throw new Error("Invalid assessment_id");
-  }
-
   /* ⬆ Upload handler */
-  uploadBtn.onclick = async () => {
+  document.getElementById("uploadBtn").onclick = async () => {
     const file = fileInput.files[0];
     if (!file) {
       status.innerText = "Please select a file first.";
@@ -118,16 +102,13 @@
 
     const fileUrl = urlData.publicUrl;
 
-    /* ✅ Normalize file type (MATCHES DB CHECK) */
-    const file_type = normalizeFileType(file);
-
     /* 3️⃣ Save DB records (one per student) */
     const rows = studentIds.map(student_id => ({
       assessment_id: assessmentId,
       student_id,
       competency_id: competencyId,
       file_url: fileUrl,
-      file_type,
+      file_type: file.type,
       uploaded_by: user.id
     }));
 
@@ -143,14 +124,6 @@
     status.innerText = "✅ Evidence uploaded successfully.";
     fileInput.value = "";
   };
-
-  /* 🔧 Helper — CBC-safe mapping */
-  function normalizeFileType(file) {
-    if (file.type.startsWith("image/")) return "image";
-    if (file.type.startsWith("video/")) return "video";
-    if (file.type.startsWith("audio/")) return "audio";
-    return "document";
-  }
 </script>
 
 </body>
