@@ -45,7 +45,7 @@
     throw new Error("Missing context");
   }
 
-  /* 2️⃣ Load assessment (term & year) */
+  /* 2️⃣ Load assessment */
   const { data: assessment, error: assessError } = await supabase
     .from("assessments")
     .select("term_id, academic_year")
@@ -69,42 +69,17 @@
   }
 
   const competencySelect = document.getElementById("competency");
-  competencySelect.innerHTML = competencies
-    .map(c => `<option value="${c.id}">${c.name}</option>`)
-    .join("");
+  competencySelect.innerHTML =
+    `<option value="">Select competency</option>` +
+    competencies.map(c =>
+      `<option value="${c.id}">${c.name}</option>`
+    ).join("");
 
-
-
-competencySelect.onchange = async () => {
-  const competency_id = competencySelect.value;
-  if (!competency_id) return;
-
-  // Use first student as reference (CBC rule)
-  const existing = await loadExistingRemark(studentIds[0], competency_id);
-
-  if (existing) {
-    achievementSelect.value = existing.achievement_level_id;
-    achievementSelect.disabled = true;
-    document.getElementById("remark").value = existing.remarks || "";
-    document.getElementById("status").innerText =
-      "Existing result found. You may edit remarks only.";
-  } else {
-    achievementSelect.disabled = false;
-    document.getElementById("remark").value = "";
-    document.getElementById("status").innerText = "";
-  }
-};
-
-
-
-
-  
-
-    const { data: levels, error: levelError } = await supabase
+  /* 4️⃣ Load achievement levels */
+  const { data: levels, error: levelError } = await supabase
     .from("achievement_levels")
     .select("id, label")
     .order("order_rank", { ascending: true });
-
 
   if (levelError || !levels.length) {
     document.getElementById("status").innerText = "No achievement levels found";
@@ -112,30 +87,84 @@ competencySelect.onchange = async () => {
   }
 
   const achievementSelect = document.getElementById("achievement");
-  achievementSelect.innerHTML = levels
-    .map(l => `<option value="${l.id}">${l.label}</option>`)
-    .join("");
+  achievementSelect.innerHTML =
+    `<option value="">Select achievement</option>` +
+    levels.map(l =>
+      `<option value="${l.id}">${l.label}</option>`
+    ).join("");
 
-  /* 5️⃣ Save results */
-document.getElementById("saveResults").onclick = async () => {
-  const competency_id = competencySelect.value;
-  const achievement_level_id = achievementSelect.value;
-  const remarks = document.getElementById("remark").value;
+  /* 5️⃣ Load existing result when competency changes */
+  competencySelect.onchange = async () => {
+    const competency_id = competencySelect.value;
+    if (!competency_id) return;
 
-  if (!competency_id) {
-    document.getElementById("status").innerText =
-      "Select a competency first.";
-    return;
-  }
+    const existing = await loadExistingRemark(studentIds[0], competency_id);
 
-  const existing = await loadExistingRemark(studentIds[0], competency_id);
+    if (existing) {
+      achievementSelect.value = existing.achievement_level_id;
+      achievementSelect.disabled = true;
+      document.getElementById("remark").value = existing.remarks || "";
+      document.getElementById("status").innerText =
+        "Existing result found. You may edit remarks only.";
+    } else {
+      achievementSelect.disabled = false;
+      achievementSelect.selectedIndex = 0;
+      document.getElementById("remark").value = "";
+      document.getElementById("status").innerText = "";
+    }
+  };
 
-  /* CASE 1️⃣: EXISTING RESULT → UPDATE REMARKS ONLY */
-  if (existing) {
+  /* 6️⃣ Save results */
+  document.getElementById("saveResults").onclick = async () => {
+    const competency_id = competencySelect.value;
+    const achievement_level_id = achievementSelect.value;
+    const remarks = document.getElementById("remark").value;
+
+    if (!competency_id) {
+      document.getElementById("status").innerText =
+        "Select a competency first.";
+      return;
+    }
+
+    const existing = await loadExistingRemark(studentIds[0], competency_id);
+
+    /* CASE 1️⃣ Update remarks only */
+    if (existing) {
+      const { error } = await supabase
+        .from("assessment_results")
+        .update({ remarks })
+        .eq("id", existing.id);
+
+      if (error) {
+        document.getElementById("status").innerText = error.message;
+        return;
+      }
+
+      document.getElementById("status").innerText =
+        "Remarks updated successfully.";
+      return;
+    }
+
+    /* CASE 2️⃣ New result */
+    if (!achievement_level_id) {
+      document.getElementById("status").innerText =
+        "Select achievement level.";
+      return;
+    }
+
+    const rows = studentIds.map(student_id => ({
+      assessment_id: assessmentId,
+      student_id,
+      competency_id,
+      achievement_level_id,
+      remarks,
+      term: assessment.term_id,
+      academic_year: assessment.academic_year
+    }));
+
     const { error } = await supabase
       .from("assessment_results")
-      .update({ remarks })
-      .eq("id", existing.id);
+      .insert(rows);
 
     if (error) {
       document.getElementById("status").innerText = error.message;
@@ -143,69 +172,28 @@ document.getElementById("saveResults").onclick = async () => {
     }
 
     document.getElementById("status").innerText =
-      "Remarks updated successfully.";
-    return;
+      "Results saved. Select another competency to continue.";
+
+    competencySelect.selectedIndex = 0;
+    achievementSelect.selectedIndex = 0;
+    achievementSelect.disabled = false;
+    document.getElementById("remark").value = "";
+    competencySelect.focus();
+  };
+
+  /* 🔧 Helper */
+  async function loadExistingRemark(student_id, competency_id) {
+    const { data, error } = await supabase
+      .from("assessment_results")
+      .select("id, remarks, achievement_level_id")
+      .eq("assessment_id", assessmentId)
+      .eq("student_id", student_id)
+      .eq("competency_id", competency_id)
+      .single();
+
+    if (error || !data) return null;
+    return data;
   }
-
-  /* CASE 2️⃣: NEW RESULT → INSERT (same as before) */
-  if (!achievement_level_id) {
-    document.getElementById("status").innerText =
-      "Select achievement level.";
-    return;
-  }
-
-  const rows = studentIds.map(student_id => ({
-    assessment_id: assessmentId,
-    student_id,
-    competency_id,
-    achievement_level_id,
-    remarks,
-    term: assessment.term_id,
-    academic_year: assessment.academic_year
-  }));
-
-  const { error } = await supabase
-    .from("assessment_results")
-    .insert(rows);
-
-  if (error) {
-    document.getElementById("status").innerText = error.message;
-    return;
-  }
-
-
- document.getElementById("status").innerText =
-  "Results saved. Select another competency to continue.";
-
-competencySelect.selectedIndex = 0;
-achievementSelect.selectedIndex = 0;
-document.getElementById("remark").value = "";
-
-/* Optional: visual cue */
-competencySelect.focus();
-
-};
-
-
-
-
-
-async function loadExistingRemark(student_id, competency_id) {
-  const { data, error } = await supabase
-    .from("assessment_results")
-    .select("id, remarks, achievement_level_id")
-    .eq("assessment_id", assessmentId)
-    .eq("student_id", student_id)
-    .eq("competency_id", competency_id)
-    .single();
-
-  if (error || !data) return null;
-
-  return data;
-}
-
-
-  
 </script>
 
 </body>
