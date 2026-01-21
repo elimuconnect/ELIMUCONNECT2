@@ -8,65 +8,72 @@
   <h2>Teacher Dashboard</h2>
   <div id="classList">Loading classes...</div>
 
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+ <script type="module">
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-    const supabase = createClient(
-      "https://zcmzuetusvpmvubbjlmx.supabase.co",
-      "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
-    );
+  const supabase = createClient(
+    "https://zcmzuetusvpmvubbjlmx.supabase.co",
+    "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
+  );
 
-    // Guard: must be teacher
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) window.location.href = "index.html";
+  const classListEl = document.getElementById("classList");
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role, school_id")
-      .eq("auth_id", user.id)
-      .single();
+  // 1️⃣ Get logged-in user
+  const { data: { user } } = await supabase.auth.getUser();
 
-    if (!profile || profile.role !== "teacher") {
-      window.location.href = "index.html";
-    }
+  if (!user) {
+    window.location.href = "index.html";
+  }
 
-    // Fetch classes
-    const { data: classes, error } = await supabase
-      .from("classes")
-      .select(`
-        id,
-        name,
-        academic_year,
-        grades ( grade_number )
-      `)
-      .eq("school_id", profile.school_id);
+  // 2️⃣ Get profile (role + school)
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role, school_id")
+    .eq("auth_id", user.id)
+    .single();
 
-    if (error) {
-      document.getElementById("classList").innerText = "Failed to load classes";
-      return;
-    }
+  if (profileError || !profile || profile.role !== "teacher") {
+    window.location.href = "index.html";
+  }
 
-    if (!classes.length) {
-      document.getElementById("classList").innerText = "No classes found";
-      return;
-    }
+  // 3️⃣ Fetch classes for teacher’s school
+  const { data: classes, error } = await supabase
+    .from("classes")
+    .select(`
+      id,
+      name,
+      academic_year,
+      grades ( grade_number )
+    `)
+    .eq("school_id", profile.school_id);
 
-    document.getElementById("classList").innerHTML = classes.map(c => `
+  // 4️⃣ Render results (NO returns)
+  if (error) {
+    classListEl.innerText = "Failed to load classes";
+  } else if (!classes || classes.length === 0) {
+    classListEl.innerText = "No classes found";
+  } else {
+    classListEl.innerHTML = classes.map(c => `
       <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
         <strong>${c.name}</strong><br>
         Grade: ${c.grades.grade_number}<br>
         Academic Year: ${c.academic_year}<br>
-        <button onclick="startAssessment('${c.id}')">
+        <button data-class="${c.id}">
           Start Assessment
         </button>
       </div>
     `).join("");
+  }
 
-    window.startAssessment = (classId) => {
+  // 5️⃣ Button handler (safe binding)
+  classListEl.addEventListener("click", (e) => {
+    if (e.target.tagName === "BUTTON") {
+      const classId = e.target.getAttribute("data-class");
       localStorage.setItem("class_id", classId);
       window.location.href = "new-assessment.html";
-    };
-  </script>
+    }
+  });
+</script>
 
 </body>
 </html>
