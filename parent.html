@@ -29,101 +29,96 @@
 <p id="status"></p>
 
 <script type="module">
-  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-  const supabase = createClient(
-    "https://zcmzuetusvpmvubbjlmx.supabase.co",
-    "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
-  );
-
-  /* Auth */
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) location.href = "index.html";
-
-  /* Load dashboard data */
-  const { data, error } = await supabase
-    .from("parent_assessment_dashboard")
-    .select("*")
-    .order("academic_year", { ascending: false });
-
-  if (error) {
-    document.getElementById("status").innerText = error.message;
-    throw error;
-  }
-
-
-
-let currentStudentId = null;
-
-
-
-  
-  /* Group by child */
-  const children = {};
-  data.forEach(r => {
-    if (!children[r.student_id]) {
-      children[r.student_id] = {
-        name: r.student_name,
-        records: []
-      };
-    }
-    children[r.student_id].records.push(r);
-  });
-
-  /* Render child tabs */
-  const tabs = document.getElementById("childrenTabs");
-  Object.entries(children).forEach(([id, child], index) => {
-    const btn = document.createElement("button");
-    btn.innerText = child.name;
-
-btn.onclick = () => {
-  currentStudentId = id;
-  renderResults();
-};
-
-if (index === 0) {
-  currentStudentId = id;
-  renderResults();
-}
-
-
-    
-    tabs.appendChild(btn);
-  });
-
-  /* Populate years */
-  const years = [...new Set(data.map(r => r.academic_year))];
-  document.getElementById("yearSelect").innerHTML =
-    years.map(y => `<option value="${y}">${y}</option>`).join("");
-
- document.getElementById("yearSelect").onchange =
-document.getElementById("termSelect").onchange = () => {
-  if (currentStudentId) {
-    renderResults();
-  }
-};
-
-
-  function renderResults() {
-  document.querySelectorAll("#childrenTabs button")
-    .forEach(b => b.classList.remove("active"));
-
-  [...document.querySelectorAll("#childrenTabs button")]
-    .find(b => b.innerText === children[currentStudentId].name)
-    ?.classList.add("active");
-
-  const year = document.getElementById("yearSelect").value;
-  const term = document.getElementById("termSelect").value;
-
-
-
-const records = children[currentStudentId].records.filter(r =>
-  (!year || String(r.academic_year) === year) &&
-  (!term || r.term === term)
+const supabase = createClient(
+  "https://zcmzuetusvpmvubbjlmx.supabase.co",
+  "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
 );
 
+/* ───────── AUTH ───────── */
+const { data: { user } } = await supabase.auth.getUser();
+if (!user) location.href = "index.html";
 
-    
+/* ───────── LOAD DATA ───────── */
+const { data, error } = await supabase
+  .from("parent_assessment_dashboard")
+  .select("*");
+
+if (error) {
+  document.getElementById("status").innerText = error.message;
+  throw error;
+}
+
+/* ───────── NORMALIZE DATA ───────── */
+data.forEach(r => {
+  r.academic_year = String(r.academic_year); // force string once
+});
+
+/* ───────── GROUP BY CHILD ───────── */
+const children = {};
+data.forEach(r => {
+  if (!children[r.student_id]) {
+    children[r.student_id] = {
+      name: r.student_name,
+      records: []
+    };
+  }
+  children[r.student_id].records.push(r);
+});
+
+/* ───────── STATE ───────── */
+let currentStudentId = null;
+
+/* ───────── CHILD TABS ───────── */
+const tabs = document.getElementById("childrenTabs");
+
+Object.entries(children).forEach(([id, child], index) => {
+  const btn = document.createElement("button");
+  btn.textContent = child.name;
+
+  btn.onclick = () => {
+    currentStudentId = id;
+    renderResults();
+  };
+
+  tabs.appendChild(btn);
+
+  if (index === 0) currentStudentId = id;
+});
+
+/* ───────── YEAR SELECT ───────── */
+const yearSelect = document.getElementById("yearSelect");
+const years = [...new Set(data.map(r => r.academic_year))].sort().reverse();
+
+yearSelect.innerHTML =
+  `<option value="">All Years</option>` +
+  years.map(y => `<option value="${y}">${y}</option>`).join("");
+
+/* ───────── FILTER EVENTS ───────── */
+yearSelect.onchange =
+document.getElementById("termSelect").onchange = () => {
+  renderResults();
+};
+
+/* ───────── RENDER ───────── */
+function renderResults() {
+  if (!currentStudentId) return;
+
+  // Highlight active tab
+  [...tabs.children].forEach(b => b.classList.remove("active"));
+  [...tabs.children]
+    .find(b => b.textContent === children[currentStudentId].name)
+    ?.classList.add("active");
+
+  const year = yearSelect.value;
+  const term = document.getElementById("termSelect").value;
+
+  const records = children[currentStudentId].records.filter(r =>
+    (!year || r.academic_year === year) &&
+    (!term || r.term === term)
+  );
+
   const container = document.getElementById("results");
 
   if (!records.length) {
@@ -141,6 +136,8 @@ const records = children[currentStudentId].records.filter(r =>
   `).join("");
 }
 
+/* Initial render */
+renderResults();
 </script>
 
 </body>
