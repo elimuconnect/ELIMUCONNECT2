@@ -33,14 +33,18 @@
     "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
   );
 
-  /* 0️⃣ Auth check */
+  /* ===============================
+     0️⃣ AUTH CHECK
+  =============================== */
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     window.location.href = "index.html";
     throw new Error("Not logged in");
   }
 
-  /* 1️⃣ Load context */
+  /* ===============================
+     1️⃣ LOAD CONTEXT
+  =============================== */
   const assessmentId = localStorage.getItem("assessment_id");
   const studentIds = JSON.parse(localStorage.getItem("selected_students") || "[]");
 
@@ -49,23 +53,30 @@
     throw new Error("Missing context");
   }
 
-  /* Elements */
+  /* ===============================
+     ELEMENTS
+  =============================== */
   const competencySelect = document.getElementById("competency");
   const achievementSelect = document.getElementById("achievement");
   const remarkInput = document.getElementById("remark");
   const uploadBtn = document.getElementById("uploadEvidence");
+  const saveBtn = document.getElementById("saveResults");
   const status = document.getElementById("status");
 
   uploadBtn.disabled = true;
 
-  /* 2️⃣ Load assessment */
+  /* ===============================
+     2️⃣ LOAD ASSESSMENT
+  =============================== */
   const { data: assessment } = await supabase
     .from("assessments")
     .select("term_id, academic_year")
     .eq("id", assessmentId)
     .single();
 
-  /* 3️⃣ Load competencies */
+  /* ===============================
+     3️⃣ LOAD COMPETENCIES
+  =============================== */
   const { data: competencies } = await supabase
     .from("competencies")
     .select("id, name")
@@ -73,11 +84,11 @@
 
   competencySelect.innerHTML =
     `<option value="">Select competency</option>` +
-    competencies.map(c =>
-      `<option value="${c.id}">${c.name}</option>`
-    ).join("");
+    competencies.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
 
-  /* 4️⃣ Load achievement levels */
+  /* ===============================
+     4️⃣ LOAD ACHIEVEMENT LEVELS
+  =============================== */
   const { data: levels } = await supabase
     .from("achievement_levels")
     .select("id, label")
@@ -85,11 +96,11 @@
 
   achievementSelect.innerHTML =
     `<option value="">Select achievement</option>` +
-    levels.map(l =>
-      `<option value="${l.id}">${l.label}</option>`
-    ).join("");
+    levels.map(l => `<option value="${l.id}">${l.label}</option>`).join("");
 
-  /* 5️⃣ Handle competency change (ONE handler) */
+  /* ===============================
+     5️⃣ COMPETENCY CHANGE HANDLER
+  =============================== */
   competencySelect.onchange = async () => {
     const competency_id = competencySelect.value;
 
@@ -102,8 +113,6 @@
       remarkInput.value = "";
       return;
     }
-
-    uploadBtn.disabled = false;
 
     const existing = await loadExistingRemark(studentIds[0], competency_id);
 
@@ -119,8 +128,10 @@
     }
   };
 
-  /* 6️⃣ Save results */
-  document.getElementById("saveResults").onclick = async () => {
+  /* ===============================
+     6️⃣ SAVE RESULTS
+  =============================== */
+  saveBtn.onclick = async () => {
     const competency_id = competencySelect.value;
     const achievement_level_id = achievementSelect.value;
     const remarks = remarkInput.value;
@@ -132,7 +143,7 @@
 
     const existing = await loadExistingRemark(studentIds[0], competency_id);
 
-    /* Update remarks only */
+    // CASE 1: Update remarks only
     if (existing) {
       await supabase
         .from("assessment_results")
@@ -140,36 +151,63 @@
         .eq("id", existing.id);
 
       status.innerText = "Remarks updated successfully.";
+    } 
+    // CASE 2: Insert new results
+    else {
+      if (!achievement_level_id) {
+        status.innerText = "Select achievement level.";
+        return;
+      }
+
+      const rows = studentIds.map(student_id => ({
+        assessment_id: assessmentId,
+        student_id,
+        competency_id,
+        achievement_level_id,
+        remarks,
+        term: assessment.term_id,
+        academic_year: assessment.academic_year
+      }));
+
+      await supabase.from("assessment_results").insert(rows);
+
+      status.innerText = "Results saved successfully.";
+    }
+
+    /* 🔑 FETCH competency_assessments ID (REQUIRED FOR EVIDENCE) */
+    const { data: ca, error } = await supabase
+      .from("competency_assessments")
+      .select("id")
+      .eq("assessment_id", assessmentId)
+      .eq("student_id", studentIds[0])
+      .eq("competency_id", competency_id)
+      .single();
+
+    if (error || !ca) {
+      status.innerText = "Results saved, but competency assessment missing.";
       return;
     }
 
-    if (!achievement_level_id) {
-      status.innerText = "Select achievement level.";
-      return;
-    }
-
-    const rows = studentIds.map(student_id => ({
-      assessment_id: assessmentId,
-      student_id,
-      competency_id,
-      achievement_level_id,
-      remarks,
-      term: assessment.term_id,
-      academic_year: assessment.academic_year
-    }));
-
-    await supabase.from("assessment_results").insert(rows);
-
-    status.innerText = "Results saved. You may upload evidence.";
+    localStorage.setItem("competency_assessment_id", ca.id);
+    uploadBtn.disabled = false;
+    status.innerText += " You may now upload evidence.";
   };
 
-  /* 7️⃣ Evidence upload redirect */
+  /* ===============================
+     7️⃣ EVIDENCE REDIRECT
+  =============================== */
   uploadBtn.onclick = () => {
-    localStorage.setItem("current_competency_id", competencySelect.value);
+    const caId = localStorage.getItem("competency_assessment_id");
+    if (!caId) {
+      status.innerText = "Save results before uploading evidence.";
+      return;
+    }
     window.location.href = "evidence-upload.html";
   };
 
-  /* Helper */
+  /* ===============================
+     HELPER
+  =============================== */
   async function loadExistingRemark(student_id, competency_id) {
     const { data } = await supabase
       .from("assessment_results")
@@ -182,6 +220,5 @@
     return data || null;
   }
 </script>
-
 </body>
 </html>
