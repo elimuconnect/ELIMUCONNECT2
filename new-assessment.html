@@ -93,18 +93,25 @@
       return;
     }
 
-    const { data, error } = await supabase
-      .from("assessments")
-      .insert({
-        class_id: classId,
-        school_id: profile.school_id,
-        learning_area_id,
-        assessment_type_id,
-        term,
-        academic_year
-      })
-      .select()
-      .single();
+    const learningAreaName =
+  learningAreas.find(la => la.id === learning_area_id)?.name || "Assessment";
+
+const title = `${learningAreaName} – ${term} ${academic_year}`;
+
+const { data, error } = await supabase
+  .from("assessments")
+  .insert({
+    title,
+    class_id: classId,
+    school_id: profile.school_id,
+    learning_area_id,
+    assessment_type_id,
+    term,
+    academic_year
+  })
+  .select()
+  .single();
+
 
     if (error) {
       document.getElementById("status").innerText = error.message;
