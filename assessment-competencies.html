@@ -175,7 +175,7 @@ if (assessmentError || !assessment) {
         competency_id,
         achievement_level_id,
         remarks,
-       term: assessment.term
+       term: assessment.term,
 
         academic_year: assessment.academic_year
       }));
@@ -213,15 +213,15 @@ if (!finalAchievementLevelId) {
     assessment_id: assessmentId,
     student_id: studentIds[0],
     competency_id,
-    achievement_level_id: finalAchievementLevelId, // ✅ ALWAYS SET
-        term: assessment.term
-                 // ✅ CHECK OK
+    achievement_level_id: finalAchievementLevelId,
+    term: assessment.term,
     academic_year: assessment.academic_year,
     teacher_id: user.id,
     created_by: user.id
   }, {
     onConflict: "assessment_id,student_id,competency_id"
   });
+
 
 
 if (caUpsertError) {
