@@ -42,7 +42,6 @@
 <button onclick="window.location.href='assessment-competencies.html'">
   ⬅ Back to Assessment
 </button>
-
 <script type="module">
   import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -102,19 +101,15 @@
 
     const fileUrl = urlData.publicUrl;
 
-    /* ✅ FIX: normalize file type */
-    const file_type: getFileType(file),
-
-    /* 3️⃣ Save DB records */
-  
-const rows = studentIds.map(student_id => ({
-  assessment_id: assessmentId,
-  student_id,
-  competency_id: competencyId,
-  file_url: fileUrl,
-  file_type: getFileType(file), // ✅ GUARANTEED VALID
-  uploaded_by: user.id
-}));
+    /* 3️⃣ Insert DB rows */
+    const rows = studentIds.map(student_id => ({
+      assessment_id: assessmentId,
+      student_id,
+      competency_id: competencyId,
+      file_url: fileUrl,
+      file_type: getFileType(file), // ✅ matches DB CHECK
+      uploaded_by: user.id
+    }));
 
     const { error: dbError } = await supabase
       .from("assessment_evidence")
@@ -129,18 +124,17 @@ const rows = studentIds.map(student_id => ({
     fileInput.value = "";
   };
 
- function getFileType(file) {
-  const mime = file.type.toLowerCase();
+  /* 🔧 Helper — MUST match DB constraint */
+  function getFileType(file) {
+    const mime = file.type.toLowerCase();
 
-  if (mime.startsWith("image/")) return "image";
-  if (mime.startsWith("video/")) return "video";
-  if (mime.startsWith("audio/")) return "audio";
-
-  // EVERYTHING else → document
-  return "document";
-}
-
+    if (mime.startsWith("image/")) return "image";
+    if (mime.startsWith("video/")) return "video";
+    if (mime.startsWith("audio/")) return "audio";
+    return "document";
+  }
 </script>
+
 
 </body>
 </html>
