@@ -26,7 +26,6 @@
 <button id="createAssessment">Create Assessment</button>
 
 <p id="status"></p>
-
 <script type="module">
   import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -35,13 +34,19 @@
     "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
   );
 
-  // 1️⃣ Get class from previous step
+  /* 0️⃣ Get logged-in user (FIX) */
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    window.location.href = "index.html";
+  }
+
+  /* 1️⃣ Get class from previous step */
   const classId = localStorage.getItem("class_id");
   if (!classId) {
     window.location.href = "teacher.html";
   }
 
-  // 2️⃣ Load learning areas
+  /* 2️⃣ Load learning areas */
   const { data: learningAreas, error: laError } = await supabase
     .from("learning_areas")
     .select("id, name");
@@ -55,7 +60,7 @@
       ).join("");
   }
 
-  // 3️⃣ Load assessment types
+  /* 3️⃣ Load assessment types */
   const { data: assessmentTypes, error: atError } = await supabase
     .from("assessment_types")
     .select("id, name");
@@ -69,7 +74,7 @@
       ).join("");
   }
 
-  // 4️⃣ Create assessment
+  /* 4️⃣ Create assessment */
   document.getElementById("createAssessment").onclick = async () => {
     const learning_area_id = document.getElementById("learningArea").value;
     const assessment_type_id = document.getElementById("assessmentType").value;
@@ -77,24 +82,29 @@
     const academic_year = document.getElementById("academicYear").value;
 
     // get teacher profile (for school_id)
-const { data: profile } = await supabase
-  .from("profiles")
-  .select("school_id")
-  .eq("auth_id", user.id)
-  .single();
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("school_id")
+      .eq("auth_id", user.id)
+      .single();
 
-const { data, error } = await supabase
-  .from("assessments")
-  .insert({
-    class_id: classId,
-    school_id: profile.school_id,
-    learning_area_id,
-    assessment_type_id,
-    term,
-    academic_year
-  })
-  .select()
-  .single();
+    if (profileError || !profile) {
+      document.getElementById("status").innerText = "Profile not found";
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("assessments")
+      .insert({
+        class_id: classId,
+        school_id: profile.school_id,
+        learning_area_id,
+        assessment_type_id,
+        term,
+        academic_year
+      })
+      .select()
+      .single();
 
     if (error) {
       document.getElementById("status").innerText = error.message;
@@ -104,6 +114,7 @@ const { data, error } = await supabase
     }
   };
 </script>
+
 
 </body>
 </html>
