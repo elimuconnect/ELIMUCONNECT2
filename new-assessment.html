@@ -81,12 +81,12 @@
     const term = document.getElementById("term").value;
     const academic_year = document.getElementById("academicYear").value;
 
-    // get teacher profile (for school_id)
     const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("school_id")
-      .eq("auth_id", user.id)
-      .single();
+  .from("profiles")
+  .select("id, school_id")
+  .eq("auth_id", user.id)
+  .single();
+
 
     if (profileError || !profile) {
       document.getElementById("status").innerText = "Profile not found";
