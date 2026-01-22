@@ -127,22 +127,23 @@
     const assessment_date = new Date().toISOString().split("T")[0];
 
     /* Insert assessment */
-    const { data, error } = await supabase
-      .from("assessments")
-      .insert({
-        title,
-        assessment_date,
-        created_by: user.id,
-        teacher_id: profile.id,
-        class_id: classId,
-        school_id: profile.school_id,
-        learning_area_id,
-        assessment_type_id,
-        term_id,
-        academic_year
-      })
-      .select()
-      .single();
+   const { data, error } = await supabase
+  .from("assessments")
+  .insert({
+    title,
+    assessment_date,
+    created_by: user.id,
+    teacher_id: profile.id,
+    class_id: classId,
+    school_id: profile.school_id,
+    learning_area_id,
+    assessment_type_id,
+    term: term_id,              // ✅ FIXED HERE
+    academic_year
+  })
+  .select()
+  .single();
+
 
     if (error) {
       document.getElementById("status").innerText = error.message;
