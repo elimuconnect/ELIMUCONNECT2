@@ -79,7 +79,8 @@ document.getElementById("loadReport").onclick = async () => {
   }
 
   const { data, error } = await supabase
-    .from("competency_assessments")
+    .from("assessment_results")
+
     .select(`
       term,
       academic_year,
