@@ -86,7 +86,6 @@ document.getElementById("loadReport").onclick = async () => {
     terms.find(t => t.id === term_id)?.name || "";
 
 
-
 const { data, error } = await supabase
   .from("assessment_results")
   .select(`
@@ -95,11 +94,13 @@ const { data, error } = await supabase
     remarks,
     students(first_name, last_name),
     competencies(name, subjects(name)),
-    achievement_levels(label)
-  `);
-
-console.log(data, error);
-
+    achievement_levels(label),
+    assessments!inner(teacher_id)
+  `)
+  .eq("assessments.teacher_id", user.id)
+  .eq("term", termSelect.options[termSelect.selectedIndex].text)
+  .order("last_name", { foreignTable: "students" })
+  .order("name", { foreignTable: "competencies" });
 
   
   if (error || !data.length) {
