@@ -52,19 +52,14 @@ const termSelect = document.getElementById("termSelect");
 const reportDiv = document.getElementById("report");
 const status = document.getElementById("status");
 
-/* 1️⃣ Load terms */
-
-const { data: terms } = await supabase
+/* ===============================
+   1️⃣ LOAD TERMS (ID + NAME)
+================================ */
+const { data: terms, error: termError } = await supabase
   .from("terms")
   .select("id, name")
   .order("name");
 
-termSelect.innerHTML =
-  `<option value="">Select term</option>` +
-  terms.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
-
-
-  
 if (termError || !terms.length) {
   status.innerText = "Failed to load terms.";
   throw termError;
@@ -72,72 +67,74 @@ if (termError || !terms.length) {
 
 termSelect.innerHTML =
   `<option value="">Select term</option>` +
-  terms.map(t => `<option value="${t.name}">${t.name}</option>`).join("");
+  terms.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
 
-/* 2️⃣ Load report */
+/* ===============================
+   2️⃣ LOAD REPORT
+================================ */
 document.getElementById("loadReport").onclick = async () => {
   reportDiv.innerHTML = "";
   status.innerText = "";
 
-  const term = termSelect.value;
-  if (!term) {
+  const term_id = termSelect.value;
+  if (!term_id) {
     status.innerText = "Select a term.";
     return;
   }
 
-const term_id = termSelect.value;
+  const termName =
+    terms.find(t => t.id === term_id)?.name || "";
 
-const { data, error } = await supabase
-  .from("assessment_results")
-  .select(`
-    term,
-    academic_year,
-    remarks,
-    students(first_name, last_name),
-    competencies(
-      name,
-      subjects(name)
-    ),
-    achievement_levels(label),
-    assessments!inner(teacher_id, term_id)
-  `)
-  .eq("assessments.teacher_id", user.id)
-  .eq("assessments.term_id", term_id)
-  .order("last_name", { foreignTable: "students" })
-  .order("name", { foreignTable: "competencies" });
-
-
-  
+  const { data, error } = await supabase
+    .from("assessment_results")
+    .select(`
+      term,
+      academic_year,
+      remarks,
+      students(first_name, last_name),
+      competencies(
+        name,
+        subjects(name)
+      ),
+      achievement_levels(label),
+      assessments!inner(teacher_id, term_id)
+    `)
+    .eq("assessments.teacher_id", user.id)   // 🔒 only this teacher
+    .eq("assessments.term_id", term_id)      // 📅 exact term
+    .order("last_name", { foreignTable: "students" })
+    .order("name", { foreignTable: "competencies" });
 
   if (error || !data.length) {
     status.innerText = "No results found for this term.";
     return;
   }
 
+  /* ===============================
+     RENDER REPORT
+  ============================== */
   reportDiv.innerHTML = `
-  <h3>${term} – ${data[0].academic_year}</h3>
-  <table>
-    <tr>
-      <th>Student</th>
-      <th>Subject</th>
-      <th>Competency</th>
-      <th>Achievement</th>
-      <th>Remarks</th>
-    </tr>
-    ${data.map(r => `
+    <h3>${termName} – ${data[0].academic_year}</h3>
+    <table>
       <tr>
-        <td>${r.students.first_name} ${r.students.last_name}</td>
-        <td>${r.competencies.subjects.name}</td>
-        <td>${r.competencies.name}</td>
-        <td>${r.achievement_levels.label}</td>
-        <td>${r.remarks || ""}</td>
+        <th>Student</th>
+        <th>Subject</th>
+        <th>Competency</th>
+        <th>Achievement</th>
+        <th>Remarks</th>
       </tr>
-    `).join("")}
-  </table>
-`;
+      ${data.map(r => `
+        <tr>
+          <td>${r.students.first_name} ${r.students.last_name}</td>
+          <td>${r.competencies.subjects.name}</td>
+          <td>${r.competencies.name}</td>
+          <td>${r.achievement_levels.label}</td>
+          <td>${r.remarks || ""}</td>
+        </tr>
+      `).join("")}
+    </table>
+  `;
 };
 </script>
-
 
 </body>
 </html>
