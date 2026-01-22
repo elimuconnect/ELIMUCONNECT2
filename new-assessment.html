@@ -126,7 +126,19 @@
 
     const assessment_date = new Date().toISOString().split("T")[0];
 
-   const { data, error } = await supabase
+
+
+
+
+const termName =
+  terms.find(t => t.id === term_id)?.name;
+
+if (!termName) {
+  document.getElementById("status").innerText = "Invalid term selected";
+  return;
+}
+
+const { data, error } = await supabase
   .from("assessments")
   .insert({
     title,
@@ -137,13 +149,13 @@
     school_id: profile.school_id,
     learning_area_id,
     assessment_type_id,
-    term_id: term_id,        // ✅ REQUIRED & CORRECT
+    term: termName,        // ✅ REQUIRED (TEXT)
     academic_year
   })
   .select()
   .single();
 
-
+    
 
     if (error) {
       document.getElementById("status").innerText = error.message;
