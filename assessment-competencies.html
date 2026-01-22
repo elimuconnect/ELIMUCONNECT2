@@ -70,7 +70,8 @@
   =============================== */
   const { data: assessment, error: assessmentError } = await supabase
   .from("assessments")
-  .select("academic_year, term, term_id")
+ .select("academic_year, term, term_id, subject_id")
+
   .eq("id", assessmentId)
   .single();
 
@@ -193,6 +194,7 @@ if (assessmentError || !assessment) {
       const rows = studentIds.map(student_id => ({
         assessment_id: assessmentId,
         student_id,
+        subject_id: assessment.subject_id, 
         competency_id,
         achievement_level_id,
         remarks,
