@@ -33,6 +33,10 @@
     "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
   );
 
+
+let selectedSubjectId = null;
+
+  
   /* ===============================
      0️⃣ AUTH CHECK
   =============================== */
@@ -110,10 +114,10 @@ if (!termName) {
   /* ===============================
      3️⃣ LOAD COMPETENCIES
   =============================== */
-  const { data: competencies } = await supabase
-    .from("competencies")
-    .select("id, name")
-    .order("name");
+ const { data: competencies } = await supabase
+  .from("competencies")
+  .select("id, name, subject_id")
+  .order("name");
 
   competencySelect.innerHTML =
     `<option value="">Select competency</option>` +
@@ -133,18 +137,17 @@ if (!termName) {
 
   /* ===============================
      5️⃣ COMPETENCY CHANGE HANDLER
-  =============================== */
-  competencySelect.onchange = async () => {
-    const competency_id = competencySelect.value;
-    uploadBtn.disabled = true;
-    status.innerText = "";
+competencySelect.onchange = async () => {
+  const competency_id = competencySelect.value;
 
-    if (!competency_id) {
-      achievementSelect.disabled = false;
-      achievementSelect.selectedIndex = 0;
-      remarkInput.value = "";
-      return;
-    }
+  const selected = competencies.find(c => c.id === competency_id);
+  selectedSubjectId = selected?.subject_id || null;
+
+  if (!selectedSubjectId) {
+    status.innerText = "This competency has no subject assigned.";
+    return;
+  }
+
 
     const existing = await loadExistingRemark(studentIds[0], competency_id);
 
@@ -241,6 +244,7 @@ if (!finalAchievementLevelId) {
   .upsert({
     assessment_id: assessmentId,
     student_id: studentIds[0],
+    subject_id: selectedSubjectId,
     competency_id,
     achievement_level_id: finalAchievementLevelId,
     term: termName,
