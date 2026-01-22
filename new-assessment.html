@@ -122,6 +122,12 @@
     const termName =
       terms.find(t => t.id === term_id)?.name || "Term";
 
+if (!termName) {
+  document.getElementById("status").innerText = "Invalid term selected";
+  return;
+}
+
+    
     const title = `${learningAreaName} – ${termName} ${academic_year}`;
 
     const assessment_date = new Date().toISOString().split("T")[0];
@@ -133,10 +139,7 @@
 const termName =
   terms.find(t => t.id === term_id)?.name;
 
-if (!termName) {
-  document.getElementById("status").innerText = "Invalid term selected";
-  return;
-}
+
 
 const { data, error } = await supabase
   .from("assessments")
