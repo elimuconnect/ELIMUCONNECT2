@@ -84,7 +84,6 @@ document.getElementById("loadReport").onclick = async () => {
 
   const termName =
     terms.find(t => t.id === term_id)?.name || "";
-
 const { data, error } = await supabase
   .from("assessment_results")
   .select(`
@@ -96,14 +95,11 @@ const { data, error } = await supabase
       name,
       subjects(name)
     ),
-    achievement_levels(label),
-    assessments!inner(teacher_id)
+    achievement_levels(label)
   `)
-  .eq("assessments.teacher_id", user.id) // 🔒 only this teacher
-  .eq("term", termName)                  // ✅ FIXED
+  .eq("term", termName)
   .order("last_name", { foreignTable: "students" })
   .order("name", { foreignTable: "competencies" });
-
 
   
   if (error || !data.length) {
