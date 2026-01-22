@@ -148,7 +148,9 @@ const { data, error } = await supabase
     school_id: profile.school_id,
     learning_area_id,
     assessment_type_id,
-    term: termName,        // ✅ REQUIRED (TEXT)
+   term_id: term_id,     // ✅ FK
+    term: termName,       // ✅ TEXT (NOT NULL)
+
     academic_year
   })
   .select()
