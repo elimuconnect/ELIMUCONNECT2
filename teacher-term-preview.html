@@ -79,22 +79,22 @@ document.getElementById("loadReport").onclick = async () => {
   }
 
   const { data, error } = await supabase
-    .from("assessment_results")
+  .from("assessment_results")
+  .select(`
+    term,
+    academic_year,
+    remarks,
+    students(first_name, last_name),
+    competencies(name),
+    subjects(name),
+    achievement_levels(label)
+  `)
+  .eq("teacher_id", user.id)   // 🔒 only this teacher
+  .eq("term", term)
+  .order("students(last_name)")
+  .order("subjects(name)")
+  .order("competencies(name)");
 
-    .select(`
-      term,
-      academic_year,
-      remarks,
-      students(first_name, last_name),
-      competencies(name),
-      subjects(name),
-      achievement_levels(label)
-    `)
-    .eq("teacher_id", user.id)
-    .eq("term", term)
-    .order("students(last_name)")
-    .order("subjects(name)")
-    .order("competencies(name)");
 
   if (error || !data.length) {
     status.innerText = "No results found for this term.";
