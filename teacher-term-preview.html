@@ -141,19 +141,6 @@ const { data, error } = await supabase
 
 
 
-
-    
-    .select(`
-      term,
-      academic_year,
-      remarks,
-      competencies(name),
-      achievement_levels(label)
-    `)
-    .eq("student_id", student_id)
-    .eq("term", term)
-    .order("competencies(name)");
-
   if (error || !data.length) {
     status.innerText = "No results found for this term.";
     return;
