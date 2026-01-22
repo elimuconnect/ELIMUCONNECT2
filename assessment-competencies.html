@@ -68,17 +68,23 @@
   /* ===============================
      2️⃣ LOAD ASSESSMENT
   =============================== */
-  const { data: assessment, error: assessmentError } = await supabase
+ const { data: assessment, error: assessmentError } = await supabase
   .from("assessments")
- .select("academic_year, term, term_id, subject_id")
-
+  .select("academic_year, term, term_id, subject_id")
   .eq("id", assessmentId)
   .single();
 
+/* ✅ ALWAYS validate first */
+if (assessmentError || !assessment) {
+  status.innerText = "Assessment not found or access denied.";
+  console.error("Assessment error:", assessmentError);
+  throw new Error(assessmentError?.message || "Invalid assessment_id");
+}
 
+/* ✅ SAFE to read now */
 let termName = assessment.term;
 
-// 🔒 Fallback if term text is missing
+/* 🔒 Fallback if term text is missing */
 if (!termName && assessment.term_id) {
   const { data: termRow, error: termError } = await supabase
     .from("terms")
@@ -94,12 +100,10 @@ if (!termName && assessment.term_id) {
   termName = termRow.name;
 }
 
-
-  
-
-if (assessmentError || !assessment) {
-  status.innerText = "Assessment not found.";
-  throw new Error(assessmentError?.message || "Invalid assessment_id");
+/* ✅ Final guard */
+if (!termName) {
+  status.innerText = "Term could not be resolved.";
+  throw new Error("Term is null");
 }
 
   /* ===============================
