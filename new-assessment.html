@@ -126,7 +126,6 @@
 
     const assessment_date = new Date().toISOString().split("T")[0];
 
-    /* Insert assessment */
    const { data, error } = await supabase
   .from("assessments")
   .insert({
@@ -138,11 +137,12 @@
     school_id: profile.school_id,
     learning_area_id,
     assessment_type_id,
-    term: term_id,              // ✅ FIXED HERE
+    term_id: term_id,        // ✅ REQUIRED & CORRECT
     academic_year
   })
   .select()
   .single();
+
 
 
     if (error) {
