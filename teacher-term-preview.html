@@ -78,7 +78,9 @@ document.getElementById("loadReport").onclick = async () => {
     return;
   }
 
-  const { data, error } = await supabase
+
+
+const { data, error } = await supabase
   .from("assessment_results")
   .select(`
     term,
@@ -87,14 +89,18 @@ document.getElementById("loadReport").onclick = async () => {
     students(first_name, last_name),
     competencies(name),
     subjects(name),
-    achievement_levels(label)
+    achievement_levels(label),
+    assessments!inner(teacher_id)
   `)
-  .eq("teacher_id", user.id)   // 🔒 only this teacher
+  .eq("assessments.teacher_id", user.id) // 🔒 teacher filter
   .eq("term", term)
   .order("students(last_name)")
   .order("subjects(name)")
   .order("competencies(name)");
 
+
+
+  
 
   if (error || !data.length) {
     status.innerText = "No results found for this term.";
