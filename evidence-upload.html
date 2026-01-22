@@ -55,14 +55,18 @@
   const fileInput = document.getElementById("fileInput");
   const uploadBtn = document.getElementById("uploadBtn");
 
-  /* 🔐 Auth check */
+  /* ===============================
+     🔐 AUTH CHECK
+  =============================== */
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     window.location.href = "index.html";
     throw new Error("Not logged in");
   }
 
-  /* 📦 REQUIRED CONTEXT */
+  /* ===============================
+     📦 REQUIRED CONTEXT
+  =============================== */
   const competencyAssessmentId =
     localStorage.getItem("competency_assessment_id");
 
@@ -72,7 +76,23 @@
     throw new Error("Missing competency_assessment_id");
   }
 
-  /* ⬆ Upload handler */
+  /* ===============================
+     🔑 LOAD PARENT (FK SAFE)
+  =============================== */
+  const { data: ca, error: caError } = await supabase
+    .from("competency_assessments")
+    .select("id")
+    .eq("id", competencyAssessmentId)
+    .single();
+
+  if (caError || !ca) {
+    status.innerText = "Invalid competency assessment reference.";
+    throw new Error(caError?.message || "Invalid CA");
+  }
+
+  /* ===============================
+     ⬆️ UPLOAD HANDLER
+  =============================== */
   uploadBtn.onclick = async () => {
     const file = fileInput.files[0];
     if (!file) {
@@ -86,7 +106,7 @@
     const filePath =
       `evidence/${competencyAssessmentId}/${crypto.randomUUID()}.${fileExt}`;
 
-    /* 1️⃣ Upload to storage */
+    /* 1️⃣ UPLOAD TO STORAGE */
     const { error: uploadError } = await supabase.storage
       .from("assessment-evidence")
       .upload(filePath, file, { upsert: false });
@@ -96,20 +116,20 @@
       return;
     }
 
-    /* 2️⃣ Get public URL */
+    /* 2️⃣ GET PUBLIC URL */
     const { data: urlData } = supabase.storage
       .from("assessment-evidence")
       .getPublicUrl(filePath);
 
     const fileUrl = urlData.publicUrl;
 
-    /* 3️⃣ Insert evidence row (FK-safe ✅) */
+    /* 3️⃣ INSERT EVIDENCE (FK + CHECK SAFE ✅) */
     const { error: dbError } = await supabase
       .from("assessment_evidence")
       .insert({
-        competency_assessment_id: competencyAssessmentId, // ✅ CORRECT FK
+        competency_assessment_id: competencyAssessmentId,
         file_url: fileUrl,
-        file_type: getFileType(file),                     // ✅ CHECK OK
+        file_type: getFileType(file),
         uploaded_by: user.id
       });
 
@@ -122,7 +142,9 @@
     fileInput.value = "";
   };
 
-  /* 🔧 MUST MATCH DB CHECK */
+  /* ===============================
+     🔧 FILE TYPE HELPER
+  =============================== */
   function getFileType(file) {
     const mime = file.type.toLowerCase();
 
