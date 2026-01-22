@@ -25,8 +25,6 @@
 <label>Term</label><br />
 <select id="termSelect"></select><br /><br />
 
-<label>Learner</label><br />
-<select id="studentSelect"></select><br /><br />
 
 <button id="loadReport">Load Report</button>
 
@@ -51,13 +49,10 @@ if (!user) {
 }
 
 const termSelect = document.getElementById("termSelect");
-const studentSelect = document.getElementById("studentSelect");
 const reportDiv = document.getElementById("report");
 const status = document.getElementById("status");
 
-/* ===============================
-   1️⃣ LOAD TERMS
-================================ */
+/* 1️⃣ Load terms */
 const { data: terms, error: termError } = await supabase
   .from("terms")
   .select("name")
@@ -72,109 +67,63 @@ termSelect.innerHTML =
   `<option value="">Select term</option>` +
   terms.map(t => `<option value="${t.name}">${t.name}</option>`).join("");
 
-/* ===============================
-   2️⃣ LOAD LEARNERS
-   (same source parent view uses)
-================================ */
-const selectedStudents =
-  JSON.parse(localStorage.getItem("selected_students") || "[]");
-
-if (!selectedStudents.length) {
-  status.innerText = "No learners available.";
-  throw new Error("No learners");
-}
-
-const { data: students, error: studentError } = await supabase
-  .from("students")
-.select("id, first_name, last_name")
-
-  .in("id", selectedStudents);
-
-if (studentError || !students.length) {
-  status.innerText = "Failed to load learners.";
-  throw studentError;
-}
-
-studentSelect.innerHTML =
-  `<option value="">Select learner</option>` +
-  students
-    .map(
-      s => `<option value="${s.id}">
-        ${(s.first_name ?? "").trim()} ${(s.last_name ?? "").trim()}
-      </option>`
-    )
-    .join("");
-
-/* ===============================
-   3️⃣ LOAD REPORT
-================================ */
+/* 2️⃣ Load report */
 document.getElementById("loadReport").onclick = async () => {
   reportDiv.innerHTML = "";
   status.innerText = "";
 
   const term = termSelect.value;
-  const student_id = studentSelect.value;
-
-  if (!term || !student_id) {
-    status.innerText = "Select term and learner.";
+  if (!term) {
+    status.innerText = "Select a term.";
     return;
   }
 
-  
-
-const { data, error } = await supabase
-  .from("competency_assessments")
-  .select(`
-    term,
-    academic_year,
-    remarks,
-    students(first_name, last_name),
-    competencies(name),
-    subjects(name),
-    achievement_levels(label)
-  `)
-  .eq("teacher_id", user.id)     // 🔒 ONLY THIS TEACHER
-  .eq("term", term)              // 📅 SELECTED TERM
-  .order("students(last_name)")
-  .order("subjects(name)")
-  .order("competencies(name)");
-
-
+  const { data, error } = await supabase
+    .from("competency_assessments")
+    .select(`
+      term,
+      academic_year,
+      remarks,
+      students(first_name, last_name),
+      competencies(name),
+      subjects(name),
+      achievement_levels(label)
+    `)
+    .eq("teacher_id", user.id)
+    .eq("term", term)
+    .order("students(last_name)")
+    .order("subjects(name)")
+    .order("competencies(name)");
 
   if (error || !data.length) {
     status.innerText = "No results found for this term.";
     return;
   }
 
-  /* ===============================
-     RENDER REPORT
-  ============================== */
   reportDiv.innerHTML = `
-  <h3>${term} – ${data[0].academic_year}</h3>
-  <table>
-    <tr>
-      <th>Student</th>
-      <th>Subject</th>
-      <th>Competency</th>
-      <th>Achievement</th>
-      <th>Remarks</th>
-    </tr>
-    ${data.map(r => `
+    <h3>${term} – ${data[0].academic_year}</h3>
+    <table>
       <tr>
-        <td>${r.students.first_name} ${r.students.last_name}</td>
-        <td>${r.subjects.name}</td>
-        <td>${r.competencies.name}</td>
-        <td>${r.achievement_levels.label}</td>
-        <td>${r.remarks || ""}</td>
+        <th>Student</th>
+        <th>Subject</th>
+        <th>Competency</th>
+        <th>Achievement</th>
+        <th>Remarks</th>
       </tr>
-    `).join("")}
-  </table>
-`;
-
+      ${data.map(r => `
+        <tr>
+          <td>${r.students.first_name} ${r.students.last_name}</td>
+          <td>${r.subjects.name}</td>
+          <td>${r.competencies.name}</td>
+          <td>${r.achievement_levels.label}</td>
+          <td>${r.remarks || ""}</td>
+        </tr>
+      `).join("")}
+    </table>
+  `;
 };
-
-
 </script>
+
 
 </body>
 </html>
