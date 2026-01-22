@@ -70,10 +70,31 @@
   =============================== */
   const { data: assessment, error: assessmentError } = await supabase
   .from("assessments")
-  .select("academic_year, term")
+  .select("academic_year, term, term_id")
   .eq("id", assessmentId)
   .single();
 
+
+let termName = assessment.term;
+
+// 🔒 Fallback if term text is missing
+if (!termName && assessment.term_id) {
+  const { data: termRow, error: termError } = await supabase
+    .from("terms")
+    .select("name")
+    .eq("id", assessment.term_id)
+    .single();
+
+  if (termError || !termRow) {
+    status.innerText = "Invalid term configuration for this assessment.";
+    throw new Error("Term resolution failed");
+  }
+
+  termName = termRow.name;
+}
+
+
+  
 
 if (assessmentError || !assessment) {
   status.innerText = "Assessment not found.";
@@ -175,7 +196,8 @@ if (assessmentError || !assessment) {
         competency_id,
         achievement_level_id,
         remarks,
-       term: assessment.term,
+      
+        term: termName,
 
         academic_year: assessment.academic_year
       }));
@@ -214,7 +236,8 @@ if (!finalAchievementLevelId) {
     student_id: studentIds[0],
     competency_id,
     achievement_level_id: finalAchievementLevelId,
-    term: assessment.term,
+    term: termName,
+
     academic_year: assessment.academic_year,
     teacher_id: user.id,
     created_by: user.id
