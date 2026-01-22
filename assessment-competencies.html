@@ -135,9 +135,11 @@ if (!termName) {
     `<option value="">Select achievement</option>` +
     levels.map(l => `<option value="${l.id}">${l.label}</option>`).join("");
 
-  /* ===============================
-     5️⃣ COMPETENCY CHANGE HANDLER
+ /* ===============================
+   5️⃣ COMPETENCY CHANGE HANDLER
+=============================== */
 competencySelect.onchange = async () => {
+
   const competency_id = competencySelect.value;
 
   const selected = competencies.find(c => c.id === competency_id);
@@ -199,18 +201,16 @@ competencySelect.onchange = async () => {
         return;
       }
 
-      const rows = studentIds.map(student_id => ({
-        assessment_id: assessmentId,
-        student_id,
-       subject: assessment.subject,  
-        competency_id,
-        achievement_level_id,
-        remarks,
-      
-        term: termName,
+     const rows = studentIds.map(student_id => ({
+  assessment_id: assessmentId,
+  student_id,
+  competency_id,
+  achievement_level_id,
+  remarks,
+  term: termName,
+  academic_year: assessment.academic_year
+}));
 
-        academic_year: assessment.academic_year
-      }));
 
       const { error } = await supabase
         .from("assessment_results")
@@ -235,6 +235,15 @@ if (!finalAchievementLevelId) {
 }
 
 
+
+
+if (!selectedSubjectId) {
+  status.innerText = "Subject could not be resolved from competency.";
+  return;
+}
+
+
+    
     
     /* ===============================
        ENSURE competency_assessment
