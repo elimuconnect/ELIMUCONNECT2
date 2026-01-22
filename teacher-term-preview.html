@@ -93,12 +93,15 @@ const { data, error } = await supabase
     academic_year,
     remarks,
     students(first_name, last_name),
-    competencies(name, subjects(name)),
+    competencies(
+      name,
+      subjects(name)
+    ),
     achievement_levels(label),
     assessments!inner(teacher_id)
   `)
   .eq("assessments.teacher_id", user.id)
-  .eq("term", termSelect.options[termSelect.selectedIndex].text)
+  .eq("term", term)
   .order("last_name", { foreignTable: "students" })
   .order("name", { foreignTable: "competencies" });
 
