@@ -79,7 +79,6 @@ document.getElementById("loadReport").onclick = async () => {
   }
 
 
-
 const { data, error } = await supabase
   .from("assessment_results")
   .select(`
@@ -87,17 +86,17 @@ const { data, error } = await supabase
     academic_year,
     remarks,
     students(first_name, last_name),
-    competencies(name),
-    subjects(name),
+    competencies(
+      name,
+      subjects(name)
+    ),
     achievement_levels(label),
     assessments!inner(teacher_id)
   `)
-  .eq("assessments.teacher_id", user.id) // 🔒 teacher filter
+  .eq("assessments.teacher_id", user.id) // 🔒 only this teacher
   .eq("term", term)
-  .order("students(last_name)")
-  .order("subjects(name)")
-  .order("competencies(name)");
-
+  .order("last_name", { foreignTable: "students" })
+  .order("name", { foreignTable: "competencies" });
 
 
   
@@ -108,27 +107,27 @@ const { data, error } = await supabase
   }
 
   reportDiv.innerHTML = `
-    <h3>${term} – ${data[0].academic_year}</h3>
-    <table>
+  <h3>${term} – ${data[0].academic_year}</h3>
+  <table>
+    <tr>
+      <th>Student</th>
+      <th>Subject</th>
+      <th>Competency</th>
+      <th>Achievement</th>
+      <th>Remarks</th>
+    </tr>
+    ${data.map(r => `
       <tr>
-        <th>Student</th>
-        <th>Subject</th>
-        <th>Competency</th>
-        <th>Achievement</th>
-        <th>Remarks</th>
+        <td>${r.students.first_name} ${r.students.last_name}</td>
+        <td>${r.competencies.subjects.name}</td>
+        <td>${r.competencies.name}</td>
+        <td>${r.achievement_levels.label}</td>
+        <td>${r.remarks || ""}</td>
       </tr>
-      ${data.map(r => `
-        <tr>
-          <td>${r.students.first_name} ${r.students.last_name}</td>
-          <td>${r.subjects.name}</td>
-          <td>${r.competencies.name}</td>
-          <td>${r.achievement_levels.label}</td>
-          <td>${r.remarks || ""}</td>
-        </tr>
-      `).join("")}
-    </table>
-  `;
-};
+    `).join("")}
+  </table>
+`;
+
 </script>
 
 
