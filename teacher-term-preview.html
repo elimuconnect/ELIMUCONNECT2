@@ -85,25 +85,23 @@ document.getElementById("loadReport").onclick = async () => {
   const termName =
     terms.find(t => t.id === term_id)?.name || "";
 
-  const { data, error } = await supabase
-    .from("assessment_results")
-    .select(`
-      term,
-      academic_year,
-      remarks,
-      students(first_name, last_name),
-      competencies(
-        name,
-        subjects(name)
-      ),
-      achievement_levels(label),
-      assessments!inner(teacher_id, term_id)
-    `)
-    .eq("assessments.teacher_id", user.id)   // 🔒 only this teacher
-    .eq("assessments.term_id", term_id)      // 📅 exact term
-    .order("last_name", { foreignTable: "students" })
-    .order("name", { foreignTable: "competencies" });
 
+
+const { data, error } = await supabase
+  .from("assessment_results")
+  .select(`
+    term,
+    academic_year,
+    remarks,
+    students(first_name, last_name),
+    competencies(name, subjects(name)),
+    achievement_levels(label)
+  `);
+
+console.log(data, error);
+
+
+  
   if (error || !data.length) {
     status.innerText = "No results found for this term.";
     return;
