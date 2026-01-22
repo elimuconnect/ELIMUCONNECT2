@@ -136,10 +136,6 @@ if (!termName) {
 
 
 
-const termName =
-  terms.find(t => t.id === term_id)?.name;
-
-
 
 const { data, error } = await supabase
   .from("assessments")
