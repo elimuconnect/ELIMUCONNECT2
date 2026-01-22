@@ -121,7 +121,28 @@ document.getElementById("loadReport").onclick = async () => {
   }
 
   const { data, error } = await supabase
-    .from("latest_competency_results")
+
+const { data, error } = await supabase
+  .from("competency_assessments")
+  .select(`
+    term,
+    academic_year,
+    remarks,
+    students(first_name, last_name),
+    competencies(name),
+    subjects(name),
+    achievement_levels(label)
+  `)
+  .eq("teacher_id", user.id)     // 🔒 ONLY THIS TEACHER
+  .eq("term", term)              // 📅 SELECTED TERM
+  .order("students(last_name)")
+  .order("subjects(name)")
+  .order("competencies(name)");
+
+
+
+
+    
     .select(`
       term,
       academic_year,
@@ -142,23 +163,27 @@ document.getElementById("loadReport").onclick = async () => {
      RENDER REPORT
   ============================== */
   reportDiv.innerHTML = `
-    <h3>${term} – ${data[0].academic_year}</h3>
-    <table>
+  <h3>${term} – ${data[0].academic_year}</h3>
+  <table>
+    <tr>
+      <th>Student</th>
+      <th>Subject</th>
+      <th>Competency</th>
+      <th>Achievement</th>
+      <th>Remarks</th>
+    </tr>
+    ${data.map(r => `
       <tr>
-        <th>Competency</th>
-        <th>Achievement Level</th>
-        <th>Remarks</th>
+        <td>${r.students.first_name} ${r.students.last_name}</td>
+        <td>${r.subjects.name}</td>
+        <td>${r.competencies.name}</td>
+        <td>${r.achievement_levels.label}</td>
+        <td>${r.remarks || ""}</td>
       </tr>
-      ${data.map(r => `
-        <tr>
-          <td>${r.competencies.name}</td>
-          <td>${r.achievement_levels.label}</td>
-          <td>${r.remarks || ""}</td>
-        </tr>
-      `).join("")}
-    </table>
-  `;
-};
+    `).join("")}
+  </table>
+`;
+
 </script>
 
 </body>
