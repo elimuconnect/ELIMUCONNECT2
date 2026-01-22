@@ -97,7 +97,13 @@ if (studentError || !students.length) {
 
 studentSelect.innerHTML =
   `<option value="">Select learner</option>` +
-  students.map(s => `<option value="${s.id}">${s.full_name}</option>`).join("");
+  students
+    .map(
+      s => `<option value="${s.id}">
+        ${(s.first_name ?? "").trim()} ${(s.last_name ?? "").trim()}
+      </option>`
+    )
+    .join("");
 
 /* ===============================
    3️⃣ LOAD REPORT
