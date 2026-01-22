@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Assess Competency</title>
+  <meta charset="UTF-8" />
+</head>
+<body>
+
+<h2>Assess Competency</h2>
+
+<label>Competency</label><br>
+<select id="competency"></select><br><br>
+
+<label>Achievement Level</label><br>
+<select id="achievement"></select><br><br>
+
+<label>Remark (optional)</label><br>
+<textarea id="remark" rows="3" cols="40"></textarea><br><br>
+
+<button id="saveResults">Save Results</button>
+
+  <button id="uploadEvidence" disabled>
+  Proceed to Evidence Upload
+</button>
+
+
+<p id="status"></p>
+<script type="module">
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+  const supabase = createClient(
+    "https://zcmzuetusvpmvubbjlmx.supabase.co",
+    "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
+  );
+
+  /* ===============================
+     0️⃣ AUTH CHECK
+  =============================== */
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    window.location.href = "index.html";
+    throw new Error("Not logged in");
+  }
+
+  /* ===============================
+     1️⃣ LOAD CONTEXT
+  =============================== */
+  const assessmentId = localStorage.getItem("assessment_id");
+  const studentIds = JSON.parse(localStorage.getItem("selected_students") || "[]");
+
+  if (!assessmentId || !studentIds.length) {
+    window.location.href = "teacher.html";
+    throw new Error("Missing context");
+  }
+
+  /* ===============================
+     ELEMENTS
+  =============================== */
+  const competencySelect = document.getElementById("competency");
+  const achievementSelect = document.getElementById("achievement");
+  const remarkInput = document.getElementById("remark");
+  const uploadBtn = document.getElementById("uploadEvidence");
+  const saveBtn = document.getElementById("saveResults");
+  const status = document.getElementById("status");
+
+  uploadBtn.disabled = true;
+
+  /* ===============================
+     2️⃣ LOAD ASSESSMENT
+  =============================== */
+  const { data: assessment, error: assessmentError } = await supabase
+  .from("assessments")
+  .select("academic_year, term")
+  .eq("id", assessmentId)
+  .single();
+
+
+if (assessmentError || !assessment) {
+  status.innerText = "Assessment not found.";
+  throw new Error(assessmentError?.message || "Invalid assessment_id");
+}
+
+
+const { data: termRow, error: termError } = await supabase
+  .from("terms")
+  .select("name")
+  .eq("id", assessment.term)
+  .single();
+
+if (termError || !termRow) {
+  status.innerText = "Invalid term configuration.";
+  throw new Error("Term lookup failed");
+}
+
+const termName = termRow.name; // "Term 1"
+
+
+  
+  /* ===============================
+     3️⃣ LOAD COMPETENCIES
+  =============================== */
+  const { data: competencies } = await supabase
+    .from("competencies")
+    .select("id, name")
+    .order("name");
+
+  competencySelect.innerHTML =
+    `<option value="">Select competency</option>` +
+    competencies.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
+
+  /* ===============================
+     4️⃣ LOAD ACHIEVEMENT LEVELS
+  =============================== */
+  const { data: levels } = await supabase
+    .from("achievement_levels")
+    .select("id, label")
+    .order("order_rank");
+
+  achievementSelect.innerHTML =
+    `<option value="">Select achievement</option>` +
+    levels.map(l => `<option value="${l.id}">${l.label}</option>`).join("");
+
+  /* ===============================
+     5️⃣ COMPETENCY CHANGE HANDLER
+  =============================== */
+  competencySelect.onchange = async () => {
+    const competency_id = competencySelect.value;
+    uploadBtn.disabled = true;
+    status.innerText = "";
+
+    if (!competency_id) {
+      achievementSelect.disabled = false;
+      achievementSelect.selectedIndex = 0;
+      remarkInput.value = "";
+      return;
+    }
+
+    const existing = await loadExistingRemark(studentIds[0], competency_id);
+
+    if (existing) {
+      achievementSelect.value = existing.achievement_level_id;
+      achievementSelect.disabled = true;
+      remarkInput.value = existing.remarks || "";
+      status.innerText = "Existing result found. You may edit remarks only.";
+    } else {
+      achievementSelect.disabled = false;
+      achievementSelect.selectedIndex = 0;
+      remarkInput.value = "";
+    }
+  };
+
+  /* ===============================
+     6️⃣ SAVE RESULTS
+  =============================== */
+  saveBtn.onclick = async () => {
+    const competency_id = competencySelect.value;
+    const achievement_level_id = achievementSelect.value;
+    const remarks = remarkInput.value;
+
+    if (!competency_id) {
+      status.innerText = "Select a competency first.";
+      return;
+    }
+
+    const existing = await loadExistingRemark(studentIds[0], competency_id);
+
+    // UPDATE
+    if (existing) {
+      const { error } = await supabase
+        .from("assessment_results")
+        .update({ remarks })
+        .eq("id", existing.id);
+
+      if (error) {
+        status.innerText = error.message;
+        return;
+      }
+
+      status.innerText = "Remarks updated successfully.";
+    }
+    // INSERT
+    else {
+      if (!achievement_level_id) {
+        status.innerText = "Select achievement level.";
+        return;
+      }
+
+      const rows = studentIds.map(student_id => ({
+  assessment_id: assessmentId,
+  student_id,
+  competency_id,
+  achievement_level_id,
+  remarks,
+  term: termName,                      // 🔒 GUARANTEED NOT NULL
+  academic_year: assessment.academic_year
+}));
+
+      const { error } = await supabase
+        .from("assessment_results")
+        .insert(rows);
+
+      if (error) {
+        status.innerText = error.message;
+        return;
+      }
+
+      status.innerText = "Results saved successfully.";
+    }
+
+
+
+const finalAchievementLevelId =
+  achievement_level_id || existing?.achievement_level_id;
+
+if (!finalAchievementLevelId) {
+  status.innerText = "Achievement level missing.";
+  return;
+}
+
+
+    
+    /* ===============================
+       ENSURE competency_assessment
+    =============================== */
+ const { error: caUpsertError } = await supabase
+  .from("competency_assessments")
+  .upsert({
+    assessment_id: assessmentId,
+    student_id: studentIds[0],
+    competency_id,
+    achievement_level_id: finalAchievementLevelId,
+    term: termName,       
+    academic_year: assessment.academic_year,
+    teacher_id: user.id,
+    created_by: user.id
+  }, {
+    onConflict: "assessment_id,student_id,competency_id"
+  });
+
+
+
+if (caUpsertError) {
+  status.innerText = caUpsertError.message;
+  return;
+}
+ 
+
+
+    /* ===============================
+       FETCH competency_assessment ID
+    =============================== */
+    const { data: ca, error: caFetchError } = await supabase
+      .from("competency_assessments")
+      .select("id")
+      .eq("assessment_id", assessmentId)
+      .eq("student_id", studentIds[0])
+      .eq("competency_id", competency_id)
+      .maybeSingle();
+
+    if (caFetchError || !ca) {
+      status.innerText = "Results saved, but competency assessment missing.";
+      return;
+    }
+
+    localStorage.setItem("competency_assessment_id", ca.id);
+    uploadBtn.disabled = false;
+    status.innerText += " You may now upload evidence.";
+  };
+
+  /* ===============================
+     7️⃣ EVIDENCE REDIRECT
+  =============================== */
+  uploadBtn.onclick = () => {
+    const caId = localStorage.getItem("competency_assessment_id");
+    if (!caId) {
+      status.innerText = "Save results before uploading evidence.";
+      return;
+    }
+    window.location.href = "evidence-upload.html";
+  };
+
+  /* ===============================
+     HELPER
+  =============================== */
+  async function loadExistingRemark(student_id, competency_id) {
+    const { data } = await supabase
+      .from("assessment_results")
+      .select("id, remarks, achievement_level_id")
+      .eq("assessment_id", assessmentId)
+      .eq("student_id", student_id)
+      .eq("competency_id", competency_id)
+      .maybeSingle();
+
+    return data || null;
+  }
+</script>
+
+</body>
+</html>
