@@ -86,7 +86,8 @@ if (!selectedStudents.length) {
 
 const { data: students, error: studentError } = await supabase
   .from("students")
-  .select("id, full_name")
+.select("id, first_name, last_name")
+
   .in("id", selectedStudents);
 
 if (studentError || !students.length) {
