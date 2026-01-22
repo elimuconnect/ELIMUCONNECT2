@@ -53,11 +53,18 @@ const reportDiv = document.getElementById("report");
 const status = document.getElementById("status");
 
 /* 1️⃣ Load terms */
-const { data: terms, error: termError } = await supabase
+
+const { data: terms } = await supabase
   .from("terms")
-  .select("name")
+  .select("id, name")
   .order("name");
 
+termSelect.innerHTML =
+  `<option value="">Select term</option>` +
+  terms.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
+
+
+  
 if (termError || !terms.length) {
   status.innerText = "Failed to load terms.";
   throw termError;
@@ -78,6 +85,7 @@ document.getElementById("loadReport").onclick = async () => {
     return;
   }
 
+const term_id = termSelect.value;
 
 const { data, error } = await supabase
   .from("assessment_results")
@@ -91,10 +99,10 @@ const { data, error } = await supabase
       subjects(name)
     ),
     achievement_levels(label),
-    assessments!inner(teacher_id)
+    assessments!inner(teacher_id, term_id)
   `)
-  .eq("assessments.teacher_id", user.id) // 🔒 only this teacher
-  .eq("term", term)
+  .eq("assessments.teacher_id", user.id)
+  .eq("assessments.term_id", term_id)
   .order("last_name", { foreignTable: "students" })
   .order("name", { foreignTable: "competencies" });
 
