@@ -8,6 +8,8 @@
 
 <h2>Select Students for Assessment</h2>
 
+<p><strong>Academic Year:</strong> <span id="yearLabel"></span></p>
+
 <div id="studentList">Loading students...</div>
 <br>
 <button id="confirmStudents">Confirm Students</button>
@@ -22,6 +24,9 @@
     "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
   );
 
+  /* 🔒 SYSTEM YEAR */
+  const SYSTEM_YEAR = 2026;
+
   /* 0️⃣ Auth check */
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
@@ -29,16 +34,22 @@
     throw new Error("Not logged in");
   }
 
-  /* 1️⃣ Get assessment + class */
+  /* 1️⃣ Load required context */
   const assessmentId = localStorage.getItem("assessment_id");
   const classId = localStorage.getItem("class_id");
+  const storedYear = localStorage.getItem("academic_year");
 
   if (!assessmentId || !classId) {
     window.location.href = "teacher.html";
     throw new Error("Missing assessment or class");
   }
 
-  /* 2️⃣ Load students in class */
+  /* 🔒 Lock academic year */
+  const academicYear = storedYear || SYSTEM_YEAR;
+  localStorage.setItem("academic_year", academicYear);
+  document.getElementById("yearLabel").innerText = academicYear;
+
+  /* 2️⃣ Load students */
   const { data: students, error: studentError } = await supabase
     .from("students")
     .select("id, first_name, last_name")
@@ -46,53 +57,37 @@
     .order("last_name");
 
   if (studentError) {
-    document.getElementById("status").innerText = studentError.message;
+    status.innerText = studentError.message;
     throw studentError;
   }
 
   if (!students.length) {
-    document.getElementById("studentList").innerText =
-      "No students found in this class.";
+    studentList.innerText = "No students found in this class.";
     throw new Error("No students");
   }
 
   /* Render checklist */
-  document.getElementById("studentList").innerHTML =
-    students.map(s => `
-      <label>
-        <input type="checkbox" value="${s.id}">
-        ${s.first_name} ${s.last_name}
-      </label><br>
-    `).join("");
+  studentList.innerHTML = students.map(s => `
+    <label>
+      <input type="checkbox" value="${s.id}">
+      ${s.first_name} ${s.last_name}
+    </label><br>
+  `).join("");
 
   /* 3️⃣ Confirm students */
-  document.getElementById("confirmStudents").onclick = async () => {
-    const checked = Array.from(
+  confirmStudents.onclick = () => {
+    const selected = Array.from(
       document.querySelectorAll("input[type=checkbox]:checked")
-    );
+    ).map(cb => cb.value);
 
-    if (!checked.length) {
-      document.getElementById("status").innerText =
-        "Please select at least one student.";
+    if (!selected.length) {
+      status.innerText = "Please select at least one student.";
       return;
     }
 
-  const studentIds = checked.map(cb => cb.value);
+    localStorage.setItem("selected_students", JSON.stringify(selected));
 
-localStorage.setItem(
-  "selected_students",
-  JSON.stringify(studentIds)
-);
-
-window.location.href = "assessment-competencies.html";
-
-
-    if (error) {
-      document.getElementById("status").innerText = error.message;
-      return;
-    }
-
-    /* Proceed to competency assessment */
+    /* ✅ Academic year is already locked and carried */
     window.location.href = "assessment-competencies.html";
   };
 </script>
