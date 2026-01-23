@@ -41,6 +41,16 @@ const supabase = createClient(
   "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
 );
 
+
+
+const levelColor = {
+  "Emerging": "#f8d7da",
+  "Approaching": "#fff3cd",
+  "Achieved": "#d4edda"
+};
+
+
+  
 /* 🔐 Auth check */
 const { data: { user } } = await supabase.auth.getUser();
 if (!user) {
@@ -107,30 +117,67 @@ const { data, error } = await supabase
     return;
   }
 
+
+
+
+const grouped = {};
+
+data.forEach(r => {
+  const student = `${r.students.first_name} ${r.students.last_name}`;
+  const subject = r.competencies.subjects.name;
+  const competency = r.competencies.name;
+
+  if (!grouped[student]) grouped[student] = {};
+  if (!grouped[student][subject]) grouped[student][subject] = [];
+
+  grouped[student][subject].push({
+    competency,
+    level: r.achievement_levels.label,
+    remarks: r.remarks
+  });
+});
+
+
+
+
+
+
+  
   /* ===============================
      RENDER REPORT
   ============================== */
-  reportDiv.innerHTML = `
-    <h3>${termName} – ${data[0].academic_year}</h3>
-    <table>
-      <tr>
-        <th>Student</th>
-        <th>Subject</th>
-        <th>Competency</th>
-        <th>Achievement</th>
-        <th>Remarks</th>
-      </tr>
-      ${data.map(r => `
-        <tr>
-          <td>${r.students.first_name} ${r.students.last_name}</td>
-          <td>${r.competencies.subjects.name}</td>
-          <td>${r.competencies.name}</td>
-          <td>${r.achievement_levels.label}</td>
-          <td>${r.remarks || ""}</td>
-        </tr>
+ reportDiv.innerHTML = `
+  <h3>${termName} – ${data[0].academic_year}</h3>
+  ${Object.entries(grouped).map(([student, subjects]) => `
+    <div style="margin-bottom:30px;">
+      <h4>👤 ${student}</h4>
+
+      ${Object.entries(subjects).map(([subject, competencies]) => `
+        <div style="margin-left:20px;">
+          <h5>📘 ${subject}</h5>
+
+          <table border="1" cellpadding="6" cellspacing="0" width="100%">
+            <tr>
+              <th>Competency</th>
+              <th>Achievement Level</th>
+              <th>Teacher Remarks</th>
+            </tr>
+
+            ${competencies.map(c => `
+  <tr style="background-color:${levelColor[c.level] || '#ffffff'}">
+    <td>${c.competency}</td>
+    <td><strong>${c.level}</strong></td>
+    <td>${c.remarks || "—"}</td>
+  </tr>
+`).join("")}
+
+          </table>
+        </div>
       `).join("")}
-    </table>
-  `;
+    </div>
+  `).join("")}
+`;
+
 };
 </script>
 
