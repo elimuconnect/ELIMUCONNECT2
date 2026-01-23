@@ -8,7 +8,7 @@
   <h2>Teacher Dashboard</h2>
   <div id="classList">Loading classes...</div>
 
- <script type="module">
+<script type="module">
   import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
   const supabase = createClient(
@@ -18,9 +18,11 @@
 
   const classListEl = document.getElementById("classList");
 
+  // 🔒 LOCK CURRENT ACADEMIC YEAR
+  const CURRENT_YEAR = 2026;
+
   // 1️⃣ Get logged-in user
   const { data: { user } } = await supabase.auth.getUser();
-
   if (!user) {
     window.location.href = "index.html";
   }
@@ -47,18 +49,25 @@
     `)
     .eq("school_id", profile.school_id);
 
-  // 4️⃣ Render results (NO returns)
   if (error) {
     classListEl.innerText = "Failed to load classes";
-  } else if (!classes || classes.length === 0) {
-    classListEl.innerText = "No classes found";
-  } else {
-    classListEl.innerHTML = classes.map(c => `
-     <div 
-  style="border:1px solid #ccc; padding:10px;"
-  data-year="${c.academic_year}"
->
+    throw error;
+  }
 
+  // ✅ FILTER TO CURRENT YEAR ONLY
+  const filteredClasses = (classes || []).filter(
+    c => Number(c.academic_year) === CURRENT_YEAR
+  );
+
+  // 4️⃣ Render results
+  if (filteredClasses.length === 0) {
+    classListEl.innerText = `No classes found for ${CURRENT_YEAR}`;
+  } else {
+    classListEl.innerHTML = filteredClasses.map(c => `
+      <div
+        style="border:1px solid #ccc; padding:10px; margin-bottom:10px;"
+        data-year="${c.academic_year}"
+      >
         <strong>${c.name}</strong><br>
         Grade: ${c.grades.grade_number}<br>
         Academic Year: ${c.academic_year}<br>
@@ -71,20 +80,25 @@
 
   // 5️⃣ Button handler (safe binding)
   classListEl.addEventListener("click", (e) => {
-    if (e.target.tagName === "BUTTON") {
-     const card = e.target.closest("div");
+    if (e.target.tagName !== "BUTTON") return;
 
-const classId = e.target.getAttribute("data-class");
-const academicYear = card.getAttribute("data-year");
+    const card = e.target.closest("div");
+    const classId = e.target.getAttribute("data-class");
+    const academicYear = card.getAttribute("data-year");
 
-localStorage.setItem("class_id", classId);
-localStorage.setItem("academic_year", academicYear);
-
-window.location.href = "new-assessment.html";
-
+    // 🛑 SAFETY GUARD
+    if (!academicYear) {
+      alert("Academic year missing for this class. Contact admin.");
+      return;
     }
+
+    localStorage.setItem("class_id", classId);
+    localStorage.setItem("academic_year", academicYear);
+
+    window.location.href = "new-assessment.html";
   });
 </script>
+
 
 </body>
 </html>
