@@ -254,14 +254,14 @@ if (!ca) {
 localStorage.setItem("competency_assessment_id", ca.id);
 uploadBtn.disabled = false;
 status.innerText = "Results saved. You may upload evidence.";
-
+  };
   /* ===============================
      7️⃣ EVIDENCE REDIRECT
   =============================== */
   uploadBtn.onclick = () => {
     window.location.href = "evidence-upload.html";
   };
-
+  
   /* ===============================
      HELPER
   =============================== */
