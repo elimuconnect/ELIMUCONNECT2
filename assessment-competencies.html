@@ -77,7 +77,8 @@
   =============================== */
   const { data: assessment, error: assessmentError } = await supabase
     .from("assessments")
-    .select("academic_year, term, term_id")
+   .select("academic_year, term, term_id, learning_area_id")
+
     .eq("id", assessmentId)
     .single();
 
@@ -129,10 +130,17 @@
   /* ===============================
      3️⃣ LOAD COMPETENCIES
   =============================== */
-  const { data: competencies } = await supabase
-    .from("competencies")
-    .select("id, name, subject_id")
-    .order("name");
+ const { data: competencies, error: compError } = await supabase
+  .from("competencies")
+  .select("id, name, subject_id")
+  .eq("learning_area_id", assessment.learning_area_id)
+  .order("name");
+
+if (compError || !competencies.length) {
+  status.innerText = "No competencies found for this subject.";
+  throw compError;
+}
+
 
   competencySelect.innerHTML =
     `<option value="">Select competency</option>` +
