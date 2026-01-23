@@ -37,7 +37,6 @@
 <select id="termSelect"></select><br /><br />
 
 
-<button id="loadReport">Load Report</button>
 
 <p id="status"></p>
 <hr />
@@ -95,115 +94,96 @@ termSelect.innerHTML =
 /* ===============================
    2️⃣ LOAD REPORT
 ================================ */
-document.getElementById("loadReport").onclick = async () => {
+async function loadReport() {
   reportDiv.innerHTML = "";
   status.innerText = "";
 
-
-const academicYear = yearSelect.value;
-
-if (!academicYear) {
-  status.innerText = "Select an academic year.";
-  return;
-}
-
-
-
-  
+  const academicYear = yearSelect.value;
   const term_id = termSelect.value;
-  if (!term_id) {
-    status.innerText = "Select a term.";
-    return;
+
+  if (!academicYear || !term_id) {
+    return; // silently wait until both are selected
   }
 
   const termName =
     terms.find(t => t.id === term_id)?.name || "";
-const { data, error } = await supabase
-  .from("assessment_results")
-  .select(`
-    term,
-    academic_year,
-    remarks,
-    students(first_name, last_name),
-    competencies(
-      name,
-      subjects(name)
-    ),
-    achievement_levels(label)
-  `)
-  .eq("term", termName)
-  .eq("academic_year", academicYear)
-  .order("last_name", { foreignTable: "students" })
-  .order("name", { foreignTable: "competencies" });
 
-  
+  const { data, error } = await supabase
+    .from("assessment_results")
+    .select(`
+      term,
+      academic_year,
+      remarks,
+      students(first_name, last_name),
+      competencies(
+        name,
+        subjects(name)
+      ),
+      achievement_levels(label)
+    `)
+    .eq("term", termName)
+    .eq("academic_year", academicYear)
+    .order("last_name", { foreignTable: "students" })
+    .order("name", { foreignTable: "competencies" });
+
   if (error || !data.length) {
-    status.innerText = "No results found for this term.";
+    status.innerText = "No results found for this selection.";
     return;
   }
 
+  const grouped = {};
 
+  data.forEach(r => {
+    const student = `${r.students.first_name} ${r.students.last_name}`;
+    const subject = r.competencies.subjects.name;
 
+    if (!grouped[student]) grouped[student] = {};
+    if (!grouped[student][subject]) grouped[student][subject] = [];
 
-const grouped = {};
-
-data.forEach(r => {
-  const student = `${r.students.first_name} ${r.students.last_name}`;
-  const subject = r.competencies.subjects.name;
-  const competency = r.competencies.name;
-
-  if (!grouped[student]) grouped[student] = {};
-  if (!grouped[student][subject]) grouped[student][subject] = [];
-
-  grouped[student][subject].push({
-    competency,
-    level: r.achievement_levels.label,
-    remarks: r.remarks
+    grouped[student][subject].push({
+      competency: r.competencies.name,
+      level: r.achievement_levels.label,
+      remarks: r.remarks
+    });
   });
-});
+
+  reportDiv.innerHTML = `
+    <h3>${termName} – ${academicYear}</h3>
+    ${Object.entries(grouped).map(([student, subjects]) => `
+      <div style="margin-bottom:30px;">
+        <h4>👤 ${student}</h4>
+
+        ${Object.entries(subjects).map(([subject, competencies]) => `
+          <div style="margin-left:20px;">
+            <h5>📘 ${subject}</h5>
+
+            <table border="1" cellpadding="6" cellspacing="0" width="100%">
+              <tr>
+                <th>Competency</th>
+                <th>Achievement Level</th>
+                <th>Teacher Remarks</th>
+              </tr>
+
+              ${competencies.map(c => `
+                <tr style="background-color:${levelColor[c.level] || '#fff'}">
+                  <td>${c.competency}</td>
+                  <td><strong>${c.level}</strong></td>
+                  <td>${c.remarks || "—"}</td>
+                </tr>
+              `).join("")}
+            </table>
+          </div>
+        `).join("")}
+      </div>
+    `).join("")}
+  `;
+}
 
 
-
-
-
+yearSelect.addEventListener("change", loadReport);
+termSelect.addEventListener("change", loadReport);
 
   
-  /* ===============================
-     RENDER REPORT
-  ============================== */
- reportDiv.innerHTML = `
-  <h3>${termName} – ${data[0].academic_year}</h3>
-  ${Object.entries(grouped).map(([student, subjects]) => `
-    <div style="margin-bottom:30px;">
-      <h4>👤 ${student}</h4>
-
-      ${Object.entries(subjects).map(([subject, competencies]) => `
-        <div style="margin-left:20px;">
-          <h5>📘 ${subject}</h5>
-
-          <table border="1" cellpadding="6" cellspacing="0" width="100%">
-            <tr>
-              <th>Competency</th>
-              <th>Achievement Level</th>
-              <th>Teacher Remarks</th>
-            </tr>
-
-            ${competencies.map(c => `
-  <tr style="background-color:${levelColor[c.level] || '#ffffff'}">
-    <td>${c.competency}</td>
-    <td><strong>${c.level}</strong></td>
-    <td>${c.remarks || "—"}</td>
-  </tr>
-`).join("")}
-
-          </table>
-        </div>
-      `).join("")}
-    </div>
-  `).join("")}
-`;
-
-};
 </script>
 
 </body>
