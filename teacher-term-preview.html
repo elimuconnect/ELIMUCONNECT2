@@ -22,6 +22,16 @@
 
 <h2>Teacher Term Report Preview</h2>
 
+
+<label>Academic Year</label><br />
+<select id="yearSelect">
+  <option value="">Select year</option>
+  <option value="2024">2024</option>
+  <option value="2025">2025</option>
+</select><br /><br />
+
+
+  
 <label>Term</label><br />
 <select id="termSelect"></select><br /><br />
 
@@ -48,6 +58,7 @@ const levelColor = {
   "Meeting Expectations": "#d4edda",     // 🟢 green → on track
   "Exceeding Expectations": "#cce5ff"    // 🔵 blue → outstanding
 };
+const yearSelect = document.getElementById("yearSelect");
 
 
 
@@ -87,6 +98,17 @@ document.getElementById("loadReport").onclick = async () => {
   reportDiv.innerHTML = "";
   status.innerText = "";
 
+
+const academicYear = yearSelect.value;
+
+if (!academicYear) {
+  status.innerText = "Select an academic year.";
+  return;
+}
+
+
+
+  
   const term_id = termSelect.value;
   if (!term_id) {
     status.innerText = "Select a term.";
@@ -109,6 +131,7 @@ const { data, error } = await supabase
     achievement_levels(label)
   `)
   .eq("term", termName)
+  .eq("academic_year", academicYear);
   .order("last_name", { foreignTable: "students" })
   .order("name", { foreignTable: "competencies" });
 
