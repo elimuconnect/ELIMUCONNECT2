@@ -54,7 +54,11 @@
     classListEl.innerText = "No classes found";
   } else {
     classListEl.innerHTML = classes.map(c => `
-      <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
+     <div 
+  style="border:1px solid #ccc; padding:10px;"
+  data-year="${c.academic_year}"
+>
+
         <strong>${c.name}</strong><br>
         Grade: ${c.grades.grade_number}<br>
         Academic Year: ${c.academic_year}<br>
@@ -68,9 +72,16 @@
   // 5️⃣ Button handler (safe binding)
   classListEl.addEventListener("click", (e) => {
     if (e.target.tagName === "BUTTON") {
-      const classId = e.target.getAttribute("data-class");
-      localStorage.setItem("class_id", classId);
-      window.location.href = "new-assessment.html";
+     const card = e.target.closest("div");
+
+const classId = e.target.getAttribute("data-class");
+const academicYear = card.getAttribute("data-year");
+
+localStorage.setItem("class_id", classId);
+localStorage.setItem("academic_year", academicYear);
+
+window.location.href = "new-assessment.html";
+
     }
   });
 </script>
