@@ -36,12 +36,23 @@
   /* 🔒 SYSTEM ACADEMIC YEAR */
   const SYSTEM_YEAR = 2026;
 
-  /* 0️⃣ Auth check */
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    window.location.href = "index.html";
-    throw new Error("Not logged in");
-  }
+ 
+/* 0️⃣ Auth check */
+const { data: { user } } = await supabase.auth.getUser();
+if (!user) {
+  window.location.href = "index.html";
+  throw new Error("Not logged in");
+}
+
+/* ✅ STATUS ELEMENT (FIX) */
+const status = document.getElementById("status");
+
+/* 1️⃣ Load class + academic year */
+const classId = localStorage.getItem("class_id");
+const storedYear = localStorage.getItem("academic_year");
+
+
+
 
   /* 1️⃣ Load class + academic year */
   const classId = localStorage.getItem("class_id");
