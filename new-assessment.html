@@ -17,15 +17,15 @@
 <label>Term</label><br>
 <select id="term"></select><br><br>
 
+<!-- 🔒 Academic year is LOCKED (display only) -->
 <label>Academic Year</label><br>
-<input id="academicYear" value="2025" /><br><br>
+<input id="academicYear" readonly /><br><br>
 
 <button id="createAssessment">Create Assessment</button>
 
 <p id="status"></p>
 
 <script type="module">
-  
   import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
   const supabase = createClient(
@@ -33,30 +33,35 @@
     "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
   );
 
+  /* 🔒 SYSTEM ACADEMIC YEAR */
+  const SYSTEM_YEAR = 2026;
 
-
-  
-  /* 0️⃣ Get logged-in user */
+  /* 0️⃣ Auth check */
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     window.location.href = "index.html";
     throw new Error("Not logged in");
   }
 
-  /* 1️⃣ Get class from previous step */
+  /* 1️⃣ Load class + academic year */
   const classId = localStorage.getItem("class_id");
+  const storedYear = localStorage.getItem("academic_year");
+
   if (!classId) {
     window.location.href = "teacher.html";
     throw new Error("No class selected");
   }
+
+  const academicYear = storedYear || SYSTEM_YEAR;
+  document.getElementById("academicYear").value = academicYear;
 
   /* 2️⃣ Load learning areas */
   const { data: learningAreas, error: laError } = await supabase
     .from("learning_areas")
     .select("id, name");
 
-  if (laError || !learningAreas.length) {
-    document.getElementById("status").innerText = "Failed to load learning areas";
+  if (laError || !learningAreas?.length) {
+    status.innerText = "Failed to load learning areas";
     throw laError;
   }
 
@@ -64,15 +69,14 @@
   learningAreaSelect.innerHTML = learningAreas
     .map(la => `<option value="${la.id}">${la.name}</option>`)
     .join("");
-  learningAreaSelect.value = learningAreas[0].id;
 
   /* 3️⃣ Load assessment types */
   const { data: assessmentTypes, error: atError } = await supabase
     .from("assessment_types")
     .select("id, name");
 
-  if (atError || !assessmentTypes.length) {
-    document.getElementById("status").innerText = "Failed to load assessment types";
+  if (atError || !assessmentTypes?.length) {
+    status.innerText = "Failed to load assessment types";
     throw atError;
   }
 
@@ -80,15 +84,14 @@
   assessmentTypeSelect.innerHTML = assessmentTypes
     .map(at => `<option value="${at.id}">${at.name}</option>`)
     .join("");
-  assessmentTypeSelect.value = assessmentTypes[0].id;
 
   /* 4️⃣ Load terms */
   const { data: terms, error: termError } = await supabase
     .from("terms")
     .select("id, name");
 
-  if (termError || !terms.length) {
-    document.getElementById("status").innerText = "Failed to load terms";
+  if (termError || !terms?.length) {
+    status.innerText = "Failed to load terms";
     throw termError;
   }
 
@@ -96,16 +99,14 @@
   termSelect.innerHTML = terms
     .map(t => `<option value="${t.id}">${t.name}</option>`)
     .join("");
-  termSelect.value = terms[0].id;
 
   /* 5️⃣ Create assessment */
   document.getElementById("createAssessment").onclick = async () => {
-    document.getElementById("status").innerText = "";
+    status.innerText = "";
 
     const learning_area_id = learningAreaSelect.value;
     const assessment_type_id = assessmentTypeSelect.value;
     const term_id = termSelect.value;
-    const academic_year = document.getElementById("academicYear").value;
 
     /* Fetch teacher profile */
     const { data: profile, error: profileError } = await supabase
@@ -115,55 +116,44 @@
       .single();
 
     if (profileError || !profile) {
-      document.getElementById("status").innerText = "Teacher profile not found";
+      status.innerText = "Teacher profile not found";
       return;
     }
 
-    /* Build title */
     const learningAreaName =
-      learningAreas.find(la => la.id === learning_area_id)?.name || "Assessment";
+      learningAreas.find(l => l.id === learning_area_id)?.name || "Assessment";
 
     const termName =
-      terms.find(t => t.id === term_id)?.name || "Term";
+      terms.find(t => t.id === term_id)?.name;
 
-if (!termName) {
-  document.getElementById("status").innerText = "Invalid term selected";
-  return;
-}
+    if (!termName) {
+      status.innerText = "Invalid term selected";
+      return;
+    }
 
-    
-    const title = `${learningAreaName} – ${termName} ${academic_year}`;
-
+    const title = `${learningAreaName} – ${termName} ${academicYear}`;
     const assessment_date = new Date().toISOString().split("T")[0];
 
-
-
-
-
-
-const { data, error } = await supabase
-  .from("assessments")
-  .insert({
-    title,
-    assessment_date,
-    created_by: user.id,
-    teacher_id: profile.id,
-    class_id: classId,
-    school_id: profile.school_id,
-    learning_area_id,
-    assessment_type_id,
-   term_id: term_id,     // ✅ FK
-    term: termName,       // ✅ TEXT (NOT NULL)
-
-    academic_year
-  })
-  .select()
-  .single();
-
-    
+    const { data, error } = await supabase
+      .from("assessments")
+      .insert({
+        title,
+        assessment_date,
+        created_by: user.id,
+        teacher_id: profile.id,
+        class_id: classId,
+        school_id: profile.school_id,
+        learning_area_id,
+        assessment_type_id,
+        term_id,
+        term: termName,
+        academic_year: academicYear
+      })
+      .select()
+      .single();
 
     if (error) {
-      document.getElementById("status").innerText = error.message;
+      status.innerText = error.message;
       return;
     }
 
