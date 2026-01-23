@@ -51,13 +51,6 @@ const status = document.getElementById("status");
 const classId = localStorage.getItem("class_id");
 const storedYear = localStorage.getItem("academic_year");
 
-
-
-
-  /* 1️⃣ Load class + academic year */
-  const classId = localStorage.getItem("class_id");
-  const storedYear = localStorage.getItem("academic_year");
-
   if (!classId) {
     window.location.href = "teacher.html";
     throw new Error("No class selected");
