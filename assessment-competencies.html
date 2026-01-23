@@ -123,10 +123,11 @@
      (CBC core + subject-specific)
   =============================== */
   const { data: competencies, error: compError } = await supabase
-    .from("competencies")
-    .select("id, name, subject_id")
-    .eq("is_active", true)
-    .order("name");
+  .from("competencies")
+  .select("id, name, subject_id")
+  .or("is_active.is.null,is_active.eq.true")
+  .order("name");
+
 
   if (compError || !competencies.length) {
     status.innerText = "No competencies available.";
