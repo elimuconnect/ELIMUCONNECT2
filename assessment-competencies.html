@@ -222,28 +222,38 @@
       achievement_level_id || existing?.achievement_level_id;
 
     /* ✅ subject_id can be NULL for core competencies */
-    const { data: ca } = await supabase
-      .from("competency_assessments")
-      .upsert({
-        assessment_id: assessmentId,
-        student_id: studentIds[0],
-        subject_id: selectedSubjectId,
-        competency_id,
-        achievement_level_id: finalAchievementLevelId,
-        term: termName,
-        academic_year: academicYear,
-        teacher_id: user.id,
-        created_by: user.id
-      }, {
-        onConflict: "assessment_id,student_id,competency_id"
-      })
-      .select("id")
-      .single();
+    const { data: ca, error: caError } = await supabase
+  .from("competency_assessments")
+  .upsert({
+    assessment_id: assessmentId,
+    student_id: studentIds[0],
+    subject_id: selectedSubjectId, // may be NULL
+    competency_id,
+    achievement_level_id: finalAchievementLevelId,
+    term: termName,
+    academic_year: academicYear,
+    teacher_id: user.id,
+    created_by: user.id
+  }, {
+    onConflict: "assessment_id,student_id,competency_id"
+  })
+  .select("id")
+  .maybeSingle();
 
-    localStorage.setItem("competency_assessment_id", ca.id);
-    uploadBtn.disabled = false;
-    status.innerText = "Results saved. You may upload evidence.";
-  };
+if (caError) {
+  status.innerText = caError.message;
+  return;
+}
+
+if (!ca) {
+  status.innerText =
+    "Results saved, but competency assessment ID missing.";
+  return;
+}
+
+localStorage.setItem("competency_assessment_id", ca.id);
+uploadBtn.disabled = false;
+status.innerText = "Results saved. You may upload evidence.";
 
   /* ===============================
      7️⃣ EVIDENCE REDIRECT
