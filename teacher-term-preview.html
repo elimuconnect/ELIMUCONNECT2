@@ -131,7 +131,7 @@ const { data, error } = await supabase
     achievement_levels(label)
   `)
   .eq("term", termName)
-  .eq("academic_year", academicYear);
+  .eq("academic_year", academicYear)
   .order("last_name", { foreignTable: "students" })
   .order("name", { foreignTable: "competencies" });
 
