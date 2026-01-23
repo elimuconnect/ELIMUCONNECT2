@@ -25,6 +25,7 @@
 <p id="status"></p>
 
 <script type="module">
+  
   import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
   const supabase = createClient(
@@ -32,6 +33,19 @@
     "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
   );
 
+
+const classId = localStorage.getItem("class_id");
+const academicYear = localStorage.getItem("academic_year");
+
+if (!classId || !academicYear) {
+  alert("Missing class or academic year");
+  window.location.href = "teacher-dashboard.html";
+}
+
+
+
+
+  
   /* 0️⃣ Get logged-in user */
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
