@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Term Report Preview</title>
+
   <style>
     table {
       border-collapse: collapse;
@@ -22,21 +23,12 @@
 
 <h2>Teacher Term Report Preview</h2>
 
-
+<!-- 🔒 Academic year is SYSTEM CONTROLLED -->
 <label>Academic Year</label><br />
-<select id="yearSelect">
-  <option value="">Select year</option>
- 
-  <option value="2025">2025</option>
-    <option value="2025">2026</option>
-</select><br /><br />
+<input id="yearSelect" value="2026" disabled /><br /><br />
 
-
-  
 <label>Term</label><br />
 <select id="termSelect"></select><br /><br />
-
-
 
 <p id="status"></p>
 <hr />
@@ -51,31 +43,40 @@ const supabase = createClient(
   "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
 );
 
+/* ===============================
+   🔒 SYSTEM ACADEMIC YEAR
+================================ */
+const SYSTEM_YEAR = "2026";
 
+/* ===============================
+   LEVEL COLORS (CBC STYLE)
+================================ */
 const levelColor = {
-  "Below Expectations": "#f8d7da",       // 🔴 soft red → needs support
-  "Approaching Expectations": "#fff3cd", // 🟡 amber → getting there
-  "Meeting Expectations": "#d4edda",     // 🟢 green → on track
-  "Exceeding Expectations": "#cce5ff"    // 🔵 blue → outstanding
+  "Below Expectations": "#f8d7da",
+  "Approaching Expectations": "#fff3cd",
+  "Meeting Expectations": "#d4edda",
+  "Exceeding Expectations": "#cce5ff"
 };
-const yearSelect = document.getElementById("yearSelect");
 
+/* ===============================
+   ELEMENTS
+================================ */
+const yearInput = document.getElementById("yearSelect");
+const termSelect = document.getElementById("termSelect");
+const reportDiv = document.getElementById("report");
+const status = document.getElementById("status");
 
-
-  
-/* 🔐 Auth check */
+/* ===============================
+   🔐 AUTH CHECK
+================================ */
 const { data: { user } } = await supabase.auth.getUser();
 if (!user) {
   window.location.href = "index.html";
   throw new Error("Not logged in");
 }
 
-const termSelect = document.getElementById("termSelect");
-const reportDiv = document.getElementById("report");
-const status = document.getElementById("status");
-
 /* ===============================
-   1️⃣ LOAD TERMS (ID + NAME)
+   1️⃣ LOAD TERMS
 ================================ */
 const { data: terms, error: termError } = await supabase
   .from("terms")
@@ -98,15 +99,18 @@ async function loadReport() {
   reportDiv.innerHTML = "";
   status.innerText = "";
 
-  const academicYear = yearSelect.value;
+  const academicYear = SYSTEM_YEAR;
   const term_id = termSelect.value;
 
-  if (!academicYear || !term_id) {
-    return; // silently wait until both are selected
-  }
+  if (!term_id) return;
 
   const termName =
     terms.find(t => t.id === term_id)?.name || "";
+
+  if (!termName) {
+    status.innerText = "Invalid term selected.";
+    return;
+  }
 
   const { data, error } = await supabase
     .from("assessment_results")
@@ -127,10 +131,13 @@ async function loadReport() {
     .order("name", { foreignTable: "competencies" });
 
   if (error || !data.length) {
-    status.innerText = "No results found for this selection.";
+    status.innerText = "No results found for this term.";
     return;
   }
 
+  /* ===============================
+     GROUP RESULTS
+  =============================== */
   const grouped = {};
 
   data.forEach(r => {
@@ -147,8 +154,12 @@ async function loadReport() {
     });
   });
 
+  /* ===============================
+     RENDER REPORT
+  =============================== */
   reportDiv.innerHTML = `
     <h3>${termName} – ${academicYear}</h3>
+
     ${Object.entries(grouped).map(([student, subjects]) => `
       <div style="margin-bottom:30px;">
         <h4>👤 ${student}</h4>
@@ -157,7 +168,7 @@ async function loadReport() {
           <div style="margin-left:20px;">
             <h5>📘 ${subject}</h5>
 
-            <table border="1" cellpadding="6" cellspacing="0" width="100%">
+            <table>
               <tr>
                 <th>Competency</th>
                 <th>Achievement Level</th>
@@ -179,11 +190,11 @@ async function loadReport() {
   `;
 }
 
-
-yearSelect.addEventListener("change", loadReport);
+/* ===============================
+   EVENTS
+================================ */
 termSelect.addEventListener("change", loadReport);
 
-  
 </script>
 
 </body>
