@@ -262,13 +262,15 @@ if (compError || !competencies.length) {
       return;
     }
 
-    const { data: ca } = await supabase
-      .from("competency_assessments")
-      .select("id")
-      .eq("assessment_id", assessmentId)
-      .eq("student_id", studentIds[0])
-      .eq("competency_id", competency_id)
-      .single();
+   const { data: ca } = await supabase
+  .from("competency_assessments")
+  .select("id")
+  .eq("assessment_id", assessmentId)
+  .eq("student_id", studentIds[0])
+  .eq("competency_id", competency_id)
+  .eq("subject_id", selectedSubjectId)
+  .single();
+
 
     localStorage.setItem("competency_assessment_id", ca.id);
     uploadBtn.disabled = false;
