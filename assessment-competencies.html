@@ -75,21 +75,17 @@
   /* ===============================
      2️⃣ LOAD ASSESSMENT
   =============================== */
-  const { data: assessment, error: assessmentError } = await supabase
+  const { data: assessment, error } = await supabase
     .from("assessments")
-   .select("academic_year, term, term_id, learning_area_id")
-
+    .select("academic_year, term, term_id")
     .eq("id", assessmentId)
     .single();
 
-  if (assessmentError || !assessment) {
+  if (error || !assessment) {
     status.innerText = "Assessment not found.";
     throw new Error("Invalid assessment");
   }
 
-  /* ===============================
-     🔒 LOCK ACADEMIC YEAR
-  =============================== */
   const academicYear =
     localStorage.getItem("academic_year") ||
     assessment.academic_year ||
@@ -98,7 +94,7 @@
   localStorage.setItem("academic_year", academicYear);
 
   if (academicYear !== SYSTEM_YEAR) {
-    status.innerText = "Invalid academic year detected.";
+    status.innerText = "Invalid academic year.";
     throw new Error("Academic year mismatch");
   }
 
@@ -108,18 +104,13 @@
   let termName = assessment.term;
 
   if (!termName && assessment.term_id) {
-    const { data: termRow, error } = await supabase
+    const { data: termRow } = await supabase
       .from("terms")
       .select("name")
       .eq("id", assessment.term_id)
       .single();
 
-    if (error || !termRow) {
-      status.innerText = "Invalid term configuration.";
-      throw new Error("Term resolution failed");
-    }
-
-    termName = termRow.name;
+    termName = termRow?.name || null;
   }
 
   if (!termName) {
@@ -128,23 +119,27 @@
   }
 
   /* ===============================
-     3️⃣ LOAD COMPETENCIES
+     3️⃣ LOAD ALL ACTIVE COMPETENCIES
+     (CBC core + subject-specific)
   =============================== */
- const { data: competencies, error: compError } = await supabase
-  .from("competencies")
-  .select("id, name, subject_id")
-  .eq("learning_area_id", assessment.learning_area_id)
-  .order("name");
+  const { data: competencies, error: compError } = await supabase
+    .from("competencies")
+    .select("id, name, subject_id")
+    .eq("is_active", true)
+    .order("name");
 
-if (compError || !competencies.length) {
-  status.innerText = "No competencies found for this subject.";
-  throw compError;
-}
-
+  if (compError || !competencies.length) {
+    status.innerText = "No competencies available.";
+    throw compError;
+  }
 
   competencySelect.innerHTML =
     `<option value="">Select competency</option>` +
-    competencies.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
+    competencies.map(c =>
+      `<option value="${c.id}">
+        ${c.name}${c.subject_id ? "" : " (Core)"}
+      </option>`
+    ).join("");
 
   /* ===============================
      4️⃣ LOAD ACHIEVEMENT LEVELS
@@ -163,14 +158,10 @@ if (compError || !competencies.length) {
   =============================== */
   competencySelect.onchange = async () => {
     const competency_id = competencySelect.value;
-
     const selected = competencies.find(c => c.id === competency_id);
-    selectedSubjectId = selected?.subject_id || null;
 
-    if (!selectedSubjectId) {
-      status.innerText = "Competency has no subject assigned.";
-      return;
-    }
+    // ✅ subject_id MAY be null (core competency)
+    selectedSubjectId = selected?.subject_id || null;
 
     const existing = await loadExistingRemark(studentIds[0], competency_id);
 
@@ -203,15 +194,10 @@ if (compError || !competencies.length) {
     const existing = await loadExistingRemark(studentIds[0], competency_id);
 
     if (existing) {
-      const { error } = await supabase
+      await supabase
         .from("assessment_results")
         .update({ remarks })
         .eq("id", existing.id);
-
-      if (error) {
-        status.innerText = error.message;
-        return;
-      }
     } else {
       if (!achievement_level_id) {
         status.innerText = "Select achievement level.";
@@ -228,20 +214,14 @@ if (compError || !competencies.length) {
         academic_year: academicYear
       }));
 
-      const { error } = await supabase
-        .from("assessment_results")
-        .insert(rows);
-
-      if (error) {
-        status.innerText = error.message;
-        return;
-      }
+      await supabase.from("assessment_results").insert(rows);
     }
 
     const finalAchievementLevelId =
       achievement_level_id || existing?.achievement_level_id;
 
-    const { error: caError } = await supabase
+    /* ✅ subject_id can be NULL for core competencies */
+    const { data: ca } = await supabase
       .from("competency_assessments")
       .upsert({
         assessment_id: assessmentId,
@@ -255,22 +235,9 @@ if (compError || !competencies.length) {
         created_by: user.id
       }, {
         onConflict: "assessment_id,student_id,subject_id,competency_id"
-      });
-
-    if (caError) {
-      status.innerText = caError.message;
-      return;
-    }
-
-   const { data: ca } = await supabase
-  .from("competency_assessments")
-  .select("id")
-  .eq("assessment_id", assessmentId)
-  .eq("student_id", studentIds[0])
-  .eq("competency_id", competency_id)
-  .eq("subject_id", selectedSubjectId)
-  .single();
-
+      })
+      .select("id")
+      .single();
 
     localStorage.setItem("competency_assessment_id", ca.id);
     uploadBtn.disabled = false;
