@@ -136,35 +136,68 @@
 
 
 
-// Group competencies by subject_id
+/* ===============================
+   LOAD SUBJECTS (for labels)
+=============================== */
+const { data: subjects, error: subjectError } = await supabase
+  .from("subjects")
+  .select("id, name");
+
+if (subjectError) {
+  status.innerText = "Failed to load subjects.";
+  throw subjectError;
+}
+
+// Create map: subject_id → subject_name
+const subjectMap = {};
+subjects.forEach(s => {
+  subjectMap[s.id] = s.name;
+});
+
+
+
+
+
+  
+
+/* ===============================
+   GROUP COMPETENCIES BY SUBJECT
+=============================== */
 const grouped = {};
 
+// Group
 competencies.forEach(c => {
   const key = c.subject_id || "core";
   if (!grouped[key]) grouped[key] = [];
   grouped[key].push(c);
 });
 
+// Render
 let html = `<option value="">Select competency</option>`;
 
-// Render subject competencies
-Object.entries(grouped).forEach(([key, comps]) => {
-  const label =
-    key === "core"
-      ? "CBC Core Competencies"
-      : "Subject Competencies";
+// CBC Core first
+if (grouped.core) {
+  html += `<optgroup label="CBC Core Competencies">`;
+  grouped.core.forEach(c => {
+    html += `<option value="${c.id}">${c.name}</option>`;
+  });
+  html += `</optgroup>`;
+}
 
-  html += `<optgroup label="${label}">`;
+// Subject competencies
+Object.entries(grouped).forEach(([subjectId, comps]) => {
+  if (subjectId === "core") return;
 
+  const subjectName = subjectMap[subjectId] || "Unknown Subject";
+
+  html += `<optgroup label="${subjectName}">`;
   comps.forEach(c => {
     html += `<option value="${c.id}">${c.name}</option>`;
   });
-
   html += `</optgroup>`;
 });
 
 competencySelect.innerHTML = html;
-
 
 
 
