@@ -142,7 +142,8 @@ async function loadReport() {
 
   data.forEach(r => {
     const student = `${r.students.first_name} ${r.students.last_name}`;
-    const subject = r.competencies.subjects.name;
+  const subject =
+  r.competencies.subjects?.name || "CBC Core Competencies";
 
     if (!grouped[student]) grouped[student] = {};
     if (!grouped[student][subject]) grouped[student][subject] = [];
