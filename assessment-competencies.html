@@ -134,13 +134,45 @@
     throw compError;
   }
 
-  competencySelect.innerHTML =
-    `<option value="">Select competency</option>` +
-    competencies.map(c =>
-      `<option value="${c.id}">
-        ${c.name}${c.subject_id ? "" : " (Core)"}
-      </option>`
-    ).join("");
+
+
+// Group competencies by subject_id
+const grouped = {};
+
+competencies.forEach(c => {
+  const key = c.subject_id || "core";
+  if (!grouped[key]) grouped[key] = [];
+  grouped[key].push(c);
+});
+
+let html = `<option value="">Select competency</option>`;
+
+// Render subject competencies
+Object.entries(grouped).forEach(([key, comps]) => {
+  const label =
+    key === "core"
+      ? "CBC Core Competencies"
+      : "Subject Competencies";
+
+  html += `<optgroup label="${label}">`;
+
+  comps.forEach(c => {
+    html += `<option value="${c.id}">${c.name}</option>`;
+  });
+
+  html += `</optgroup>`;
+});
+
+competencySelect.innerHTML = html;
+
+
+
+
+
+
+
+
+  
 
   /* ===============================
      4️⃣ LOAD ACHIEVEMENT LEVELS
