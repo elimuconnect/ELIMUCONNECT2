@@ -113,22 +113,23 @@ async function loadReport() {
   }
 
   const { data, error } = await supabase
-    .from("assessment_results")
-    .select(`
-      term,
-      academic_year,
-      remarks,
-      students(first_name, last_name),
-      competencies(
-        name,
-        subjects(name)
-      ),
-      achievement_levels(label)
-    `)
-    .eq("term", termName)
-    .eq("academic_year", academicYear)
-    .order("last_name", { foreignTable: "students" })
-    .order("name", { foreignTable: "competencies" });
+  .from("assessment_results")
+  .select(`
+    term,
+    academic_year,
+    remarks,
+    students(first_name, last_name),
+    competencies(
+      name,
+      subject_id,
+      subjects:subjects(name)
+    ),
+    achievement_levels(label)
+  `)
+  .eq("term", termName)
+  .eq("academic_year", academicYear)
+  .order("last_name", { foreignTable: "students" })
+  .order("name", { foreignTable: "competencies" });
 
   if (error || !data.length) {
     status.innerText = "No results found for this term.";
@@ -142,9 +143,12 @@ async function loadReport() {
 
   data.forEach(r => {
     const student = `${r.students.first_name} ${r.students.last_name}`;
-  const subject =
-  r.competencies.subjects?.name || "CBC Core Competencies";
 
+const subject = r.competencies.subject_id
+  ? r.competencies.subjects.name
+  : "CBC Core Competencies";
+
+    
     if (!grouped[student]) grouped[student] = {};
     if (!grouped[student][subject]) grouped[student][subject] = [];
 
