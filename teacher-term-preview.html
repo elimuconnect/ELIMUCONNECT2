@@ -145,54 +145,40 @@ async function loadReport() {
     remarks: r.remarks
   }));
 
-  /* ===== RENDER FUNCTION (ONE TABLE FORMAT) ===== */
-  function renderGrouped(grouped) {
-    return Object.entries(grouped).map(([student, subjects]) => `
+  
+function renderGrouped(grouped) {
+  return Object.entries(grouped).map(([student, subjects]) => {
 
+    const admission =
+      Object.values(subjects).flat().find(r => r.admission)?.admission || "N/A";
 
+    const supportFlag = generateSupportFlag(subjects);
+    const insight = generateInsight(subjects);
+    const { strengths, needs } = generateStrengthsAndNeeds(subjects);
 
+    return `
+      <h4>
+        👤 ${student}
+        <small style="font-size: 2em;">
+          (<strong>Adm: ${admission}</strong>)
+        </small>
+      </h4>
 
- 
+      <p>${supportFlag}</p>
 
-${(() => {
-  return `
-    <h4>
-      👤 ${student}
-      <small style="font-size: 2em;">
-        (<strong>Adm: ${
-          Object.values(subjects)
-            .flat()
-            .find(r => r.admission)?.admission || "N/A"
-        }</strong>)
-      </small>
-    </h4>
+      ${insight}
 
-    <p>
-      ${generateSupportFlag(subjects)}
-    </p>
+      ${strengths.length ? `
+        <p style="margin:4px 0;">
+          <strong>💪 Strengths:</strong> ${strengths.join(", ")}
+        </p>
+      ` : ""}
 
-    ${generateInsight(subjects)}
-
-${(() => {
-  const { strengths, needs } = generateStrengthsAndNeeds(subjects);
-
-  return `
-    ${strengths.length ? `
-      <p style="margin:4px 0;">
-        <strong>💪 Strengths:</strong> ${strengths.join(", ")}
-      </p>
-    ` : ""}
-
-    ${needs.length ? `
-      <p style="margin:4px 0;">
-        <strong>🎯 Areas for Improvement:</strong> ${needs.join(", ")}
-      </p>
-    ` : ""}
-  `;
-
-})()}
-
-
+      ${needs.length ? `
+        <p style="margin:4px 0;">
+          <strong>🎯 Areas for Improvement:</strong> ${needs.join(", ")}
+        </p>
+      ` : ""}
 
       ${Object.entries(subjects).map(([subject, rows]) => `
         <h5>📘 ${subject}</h5>
@@ -224,9 +210,9 @@ ${(() => {
           ` : ""}
         </table>
       `).join("")}
-    `).join("");
-  }
-
+    `;
+  }).join("");
+}
 
 
 
