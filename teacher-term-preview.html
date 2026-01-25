@@ -113,7 +113,10 @@ async function loadReport() {
   }
 
   const { data, error } = await supabase
-  .from("assessment_results")
+  .from("term_subject_report_view")
+.eq("term", termName)
+.eq("academic_year", SYSTEM_YEAR);
+
   .select(`
     term,
     academic_year,
