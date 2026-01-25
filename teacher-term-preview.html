@@ -271,57 +271,27 @@ function generateInsight(subjects) {
 
 
 
+function getSupportFlag(subjects) {
+  let below = 0;
+  let approaching = 0;
+  let total = 0;
 
-function generateSupportFlag(subjects) {
-  let scores = [];
-  let belowCount = 0;
-  let subjectAverages = [];
-
-  Object.entries(subjects).forEach(([subject, rows]) => {
-    if (subject === "__admission") return;
-
-    let subjectScores = [];
-
-    rows.forEach(r => {
-      const score = levelToScore(r.level);
-      if (score > 0) {
-        scores.push(score);
-        subjectScores.push(score);
-        if (score === 1) belowCount++;
-      }
-    });
-
-    if (subjectScores.length) {
-      subjectAverages.push(
-        subjectScores.reduce((a,b)=>a+b,0) / subjectScores.length
-      );
-    }
+  Object.values(subjects).flat().forEach(r => {
+    total++;
+    if (r.level === "Below Expectations") below++;
+    if (r.level === "Approaching Expectations") approaching++;
   });
 
-  if (!scores.length) return "";
-
-  const overall = scores.reduce((a,b)=>a+b,0) / scores.length;
-
-  if (
-    overall < 2.5 ||
-    belowCount >= 2 ||
-    subjectAverages.some(a => a <= 2)
-  ) {
-    return `<span style="color:#c0392b;font-weight:bold;">🔴 Needs Learning Support</span>`;
+  if (below / total >= 0.4) {
+    return { label: "🔴 Needs Support", color: "#dc3545" };
   }
 
-  if (
-    overall >= 3.5 &&
-    subjectAverages.every(a => a >= 3) &&
-    subjectAverages.some(a => a >= 4)
-  ) {
-    return `<span style="color:#1e8449;font-weight:bold;">🟢 High Potential</span>`;
+  if ((below + approaching) / total >= 0.4) {
+    return { label: "🟡 Needs Monitoring", color: "#ffc107" };
   }
 
-  return `<span style="color:#b9770e;font-weight:bold;">🟡 On Track</span>`;
+  return { label: "🟢 On Track", color: "#28a745" };
 }
-
-
 
 
   
