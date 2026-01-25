@@ -218,6 +218,7 @@ function renderGrouped(grouped) {
     const supportFlag = generateSupportFlag(subjects);
     const insight = generateInsight(subjects);
     const { strengths, needs } = generateStrengthsAndNeeds(subjects);
+const recommendations = generateRecommendations(subjects, trend, supportFlag);
 
     return `
       <h4>
@@ -242,6 +243,37 @@ function renderGrouped(grouped) {
       ${needs.length ? `
         <p><strong>🎯 Areas for Improvement:</strong> ${needs.join(", ")}</p>
       ` : ""}
+
+
+${recommendations.teacher.length ? `
+  <div style="margin:10px 0;padding:8px;border-left:4px solid #3498db;">
+    <strong>👩🏽‍🏫 Teacher Actions:</strong>
+    <ul>
+      ${recommendations.teacher.map(r => `<li>${r}</li>`).join("")}
+    </ul>
+  </div>
+` : ""}
+
+${recommendations.parent.length ? `
+  <div style="margin:10px 0;padding:8px;border-left:4px solid #f39c12;">
+    <strong>🏠 Parent Support:</strong>
+    <ul>
+      ${recommendations.parent.map(r => `<li>${r}</li>`).join("")}
+    </ul>
+  </div>
+` : ""}
+
+${recommendations.learner.length ? `
+  <div style="margin:10px 0;padding:8px;border-left:4px solid #2ecc71;">
+    <strong>🎯 Learner Focus:</strong>
+    <ul>
+      ${recommendations.learner.map(r => `<li>${r}</li>`).join("")}
+    </ul>
+  </div>
+` : ""}
+
+
+
 
       ${Object.entries(subjects).map(([subject, rows]) => `
         <h5>📘 ${subject}</h5>
@@ -418,6 +450,56 @@ if (avg < 2.5 || weakCount >= 2) {
   return { strengths, needs };
 }
 
+
+
+function generateRecommendations(subjects, trend, supportFlag) {
+  const teacher = [];
+  const parent = [];
+  const learner = [];
+
+  const { strengths, needs } = generateStrengthsAndNeeds(subjects);
+
+  /* ===== TEACHER ===== */
+  if (supportFlag.includes("Needs Learning Support")) {
+    teacher.push("Provide targeted remediation on identified weak competencies");
+    teacher.push("Use differentiated instruction and more formative checks");
+  }
+
+  if (trend === "📉 Declining") {
+    teacher.push("Review recent assessments to identify emerging gaps");
+  }
+
+  if (strengths.length) {
+    teacher.push(`Encourage learner through strengths in ${strengths.join(", ")}`);
+  }
+
+  /* ===== PARENT ===== */
+  if (needs.length) {
+    parent.push(`Support practice in ${needs.join(", ")} at home`);
+  }
+
+  if (trend === "📉 Declining") {
+    parent.push("Monitor homework completion and provide routine study time");
+  }
+
+  parent.push("Maintain communication with class teacher");
+
+  /* ===== LEARNER ===== */
+  if (strengths.length) {
+    learner.push(`Build confidence by applying strengths in ${strengths.join(", ")}`);
+  }
+
+  if (needs.length) {
+    learner.push(`Focus revision on ${needs.join(", ")}`);
+  }
+
+  learner.push("Ask for help when concepts are unclear");
+
+  return { teacher, parent, learner };
+}
+
+
+  
 
 
   
