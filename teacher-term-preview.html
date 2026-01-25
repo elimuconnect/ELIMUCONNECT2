@@ -47,15 +47,21 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
 /* ===============================
-   SUPABASE
+   SUPABASE CLIENT
 ================================ */
 const supabase = createClient(
   "https://zcmzuetusvpmvubbjlmx.supabase.co",
   "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
 );
 
+/* ===============================
+   SYSTEM ACADEMIC YEAR
+================================ */
 const SYSTEM_YEAR = "2026";
 
+/* ===============================
+   LEVEL COLORS (CBC STYLE)
+================================ */
 const levelColor = {
   "Below Expectations": "#f8d7da",
   "Approaching Expectations": "#fff3cd",
@@ -66,221 +72,191 @@ const levelColor = {
 /* ===============================
    ELEMENTS
 ================================ */
+const yearInput = document.getElementById("yearSelect");
 const termSelect = document.getElementById("termSelect");
-const viewMode = document.getElementById("viewMode");
-const filterBox = document.getElementById("filterBox");
 const reportDiv = document.getElementById("report");
 const status = document.getElementById("status");
 
 /* ===============================
-   AUTH
+   AUTH CHECK
 ================================ */
 const { data: { user } } = await supabase.auth.getUser();
-if (!user) location.href = "index.html";
+if (!user) {
+  window.location.href = "index.html";
+  throw new Error("Not logged in");
+}
 
 /* ===============================
    LOAD TERMS
 ================================ */
-const { data: terms } = await supabase
+const { data: terms, error: termError } = await supabase
   .from("terms")
   .select("id, name")
   .order("name");
+
+if (termError || !terms.length) {
+  status.innerText = "Failed to load terms.";
+  throw termError;
+}
 
 termSelect.innerHTML =
   `<option value="">Select term</option>` +
   terms.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
 
 /* ===============================
-   CORE LOAD
+   LOAD REPORT
 ================================ */
 async function loadReport() {
   reportDiv.innerHTML = "";
   status.innerText = "";
 
+  const academicYear = SYSTEM_YEAR;
   const term_id = termSelect.value;
   if (!term_id) return;
 
   const termName = terms.find(t => t.id === term_id)?.name;
+  if (!termName) {
+    status.innerText = "Invalid term selected.";
+    return;
+  }
 
   /* ===============================
-     LOAD AVERAGES (ID-BASED)
+     LOAD BACKEND AVERAGES
   ================================ */
-  const { data: averages } = await supabase
+  const { data: averages, error: avgError } = await supabase
     .from("term_subject_report_view")
     .select(`
-      student_id,
-      admission_number,
-      subject_id,
+      first_name,
+      last_name,
       subject_name,
       average_score,
       achievement_level
     `)
     .eq("term", termName)
-    .eq("academic_year", SYSTEM_YEAR);
+    .eq("academic_year", academicYear);
 
-  /* ===============================
-     LOAD DETAILS
-  ================================ */
-  const { data: rows } = await supabase
-    .from("assessment_results")
-    .select(`
-      remarks,
-      students(
-        id,
-        first_name,
-        last_name,
-        admission_number
-      ),
-      competencies(
-        name,
-        subject_id,
-        subjects(name)
-      ),
-      achievement_levels(label)
-    `)
-    .eq("term", termName)
-    .eq("academic_year", SYSTEM_YEAR);
-
-  if (!rows?.length) {
-    status.innerText = "No results found.";
+  if (avgError) {
+    status.innerText = "Failed to load subject averages.";
     return;
   }
 
   /* ===============================
-     BUILD AVERAGE MAP (IDS!)
+     BUILD AVERAGE LOOKUP MAP
   ================================ */
   const avgMap = {};
-  averages?.forEach(a => {
-    avgMap[a.student_id] ??= {};
-    avgMap[a.student_id][a.subject_id] = a;
+  averages.forEach(a => {
+    const student = `${a.first_name} ${a.last_name}`;
+    if (!avgMap[student]) avgMap[student] = {};
+    avgMap[student][a.subject_name] = a;
   });
 
   /* ===============================
-     GROUPINGS
+     LOAD DETAILED RESULTS
   ================================ */
-  const byTerm = {};
-  const byStudent = {};
-  const bySubject = {};
+  const { data, error } = await supabase
+    .from("assessment_results")
+    .select(`
+      term,
+      academic_year,
+      remarks,
+      students(first_name, last_name),
+      competencies(
+        name,
+        subject_id,
+        subjects:subjects(name)
+      ),
+      achievement_levels(label)
+    `)
+    .eq("term", termName)
+    .eq("academic_year", academicYear)
+    .order("last_name", { foreignTable: "students" })
+    .order("name", { foreignTable: "competencies" });
 
-  rows.forEach(r => {
-    if (!r.students || !r.competencies) return;
+  if (error || !data.length) {
+    status.innerText = "No results found for this term.";
+    return;
+  }
 
-    const studentId = r.students.id;
-    const admission = r.students.admission_number;
-    const studentName = `${r.students.first_name} ${r.students.last_name}`;
-    const subjectId = r.competencies.subject_id;
-    const subjectName = r.competencies.subjects.name;
+  /* ===============================
+     GROUP RESULTS
+  ================================ */
+  const grouped = {};
 
-    const record = {
-      studentId,
-      admission,
-      studentName,
-      subjectId,
-      subjectName,
+  data.forEach(r => {
+    const student = `${r.students.first_name} ${r.students.last_name}`;
+    const subject = r.competencies.subject_id
+      ? r.competencies.subjects.name
+      : "CBC Core Competencies";
+
+    if (!grouped[student]) grouped[student] = {};
+    if (!grouped[student][subject]) grouped[student][subject] = [];
+
+    grouped[student][subject].push({
       competency: r.competencies.name,
       level: r.achievement_levels.label,
       remarks: r.remarks
-    };
-
-    byTerm[studentName] ??= {};
-    byTerm[studentName][subjectId] ??= { subjectName, rows: [] };
-    byTerm[studentName][subjectId].rows.push(record);
-
-    byStudent[admission] ??= [];
-    byStudent[admission].push(record);
-
-    bySubject[subjectId] ??= { subjectName, rows: [] };
-    bySubject[subjectId].rows.push(record);
+    });
   });
 
   /* ===============================
-     RENDER
+     RENDER REPORT
   ================================ */
-  const mode = viewMode.value;
+  reportDiv.innerHTML = `
+    <h3>${termName} – ${academicYear}</h3>
 
-  /* ---- TERM VIEW ---- */
-  if (mode === "term") {
-    reportDiv.innerHTML = `
-      <h3>${termName} – ${SYSTEM_YEAR}</h3>
-      ${Object.entries(byTerm).map(([student, subjects]) => `
+    ${Object.entries(grouped).map(([student, subjects]) => `
+      <div style="margin-bottom:30px;">
         <h4>👤 ${student}</h4>
-        ${Object.values(subjects).map(s => {
-          const sample = s.rows[0];
-          const avg = avgMap[sample.studentId]?.[sample.subjectId];
-          return `
-            <h5>📘 ${s.subjectName}</h5>
-            <table border="1" cellpadding="6">
+
+        ${Object.entries(subjects).map(([subject, competencies]) => `
+          <div style="margin-left:20px;">
+            <h5>📘 ${subject}</h5>
+
+            <table border="1" cellpadding="6" cellspacing="0">
               <tr>
                 <th>Competency</th>
-                <th>Achievement</th>
-                <th>Remarks</th>
+                <th>Achievement Level</th>
+                <th>Teacher Remarks</th>
               </tr>
-              ${s.rows.map(c => `
-                <tr style="background:${levelColor[c.level]}">
+
+              ${competencies.map(c => `
+                <tr style="background-color:${levelColor[c.level] || "#fff"}">
                   <td>${c.competency}</td>
-                  <td>${c.level}</td>
+                  <td><strong>${c.level}</strong></td>
                   <td>${c.remarks || "—"}</td>
                 </tr>
               `).join("")}
-              ${avg ? `
-                <tr style="background:${levelColor[avg.achievement_level]}">
-                  <td><strong>SUBJECT AVERAGE</strong></td>
-                  <td colspan="2">
-                    <strong>${avg.achievement_level} (Score ${avg.average_score})</strong>
-                  </td>
-                </tr>
-              ` : ""}
+
+              ${(() => {
+                const avg = avgMap[student]?.[subject];
+                if (!avg) return "";
+
+                return `
+                  <tr style="background-color:${levelColor[avg.achievement_level]}">
+                    <td><strong>SUBJECT AVERAGE</strong></td>
+                    <td>
+                      <strong>
+                        ${avg.achievement_level}
+                        (Score ${avg.average_score})
+                      </strong>
+                    </td>
+                    <td><strong>Based on all assessments</strong></td>
+                  </tr>
+                `;
+              })()}
+
             </table>
-          `;
-        }).join("")}
-      `).join("")}
-    `;
-  }
-
-  /* ---- STUDENT VIEW ---- */
-  if (mode === "student") {
-    filterBox.innerHTML = `
-      <label>Admission Number</label><br />
-      <input id="admInput" placeholder="Type admission…" />
-    `;
-    document.getElementById("admInput").addEventListener("input", e => {
-      const adm = e.target.value.trim();
-      reportDiv.innerHTML = byStudent[adm]
-        ? byStudent[adm].map(r =>
-            `<div>${r.subjectName} – ${r.level}</div>`
-          ).join("")
-        : "No results";
-    });
-  }
-
-  /* ---- SUBJECT VIEW ---- */
-  if (mode === "subject") {
-    filterBox.innerHTML = `
-      <label>Subject</label><br />
-      <select id="subSelect">
-        <option value="">Select</option>
-        ${Object.values(bySubject).map(s =>
-          `<option value="${s.subjectName}">${s.subjectName}</option>`
-        ).join("")}
-      </select>
-    `;
-    document.getElementById("subSelect").addEventListener("change", e => {
-      const subj = e.target.value;
-      reportDiv.innerHTML = Object.values(bySubject)
-        .filter(s => s.subjectName === subj)
-        .flatMap(s => s.rows)
-        .map(r =>
-          `<div>${r.studentName} (${r.admission}) – ${r.level}</div>`
-        ).join("");
-    });
-  }
+          </div>
+        `).join("")}
+      </div>
+    `).join("")}
+  `;
 }
 
 /* ===============================
    EVENTS
 ================================ */
 termSelect.addEventListener("change", loadReport);
-viewMode.addEventListener("change", loadReport);
 </script>
 
 </body>
