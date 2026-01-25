@@ -38,13 +38,16 @@
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
+/* ===============================
+   SUPABASE CLIENT
+================================ */
 const supabase = createClient(
   "https://zcmzuetusvpmvubbjlmx.supabase.co",
   "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
 );
 
 /* ===============================
-   🔒 SYSTEM ACADEMIC YEAR
+   SYSTEM ACADEMIC YEAR
 ================================ */
 const SYSTEM_YEAR = "2026";
 
@@ -67,7 +70,7 @@ const reportDiv = document.getElementById("report");
 const status = document.getElementById("status");
 
 /* ===============================
-   🔐 AUTH CHECK
+   AUTH CHECK
 ================================ */
 const { data: { user } } = await supabase.auth.getUser();
 if (!user) {
@@ -76,7 +79,7 @@ if (!user) {
 }
 
 /* ===============================
-   1️⃣ LOAD TERMS
+   LOAD TERMS
 ================================ */
 const { data: terms, error: termError } = await supabase
   .from("terms")
@@ -93,7 +96,7 @@ termSelect.innerHTML =
   terms.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
 
 /* ===============================
-   2️⃣ LOAD REPORT
+   LOAD REPORT
 ================================ */
 async function loadReport() {
   reportDiv.innerHTML = "";
@@ -101,38 +104,65 @@ async function loadReport() {
 
   const academicYear = SYSTEM_YEAR;
   const term_id = termSelect.value;
-
   if (!term_id) return;
 
-  const termName =
-    terms.find(t => t.id === term_id)?.name || "";
-
+  const termName = terms.find(t => t.id === term_id)?.name;
   if (!termName) {
     status.innerText = "Invalid term selected.";
     return;
   }
 
-  const { data, error } = await supabase
-  .from("term_subject_report_view")
-.eq("term", termName)
-.eq("academic_year", SYSTEM_YEAR);
+  /* ===============================
+     LOAD BACKEND AVERAGES
+  ================================ */
+  const { data: averages, error: avgError } = await supabase
+    .from("term_subject_report_view")
+    .select(`
+      first_name,
+      last_name,
+      subject_name,
+      average_score,
+      achievement_level
+    `)
+    .eq("term", termName)
+    .eq("academic_year", academicYear);
 
-  .select(`
-    term,
-    academic_year,
-    remarks,
-    students(first_name, last_name),
-    competencies(
-      name,
-      subject_id,
-      subjects:subjects(name)
-    ),
-    achievement_levels(label)
-  `)
-  .eq("term", termName)
-  .eq("academic_year", academicYear)
-  .order("last_name", { foreignTable: "students" })
-  .order("name", { foreignTable: "competencies" });
+  if (avgError) {
+    status.innerText = "Failed to load subject averages.";
+    return;
+  }
+
+  /* ===============================
+     BUILD AVERAGE LOOKUP MAP
+  ================================ */
+  const avgMap = {};
+  averages.forEach(a => {
+    const student = `${a.first_name} ${a.last_name}`;
+    if (!avgMap[student]) avgMap[student] = {};
+    avgMap[student][a.subject_name] = a;
+  });
+
+  /* ===============================
+     LOAD DETAILED RESULTS
+  ================================ */
+  const { data, error } = await supabase
+    .from("assessment_results")
+    .select(`
+      term,
+      academic_year,
+      remarks,
+      students(first_name, last_name),
+      competencies(
+        name,
+        subject_id,
+        subjects:subjects(name)
+      ),
+      achievement_levels(label)
+    `)
+    .eq("term", termName)
+    .eq("academic_year", academicYear)
+    .order("last_name", { foreignTable: "students" })
+    .order("name", { foreignTable: "competencies" });
 
   if (error || !data.length) {
     status.innerText = "No results found for this term.";
@@ -141,17 +171,15 @@ async function loadReport() {
 
   /* ===============================
      GROUP RESULTS
-  =============================== */
+  ================================ */
   const grouped = {};
 
   data.forEach(r => {
     const student = `${r.students.first_name} ${r.students.last_name}`;
+    const subject = r.competencies.subject_id
+      ? r.competencies.subjects.name
+      : "CBC Core Competencies";
 
-const subject = r.competencies.subject_id
-  ? r.competencies.subjects.name
-  : "CBC Core Competencies";
-
-    
     if (!grouped[student]) grouped[student] = {};
     if (!grouped[student][subject]) grouped[student][subject] = [];
 
@@ -164,7 +192,7 @@ const subject = r.competencies.subject_id
 
   /* ===============================
      RENDER REPORT
-  =============================== */
+  ================================ */
   reportDiv.innerHTML = `
     <h3>${termName} – ${academicYear}</h3>
 
@@ -176,7 +204,7 @@ const subject = r.competencies.subject_id
           <div style="margin-left:20px;">
             <h5>📘 ${subject}</h5>
 
-            <table>
+            <table border="1" cellpadding="6" cellspacing="0">
               <tr>
                 <th>Competency</th>
                 <th>Achievement Level</th>
@@ -184,12 +212,31 @@ const subject = r.competencies.subject_id
               </tr>
 
               ${competencies.map(c => `
-                <tr style="background-color:${levelColor[c.level] || '#fff'}">
+                <tr style="background-color:${levelColor[c.level] || "#fff"}">
                   <td>${c.competency}</td>
                   <td><strong>${c.level}</strong></td>
                   <td>${c.remarks || "—"}</td>
                 </tr>
               `).join("")}
+
+              ${(() => {
+                const avg = avgMap[student]?.[subject];
+                if (!avg) return "";
+
+                return `
+                  <tr style="background-color:${levelColor[avg.achievement_level]}">
+                    <td><strong>SUBJECT AVERAGE</strong></td>
+                    <td>
+                      <strong>
+                        ${avg.achievement_level}
+                        (Score ${avg.average_score})
+                      </strong>
+                    </td>
+                    <td><strong>Based on all assessments</strong></td>
+                  </tr>
+                `;
+              })()}
+
             </table>
           </div>
         `).join("")}
@@ -202,7 +249,6 @@ const subject = r.competencies.subject_id
    EVENTS
 ================================ */
 termSelect.addEventListener("change", loadReport);
-
 </script>
 
 </body>
