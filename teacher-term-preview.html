@@ -58,6 +58,18 @@ const levelColor = {
   "Exceeding Expectations": "#cce5ff"
 };
 
+
+function levelToScore(level) {
+  return {
+    "Below Expectations": 1,
+    "Approaching Expectations": 2,
+    "Meeting Expectations": 3,
+    "Exceeding Expectations": 4
+  }[level] || 0;
+}
+
+
+  
 const termSelect = document.getElementById("termSelect");
 const viewMode = document.getElementById("viewMode");
 const filterBox = document.getElementById("filterBox");
@@ -139,6 +151,7 @@ async function loadReport() {
     (<strong>Adm: ${Object.values(subjects)[0][0].admission}</strong>)
   </small>
 </h4>
+${generateInsight(subjects)}
 
 
 
@@ -175,6 +188,54 @@ async function loadReport() {
     `).join("");
   }
 
+
+
+
+function generateInsight(subjects) {
+  let total = 0;
+  let count = 0;
+  const subjectScores = {};
+
+  Object.entries(subjects).forEach(([key, rows]) => {
+    if (key === "__admission") return;
+
+    rows.forEach(r => {
+      const score = levelToScore(r.level);
+      total += score;
+      count++;
+      subjectScores[key] ??= [];
+      subjectScores[key].push(score);
+    });
+  });
+
+  if (!count) return "";
+
+  const avg = total / count;
+
+  let overall =
+    avg >= 3.5 ? "exceeding expectations" :
+    avg >= 2.5 ? "meeting expectations" :
+    avg >= 1.5 ? "approaching expectations" :
+    "below expectations";
+
+  const strongest = Object.entries(subjectScores)
+    .map(([s, scores]) => [s, scores.reduce((a,b)=>a+b,0)/scores.length])
+    .sort((a,b)=>b[1]-a[1])[0]?.[0];
+
+  return `
+    <p style="margin:6px 0 12px 0;font-style:italic;color:#444;">
+      Overall, the learner is <strong>${overall}</strong>
+      ${strongest ? `, with stronger performance in <strong>${strongest}</strong>.` : "."}
+    </p>
+  `;
+}
+
+
+
+
+
+
+  
   /* ===== TERM VIEW ===== */
   if (viewMode.value === "term") {
     const grouped = {};
