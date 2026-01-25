@@ -63,7 +63,12 @@ const levelColor = {
   "Exceeding Expectations": "#cce5ff"
 };
 
+/* ===============================
+   ELEMENTS
+================================ */
 const termSelect = document.getElementById("termSelect");
+const viewMode = document.getElementById("viewMode");
+const filterBox = document.getElementById("filterBox");
 const reportDiv = document.getElementById("report");
 const status = document.getElementById("status");
 
@@ -86,7 +91,7 @@ termSelect.innerHTML =
   terms.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
 
 /* ===============================
-   LOAD REPORT
+   CORE LOAD
 ================================ */
 async function loadReport() {
   reportDiv.innerHTML = "";
@@ -98,28 +103,37 @@ async function loadReport() {
   const termName = terms.find(t => t.id === term_id)?.name;
 
   /* ===============================
-     LOAD AVERAGES (BACKEND)
+     LOAD AVERAGES (ID-BASED)
   ================================ */
   const { data: averages } = await supabase
     .from("term_subject_report_view")
-    .select("*")
+    .select(`
+      student_id,
+      admission_number,
+      subject_id,
+      subject_name,
+      average_score,
+      achievement_level
+    `)
     .eq("term", termName)
     .eq("academic_year", SYSTEM_YEAR);
 
   /* ===============================
-     LOAD DETAILS (ONCE)
+     LOAD DETAILS
   ================================ */
-  const { data: rows, error } = await supabase
+  const { data: rows } = await supabase
     .from("assessment_results")
     .select(`
       remarks,
       students(
+        id,
         first_name,
         last_name,
         admission_number
       ),
       competencies(
         name,
+        subject_id,
         subjects(name)
       ),
       achievement_levels(label)
@@ -127,105 +141,147 @@ async function loadReport() {
     .eq("term", termName)
     .eq("academic_year", SYSTEM_YEAR);
 
-  if (error || !rows.length) {
+  if (!rows?.length) {
     status.innerText = "No results found.";
     return;
   }
 
   /* ===============================
+     BUILD AVERAGE MAP (IDS!)
+  ================================ */
+  const avgMap = {};
+  averages?.forEach(a => {
+    avgMap[a.student_id] ??= {};
+    avgMap[a.student_id][a.subject_id] = a;
+  });
+
+  /* ===============================
      GROUPINGS
   ================================ */
-
   const byTerm = {};
   const byStudent = {};
   const bySubject = {};
 
   rows.forEach(r => {
-    const studentName = `${r.students.first_name} ${r.students.last_name}`;
+    if (!r.students || !r.competencies) return;
+
+    const studentId = r.students.id;
     const admission = r.students.admission_number;
-    const subject = r.competencies.subjects.name;
+    const studentName = `${r.students.first_name} ${r.students.last_name}`;
+    const subjectId = r.competencies.subject_id;
+    const subjectName = r.competencies.subjects.name;
 
     const record = {
-      studentName,
+      studentId,
       admission,
-      subject,
+      studentName,
+      subjectId,
+      subjectName,
       competency: r.competencies.name,
       level: r.achievement_levels.label,
       remarks: r.remarks
     };
 
-    /* Term grouping */
     byTerm[studentName] ??= {};
-    byTerm[studentName][subject] ??= [];
-    byTerm[studentName][subject].push(record);
+    byTerm[studentName][subjectId] ??= { subjectName, rows: [] };
+    byTerm[studentName][subjectId].rows.push(record);
 
-    /* Student grouping */
-    byStudent[admission] ??= {};
-    byStudent[admission][subject] ??= [];
-    byStudent[admission][subject].push(record);
+    byStudent[admission] ??= [];
+    byStudent[admission].push(record);
 
-    /* Subject grouping */
-    bySubject[subject] ??= [];
-    bySubject[subject].push(record);
+    bySubject[subjectId] ??= { subjectName, rows: [] };
+    bySubject[subjectId].rows.push(record);
   });
 
   /* ===============================
-     AVERAGE MAP
+     RENDER
   ================================ */
-  const avgMap = {};
-  averages.forEach(a => {
-    avgMap[a.admission_number] ??= {};
-    avgMap[a.admission_number][a.subject_name] = a;
-  });
+  const mode = viewMode.value;
 
-  /* ===============================
-     RENDER (TERM VIEW)
-  ================================ */
-  reportDiv.innerHTML = `
-    <h3>${termName} – ${SYSTEM_YEAR}</h3>
-
-    ${Object.entries(byTerm).map(([student, subjects]) => `
-      <h4>👤 ${student}</h4>
-
-      ${Object.entries(subjects).map(([subject, comps]) => {
-        const admission = comps[0].admission;
-        const avg = avgMap[admission]?.[subject];
-
-        return `
-          <h5>📘 ${subject}</h5>
-          <table border="1" cellpadding="6">
-            <tr>
-              <th>Competency</th>
-              <th>Achievement</th>
-              <th>Remarks</th>
-            </tr>
-
-            ${comps.map(c => `
-              <tr style="background:${levelColor[c.level]}">
-                <td>${c.competency}</td>
-                <td>${c.level}</td>
-                <td>${c.remarks || "—"}</td>
+  /* ---- TERM VIEW ---- */
+  if (mode === "term") {
+    reportDiv.innerHTML = `
+      <h3>${termName} – ${SYSTEM_YEAR}</h3>
+      ${Object.entries(byTerm).map(([student, subjects]) => `
+        <h4>👤 ${student}</h4>
+        ${Object.values(subjects).map(s => {
+          const sample = s.rows[0];
+          const avg = avgMap[sample.studentId]?.[sample.subjectId];
+          return `
+            <h5>📘 ${s.subjectName}</h5>
+            <table border="1" cellpadding="6">
+              <tr>
+                <th>Competency</th>
+                <th>Achievement</th>
+                <th>Remarks</th>
               </tr>
-            `).join("")}
+              ${s.rows.map(c => `
+                <tr style="background:${levelColor[c.level]}">
+                  <td>${c.competency}</td>
+                  <td>${c.level}</td>
+                  <td>${c.remarks || "—"}</td>
+                </tr>
+              `).join("")}
+              ${avg ? `
+                <tr style="background:${levelColor[avg.achievement_level]}">
+                  <td><strong>SUBJECT AVERAGE</strong></td>
+                  <td colspan="2">
+                    <strong>${avg.achievement_level} (Score ${avg.average_score})</strong>
+                  </td>
+                </tr>
+              ` : ""}
+            </table>
+          `;
+        }).join("")}
+      `).join("")}
+    `;
+  }
 
-            ${avg ? `
-              <tr style="background:${levelColor[avg.achievement_level]}">
-                <td><strong>SUBJECT AVERAGE</strong></td>
-                <td colspan="2">
-                  <strong>${avg.achievement_level} (Score ${avg.average_score})</strong>
-                </td>
-              </tr>
-            ` : ""}
-          </table>
-        `;
-      }).join("")}
-    `).join("")}
-  `;
+  /* ---- STUDENT VIEW ---- */
+  if (mode === "student") {
+    filterBox.innerHTML = `
+      <label>Admission Number</label><br />
+      <input id="admInput" placeholder="Type admission…" />
+    `;
+    document.getElementById("admInput").addEventListener("input", e => {
+      const adm = e.target.value.trim();
+      reportDiv.innerHTML = byStudent[adm]
+        ? byStudent[adm].map(r =>
+            `<div>${r.subjectName} – ${r.level}</div>`
+          ).join("")
+        : "No results";
+    });
+  }
+
+  /* ---- SUBJECT VIEW ---- */
+  if (mode === "subject") {
+    filterBox.innerHTML = `
+      <label>Subject</label><br />
+      <select id="subSelect">
+        <option value="">Select</option>
+        ${Object.values(bySubject).map(s =>
+          `<option value="${s.subjectName}">${s.subjectName}</option>`
+        ).join("")}
+      </select>
+    `;
+    document.getElementById("subSelect").addEventListener("change", e => {
+      const subj = e.target.value;
+      reportDiv.innerHTML = Object.values(bySubject)
+        .filter(s => s.subjectName === subj)
+        .flatMap(s => s.rows)
+        .map(r =>
+          `<div>${r.studentName} (${r.admission}) – ${r.level}</div>`
+        ).join("");
+    });
+  }
 }
 
+/* ===============================
+   EVENTS
+================================ */
 termSelect.addEventListener("change", loadReport);
+viewMode.addEventListener("change", loadReport);
 </script>
-
 
 </body>
 </html>
