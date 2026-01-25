@@ -40,7 +40,6 @@
 <p id="status"></p>
 <hr />
 <div id="report"></div>
-
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -59,19 +58,16 @@ const levelColor = {
 };
 
 const termSelect = document.getElementById("termSelect");
+const viewMode = document.getElementById("viewMode");
+const filterBox = document.getElementById("filterBox");
 const reportDiv = document.getElementById("report");
 const status = document.getElementById("status");
-const filterBox = document.getElementById("filterBox");
-const viewMode = document.getElementById("viewMode");
 
-/* ================= AUTH ================= */
+/* ========== AUTH ========== */
 const { data: { user } } = await supabase.auth.getUser();
-if (!user) {
-  window.location.href = "index.html";
-  throw new Error("Not logged in");
-}
+if (!user) location.href = "index.html";
 
-/* ================= LOAD TERMS ================= */
+/* ========== LOAD TERMS ========== */
 const { data: terms } = await supabase
   .from("terms")
   .select("id, name")
@@ -81,18 +77,18 @@ termSelect.innerHTML =
   `<option value="">Select term</option>` +
   terms.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
 
-/* ================= MAIN LOAD ================= */
+/* ========== MAIN LOAD ========== */
 async function loadReport() {
   reportDiv.innerHTML = "";
-  status.innerText = "";
   filterBox.innerHTML = "";
+  status.innerText = "";
 
   const term_id = termSelect.value;
   if (!term_id) return;
 
   const termName = terms.find(t => t.id === term_id)?.name;
 
-  /* ===== SUBJECT AVERAGES ===== */
+  /* ===== AVERAGES ===== */
   const { data: averages } = await supabase
     .from("term_subject_report_view")
     .select("first_name,last_name,subject_name,average_score,achievement_level")
@@ -102,11 +98,11 @@ async function loadReport() {
   const avgMap = {};
   averages.forEach(a => {
     const student = `${a.first_name} ${a.last_name}`;
-    if (!avgMap[student]) avgMap[student] = {};
+    avgMap[student] ??= {};
     avgMap[student][a.subject_name] = a;
   });
 
-  /* ===== DETAILED RESULTS ===== */
+  /* ===== RAW RESULTS ===== */
   const { data } = await supabase
     .from("assessment_results")
     .select(`
@@ -123,73 +119,65 @@ async function loadReport() {
     return;
   }
 
-  /* ===== GROUPINGS ===== */
-  const byTerm = {};
-  const byStudent = {};
-  const bySubject = {};
+  /* ===== NORMALIZED RECORDS ===== */
+  const records = data.map(r => ({
+    student: `${r.students.first_name} ${r.students.last_name}`,
+    admission: r.students.admission_number,
+    subject: r.competencies.subjects.name,
+    competency: r.competencies.name,
+    level: r.achievement_levels.label,
+    remarks: r.remarks
+  }));
 
-  data.forEach(r => {
-    const studentName = `${r.students.first_name} ${r.students.last_name}`;
-    const admission = r.students.admission_number;
-    const subject = r.competencies.subjects.name;
+  /* ===== RENDER FUNCTION (ONE TABLE FORMAT) ===== */
+  function renderGrouped(grouped) {
+    return Object.entries(grouped).map(([student, subjects]) => `
+      <h4>👤 ${student}</h4>
+      ${Object.entries(subjects).map(([subject, rows]) => `
+        <h5>📘 ${subject}</h5>
+        <table>
+          <tr>
+            <th>Competency</th>
+            <th>Achievement</th>
+            <th>Remarks</th>
+          </tr>
 
-    const row = {
-      studentName,
-      admission,
-      subject,
-      competency: r.competencies.name,
-      level: r.achievement_levels.label,
-      remarks: r.remarks
-    };
+          ${rows.map(r => `
+            <tr style="background:${levelColor[r.level]}">
+              <td>${r.competency}</td>
+              <td>${r.level}</td>
+              <td>${r.remarks || "—"}</td>
+            </tr>
+          `).join("")}
 
-    if (!byTerm[studentName]) byTerm[studentName] = {};
-    if (!byTerm[studentName][subject]) byTerm[studentName][subject] = [];
-    byTerm[studentName][subject].push(row);
-
-    if (!byStudent[admission]) byStudent[admission] = {};
-    if (!byStudent[admission][subject]) byStudent[admission][subject] = [];
-    byStudent[admission][subject].push(row);
-
-    if (!bySubject[subject]) bySubject[subject] = {};
-    if (!bySubject[subject][studentName]) bySubject[subject][studentName] = [];
-    bySubject[subject][studentName].push(row);
-  });
+          ${avgMap[student]?.[subject] ? `
+            <tr style="background:${levelColor[avgMap[student][subject].achievement_level]}">
+              <td><strong>SUBJECT AVERAGE</strong></td>
+              <td colspan="2">
+                <strong>
+                  ${avgMap[student][subject].achievement_level}
+                  (Score ${avgMap[student][subject].average_score})
+                </strong>
+              </td>
+            </tr>
+          ` : ""}
+        </table>
+      `).join("")}
+    `).join("");
+  }
 
   /* ===== TERM VIEW ===== */
   if (viewMode.value === "term") {
+    const grouped = {};
+    records.forEach(r => {
+      grouped[r.student] ??= {};
+      grouped[r.student][r.subject] ??= [];
+      grouped[r.student][r.subject].push(r);
+    });
+
     reportDiv.innerHTML = `
       <h3>${termName} – ${SYSTEM_YEAR}</h3>
-      ${Object.entries(byTerm).map(([student, subjects]) => `
-        <h4>👤 ${student}</h4>
-        ${Object.entries(subjects).map(([subject, rows]) => `
-          <h5>📘 ${subject}</h5>
-          <table>
-            <tr>
-              <th>Competency</th>
-              <th>Achievement</th>
-              <th>Remarks</th>
-            </tr>
-            ${rows.map(r => `
-              <tr style="background:${levelColor[r.level]}">
-                <td>${r.competency}</td>
-                <td>${r.level}</td>
-                <td>${r.remarks || "—"}</td>
-              </tr>
-            `).join("")}
-            ${avgMap[student]?.[subject] ? `
-              <tr style="background:${levelColor[avgMap[student][subject].achievement_level]}">
-                <td><strong>SUBJECT AVERAGE</strong></td>
-                <td colspan="2">
-                  <strong>
-                    ${avgMap[student][subject].achievement_level}
-                    (Score ${avgMap[student][subject].average_score})
-                  </strong>
-                </td>
-              </tr>
-            ` : ""}
-          </table>
-        `).join("")}
-      `).join("")}
+      ${renderGrouped(grouped)}
     `;
   }
 
@@ -202,33 +190,33 @@ async function loadReport() {
 
     document.getElementById("admInput").addEventListener("input", e => {
       const adm = e.target.value.trim();
-      const student = byStudent[adm];
-      if (!student) {
+      const filtered = records.filter(r => r.admission === adm);
+
+      if (!filtered.length) {
         reportDiv.innerHTML = "<p>No student found</p>";
         return;
       }
 
-      reportDiv.innerHTML = `
-        <h3>Admission No: ${adm}</h3>
-        ${Object.entries(student).map(([subject, rows]) => `
-          <h4>${subject}</h4>
-          <ul>
-            ${rows.map(r => `<li>${r.competency} – ${r.level}</li>`).join("")}
-          </ul>
-        `).join("")}
-      `;
+      const grouped = {};
+      filtered.forEach(r => {
+        grouped[r.student] ??= {};
+        grouped[r.student][r.subject] ??= [];
+        grouped[r.student][r.subject].push(r);
+      });
+
+      reportDiv.innerHTML = renderGrouped(grouped);
     });
   }
 
   /* ===== SUBJECT VIEW ===== */
   if (viewMode.value === "subject") {
+    const subjects = [...new Set(records.map(r => r.subject))];
+
     filterBox.innerHTML = `
       <label>Subject</label><br />
       <select id="subjectSelect">
         <option value="">Select subject</option>
-        ${Object.keys(bySubject).map(s =>
-          `<option value="${s}">${s}</option>`
-        ).join("")}
+        ${subjects.map(s => `<option>${s}</option>`).join("")}
       </select>
     `;
 
@@ -236,14 +224,18 @@ async function loadReport() {
       const subject = e.target.value;
       if (!subject) return;
 
+      const filtered = records.filter(r => r.subject === subject);
+      const grouped = {};
+
+      filtered.forEach(r => {
+        grouped[r.student] ??= {};
+        grouped[r.student][r.subject] ??= [];
+        grouped[r.student][r.subject].push(r);
+      });
+
       reportDiv.innerHTML = `
         <h3>${subject} – All Students</h3>
-        ${Object.entries(bySubject[subject]).map(([student, rows]) => `
-          <h4>${student}</h4>
-          <ul>
-            ${rows.map(r => `<li>${r.competency} – ${r.level}</li>`).join("")}
-          </ul>
-        `).join("")}
+        ${renderGrouped(grouped)}
       `;
     });
   }
