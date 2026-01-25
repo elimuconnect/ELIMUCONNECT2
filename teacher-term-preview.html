@@ -30,6 +30,15 @@
 <label>Term</label><br />
 <select id="termSelect"></select><br /><br />
 
+<label>View As</label><br />
+<select id="viewMode">
+  <option value="term">Term Report</option>
+  <option value="student">Student (Admission No)</option>
+  <option value="subject">Subject (All Students)</option>
+</select><br /><br />
+
+<div id="filterBox"></div>
+
 <p id="status"></p>
 <hr />
 
@@ -47,13 +56,10 @@ const supabase = createClient(
 );
 
 /* ===============================
-   SYSTEM ACADEMIC YEAR
+   SYSTEM SETTINGS
 ================================ */
 const SYSTEM_YEAR = "2026";
 
-/* ===============================
-   LEVEL COLORS (CBC STYLE)
-================================ */
 const levelColor = {
   "Below Expectations": "#f8d7da",
   "Approaching Expectations": "#fff3cd",
@@ -64,10 +70,11 @@ const levelColor = {
 /* ===============================
    ELEMENTS
 ================================ */
-const yearInput = document.getElementById("yearSelect");
 const termSelect = document.getElementById("termSelect");
 const reportDiv = document.getElementById("report");
 const status = document.getElementById("status");
+const viewMode = document.getElementById("viewMode");
+const filterBox = document.getElementById("filterBox");
 
 /* ===============================
    AUTH CHECK
@@ -81,19 +88,35 @@ if (!user) {
 /* ===============================
    LOAD TERMS
 ================================ */
-const { data: terms, error: termError } = await supabase
+const { data: terms } = await supabase
   .from("terms")
   .select("id, name")
   .order("name");
 
-if (termError || !terms.length) {
-  status.innerText = "Failed to load terms.";
-  throw termError;
-}
-
 termSelect.innerHTML =
   `<option value="">Select term</option>` +
   terms.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
+
+/* ===============================
+   VIEW MODE FILTER UI
+================================ */
+viewMode.addEventListener("change", () => {
+  filterBox.innerHTML = "";
+
+  if (viewMode.value === "student") {
+    filterBox.innerHTML = `
+      <label>Admission Number</label><br />
+      <input id="admissionInput" placeholder="ADM001" /><br /><br />
+    `;
+  }
+
+  if (viewMode.value === "subject") {
+    filterBox.innerHTML = `
+      <label>Subject</label><br />
+      <input id="subjectInput" placeholder="Mathematics" /><br /><br />
+    `;
+  }
+});
 
 /* ===============================
    LOAD REPORT
@@ -102,87 +125,117 @@ async function loadReport() {
   reportDiv.innerHTML = "";
   status.innerText = "";
 
-  const academicYear = SYSTEM_YEAR;
   const term_id = termSelect.value;
   if (!term_id) return;
 
   const termName = terms.find(t => t.id === term_id)?.name;
-  if (!termName) {
-    status.innerText = "Invalid term selected.";
+  if (!termName) return;
+
+  /* ===============================
+     SUBJECT VIEW
+  ================================ */
+  if (viewMode.value === "subject") {
+    const subject = document.getElementById("subjectInput")?.value;
+    if (!subject) {
+      status.innerText = "Enter subject name.";
+      return;
+    }
+
+    const { data } = await supabase
+      .from("term_subject_report_view")
+      .select("*")
+      .eq("subject_name", subject)
+      .eq("term", termName)
+      .eq("academic_year", SYSTEM_YEAR)
+      .order("last_name");
+
+    if (!data?.length) {
+      status.innerText = "No results found.";
+      return;
+    }
+
+    reportDiv.innerHTML = `
+      <h3>${subject} – ${termName} (${SYSTEM_YEAR})</h3>
+      <table border="1" cellpadding="6">
+        <tr>
+          <th>Admission</th>
+          <th>Student</th>
+          <th>Score</th>
+          <th>Achievement</th>
+        </tr>
+        ${data.map(r => `
+          <tr style="background:${levelColor[r.achievement_level]}">
+            <td>${r.admission_number}</td>
+            <td>${r.first_name} ${r.last_name}</td>
+            <td>${r.average_score}</td>
+            <td><strong>${r.achievement_level}</strong></td>
+          </tr>
+        `).join("")}
+      </table>
+    `;
     return;
   }
 
   /* ===============================
-     LOAD BACKEND AVERAGES
+     STUDENT VIEW
   ================================ */
-  const { data: averages, error: avgError } = await supabase
-    .from("term_subject_report_view")
-    .select(`
-      first_name,
-      last_name,
-      subject_name,
-      average_score,
-      achievement_level
-    `)
-    .eq("term", termName)
-    .eq("academic_year", academicYear);
+  if (viewMode.value === "student") {
+    const admission = document.getElementById("admissionInput")?.value;
+    if (!admission) {
+      status.innerText = "Enter admission number.";
+      return;
+    }
 
-  if (avgError) {
-    status.innerText = "Failed to load subject averages.";
+    const { data } = await supabase
+      .from("term_subject_report_view")
+      .select("*")
+      .eq("admission_number", admission)
+      .eq("term", termName)
+      .eq("academic_year", SYSTEM_YEAR);
+
+    if (!data?.length) {
+      status.innerText = "No student results found.";
+      return;
+    }
+
+    reportDiv.innerHTML = `
+      <h3>Student Report – ${admission}</h3>
+      ${data.map(r => `
+        <div style="margin-bottom:10px;">
+          <strong>${r.subject_name}</strong> —
+          ${r.achievement_level} (Score ${r.average_score})
+        </div>
+      `).join("")}
+    `;
     return;
   }
 
   /* ===============================
-     BUILD AVERAGE LOOKUP MAP
+     TERM VIEW (DEFAULT)
   ================================ */
-  const avgMap = {};
-  averages.forEach(a => {
-    const student = `${a.first_name} ${a.last_name}`;
-    if (!avgMap[student]) avgMap[student] = {};
-    avgMap[student][a.subject_name] = a;
-  });
-
-  /* ===============================
-     LOAD DETAILED RESULTS
-  ================================ */
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from("assessment_results")
     .select(`
-      term,
-      academic_year,
       remarks,
-      students(first_name, last_name),
-      competencies(
-        name,
-        subject_id,
-        subjects:subjects(name)
-      ),
+      students(first_name,last_name),
+      competencies(name,subjects(name)),
       achievement_levels(label)
     `)
     .eq("term", termName)
-    .eq("academic_year", academicYear)
-    .order("last_name", { foreignTable: "students" })
-    .order("name", { foreignTable: "competencies" });
+    .eq("academic_year", SYSTEM_YEAR);
 
-  if (error || !data.length) {
-    status.innerText = "No results found for this term.";
+  if (!data?.length) {
+    status.innerText = "No results found.";
     return;
   }
 
-  /* ===============================
-     GROUP RESULTS
-  ================================ */
   const grouped = {};
-
   data.forEach(r => {
     const student = `${r.students.first_name} ${r.students.last_name}`;
-    const subject = r.competencies.subject_id
-      ? r.competencies.subjects.name
-      : "CBC Core Competencies";
+    const subject = r.competencies.subjects?.name || "CBC Core Competencies";
 
-    if (!grouped[student]) grouped[student] = {};
-    if (!grouped[student][subject]) grouped[student][subject] = [];
-
+    grouped[student] ??= {};
+    grouped[student][subject] ??= [];
     grouped[student][subject].push({
       competency: r.competencies.name,
       level: r.achievement_levels.label,
@@ -190,57 +243,27 @@ async function loadReport() {
     });
   });
 
-  /* ===============================
-     RENDER REPORT
-  ================================ */
   reportDiv.innerHTML = `
-    <h3>${termName} – ${academicYear}</h3>
-
+    <h3>${termName} – ${SYSTEM_YEAR}</h3>
     ${Object.entries(grouped).map(([student, subjects]) => `
-      <div style="margin-bottom:30px;">
-        <h4>👤 ${student}</h4>
-
-        ${Object.entries(subjects).map(([subject, competencies]) => `
-          <div style="margin-left:20px;">
-            <h5>📘 ${subject}</h5>
-
-            <table border="1" cellpadding="6" cellspacing="0">
-              <tr>
-                <th>Competency</th>
-                <th>Achievement Level</th>
-                <th>Teacher Remarks</th>
-              </tr>
-
-              ${competencies.map(c => `
-                <tr style="background-color:${levelColor[c.level] || "#fff"}">
-                  <td>${c.competency}</td>
-                  <td><strong>${c.level}</strong></td>
-                  <td>${c.remarks || "—"}</td>
-                </tr>
-              `).join("")}
-
-              ${(() => {
-                const avg = avgMap[student]?.[subject];
-                if (!avg) return "";
-
-                return `
-                  <tr style="background-color:${levelColor[avg.achievement_level]}">
-                    <td><strong>SUBJECT AVERAGE</strong></td>
-                    <td>
-                      <strong>
-                        ${avg.achievement_level}
-                        (Score ${avg.average_score})
-                      </strong>
-                    </td>
-                    <td><strong>Based on all assessments</strong></td>
-                  </tr>
-                `;
-              })()}
-
-            </table>
-          </div>
-        `).join("")}
-      </div>
+      <h4>👤 ${student}</h4>
+      ${Object.entries(subjects).map(([subject, comps]) => `
+        <h5>📘 ${subject}</h5>
+        <table border="1" cellpadding="6">
+          <tr>
+            <th>Competency</th>
+            <th>Achievement</th>
+            <th>Remarks</th>
+          </tr>
+          ${comps.map(c => `
+            <tr style="background:${levelColor[c.level]}">
+              <td>${c.competency}</td>
+              <td><strong>${c.level}</strong></td>
+              <td>${c.remarks || "—"}</td>
+            </tr>
+          `).join("")}
+        </table>
+      `).join("")}
     `).join("")}
   `;
 }
@@ -249,7 +272,9 @@ async function loadReport() {
    EVENTS
 ================================ */
 termSelect.addEventListener("change", loadReport);
+viewMode.addEventListener("change", loadReport);
 </script>
+
 
 </body>
 </html>
