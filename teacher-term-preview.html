@@ -111,6 +111,46 @@ async function loadReport() {
     .eq("term", termName)
     .eq("academic_year", SYSTEM_YEAR);
 
+
+
+
+
+const previousTerm = terms
+  .map(t => t.name)
+  .sort()
+  .filter(t => t < termName)
+  .slice(-1)[0];
+
+let previousAverages = {};
+
+if (previousTerm) {
+  const { data: prev } = await supabase
+    .from("assessment_results")
+    .select(`
+      students(admission_number),
+      achievement_levels(label)
+    `)
+    .eq("term", previousTerm)
+    .eq("academic_year", SYSTEM_YEAR);
+
+  prev?.forEach(r => {
+    const adm = r.students.admission_number;
+    const score = levelToScore(r.achievement_levels.label);
+
+    if (!previousAverages[adm]) {
+      previousAverages[adm] = { total: 0, count: 0 };
+    }
+
+    previousAverages[adm].total += score;
+    previousAverages[adm].count++;
+  });
+}
+
+
+
+  
+  
+
   const avgMap = {};
   averages.forEach(a => {
     const student = `${a.first_name} ${a.last_name}`;
@@ -147,6 +187,25 @@ async function loadReport() {
 
   
 function renderGrouped(grouped) {
+
+const allScores = [];
+
+Object.values(subjects).flat().forEach(r => {
+  const s = levelToScore(r.level);
+  if (s > 0) allScores.push(s);
+});
+
+const currentAvg =
+  allScores.length ? allScores.reduce((a,b)=>a+b,0) / allScores.length : null;
+
+const prevData = previousAverages[admission];
+const previousAvg = prevData ? prevData.total / prevData.count : null;
+
+const trend = getTrend(currentAvg, previousAvg);
+
+
+
+  
   return Object.entries(grouped).map(([student, subjects]) => {
 
     const admission =
@@ -165,6 +224,10 @@ function renderGrouped(grouped) {
       </h4>
 
       <p>${supportFlag}</p>
+      <p style="font-weight:bold;">
+  📊 Progress Trend: <span>${trend}</span>
+</p>
+
 
       ${insight}
 
@@ -435,6 +498,22 @@ if (avg < 2.5 || weakCount >= 2) {
 
 termSelect.addEventListener("change", loadReport);
 viewMode.addEventListener("change", loadReport);
+
+
+
+
+function getTrend(currentAvg, previousAvg) {
+  if (previousAvg === null) return "🆕 New Entry";
+
+  const diff = currentAvg - previousAvg;
+
+  if (diff >= 0.3) return "📈 Improving";
+  if (diff <= -0.3) return "📉 Declining";
+  return "➖ Stable";
+}
+
+
+  
 </script>
 
 
