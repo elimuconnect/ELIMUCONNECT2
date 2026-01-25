@@ -58,15 +58,17 @@ const levelColor = {
   "Exceeding Expectations": "#cce5ff"
 };
 
-
 function levelToScore(level) {
-  return {
-    "Below Expectations": 1,
-    "Approaching Expectations": 2,
-    "Meeting Expectations": 3,
-    "Exceeding Expectations": 4
-  }[level] || 0;
+  switch (level) {
+    case "Below Expectations": return 1;
+    case "Approaching Expectations": return 2;
+    case "Meeting Expectations": return 3;
+    case "Exceeding Expectations": return 4;
+    default: return 0;
+  }
 }
+
+
 
 
   
@@ -323,7 +325,55 @@ function generateSupportFlag(subjects) {
 }
 
 
-  
+
+
+
+${(() => {
+  const { strengths, needs } = generateStrengthsAndNeeds(subjects);
+
+  return `
+    ${strengths.length ? `
+      <p><strong>💪 Strengths:</strong> ${strengths.join(", ")}</p>
+    ` : ""}
+
+    ${needs.length ? `
+      <p><strong>🎯 Areas for Improvement:</strong> ${needs.join(", ")}</p>
+    ` : ""}
+  `;
+})()}
+
+
+
+
+
+
+
+
+  function generateStrengthsAndNeeds(subjects) {
+  const strengths = [];
+  const needs = [];
+
+  Object.entries(subjects).forEach(([subject, rows]) => {
+    if (subject === "__admission") return;
+
+    let scores = rows.map(r => levelToScore(r.level)).filter(s => s > 0);
+    if (!scores.length) return;
+
+    const avg = scores.reduce((a,b)=>a+b,0) / scores.length;
+    const weakCount = scores.filter(s => s <= 2).length;
+
+    if (avg >= 3.2 && weakCount <= 1) {
+      strengths.push(subject);
+    }
+
+    if (weakCount >= 2) {
+      needs.push(subject);
+    }
+  });
+
+  return { strengths, needs };
+}
+
   
   /* ===== TERM VIEW ===== */
   if (viewMode.value === "term") {
