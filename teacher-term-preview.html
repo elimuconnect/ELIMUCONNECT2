@@ -145,13 +145,35 @@ async function loadReport() {
   /* ===== RENDER FUNCTION (ONE TABLE FORMAT) ===== */
   function renderGrouped(grouped) {
     return Object.entries(grouped).map(([student, subjects]) => `
-   <h4>
-  👤 ${student}
-  <small style="font-size: 2em;">
-    (<strong>Adm: ${Object.values(subjects)[0][0].admission}</strong>)
-  </small>
-</h4>
-${generateInsight(subjects)}
+
+
+
+
+ 
+${(() => {
+  const flag = getSupportFlag(subjects);
+  return `
+    <h4>
+      👤 ${student}
+      <small style="font-size: 2em;">
+        (<strong>Adm: ${
+          Object.values(subjects)
+            .flat()
+            .find(r => r.admission)?.admission || "N/A"
+        }</strong>)
+      </small>
+    </h4>
+
+    <p style="font-weight:bold;color:${flag.color}">
+      ${flag.label}
+    </p>
+
+    ${generateInsight(subjects)}
+  `;
+})()}
+
+
+
 
 
 
@@ -247,6 +269,62 @@ function generateInsight(subjects) {
 }
 
 
+
+
+
+function generateSupportFlag(subjects) {
+  let scores = [];
+  let belowCount = 0;
+  let subjectAverages = [];
+
+  Object.entries(subjects).forEach(([subject, rows]) => {
+    if (subject === "__admission") return;
+
+    let subjectScores = [];
+
+    rows.forEach(r => {
+      const score = levelToScore(r.level);
+      if (score > 0) {
+        scores.push(score);
+        subjectScores.push(score);
+        if (score === 1) belowCount++;
+      }
+    });
+
+    if (subjectScores.length) {
+      subjectAverages.push(
+        subjectScores.reduce((a,b)=>a+b,0) / subjectScores.length
+      );
+    }
+  });
+
+  if (!scores.length) return "";
+
+  const overall = scores.reduce((a,b)=>a+b,0) / scores.length;
+
+  if (
+    overall < 2.5 ||
+    belowCount >= 2 ||
+    subjectAverages.some(a => a <= 2)
+  ) {
+    return `<span style="color:#c0392b;font-weight:bold;">🔴 Needs Learning Support</span>`;
+  }
+
+  if (
+    overall >= 3.5 &&
+    subjectAverages.every(a => a >= 3) &&
+    subjectAverages.some(a => a >= 4)
+  ) {
+    return `<span style="color:#1e8449;font-weight:bold;">🟢 High Potential</span>`;
+  }
+
+  return `<span style="color:#b9770e;font-weight:bold;">🟡 On Track</span>`;
+}
+
+
+
+
+  
 
   
   /* ===== TERM VIEW ===== */
