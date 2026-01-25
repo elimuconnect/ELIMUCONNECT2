@@ -133,12 +133,13 @@ async function loadReport() {
   /* ===== RENDER FUNCTION (ONE TABLE FORMAT) ===== */
   function renderGrouped(grouped) {
     return Object.entries(grouped).map(([student, subjects]) => `
-    <h4>
+   <h4>
   👤 ${student}
-  <small>
+  <small style="font-size: 2em;">
     (<strong>Adm: ${Object.values(subjects)[0][0].admission}</strong>)
   </small>
 </h4>
+
 
 
       ${Object.entries(subjects).map(([subject, rows]) => `
