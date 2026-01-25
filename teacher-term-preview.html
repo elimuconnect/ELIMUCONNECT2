@@ -51,13 +51,6 @@ const supabase = createClient(
 
 const SYSTEM_YEAR = "2026";
 
-const levelColor = {
-  "Below Expectations": "#f8d7da",
-  "Approaching Expectations": "#fff3cd",
-  "Meeting Expectations": "#d4edda",
-  "Exceeding Expectations": "#cce5ff"
-};
-
 function levelToScore(level) {
   switch (level) {
     case "Below Expectations": return 1;
@@ -171,8 +164,30 @@ ${(() => {
     </p>
 
     ${generateInsight(subjects)}
+
+${(() => {
+  const { strengths, needs } = generateStrengthsAndNeeds(subjects);
+
+  return `
+    ${strengths.length ? `
+      <p style="margin:4px 0;">
+        <strong>💪 Strengths:</strong> ${strengths.join(", ")}
+      </p>
+    ` : ""}
+
+    ${needs.length ? `
+      <p style="margin:4px 0;">
+        <strong>🎯 Areas for Improvement:</strong> ${needs.join(", ")}
+      </p>
+    ` : ""}
   `;
+
 })()}
+
+
+
+
+
 
 
 
@@ -271,7 +286,6 @@ function generateInsight(subjects) {
 
 
 
-
 function generateSupportFlag(subjects) {
   let scores = [];
   let belowCount = 0;
@@ -322,34 +336,12 @@ function generateSupportFlag(subjects) {
 
   /* 🟡 DEFAULT */
   return `<span style="color:#b9770e;font-weight:bold;">🟡 On Track</span>`;
+}
 
 
 
 
-
-
-${(() => {
-  const { strengths, needs } = generateStrengthsAndNeeds(subjects);
-
-  return `
-    ${strengths.length ? `
-      <p><strong>💪 Strengths:</strong> ${strengths.join(", ")}</p>
-    ` : ""}
-
-    ${needs.length ? `
-      <p><strong>🎯 Areas for Improvement:</strong> ${needs.join(", ")}</p>
-    ` : ""}
-  `;
-})()}
-
-
-
-
-
-
-
-
-  function generateStrengthsAndNeeds(subjects) {
+function generateStrengthsAndNeeds(subjects) {
   const strengths = [];
   const needs = [];
 
@@ -373,6 +365,8 @@ ${(() => {
 
   return { strengths, needs };
 }
+
+
 
   
   /* ===== TERM VIEW ===== */
