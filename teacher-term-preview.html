@@ -191,47 +191,60 @@ ${generateInsight(subjects)}
 
 
 
+
 function generateInsight(subjects) {
+  const subjectScores = {};
   let total = 0;
   let count = 0;
-  const subjectScores = {};
 
-  Object.entries(subjects).forEach(([key, rows]) => {
-    if (key === "__admission") return;
+  Object.entries(subjects).forEach(([subject, rows]) => {
+    if (subject === "__admission") return;
+
+    subjectScores[subject] = [];
 
     rows.forEach(r => {
       const score = levelToScore(r.level);
-      total += score;
-      count++;
-      subjectScores[key] ??= [];
-      subjectScores[key].push(score);
+      if (score > 0) {
+        subjectScores[subject].push(score);
+        total += score;
+        count++;
+      }
     });
   });
 
   if (!count) return "";
 
-  const avg = total / count;
+  const overallAvg = total / count;
 
-  let overall =
-    avg >= 3.5 ? "exceeding expectations" :
-    avg >= 2.5 ? "meeting expectations" :
-    avg >= 1.5 ? "approaching expectations" :
+  const overall =
+    overallAvg >= 3.5 ? "exceeding expectations" :
+    overallAvg >= 2.5 ? "meeting expectations" :
+    overallAvg >= 1.5 ? "approaching expectations" :
     "below expectations";
 
-  const strongest = Object.entries(subjectScores)
-    .map(([s, scores]) => [s, scores.reduce((a,b)=>a+b,0)/scores.length])
-    .sort((a,b)=>b[1]-a[1])[0]?.[0];
+  const subjectsArray = Object.entries(subjectScores)
+    .map(([s, scores]) => ({
+      subject: s,
+      avg: scores.reduce((a,b)=>a+b,0) / scores.length
+    }))
+    .sort((a,b)=>b.avg - a.avg);
+
+  let strengthSentence = "";
+
+  if (
+    subjectsArray.length > 1 &&
+    subjectsArray[0].avg >= 3 &&
+    subjectsArray[0].avg - subjectsArray[1].avg >= 0.5
+  ) {
+    strengthSentence = `, with stronger performance in <strong>${subjectsArray[0].subject}</strong>`;
+  }
 
   return `
     <p style="margin:6px 0 12px 0;font-style:italic;color:#444;">
-      Overall, the learner is <strong>${overall}</strong>
-      ${strongest ? `, with stronger performance in <strong>${strongest}</strong>.` : "."}
+      Overall, the learner is <strong>${overall}</strong>${strengthSentence}.
     </p>
   `;
 }
-
-
-
 
 
 
