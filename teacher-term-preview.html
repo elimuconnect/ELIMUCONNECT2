@@ -354,12 +354,14 @@ function generateStrengthsAndNeeds(subjects) {
     const avg = scores.reduce((a,b)=>a+b,0) / scores.length;
     const weakCount = scores.filter(s => s <= 2).length;
 
-    if (avg >= 3.2 && weakCount <= 1) {
-      strengths.push(subject);
-    }
+  if (avg >= 3.5 && weakCount === 0) {
+  strengths.push(subject);
+}
 
-    if (weakCount >= 2) {
-      needs.push(subject);
+if (avg < 2.5 || weakCount >= 2) {
+  needs.push(subject);
+
+
     }
   });
 
