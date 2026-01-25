@@ -186,31 +186,35 @@ if (previousTerm) {
   }));
 
   
+
+
 function renderGrouped(grouped) {
-
-const allScores = [];
-
-Object.values(subjects).flat().forEach(r => {
-  const s = levelToScore(r.level);
-  if (s > 0) allScores.push(s);
-});
-
-const currentAvg =
-  allScores.length ? allScores.reduce((a,b)=>a+b,0) / allScores.length : null;
-
-const prevData = previousAverages[admission];
-const previousAvg = prevData ? prevData.total / prevData.count : null;
-
-const trend = getTrend(currentAvg, previousAvg);
-
-
-
-  
   return Object.entries(grouped).map(([student, subjects]) => {
 
     const admission =
       Object.values(subjects).flat().find(r => r.admission)?.admission || "N/A";
 
+    /* ===== CURRENT AVERAGE ===== */
+    const allScores = [];
+    Object.values(subjects).flat().forEach(r => {
+      const s = levelToScore(r.level);
+      if (s > 0) allScores.push(s);
+    });
+
+    const currentAvg =
+      allScores.length
+        ? allScores.reduce((a,b)=>a+b,0) / allScores.length
+        : null;
+
+    /* ===== PREVIOUS AVERAGE ===== */
+    const prevData = previousAverages[admission];
+    const previousAvg = prevData
+      ? prevData.total / prevData.count
+      : null;
+
+    const trend = getTrend(currentAvg, previousAvg);
+
+    /* ===== EXISTING FEATURES ===== */
     const supportFlag = generateSupportFlag(subjects);
     const insight = generateInsight(subjects);
     const { strengths, needs } = generateStrengthsAndNeeds(subjects);
@@ -224,23 +228,19 @@ const trend = getTrend(currentAvg, previousAvg);
       </h4>
 
       <p>${supportFlag}</p>
-      <p style="font-weight:bold;">
-  📊 Progress Trend: <span>${trend}</span>
-</p>
 
+      <p style="font-weight:bold;">
+        📊 Progress Trend: <span>${trend}</span>
+      </p>
 
       ${insight}
 
       ${strengths.length ? `
-        <p style="margin:4px 0;">
-          <strong>💪 Strengths:</strong> ${strengths.join(", ")}
-        </p>
+        <p><strong>💪 Strengths:</strong> ${strengths.join(", ")}</p>
       ` : ""}
 
       ${needs.length ? `
-        <p style="margin:4px 0;">
-          <strong>🎯 Areas for Improvement:</strong> ${needs.join(", ")}
-        </p>
+        <p><strong>🎯 Areas for Improvement:</strong> ${needs.join(", ")}</p>
       ` : ""}
 
       ${Object.entries(subjects).map(([subject, rows]) => `
@@ -277,7 +277,7 @@ const trend = getTrend(currentAvg, previousAvg);
   }).join("");
 }
 
-
+  
 
 
 function generateInsight(subjects) {
