@@ -44,7 +44,6 @@
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-/* ================= SUPABASE ================= */
 const supabase = createClient(
   "https://zcmzuetusvpmvubbjlmx.supabase.co",
   "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
@@ -65,11 +64,11 @@ const filterBox = document.getElementById("filterBox");
 const reportDiv = document.getElementById("report");
 const status = document.getElementById("status");
 
-/* ================= AUTH ================= */
+/* ========== AUTH ========== */
 const { data: { user } } = await supabase.auth.getUser();
 if (!user) location.href = "index.html";
 
-/* ================= LOAD TERMS ================= */
+/* ========== LOAD TERMS ========== */
 const { data: terms } = await supabase
   .from("terms")
   .select("id, name")
@@ -79,7 +78,7 @@ termSelect.innerHTML =
   `<option value="">Select term</option>` +
   terms.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
 
-/* ================= MAIN ================= */
+/* ========== MAIN LOAD ========== */
 async function loadReport() {
   reportDiv.innerHTML = "";
   filterBox.innerHTML = "";
@@ -90,20 +89,21 @@ async function loadReport() {
 
   const termName = terms.find(t => t.id === term_id)?.name;
 
-  /* ===== LOAD AVERAGES (KEYED BY ADMISSION) ===== */
+  /* ===== AVERAGES ===== */
   const { data: averages } = await supabase
     .from("term_subject_report_view")
-    .select("admission_number,subject_name,average_score,achievement_level")
+    .select("first_name,last_name,subject_name,average_score,achievement_level")
     .eq("term", termName)
     .eq("academic_year", SYSTEM_YEAR);
 
   const avgMap = {};
   averages.forEach(a => {
-    avgMap[a.admission_number] ??= {};
-    avgMap[a.admission_number][a.subject_name] = a;
+    const student = `${a.first_name} ${a.last_name}`;
+    avgMap[student] ??= {};
+    avgMap[student][a.subject_name] = a;
   });
 
-  /* ===== LOAD RAW RESULTS ===== */
+  /* ===== RAW RESULTS ===== */
   const { data } = await supabase
     .from("assessment_results")
     .select(`
@@ -120,71 +120,73 @@ async function loadReport() {
     return;
   }
 
-  /* ===== NORMALIZE ===== */
+  /* ===== NORMALIZED RECORDS ===== */
   const records = data.map(r => ({
+    student: `${r.students.first_name} ${r.students.last_name}`,
     admission: r.students.admission_number,
-    studentName: `${r.students.first_name} ${r.students.last_name}`,
     subject: r.competencies.subjects.name,
     competency: r.competencies.name,
     level: r.achievement_levels.label,
     remarks: r.remarks
   }));
 
-  /* ===== TABLE RENDER ===== */
-  function render(grouped) {
-    return Object.values(grouped).map(s => `
-      <h4>
-        👤 ${s.name}
-        <small style="color:#666">(Adm: ${s.admission})</small>
-      </h4>
+  /* ===== RENDER FUNCTION (ONE TABLE FORMAT) ===== */
+  function renderGrouped(grouped) {
+    return Object.entries(grouped).map(([student, subjects]) => `
+    <h4>
+  👤 ${student}
+  <small>
+    (<strong>Adm: ${Object.values(subjects)[0][0].admission}</strong>)
+  </small>
+</h4>
 
-      ${Object.entries(s.subjects).map(([subject, rows]) => {
-        const avg = avgMap[s.admission]?.[subject];
-        return `
-          <h5>📘 ${subject}</h5>
-          <table>
-            <tr>
-              <th>Competency</th>
-              <th>Achievement</th>
-              <th>Remarks</th>
+
+      ${Object.entries(subjects).map(([subject, rows]) => `
+        <h5>📘 ${subject}</h5>
+        <table>
+          <tr>
+            <th>Competency</th>
+            <th>Achievement</th>
+            <th>Remarks</th>
+          </tr>
+
+          ${rows.map(r => `
+            <tr style="background:${levelColor[r.level]}">
+              <td>${r.competency}</td>
+              <td>${r.level}</td>
+              <td>${r.remarks || "—"}</td>
             </tr>
+          `).join("")}
 
-            ${rows.map(r => `
-              <tr style="background:${levelColor[r.level]}">
-                <td>${r.competency}</td>
-                <td>${r.level}</td>
-                <td>${r.remarks || "—"}</td>
-              </tr>
-            `).join("")}
-
-            ${avg ? `
-              <tr style="background:${levelColor[avg.achievement_level]}">
-                <td><strong>SUBJECT AVERAGE</strong></td>
-                <td colspan="2">
-                  <strong>${avg.achievement_level} (Score ${avg.average_score})</strong>
-                </td>
-              </tr>
-            ` : ""}
-          </table>
-        `;
-      }).join("")}
+          ${avgMap[student]?.[subject] ? `
+            <tr style="background:${levelColor[avgMap[student][subject].achievement_level]}">
+              <td><strong>SUBJECT AVERAGE</strong></td>
+              <td colspan="2">
+                <strong>
+                  ${avgMap[student][subject].achievement_level}
+                  (Score ${avgMap[student][subject].average_score})
+                </strong>
+              </td>
+            </tr>
+          ` : ""}
+        </table>
+      `).join("")}
     `).join("");
-  }
-
-  /* ===== GROUPERS ===== */
-  function groupBy(list) {
-    const g = {};
-    list.forEach(r => {
-      g[r.admission] ??= { name: r.studentName, admission: r.admission, subjects: {} };
-      g[r.admission].subjects[r.subject] ??= [];
-      g[r.admission].subjects[r.subject].push(r);
-    });
-    return g;
   }
 
   /* ===== TERM VIEW ===== */
   if (viewMode.value === "term") {
-    reportDiv.innerHTML = `<h3>${termName} – ${SYSTEM_YEAR}</h3>` + render(groupBy(records));
+    const grouped = {};
+    records.forEach(r => {
+      grouped[r.student] ??= {};
+      grouped[r.student][r.subject] ??= [];
+      grouped[r.student][r.subject].push(r);
+    });
+
+    reportDiv.innerHTML = `
+      <h3>${termName} – ${SYSTEM_YEAR}</h3>
+      ${renderGrouped(grouped)}
+    `;
   }
 
   /* ===== STUDENT VIEW ===== */
@@ -197,15 +199,27 @@ async function loadReport() {
     document.getElementById("admInput").addEventListener("input", e => {
       const adm = e.target.value.trim();
       const filtered = records.filter(r => r.admission === adm);
-      reportDiv.innerHTML = filtered.length
-        ? render(groupBy(filtered))
-        : "<p>No student found</p>";
+
+      if (!filtered.length) {
+        reportDiv.innerHTML = "<p>No student found</p>";
+        return;
+      }
+
+      const grouped = {};
+      filtered.forEach(r => {
+        grouped[r.student] ??= {};
+        grouped[r.student][r.subject] ??= [];
+        grouped[r.student][r.subject].push(r);
+      });
+
+      reportDiv.innerHTML = renderGrouped(grouped);
     });
   }
 
   /* ===== SUBJECT VIEW ===== */
   if (viewMode.value === "subject") {
     const subjects = [...new Set(records.map(r => r.subject))];
+
     filterBox.innerHTML = `
       <label>Subject</label><br />
       <select id="subjectSelect">
@@ -216,10 +230,21 @@ async function loadReport() {
 
     document.getElementById("subjectSelect").addEventListener("change", e => {
       const subject = e.target.value;
+      if (!subject) return;
+
       const filtered = records.filter(r => r.subject === subject);
-      reportDiv.innerHTML = filtered.length
-        ? `<h3>${subject} – All Students</h3>` + render(groupBy(filtered))
-        : "";
+      const grouped = {};
+
+      filtered.forEach(r => {
+        grouped[r.student] ??= {};
+        grouped[r.student][r.subject] ??= [];
+        grouped[r.student][r.subject].push(r);
+      });
+
+      reportDiv.innerHTML = `
+        <h3>${subject} – All Students</h3>
+        ${renderGrouped(grouped)}
+      `;
     });
   }
 }
