@@ -726,6 +726,41 @@ function getEvidenceStatus(rows) {
 }
 
 
+
+const achievementBandsPlugin = {
+  id: "achievementBands",
+  beforeDraw(chart) {
+    const { ctx, chartArea, scales } = chart;
+    if (!chartArea) return;
+
+    const y = scales.y;
+    const bands = [
+      { from: 1, to: 2, color: "rgba(248,215,218,0.35)" }, // Below
+      { from: 2, to: 3, color: "rgba(255,243,205,0.35)" }, // Approaching
+      { from: 3, to: 4, color: "rgba(212,237,218,0.35)" }, // Meeting
+      { from: 4, to: 5, color: "rgba(204,229,255,0.35)" }  // Exceeding
+    ];
+
+    ctx.save();
+    bands.forEach(b => {
+      const yTop = y.getPixelForValue(b.to);
+      const yBottom = y.getPixelForValue(b.from);
+      ctx.fillStyle = b.color;
+      ctx.fillRect(
+        chartArea.left,
+        yTop,
+        chartArea.right - chartArea.left,
+        yBottom - yTop
+      );
+    });
+    ctx.restore();
+  }
+};
+
+
+
+
+  
 function renderTrendChart(admission) {
   const canvas = document.getElementById(`trend-${admission}`);
   if (!canvas) return;
@@ -740,39 +775,42 @@ function renderTrendChart(admission) {
   }
 
   /* ✅ CREATE & STORE NEW CHART */
-  canvas.chart = new Chart(canvas, {
-    type: "line",
-    data: {
-      labels: terms,
-      datasets: [{
-        label: "Learner Progress",
-        data: scores,
-        tension: 0.3,
-        borderWidth: 2,
-        pointRadius: 4
-      }]
-    },
-   
-options: {
-  responsive: true,
-  maintainAspectRatio: false, // 🔑 THIS IS THE KEY
-  plugins: {
-    legend: { display: false }
+ canvas.chart = new Chart(canvas, {
+  type: "line",
+  data: {
+    labels: terms,
+    datasets: [{
+      label: "Learner Progress",
+      data: scores,
+      tension: 0,
+      stepped: true,              // 🔑 honest CBC progression
+      borderWidth: 2,
+      pointRadius: 4,
+      borderColor: "#2c3e50",
+      backgroundColor: "#2c3e50"
+    }]
   },
-  scales: {
-    y: {
-      min: 1,
-      max: 4,
-      ticks: {
-        stepSize: 1,
-        callback: v =>
-          ["", "Below", "Approaching", "Meeting", "Exceeding"][v]
-    } 
-    } 
+  plugins: [achievementBandsPlugin], // 🔑 ADD THIS
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false }
+    },
+    scales: {
+      y: {
+        min: 1,
+        max: 4,
+        ticks: {
+          stepSize: 1,
+          callback: v =>
+            ["", "Below", "Approaching", "Meeting", "Exceeding"][v]
+        }
+      }
+    }
   }
-}
-  }); 
-} 
+});
+
   
   /* ===== TERM VIEW ===== */
   if (viewMode.value === "term") {
