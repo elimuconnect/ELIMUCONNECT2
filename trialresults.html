@@ -74,13 +74,14 @@
     border-collapse: collapse;
     width: 100%;
     margin-top: 6px;
-    font-size: 0.9em;
+    font-size: 0.85em;
   }
 
-  th, td {
-    padding: 6px 8px;
-    border-bottom: 1px solid #ddd;
-  }
+ th, td {
+  padding: 5px 6px;
+  border-bottom: 1px solid #ddd;
+}
+
 
   th {
     background: #f0f0f0;
@@ -101,6 +102,11 @@
     font-size: 0.85em;
     margin-bottom: 6px;
   }
+
+
+
+
+  
 </style>
 
 </head>
@@ -305,7 +311,7 @@ function renderGrouped(grouped) {
     const recommendations = generateRecommendations(subjects, trend, supportFlag);
 
     return `
-      <div style="border:1px solid #ddd;border-radius:8px;padding:16px;margin-bottom:28px;background:#fff;">
+     <div class="learner-card">
 
         <!-- STUDENT HEADER -->
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
@@ -369,6 +375,16 @@ function renderGrouped(grouped) {
             </ul>
           </div>
         ` : ""}
+
+
+
+<p style="margin-top:16px;font-weight:bold;color:#555;">
+  📘 Subject Performance
+</p>
+
+
+
+
 
         <!-- SUBJECTS -->
         ${Object.entries(subjects).map(([subject, rows]) => {
