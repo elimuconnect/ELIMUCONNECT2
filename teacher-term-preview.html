@@ -131,6 +131,20 @@
   }
 }
 
+
+
+.trend-box {
+  max-width: 420px;        /* keeps it compact */
+  height: 120px;           /* fixed, intentional height */
+  margin-top: 12px;
+}
+
+.trend-box canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+
   
 </style>
 
@@ -493,11 +507,9 @@ Object.entries(subjects).forEach(([subject, rows]) => {
         }).join("")}
 
 
-
-<div style="margin-top:20px;">
-  <canvas id="trend-${admission}" height="120"></canvas>
+<div class="trend-box">
+  <canvas id="trend-${admission}"></canvas>
 </div>
-
 
 
       </div>
@@ -740,27 +752,27 @@ function renderTrendChart(admission) {
         pointRadius: 4
       }]
     },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { display: false }
-      },
-      scales: {
-        y: {
-          min: 1,
-          max: 4,
-          ticks: {
-            stepSize: 1,
-            callback: v =>
-              ["", "Below", "Approaching", "Meeting", "Exceeding"][v]
-          }
-        }
-      }
-    }
-  });
+   
+options: {
+  responsive: true,
+  maintainAspectRatio: false, // 🔑 THIS IS THE KEY
+  plugins: {
+    legend: { display: false }
+  },
+  scales: {
+    y: {
+      min: 1,
+      max: 4,
+      ticks: {
+        stepSize: 1,
+        callback: v =>
+          ["", "Below", "Approaching", "Meeting", "Exceeding"][v]
+    } 
+    } 
+  }
 }
-
-
+  }); 
+} 
   
   /* ===== TERM VIEW ===== */
   if (viewMode.value === "term") {
