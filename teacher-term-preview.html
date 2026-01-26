@@ -337,12 +337,17 @@ function renderGrouped(grouped) {
     const admission = subjects.__admission || "N/A";
 
 
-    /* ===== CURRENT AVERAGE ===== */
-    const allScores = [];
-    Object.values(subjects).flat().forEach(r => {
-      const s = levelToScore(r.level);
-      if (s > 0) allScores.push(s);
-    });
+   const allScores = [];
+
+Object.entries(subjects).forEach(([subject, rows]) => {
+  if (subject === "__admission") return;
+
+  rows.forEach(r => {
+    const s = levelToScore(r.level);
+    if (s > 0) allScores.push(s);
+  });
+});
+
 
     const currentAvg =
       allScores.length
@@ -435,8 +440,8 @@ function renderGrouped(grouped) {
 
 
         <!-- SUBJECTS -->
-        ${Object.entries(subjects).map(([subject, rows]) => {
-          if (subject === "__admission") return "";
+      
+<!-- SUBJECTS --> ${Object.entries(subjects).map(([subject, rows]) => { if (subject === "__admission") return "";
 
           const evidence = getEvidenceStatus(rows);
 
