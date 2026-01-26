@@ -285,7 +285,13 @@ ${recommendations.learner.length ? `
   const evidence = getEvidenceStatus(rows);
 
   return `
-    <h5>📘 ${subject}</h5>
+   <h5>
+  📘 ${subject}
+  <span style="font-size:0.9em;font-weight:normal;color:#555;">
+    — Assessments: <strong>${rows.length}</strong>
+  </span>
+</h5>
+
 
     <p style="margin:4px 0;color:${evidence.color};font-weight:bold;">
       ${evidence.label}
@@ -299,7 +305,6 @@ ${recommendations.learner.length ? `
   <th>Competency</th>
   <th>Achievement</th>
   <th>Remarks</th>
-  <th>Assessments</th>
 </tr>
 
 
@@ -308,9 +313,6 @@ ${rows.map((r, i) => `
     <td>${r.competency}</td>
     <td>${r.level}</td>
     <td>${r.remarks || "—"}</td>
-    <td style="text-align:center;">
-      ${i === 0 ? rows.length : ""}
-    </td>
   </tr>
 `).join("")}
 
