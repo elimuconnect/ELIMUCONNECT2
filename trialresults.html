@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <title>Term Report Preview</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
 <style>
   body {
     font-family: "Segoe UI", Arial, sans-serif;
@@ -105,6 +107,28 @@
 
 
 
+@media print {
+  body {
+    background: #fff;
+  }
+
+  .actions-box,
+  select,
+  input,
+  label,
+  hr {
+    display: none !important;
+  }
+
+  .learner-card {
+    box-shadow: none;
+    page-break-inside: avoid;
+  }
+
+  h2, h3 {
+    page-break-after: avoid;
+  }
+}
 
   
 </style>
@@ -130,6 +154,14 @@
 <div id="filterBox"></div>
 <p id="status"></p>
 <hr />
+
+
+<div class="actions-box">
+  <button onclick="printReport()">🖨️ Print</button>
+  <button onclick="downloadPDF()">⬇️ Download PDF</button>
+</div>
+
+  
 <div id="report"></div>
 
 <script type="module">
@@ -744,6 +776,57 @@ function getTrend(currentAvg, previousAvg) {
   if (diff <= -0.3) return "📉 Declining";
   return "➖ Stable";
 }
+
+
+
+
+
+window.printReport = function () {
+  if (!reportDiv.innerHTML.trim()) {
+    alert("No report to print");
+    return;
+  }
+
+  window.print();
+};
+
+
+
+
+window.downloadPDF = function () {
+  if (!reportDiv.innerHTML.trim()) {
+    alert("No report to download");
+    return;
+  }
+
+  const term = termSelect.options[termSelect.selectedIndex]?.text || "Term";
+  const mode = viewMode.value;
+
+  let filename = `Report_${term}_${SYSTEM_YEAR}.pdf`;
+
+  if (mode === "student") filename = `Student_Report_${term}_${SYSTEM_YEAR}.pdf`;
+  if (mode === "subject") filename = `Subject_Report_${term}_${SYSTEM_YEAR}.pdf`;
+
+  const element = reportDiv;
+
+  const opt = {
+    margin: 10,
+    filename,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: {
+      scale: 2,
+      useCORS: true
+    },
+    jsPDF: {
+      unit: "mm",
+      format: "a4",
+      orientation: "portrait"
+    },
+    pagebreak: { mode: ["avoid-all", "css", "legacy"] }
+  };
+
+  html2pdf().set(opt).from(element).save();
+};
 
 
   
