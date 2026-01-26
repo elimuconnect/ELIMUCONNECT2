@@ -216,6 +216,8 @@ function renderGrouped(grouped) {
 
     /* ===== EXISTING FEATURES ===== */
     const supportFlag = generateSupportFlag(subjects);
+    const risk = generateRiskScore(subjects);
+
     const insight = generateInsight(subjects);
     const { strengths, needs } = generateStrengthsAndNeeds(subjects);
 const recommendations = generateRecommendations(subjects, trend, supportFlag);
@@ -229,6 +231,12 @@ const recommendations = generateRecommendations(subjects, trend, supportFlag);
       </h4>
 
       <p>${supportFlag}</p>
+      ${risk ? `
+  <p style="font-weight:bold;color:${risk.color};">
+    🚨 Risk Level: ${risk.label} (${risk.score}%)
+  </p>
+` : ""}
+
 
       <p style="font-weight:bold;">
         📊 Progress Trend: <span>${trend}</span>
@@ -497,6 +505,77 @@ function generateRecommendations(subjects, trend, supportFlag) {
 
   return { teacher, parent, learner };
 }
+
+
+
+
+function generateRiskScore(subjects) {
+  let scores = [];
+  let belowCount = 0;
+  let weakSubjects = 0;
+
+  Object.entries(subjects).forEach(([subject, rows]) => {
+    if (subject === "__admission") return;
+
+    let subjectScores = [];
+
+    rows.forEach(r => {
+      const score = levelToScore(r.level);
+      if (score > 0) {
+        scores.push(score);
+        subjectScores.push(score);
+        if (score === 1) belowCount++;
+      }
+    });
+
+    if (subjectScores.length) {
+      const avg =
+        subjectScores.reduce((a, b) => a + b, 0) / subjectScores.length;
+
+      if (avg < 2.5) weakSubjects++;
+    }
+  });
+
+  if (!scores.length) return null;
+
+  const overall =
+    scores.reduce((a, b) => a + b, 0) / scores.length;
+
+  /* ===== RISK LOGIC ===== */
+  let risk = 0;
+
+  if (overall < 2.5) risk += 40;
+  if (belowCount >= 3) risk += 30;
+  if (weakSubjects >= 2) risk += 30;
+
+  if (risk >= 70) {
+    return {
+      level: "HIGH",
+      color: "#c0392b",
+      label: "🔴 High Risk",
+      score: risk
+    };
+  }
+
+  if (risk >= 40) {
+    return {
+      level: "MEDIUM",
+      color: "#b9770e",
+      label: "🟡 Medium Risk",
+      score: risk
+    };
+  }
+
+  return {
+    level: "LOW",
+    color: "#1e8449",
+    label: "🟢 Low Risk",
+    score: risk
+  };
+}
+
+
+
 
 
   
