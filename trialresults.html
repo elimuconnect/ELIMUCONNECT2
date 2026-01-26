@@ -281,8 +281,8 @@ if (previousTerm) {
 function renderGrouped(grouped) {
   return Object.entries(grouped).map(([student, subjects]) => {
 
-    const admission =
-      Object.values(subjects).flat().find(r => r.admission)?.admission || "N/A";
+    const admission = subjects.__admission || "N/A";
+
 
     /* ===== CURRENT AVERAGE ===== */
     const allScores = [];
@@ -652,12 +652,12 @@ function getEvidenceStatus(rows) {
   
   /* ===== TERM VIEW ===== */
   if (viewMode.value === "term") {
-    const grouped = {};
-    records.forEach(r => {
-      grouped[r.student] ??= {};
-      grouped[r.student][r.subject] ??= [];
-      grouped[r.student][r.subject].push(r);
-    });
+  const grouped = {};
+  records.forEach(r => {
+    grouped[r.student] ??= { __admission: r.admission };
+    grouped[r.student][r.subject] ??= [];
+    grouped[r.student][r.subject].push(r);
+  });
 
     reportDiv.innerHTML = `
       <h3>${termName} – ${SYSTEM_YEAR}</h3>
@@ -682,11 +682,12 @@ function getEvidenceStatus(rows) {
       }
 
       const grouped = {};
-      filtered.forEach(r => {
-        grouped[r.student] ??= {};
-        grouped[r.student][r.subject] ??= [];
-        grouped[r.student][r.subject].push(r);
-      });
+filtered.forEach(r => {
+  grouped[r.student] ??= { __admission: r.admission };
+  grouped[r.student][r.subject] ??= [];
+  grouped[r.student][r.subject].push(r);
+});
+
 
       reportDiv.innerHTML = renderGrouped(grouped);
     });
@@ -709,14 +710,17 @@ function getEvidenceStatus(rows) {
       if (!subject) return;
 
       const filtered = records.filter(r => r.subject === subject);
-      const grouped = {};
 
-      filtered.forEach(r => {
-        grouped[r.student] ??= {};
-        grouped[r.student][r.subject] ??= [];
-        grouped[r.student][r.subject].push(r);
-      });
+const grouped = {};
 
+filtered.forEach(r => {
+  grouped[r.student] ??= { __admission: r.admission };
+  grouped[r.student][r.subject] ??= [];
+  grouped[r.student][r.subject].push(r);
+});
+
+
+      
       reportDiv.innerHTML = `
         <h3>${subject} – All Students</h3>
         ${renderGrouped(grouped)}
