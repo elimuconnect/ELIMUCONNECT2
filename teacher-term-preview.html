@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>Term Report Preview</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
   body {
@@ -227,6 +228,18 @@ async function loadReport() {
 
   const termName = terms.find(t => t.id === term_id)?.name;
 
+
+/* ===== LEARNER TERM AVERAGES FOR GRAPHS ===== */
+const { data: termAverages } = await supabase
+  .from("learner_term_averages") // ✅ the view you already created
+  .select("admission_number, term, average_score")
+  .eq("academic_year", SYSTEM_YEAR);
+
+
+
+
+
+  
   /* ===== AVERAGES ===== */
   const { data: averages } = await supabase
     .from("term_subject_report_view")
@@ -235,6 +248,14 @@ async function loadReport() {
     .eq("academic_year", SYSTEM_YEAR);
 
 
+const trendMap = {};
+
+termAverages?.forEach(r => {
+  if (!trendMap[r.admission_number]) {
+    trendMap[r.admission_number] = {};
+  }
+  trendMap[r.admission_number][r.term] = Number(r.average_score);
+});
 
 
 
@@ -466,6 +487,14 @@ function renderGrouped(grouped) {
           `;
         }).join("")}
 
+
+
+<div style="margin-top:20px;">
+  <canvas id="trend-${admission}" height="120"></canvas>
+</div>
+
+
+
       </div>
     `;
   }).join("");
@@ -681,6 +710,51 @@ function getEvidenceStatus(rows) {
 
 
 
+function renderTrendChart(admission) {
+  const ctx = document.getElementById(`trend-${admission}`);
+  if (!ctx) return;
+
+  const terms = ["Term 1", "Term 2", "Term 3"];
+  const scores = terms.map(t =>
+    trendMap[admission]?.[t] ?? null
+  );
+
+  new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: terms,
+      datasets: [{
+        label: "Learner Progress",
+        data: scores,
+        tension: 0.3,
+        fill: false,
+        borderWidth: 2,
+        pointRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: {
+          min: 1,
+          max: 4,
+          ticks: {
+            stepSize: 1,
+            callback: v =>
+              ["", "Below", "Approaching", "Meeting", "Exceeding"][v]
+          }
+        }
+      }
+    }
+  });
+}
+
+
+  
+
   
   /* ===== TERM VIEW ===== */
   if (viewMode.value === "term") {
@@ -692,9 +766,18 @@ function getEvidenceStatus(rows) {
   });
 
     reportDiv.innerHTML = `
-      <h3>${termName} – ${SYSTEM_YEAR}</h3>
-      ${renderGrouped(grouped)}
-    `;
+  <h3>${termName} – ${SYSTEM_YEAR}</h3>
+  ${renderGrouped(grouped)}
+`;
+
+setTimeout(() => {
+  Object.values(grouped).forEach(s => {
+    if (s.__admission) {
+      renderTrendChart(s.__admission);
+    }
+  });
+}, 0);
+
   }
 
   /* ===== STUDENT VIEW ===== */
@@ -722,7 +805,16 @@ filtered.forEach(r => {
 
 
       reportDiv.innerHTML = renderGrouped(grouped);
-    });
+    
+
+    setTimeout(() => {
+  Object.values(grouped).forEach(s => {
+    if (s.__admission) {
+      renderTrendChart(s.__admission);
+    }
+  });
+}, 0);
+      });
   }
 
   /* ===== SUBJECT VIEW ===== */
@@ -757,6 +849,15 @@ filtered.forEach(r => {
         <h3>${subject} – All Students</h3>
         ${renderGrouped(grouped)}
       `;
+
+setTimeout(() => {
+  Object.values(grouped).forEach(s => {
+    if (s.__admission) {
+      renderTrendChart(s.__admission);
+    }
+  });
+}, 0);
+      
     });
   }
 }
