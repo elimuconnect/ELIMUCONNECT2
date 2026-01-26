@@ -279,11 +279,14 @@ ${recommendations.learner.length ? `
 
 
 
-      ${Object.entries(subjects).map(([subject, rows]) => {
+    ${Object.entries(subjects).map(([subject, rows]) => {
+  if (subject === "__admission") return "";
+
   const evidence = getEvidenceStatus(rows);
 
   return `
     <h5>📘 ${subject}</h5>
+
     <p style="margin:4px 0;color:${evidence.color};font-weight:bold;">
       ${evidence.label}
       <span style="font-weight:normal;font-size:0.9em;">
