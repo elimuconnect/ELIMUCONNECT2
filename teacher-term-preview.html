@@ -279,8 +279,18 @@ ${recommendations.learner.length ? `
 
 
 
-      ${Object.entries(subjects).map(([subject, rows]) => `
-        <h5>📘 ${subject}</h5>
+      ${Object.entries(subjects).map(([subject, rows]) => {
+  const evidence = getEvidenceStatus(rows);
+
+  return `
+    <h5>📘 ${subject}</h5>
+    <p style="margin:4px 0;color:${evidence.color};font-weight:bold;">
+      ${evidence.label}
+      <span style="font-weight:normal;font-size:0.9em;">
+        — ${evidence.note}
+      </span>
+    </p>
+
         <table>
           <tr>
             <th>Competency</th>
@@ -503,6 +513,23 @@ function generateRecommendations(subjects, trend, supportFlag) {
 }
 
 
+function getEvidenceStatus(rows) {
+  const count = rows.length;
+
+  if (count >= 3) {
+    return {
+      label: "🧾 Adequate Evidence",
+      color: "#1e8449",
+      note: "Sufficient assessment records to support judgement"
+    };
+  }
+
+  return {
+    label: "⚠️ Limited Evidence",
+    color: "#b9770e",
+    note: "Consider additional assessment opportunities"
+  };
+}
 
 
 
