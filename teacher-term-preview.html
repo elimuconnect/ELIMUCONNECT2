@@ -295,19 +295,25 @@ ${recommendations.learner.length ? `
     </p>
 
         <table>
-          <tr>
-            <th>Competency</th>
-            <th>Achievement</th>
-            <th>Remarks</th>
-          </tr>
+         <tr>
+  <th>Competency</th>
+  <th>Achievement</th>
+  <th>Remarks</th>
+  <th>Assessments</th>
+</tr>
 
-          ${rows.map(r => `
-            <tr style="background:${levelColor[r.level]}">
-              <td>${r.competency}</td>
-              <td>${r.level}</td>
-              <td>${r.remarks || "—"}</td>
-            </tr>
-          `).join("")}
+
+${rows.map((r, i) => `
+  <tr style="background:${levelColor[r.level]}">
+    <td>${r.competency}</td>
+    <td>${r.level}</td>
+    <td>${r.remarks || "—"}</td>
+    <td style="text-align:center;">
+      ${i === 0 ? rows.length : ""}
+    </td>
+  </tr>
+`).join("")}
+
 
           ${avgMap[student]?.[subject] ? `
             <tr style="background:${levelColor[avgMap[student][subject].achievement_level]}">
