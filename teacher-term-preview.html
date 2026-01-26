@@ -544,7 +544,8 @@ function generateRiskScore(subjects) {
   /* ===== RISK LOGIC ===== */
   let risk = 0;
 
-  if (overall < 2.5) risk += 40;
+if (overall < 2.5 && scores.length >= 3) risk += 30;
+
   if (belowCount >= 3) risk += 30;
   if (weakSubjects >= 2) risk += 30;
 
