@@ -175,6 +175,7 @@ const supabase = createClient(
 
 const SYSTEM_YEAR = "2026";
 
+let trendMap = {};
 
 function levelToScore(level) {
   switch (level) {
@@ -248,7 +249,7 @@ const { data: termAverages } = await supabase
     .eq("academic_year", SYSTEM_YEAR);
 
 
-const trendMap = {};
+trendMap = {};
 
 termAverages?.forEach(r => {
   if (!trendMap[r.admission_number]) {
@@ -256,7 +257,6 @@ termAverages?.forEach(r => {
   }
   trendMap[r.admission_number][r.term] = Number(r.average_score);
 });
-
 
 
 const previousTerm = terms
@@ -714,17 +714,21 @@ function getEvidenceStatus(rows) {
 }
 
 
-
 function renderTrendChart(admission) {
-  const ctx = document.getElementById(`trend-${admission}`);
-  if (!ctx) return;
+  const canvas = document.getElementById(`trend-${admission}`);
+  if (!canvas) return;
 
-  const terms = ["Term 1", "Term 2", "Term 3"];
-  const scores = terms.map(t =>
-    trendMap[admission]?.[t] ?? null
-  );
+  const learnerData = trendMap[admission] || {};
+  const terms = Object.keys(learnerData).sort();
+  const scores = terms.map(t => learnerData[t]);
 
-  new Chart(ctx, {
+  /* ✅ DESTROY OLD CHART IF IT EXISTS */
+  if (canvas.chart) {
+    canvas.chart.destroy();
+  }
+
+  /* ✅ CREATE & STORE NEW CHART */
+  canvas.chart = new Chart(canvas, {
     type: "line",
     data: {
       labels: terms,
@@ -732,7 +736,6 @@ function renderTrendChart(admission) {
         label: "Learner Progress",
         data: scores,
         tension: 0.3,
-        fill: false,
         borderWidth: 2,
         pointRadius: 4
       }]
@@ -757,8 +760,6 @@ function renderTrendChart(admission) {
   });
 }
 
-
-  
 
   
   /* ===== TERM VIEW ===== */
