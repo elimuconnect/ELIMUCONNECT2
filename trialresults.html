@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Term Report Preview</title>
+<style>
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #f7f9fb;
+    color: #222;
+    line-height: 1.5;
+  }
+
+  h2, h3 {
+    margin-bottom: 6px;
+  }
+
+  h4 {
+    margin: 0;
+  }
+
+  .learner-card {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 20px 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  }
+
+  .learner-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+  }
+
+  .learner-meta {
+    font-size: 0.95em;
+    color: #555;
+  }
+
+  .summary-box {
+    background: #f3f6fa;
+    border-left: 5px solid #3498db;
+    padding: 10px 14px;
+    margin: 12px 0;
+    border-radius: 4px;
+  }
+
+  .pill {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 14px;
+    font-size: 0.85em;
+    background: #eee;
+    margin-right: 6px;
+  }
+
+  .actions-box {
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 4px;
+    background: #fafafa;
+  }
+
+  h5 {
+    margin-top: 18px;
+    margin-bottom: 4px;
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 6px;
+    font-size: 0.9em;
+  }
+
+  th, td {
+    padding: 6px 8px;
+    border-bottom: 1px solid #ddd;
+  }
+
+  th {
+    background: #f0f0f0;
+    text-align: left;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  .subject-block {
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px dashed #ccc;
+  }
+
+  .evidence-note {
+    font-size: 0.85em;
+    margin-bottom: 6px;
+  }
+</style>
+
+</head>
+<body>
+
+<h2>Teacher Term Report Preview</h2>
+
+<label>Academic Year</label><br />
+<input value="2026" disabled /><br /><br />
+
+<label>Term</label><br />
+<select id="termSelect"></select><br /><br />
+
+<label>View As</label><br />
+<select id="viewMode">
+  <option value="term">Term Results</option>
+  <option value="student">Student (Admission No)</option>
+  <option value="subject">Subject</option>
+</select><br /><br />
+
+<div id="filterBox"></div>
+<p id="status"></p>
+<hr />
+<div id="report"></div>
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabase = createClient(
+  "https://zcmzuetusvpmvubbjlmx.supabase.co",
+  "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
+);
+
+const SYSTEM_YEAR = "2026";
+
+
+function levelToScore(level) {
+  switch (level) {
+    case "Below Expectations": return 1;
+    case "Approaching Expectations": return 2;
+    case "Meeting Expectations": return 3;
+    case "Exceeding Expectations": return 4;
+    default: return 0;
+  }
+}
+
+  
+
+const levelColor = {
+  "Below Expectations": "#f8d7da",
+  "Approaching Expectations": "#fff3cd",
+  "Meeting Expectations": "#d4edda",
+  "Exceeding Expectations": "#cce5ff"
+};
+
+
+  
+const termSelect = document.getElementById("termSelect");
+const viewMode = document.getElementById("viewMode");
+const filterBox = document.getElementById("filterBox");
+const reportDiv = document.getElementById("report");
+const status = document.getElementById("status");
+
+/* ========== AUTH ========== */
+const { data: { user } } = await supabase.auth.getUser();
+if (!user) location.href = "index.html";
+
+/* ========== LOAD TERMS ========== */
+const { data: terms } = await supabase
+  .from("terms")
+  .select("id, name")
+  .order("name");
+
+termSelect.innerHTML =
+  `<option value="">Select term</option>` +
+  terms.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
+
+/* ========== MAIN LOAD ========== */
+async function loadReport() {
+  reportDiv.innerHTML = "";
+  filterBox.innerHTML = "";
+  status.innerText = "";
+
+  const term_id = termSelect.value;
+  if (!term_id) return;
+
+  const termName = terms.find(t => t.id === term_id)?.name;
+
+  /* ===== AVERAGES ===== */
+  const { data: averages } = await supabase
+    .from("term_subject_report_view")
+    .select("first_name,last_name,subject_name,average_score,achievement_level")
+    .eq("term", termName)
+    .eq("academic_year", SYSTEM_YEAR);
+
+
+
+
+
+const previousTerm = terms
+  .map(t => t.name)
+  .sort()
+  .filter(t => t < termName)
+  .slice(-1)[0];
+
+let previousAverages = {};
+
+if (previousTerm) {
+  const { data: prev } = await supabase
+    .from("assessment_results")
+    .select(`
+      students(admission_number),
+      achievement_levels(label)
+    `)
+    .eq("term", previousTerm)
+    .eq("academic_year", SYSTEM_YEAR);
+
+  prev?.forEach(r => {
+    const adm = r.students.admission_number;
+    const score = levelToScore(r.achievement_levels.label);
+
+    if (!previousAverages[adm]) {
+      previousAverages[adm] = { total: 0, count: 0 };
+    }
+
+    previousAverages[adm].total += score;
+    previousAverages[adm].count++;
+  });
+}
+
+
+
+  
+  
+
+  const avgMap = {};
+  averages.forEach(a => {
+    const student = `${a.first_name} ${a.last_name}`;
+    avgMap[student] ??= {};
+    avgMap[student][a.subject_name] = a;
+  });
+
+  /* ===== RAW RESULTS ===== */
+  const { data } = await supabase
+    .from("assessment_results")
+    .select(`
+      remarks,
+      students(first_name,last_name,admission_number),
+      competencies(name,subjects(name)),
+      achievement_levels(label)
+    `)
+    .eq("term", termName)
+    .eq("academic_year", SYSTEM_YEAR);
+
+  if (!data.length) {
+    status.innerText = "No results found.";
+    return;
+  }
+
+  /* ===== NORMALIZED RECORDS ===== */
+  const records = data.map(r => ({
+    student: `${r.students.first_name} ${r.students.last_name}`,
+    admission: r.students.admission_number,
+    subject: r.competencies.subjects.name,
+    competency: r.competencies.name,
+    level: r.achievement_levels.label,
+    remarks: r.remarks
+  }));
+
+  
+
+function renderGrouped(grouped) {
+  return Object.entries(grouped).map(([student, subjects]) => {
+
+    const admission =
+      Object.values(subjects).flat().find(r => r.admission)?.admission || "N/A";
+
+    /* ===== CURRENT AVERAGE ===== */
+    const allScores = [];
+    Object.values(subjects).flat().forEach(r => {
+      const s = levelToScore(r.level);
+      if (s > 0) allScores.push(s);
+    });
+
+    const currentAvg =
+      allScores.length
+        ? allScores.reduce((a,b)=>a+b,0) / allScores.length
+        : null;
+
+    /* ===== PREVIOUS AVERAGE ===== */
+    const prevData = previousAverages[admission];
+    const previousAvg = prevData
+      ? prevData.total / prevData.count
+      : null;
+
+    const trend = getTrend(currentAvg, previousAvg);
+
+    /* ===== EXISTING FEATURES ===== */
+    const supportFlag = generateSupportFlag(subjects);
+    const insight = generateInsight(subjects);
+    const { strengths, needs } = generateStrengthsAndNeeds(subjects);
+    const recommendations = generateRecommendations(subjects, trend, supportFlag);
+
+    return `
+      <div style="border:1px solid #ddd;border-radius:8px;padding:16px;margin-bottom:28px;background:#fff;">
+
+        <!-- STUDENT HEADER -->
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+          <h4 style="margin:0;">
+            👤 ${student}
+            <small style="font-weight:normal;color:#555;">
+              (Adm: <strong>${admission}</strong>)
+            </small>
+          </h4>
+          <div style="font-weight:bold;">
+            ${supportFlag}
+          </div>
+        </div>
+
+        <!-- TREND -->
+        <p style="margin:6px 0 10px 0;font-weight:bold;">
+          📊 Progress Trend: <span>${trend}</span>
+        </p>
+
+        <!-- OVERALL INSIGHT -->
+        ${insight}
+
+        <!-- STRENGTHS / NEEDS -->
+        <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:10px;">
+          ${strengths.length ? `
+            <p style="margin:0;">
+              <strong>💪 Strengths:</strong> ${strengths.join(", ")}
+            </p>
+          ` : ""}
+          ${needs.length ? `
+            <p style="margin:0;">
+              <strong>🎯 Areas for Improvement:</strong> ${needs.join(", ")}
+            </p>
+          ` : ""}
+        </div>
+
+        <!-- RECOMMENDATIONS -->
+        ${recommendations.teacher.length ? `
+          <div style="margin:10px 0;padding:10px;border-left:4px solid #3498db;background:#f8fbff;">
+            <strong>👩🏽‍🏫 Teacher Actions</strong>
+            <ul style="margin:6px 0 0 18px;">
+              ${recommendations.teacher.map(r => `<li>${r}</li>`).join("")}
+            </ul>
+          </div>
+        ` : ""}
+
+        ${recommendations.parent.length ? `
+          <div style="margin:10px 0;padding:10px;border-left:4px solid #f39c12;background:#fffaf3;">
+            <strong>🏠 Parent Support</strong>
+            <ul style="margin:6px 0 0 18px;">
+              ${recommendations.parent.map(r => `<li>${r}</li>`).join("")}
+            </ul>
+          </div>
+        ` : ""}
+
+        ${recommendations.learner.length ? `
+          <div style="margin:10px 0;padding:10px;border-left:4px solid #2ecc71;background:#f6fffa;">
+            <strong>🎯 Learner Focus</strong>
+            <ul style="margin:6px 0 0 18px;">
+              ${recommendations.learner.map(r => `<li>${r}</li>`).join("")}
+            </ul>
+          </div>
+        ` : ""}
+
+        <!-- SUBJECTS -->
+        ${Object.entries(subjects).map(([subject, rows]) => {
+          if (subject === "__admission") return "";
+
+          const evidence = getEvidenceStatus(rows);
+
+          return `
+            <div style="margin-top:18px;">
+              <h5 style="margin-bottom:4px;">
+                📘 ${subject}
+                <span style="font-size:0.85em;font-weight:normal;color:#666;">
+                  — Assessments: <strong>${rows.length}</strong>
+                </span>
+              </h5>
+
+              <p style="margin:2px 0 8px 0;color:${evidence.color};font-weight:bold;">
+                ${evidence.label}
+                <span style="font-weight:normal;font-size:0.9em;">
+                  — ${evidence.note}
+                </span>
+              </p>
+
+              <table>
+                <tr>
+                  <th>Competency</th>
+                  <th>Achievement</th>
+                  <th>Remarks</th>
+                </tr>
+
+                ${rows.map(r => `
+                  <tr style="background:${levelColor[r.level]}">
+                    <td>${r.competency}</td>
+                    <td>${r.level}</td>
+                    <td>${r.remarks || "—"}</td>
+                  </tr>
+                `).join("")}
+
+                ${avgMap[student]?.[subject] ? `
+                  <tr style="background:${levelColor[avgMap[student][subject].achievement_level]}">
+                    <td><strong>SUBJECT AVERAGE</strong></td>
+                    <td colspan="2">
+                      <strong>
+                        ${avgMap[student][subject].achievement_level}
+                        (Score ${avgMap[student][subject].average_score})
+                      </strong>
+                    </td>
+                  </tr>
+                ` : ""}
+              </table>
+            </div>
+          `;
+        }).join("")}
+
+      </div>
+    `;
+  }).join("");
+}
+
+  
+
+
+function generateInsight(subjects) {
+  const subjectScores = {};
+  let total = 0;
+  let count = 0;
+
+  Object.entries(subjects).forEach(([subject, rows]) => {
+    if (subject === "__admission") return;
+
+    subjectScores[subject] = [];
+
+    rows.forEach(r => {
+      const score = levelToScore(r.level);
+      if (score > 0) {
+        subjectScores[subject].push(score);
+        total += score;
+        count++;
+      }
+    });
+  });
+
+  if (!count) return "";
+
+  const overallAvg = total / count;
+
+  const overall =
+    overallAvg >= 3.5 ? "exceeding expectations" :
+    overallAvg >= 2.5 ? "meeting expectations" :
+    overallAvg >= 1.5 ? "approaching expectations" :
+    "below expectations";
+
+  const subjectsArray = Object.entries(subjectScores)
+    .map(([s, scores]) => ({
+      subject: s,
+      avg: scores.reduce((a,b)=>a+b,0) / scores.length
+    }))
+    .sort((a,b)=>b.avg - a.avg);
+
+  let strengthSentence = "";
+
+  if (
+    subjectsArray.length > 1 &&
+    subjectsArray[0].avg >= 3 &&
+    subjectsArray[0].avg - subjectsArray[1].avg >= 0.5
+  ) {
+    strengthSentence = `, with stronger performance in <strong>${subjectsArray[0].subject}</strong>`;
+  }
+
+  return `
+    <p style="margin:6px 0 12px 0;font-style:italic;color:#444;">
+      Overall, based on current evidence, the learner is <strong>${overall}</strong>${strengthSentence}.
+    </p>
+  `;
+}
+
+
+
+function generateSupportFlag(subjects) {
+  let scores = [];
+  let belowCount = 0;
+  let subjectAverages = [];
+
+  Object.entries(subjects).forEach(([subject, rows]) => {
+    if (subject === "__admission") return;
+
+    let subjectScores = [];
+
+    rows.forEach(r => {
+      const score = levelToScore(r.level);
+      if (score > 0) {
+        scores.push(score);
+        subjectScores.push(score);
+        if (score === 1) belowCount++;
+      }
+    });
+
+    if (subjectScores.length) {
+      subjectAverages.push(
+        subjectScores.reduce((a, b) => a + b, 0) / subjectScores.length
+      );
+    }
+  });
+
+  if (!scores.length) return "";
+
+  const overall = scores.reduce((a, b) => a + b, 0) / scores.length;
+
+  /* 🔴 NEEDS SUPPORT */
+  if (
+    overall < 2.3 ||                 // overall struggling
+    belowCount >= 3 ||                // repeated difficulty
+    subjectAverages.filter(a => a <= 2).length >= 2 // weak in 2+ subjects
+  ) {
+    return `<span style="color:#c0392b;font-weight:bold;">🔴 Needs Learning Support</span>`;
+  }
+
+  /* 🟢 HIGH POTENTIAL */
+  if (
+    overall >= 3.5 &&
+    subjectAverages.every(a => a >= 3) &&
+    subjectAverages.some(a => a >= 4)
+  ) {
+    return `<span style="color:#1e8449;font-weight:bold;">🟢 High Potential</span>`;
+  }
+
+  /* 🟡 DEFAULT */
+  return `<span style="color:#b9770e;font-weight:bold;">🟡 On Track</span>`;
+}
+
+
+
+
+function generateStrengthsAndNeeds(subjects) {
+  const strengths = [];
+  const needs = [];
+
+  Object.entries(subjects).forEach(([subject, rows]) => {
+    if (subject === "__admission") return;
+
+    let scores = rows.map(r => levelToScore(r.level)).filter(s => s > 0);
+    if (!scores.length) return;
+
+    const avg = scores.reduce((a,b)=>a+b,0) / scores.length;
+    const weakCount = scores.filter(s => s <= 2).length;
+
+  if (avg >= 3.5 && weakCount === 0) {
+  strengths.push(subject);
+}
+
+if (avg < 2.5 || weakCount >= 2) {
+  needs.push(subject);
+
+
+    }
+  });
+
+  return { strengths, needs };
+}
+
+
+
+function generateRecommendations(subjects, trend, supportFlag) {
+  const teacher = [];
+  const parent = [];
+  const learner = [];
+
+  const { strengths, needs } = generateStrengthsAndNeeds(subjects);
+
+  /* ===== TEACHER ===== */
+  if (supportFlag.includes("Needs Learning Support")) {
+    teacher.push("Provide targeted remediation on identified weak competencies");
+    teacher.push("Use differentiated instruction and more formative checks");
+  }
+
+  if (trend === "📉 Declining") {
+    teacher.push("Review recent assessments to identify emerging gaps");
+  }
+
+  if (strengths.length) {
+    teacher.push(`Encourage learner through strengths in ${strengths.join(", ")}`);
+  }
+
+  /* ===== PARENT ===== */
+  if (needs.length) {
+    parent.push(`Support practice in ${needs.join(", ")} at home`);
+  }
+
+  if (trend === "📉 Declining") {
+    parent.push("Monitor homework completion and provide routine study time");
+  }
+
+  parent.push("Maintain communication with class teacher");
+
+  /* ===== LEARNER ===== */
+  if (strengths.length) {
+    learner.push(`Build confidence by applying strengths in ${strengths.join(", ")}`);
+  }
+
+  if (needs.length) {
+    learner.push(`Focus revision on ${needs.join(", ")}`);
+  }
+
+  learner.push("Ask for help when concepts are unclear");
+
+  return { teacher, parent, learner };
+}
+
+
+function getEvidenceStatus(rows) {
+  const count = rows.length;
+
+  if (count >= 3) {
+    return {
+      label: "🧾 Adequate Evidence",
+      color: "#1e8449",
+      note: "Sufficient assessment records to support judgement"
+    };
+  }
+
+  return {
+    label: "⚠️ Limited Evidence",
+    color: "#b9770e",
+    note: "Consider additional assessment opportunities"
+  };
+}
+
+
+
+  
+  /* ===== TERM VIEW ===== */
+  if (viewMode.value === "term") {
+    const grouped = {};
+    records.forEach(r => {
+      grouped[r.student] ??= {};
+      grouped[r.student][r.subject] ??= [];
+      grouped[r.student][r.subject].push(r);
+    });
+
+    reportDiv.innerHTML = `
+      <h3>${termName} – ${SYSTEM_YEAR}</h3>
+      ${renderGrouped(grouped)}
+    `;
+  }
+
+  /* ===== STUDENT VIEW ===== */
+  if (viewMode.value === "student") {
+    filterBox.innerHTML = `
+      <label>Admission Number</label><br />
+      <input id="admInput" />
+    `;
+
+    document.getElementById("admInput").addEventListener("input", e => {
+      const adm = e.target.value.trim();
+      const filtered = records.filter(r => r.admission === adm);
+
+      if (!filtered.length) {
+        reportDiv.innerHTML = "<p>No student found</p>";
+        return;
+      }
+
+      const grouped = {};
+      filtered.forEach(r => {
+        grouped[r.student] ??= {};
+        grouped[r.student][r.subject] ??= [];
+        grouped[r.student][r.subject].push(r);
+      });
+
+      reportDiv.innerHTML = renderGrouped(grouped);
+    });
+  }
+
+  /* ===== SUBJECT VIEW ===== */
+  if (viewMode.value === "subject") {
+    const subjects = [...new Set(records.map(r => r.subject))];
+
+    filterBox.innerHTML = `
+      <label>Subject</label><br />
+      <select id="subjectSelect">
+        <option value="">Select subject</option>
+        ${subjects.map(s => `<option>${s}</option>`).join("")}
+      </select>
+    `;
+
+    document.getElementById("subjectSelect").addEventListener("change", e => {
+      const subject = e.target.value;
+      if (!subject) return;
+
+      const filtered = records.filter(r => r.subject === subject);
+      const grouped = {};
+
+      filtered.forEach(r => {
+        grouped[r.student] ??= {};
+        grouped[r.student][r.subject] ??= [];
+        grouped[r.student][r.subject].push(r);
+      });
+
+      reportDiv.innerHTML = `
+        <h3>${subject} – All Students</h3>
+        ${renderGrouped(grouped)}
+      `;
+    });
+  }
+}
+
+termSelect.addEventListener("change", loadReport);
+viewMode.addEventListener("change", loadReport);
+
+
+
+
+function getTrend(currentAvg, previousAvg) {
+  if (previousAvg === null) return "🆕 New Entry";
+
+  const diff = currentAvg - previousAvg;
+
+  if (diff >= 0.3) return "📈 Improving";
+  if (diff <= -0.3) return "📉 Declining";
+  return "➖ Stable";
+}
+
+
+  
+</script>
+
+
+</body>
+</html>
