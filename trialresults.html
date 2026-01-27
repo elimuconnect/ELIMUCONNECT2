@@ -106,7 +106,9 @@
     margin-bottom: 6px;
   }
 
+
 @media print {
+
   body {
     background: #fff;
   }
@@ -119,68 +121,41 @@
     display: none !important;
   }
 
-  .learner-card {
-    box-shadow: none;
-    margin-top: 10px;
-  }
-
-  h2 {
-    margin-top: 0;
-    margin-bottom: 6px;
-  }
-
-  h3 {
-    margin-bottom: 8px;
-  }
-
-  /* Prevent ugly splits INSIDE learner */
-  .trend-box,
-  table,
-  thead,
-  h4,
-  h5 {
-    page-break-inside: avoid;
-    break-inside: avoid;
-  }
-
-  /* Repeat table headers correctly */
-  thead {
-    display: table-header-group;
-  }
-
-  /* Force NEW learner on new page */
-  .page-break {
+  /* PAGE wrapper handles breaking */
+  .learner-page {
     page-break-before: always;
     break-before: page;
   }
 
-  /* Allow first learner to start immediately after title */
-  #report > .learner-card:first-of-type {
-    page-break-before: auto !important;
-    break-before: auto !important;
+  /* first learner does NOT break */
+  #report > .learner-page:first-child {
+    page-break-before: auto;
+    break-before: auto;
   }
-}
 
-/* Chart sizing – screen & print */
-.trend-box {
-  height: 180px;
-  margin-top: 10px;
-}
-
-.trend-box canvas {
-  width: 100% !important;
-  height: 100% !important;
-}
-
-  @media print {
-
+  /* card styling */
   .learner-card {
-    margin: 0 0 12px 0;   /* bottom spacing only */
+    margin: 0;
     padding: 14px;
+    box-shadow: none;
   }
 
+  /* keep internals together */
+  table,
+  thead,
+  h4,
+  h5,
+  .trend-box {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  thead {
+    display: table-header-group;
+  }
 }
 
+  
 </style>
 
 </head>
@@ -411,9 +386,8 @@ function renderGrouped(grouped) {
     const recommendations = generateRecommendations(subjects, trend, supportFlag);
 
     return `
-    
-
-    <div class="learner-card ${index > 0 ? "page-break" : ""}">
+  <div class="learner-page ${index > 0 ? "page-break" : ""}">
+    <div class="learner-card">
 
 
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
@@ -940,7 +914,8 @@ window.downloadPDF = function () {
   const element = reportDiv;
 
  const opt = {
-  margin: [8, 10, 8, 10],   // top, right, bottom, left
+ margin: [6, 10, 6, 10],
+   // top, right, bottom, left
   filename,
   image: { type: "jpeg", quality: 0.98 },
   html2canvas: { scale: 2, useCORS: true },
