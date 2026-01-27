@@ -1,4 +1,4 @@
-still gap is there, <!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -171,7 +171,7 @@ tr:last-child td {
 
 
 <div class="actions-box">
-  <button onclick="printReport()">🖨️ Print</button>
+
   <button onclick="downloadPDF()">⬇️ Download PDF</button>
 </div>
 
@@ -934,17 +934,6 @@ function getTrend(currentAvg, previousAvg) {
 }
 
 
-
-
-
-window.printReport = function () {
-  if (!reportDiv.innerHTML.trim()) {
-    alert("No report to print");
-    return;
-  }
-
-  window.print();
-};
 
 
 
