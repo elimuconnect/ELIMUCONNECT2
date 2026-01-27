@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -106,9 +106,7 @@
     margin-bottom: 6px;
   }
 
-
 @media print {
-
   body {
     background: #fff;
   }
@@ -121,41 +119,38 @@
     display: none !important;
   }
 
-  /* PAGE wrapper handles breaking */
-  .learner-page {
+  .learner-card {
+    box-shadow: none;
+  }
+
+  /* Prevent ugly splits INSIDE learner */
+  .trend-box,
+  table,
+  thead,
+  tr,
+  h4,
+  h5,
+  canvas {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Repeat table headers correctly */
+  thead {
+    display: table-header-group;
+  }
+
+  /* Force NEW learner on new page */
+  .page-break {
     page-break-before: always;
     break-before: page;
   }
 
-  /* first learner does NOT break */
-  #report > .learner-page:first-child {
-    page-break-before: auto;
-    break-before: auto;
-  }
-
-  /* card styling */
-  .learner-card {
-    margin: 0;
-    padding: 14px;
-    box-shadow: none;
-  }
-
-  /* keep internals together */
-  table,
-  thead,
-  h4,
-  h5,
-  .trend-box {
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
-
-  thead {
-    display: table-header-group;
+  canvas {
+    max-height: 240px;
   }
 }
 
-  
 </style>
 
 </head>
@@ -386,9 +381,9 @@ function renderGrouped(grouped) {
     const recommendations = generateRecommendations(subjects, trend, supportFlag);
 
     return `
-  <div class="learner-page ${index > 0 ? "page-break" : ""}">
-    <div class="learner-card">
+      ${index === 0 ? "" : `<div class="page-break"></div>`}
 
+      <div class="learner-card">
 
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
           <h4>👤 ${student} <small>(<strong>Adm: ${admission}</strong>)</small></h4>
@@ -913,9 +908,8 @@ window.downloadPDF = function () {
 
   const element = reportDiv;
 
- const opt = {
- margin: [6, 10, 6, 10],
-   // top, right, bottom, left
+  const opt = {
+  margin: 10,
   filename,
   image: { type: "jpeg", quality: 0.98 },
   html2canvas: { scale: 2, useCORS: true },
