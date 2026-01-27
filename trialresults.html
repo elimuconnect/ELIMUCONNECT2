@@ -167,24 +167,35 @@
 
 
 
-
 @media print {
+
+  /* Start EACH NEW learner on a new page */
   .learner-wrapper {
-    break-before: page;
     page-break-before: always;
+    break-before: page;
   }
 
-  .learner-wrapper:first-child {
-    break-before: auto;
+  /* But NOT the first learner */
+  .learner-wrapper:first-of-type {
     page-break-before: auto;
+    break-before: auto;
   }
 
-  /* allow content to flow */
+  /* Allow learner content to flow across pages */
   .learner-card {
     page-break-inside: auto;
     break-inside: auto;
   }
+
+  /* Prevent ugly splits */
+  table,
+  tr,
+  .no-break {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
 }
+
 
 
   
