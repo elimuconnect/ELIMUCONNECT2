@@ -106,6 +106,7 @@
     margin-bottom: 6px;
   }
 
+
 @media print {
   body {
     background: #fff;
@@ -121,36 +122,46 @@
 
   .learner-card {
     box-shadow: none;
+    page-break-inside: auto;
+    break-inside: auto;
   }
 
-  /* Prevent ugly splits INSIDE learner */
-  .trend-box,
+  /* Allow headings to flow */
+  h4,
+  h5 {
+    page-break-inside: auto;
+    break-inside: auto;
+  }
+
+  /* Protect only what must stay together */
   table,
   thead,
   tr,
-  h4,
-  h5,
-  canvas {
+  .trend-box {
     page-break-inside: avoid;
     break-inside: avoid;
   }
 
-  /* Repeat table headers correctly */
   thead {
     display: table-header-group;
   }
 
-  /* Force NEW learner on new page */
   .page-break {
     page-break-before: always;
     break-before: page;
   }
 
+  .trend-box {
+    height: 260px;
+  }
+
   canvas {
-    max-height: 240px;
+    width: 100% !important;
+    height: 100% !important;
   }
 }
 
+ 
 </style>
 
 </head>
