@@ -121,11 +121,7 @@
     display: none !important;
   }
 
-  /* PAGE wrapper handles breaking */
-  .learner-page {
-    page-break-before: always;
-    break-before: page;
-  }
+  
 
   /* first learner does NOT break */
   #report > .learner-page:first-child {
@@ -155,7 +151,19 @@
   }
 }
 
-  
+
+
+ .trend-box {
+  height: 180px;
+  margin-top: 12px;
+}
+
+.trend-box canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+
 </style>
 
 </head>
@@ -914,7 +922,8 @@ window.downloadPDF = function () {
   const element = reportDiv;
 
  const opt = {
- margin: [6, 10, 6, 10],
+margin: [4, 8, 6, 8],
+
    // top, right, bottom, left
   filename,
   image: { type: "jpeg", quality: 0.98 },
