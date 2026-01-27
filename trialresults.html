@@ -126,16 +126,6 @@
     page-break-inside: auto;
   }
 
-  /* 🔑 Force NEW PAGE before every learner EXCEPT the first */
- @media print {
-  #report > .learner-card {
-    page-break-before: always;
-  }
-
-  #report > .learner-card:first-child {
-    page-break-before: auto;
-  }
-}
 
   h2, h3 {
     page-break-after: avoid;
@@ -413,7 +403,9 @@ Object.entries(subjects).forEach(([subject, rows]) => {
     const recommendations = generateRecommendations(subjects, trend, supportFlag);
 
     return `
-     <div class="learner-card">
+    <div class="learner-wrapper">
+  <div class="learner-card">
+
 
         <!-- STUDENT HEADER -->
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
@@ -547,8 +539,10 @@ Object.entries(subjects).forEach(([subject, rows]) => {
   <canvas id="trend-${admission}"></canvas>
 </div>
 
+  </div>
+</div>
 
-      </div>
+      
     `;
   }).join("");
 }
