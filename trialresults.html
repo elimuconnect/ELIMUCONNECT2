@@ -197,6 +197,27 @@
 }
 
 
+@media print {
+  .page-break {
+    page-break-before: always;
+    break-before: page;
+  }
+
+  /* First learner should not break */
+  .page-break:first-child {
+    display: none;
+  }
+
+  .learner-card {
+    page-break-inside: auto;
+    break-inside: auto;
+  }
+
+  table, tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+}
 
   
 </style>
@@ -436,9 +457,8 @@ Object.entries(subjects).forEach(([subject, rows]) => {
     const recommendations = generateRecommendations(subjects, trend, supportFlag);
 
     return `
-    <div class="learner-wrapper">
-  <div class="learner-card">
-
+   <div class="page-break"></div>
+<div class="learner-card">
 
         <!-- STUDENT HEADER -->
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
@@ -1030,20 +1050,16 @@ window.downloadPDF = function () {
   const element = reportDiv;
 
   const opt = {
-    margin: 10,
-    filename,
-    image: { type: "jpeg", quality: 0.98 },
-    html2canvas: {
-      scale: 2,
-      useCORS: true
-    },
-    jsPDF: {
-      unit: "mm",
-      format: "a4",
-      orientation: "portrait"
-    },
-    pagebreak: { mode: ["avoid-all", "css", "legacy"] }
-  };
+  margin: 10,
+  filename,
+  image: { type: "jpeg", quality: 0.98 },
+  html2canvas: { scale: 2, useCORS: true },
+  jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+  pagebreak: {
+    mode: ["css"],
+    before: ".page-break"
+  }
+};
 
   html2pdf().set(opt).from(element).save();
 };
