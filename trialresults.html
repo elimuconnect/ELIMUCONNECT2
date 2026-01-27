@@ -107,7 +107,6 @@
   }
 
 
-
 @media print {
   body {
     background: #fff;
@@ -121,17 +120,42 @@
     display: none !important;
   }
 
+  /* 🔑 Allow learner to FLOW across pages */
   .learner-card {
     box-shadow: none;
-    page-break-inside: avoid;
+    page-break-inside: auto;
+  }
+
+  /* 🔑 Force NEW PAGE before every learner EXCEPT the first */
+  .learner-card:not(:first-of-type) {
+    page-break-before: always;
   }
 
   h2, h3 {
     page-break-after: avoid;
   }
+
+  /* Prevent ugly splits */
+  table,
+  .no-break {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  canvas {
+    max-height: 240px;
+  }
 }
 
 
+@media print {
+  thead {
+    display: table-header-group;
+  }
+}
+
+
+  
 
 .trend-box {
   max-width: 420px;        /* keeps it compact */
@@ -475,13 +499,18 @@ Object.entries(subjects).forEach(([subject, rows]) => {
                 </span>
               </p>
 
-              <table>
-                <tr>
-                  <th>Competency</th>
-                  <th>Achievement</th>
-                  <th>Remarks</th>
-                </tr>
 
+
+<table>
+  <thead>
+    <tr>
+      <th>Competency</th>
+      <th>Achievement</th>
+      <th>Remarks</th>
+    </tr>
+  </thead>
+  <tbody>
+              
                 ${rows.map(r => `
                   <tr style="background:${levelColor[r.level]}">
                     <td>${r.competency}</td>
@@ -501,7 +530,8 @@ Object.entries(subjects).forEach(([subject, rows]) => {
                     </td>
                   </tr>
                 ` : ""}
-              </table>
+             </tbody>
+           </table>
             </div>
           `;
         }).join("")}
