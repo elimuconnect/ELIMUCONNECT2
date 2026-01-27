@@ -127,9 +127,15 @@
   }
 
   /* 🔑 Force NEW PAGE before every learner EXCEPT the first */
-  .learner-card:not(:first-of-type) {
+ @media print {
+  #report > .learner-card {
     page-break-before: always;
   }
+
+  #report > .learner-card:first-child {
+    page-break-before: auto;
+  }
+}
 
   h2, h3 {
     page-break-after: avoid;
