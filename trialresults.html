@@ -22,14 +22,19 @@
     margin: 0;
   }
 
-  .learner-card {
-    background: #ffffff;
-    border-radius: 8px;
-    padding: 16px;
-    margin: 20px 0;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-  }
 
+.learner-card {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 12px 0; /* reduced */
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+#report .learner-page:first-child .learner-card {
+  margin-top: 0 !important;
+}
+  
   .learner-header {
     display: flex;
     justify-content: space-between;
@@ -107,6 +112,13 @@
   }
 
 
+.learner-page {
+  margin: 0;
+  padding: 0;
+}
+
+
+  
 @media print {
 
   body {
@@ -136,6 +148,15 @@
     box-shadow: none;
   }
 
+.page-break {
+  page-break-before: always;
+  break-before: page;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+
+  
   /* keep internals together */
   table,
   thead,
@@ -163,6 +184,12 @@
   height: 100% !important;
 }
 
+@media print {
+  h3 {
+    margin-top: 0;
+    margin-bottom: 6px;
+  }
+}
 
 </style>
 
