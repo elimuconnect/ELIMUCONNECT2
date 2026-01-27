@@ -108,73 +108,7 @@ tr:last-child td {
   margin-bottom: 6px;
 }
 
-/* ================== PAGE SETUP ================== */
-@page {
-  size: A4;
-  margin: 15mm 12mm 15mm 12mm;
-}
 
-/* ================== PRINT ================== */
-@media print {
-
-  body {
-    background: #fff;
-  }
-
-  .actions-box,
-  select,
-  input,
-  label,
-  hr {
-    display: none !important;
-  }
-
-  /* each learner starts on a new page */
-  .learner-page {
-    page-break-before: always;
-    break-before: page;
-  }
-
-  /* except the first */
-  #report > .learner-page:first-child {
-    page-break-before: auto;
-    break-before: auto;
-  }
-
-  .learner-card {
-    margin: 0;
-    padding: 14px;
-    box-shadow: none;
-  }
-
-  /* keep small logical blocks together */
-  h4,
-  h5,
-  thead {
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
-
-  /* allow tables to flow */
-  table {
-    page-break-inside: auto;
-  }
-
-  tr {
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
-
-  thead {
-    display: table-header-group;
-  }
-
-  /* charts never split */
-  .trend-box {
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
-}
 
 /* ================== CHART ================== */
 .trend-box {
@@ -186,6 +120,29 @@ tr:last-child td {
   width: 100% !important;
   height: 100% !important;
 }
+
+
+/* ===== A4 PAGE CANVAS ===== */
+.a4-page {
+  width: 210mm;
+  height: 297mm;
+
+  padding: 15mm 12mm;
+  box-sizing: border-box;
+
+  background: white;
+  margin: 0 auto 12px auto;
+
+  overflow: visible; /* allow content measurement */
+}
+
+
+.a4-page {
+  overflow: visible;
+}
+
+
+  
 </style>
 
   
@@ -384,7 +341,7 @@ if (previousTerm) {
     remarks: r.remarks
   }));
 
-  
+ 
 function renderGrouped(grouped) {
   return Object.entries(grouped).map(([student, subjects], index) => {
 
@@ -417,86 +374,134 @@ function renderGrouped(grouped) {
     const recommendations = generateRecommendations(subjects, trend, supportFlag);
 
     return `
-  <div class="learner-page ${index > 0 ? "page-break" : ""}">
-    <div class="learner-card">
+<div class="a4-page learner-page">
+  <div class="learner-card">
 
+    <!-- HEADER -->
+    <div class="split-block learner-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+      <h4>👤 ${student} <small>(<strong>Adm: ${admission}</strong>)</small></h4>
+      <div style="font-weight:bold;">${supportFlag}</div>
+    </div>
 
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
-          <h4>👤 ${student} <small>(<strong>Adm: ${admission}</strong>)</small></h4>
-          <div style="font-weight:bold;">${supportFlag}</div>
-        </div>
+    <!-- TREND SUMMARY -->
+    <div class="split-block">
+      <p style="margin:6px 0 10px 0;font-weight:bold;">
+        📊 Progress Trend: ${trend}
+      </p>
+      ${insight}
+    </div>
 
-        <p style="margin:6px 0 10px 0;font-weight:bold;">
-          📊 Progress Trend: ${trend}
+    <!-- STRENGTHS / NEEDS -->
+    <div class="split-block" style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:10px;">
+      ${strengths.length ? `<p><strong>💪 Strengths:</strong> ${strengths.join(", ")}</p>` : ""}
+      ${needs.length ? `<p><strong>🎯 Areas for Improvement:</strong> ${needs.join(", ")}</p>` : ""}
+    </div>
+
+    <!-- RECOMMENDATIONS -->
+    ${recommendations.teacher.length ? `
+      <div class="split-block" style="margin:10px 0;padding:10px;border-left:4px solid #3498db;background:#f8fbff;">
+        <strong>👩🏽‍🏫 Teacher Actions</strong>
+        <ul>${recommendations.teacher.map(r => `<li>${r}</li>`).join("")}</ul>
+      </div>` : ""}
+
+    ${recommendations.parent.length ? `
+      <div class="split-block" style="margin:10px 0;padding:10px;border-left:4px solid #f39c12;background:#fffaf3;">
+        <strong>🏠 Parent Support</strong>
+        <ul>${recommendations.parent.map(r => `<li>${r}</li>`).join("")}</ul>
+      </div>` : ""}
+
+    ${recommendations.learner.length ? `
+      <div class="split-block" style="margin:10px 0;padding:10px;border-left:4px solid #2ecc71;background:#f6fffa;">
+        <strong>🎯 Learner Focus</strong>
+        <ul>${recommendations.learner.map(r => `<li>${r}</li>`).join("")}</ul>
+      </div>` : ""}
+
+    <!-- SUBJECTS -->
+    ${Object.entries(subjects).map(([subject, rows]) => {
+      if (subject === "__admission") return "";
+
+      const evidence = getEvidenceStatus(rows);
+
+      return `
+      <div class="split-block subject-block">
+        <h5>📘 ${subject} — Assessments: <strong>${rows.length}</strong></h5>
+        <p style="font-weight:bold;color:${evidence.color};">
+          ${evidence.label} — <span style="font-weight:normal">${evidence.note}</span>
         </p>
 
-        ${insight}
+        <table>
+          <thead>
+            <tr>
+              <th>Competency</th>
+              <th>Achievement</th>
+              <th>Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(r => `
+              <tr style="background:${levelColor[r.level]}">
+                <td>${r.competency}</td>
+                <td>${r.level}</td>
+                <td>${r.remarks || "—"}</td>
+              </tr>`).join("")}
+          </tbody>
+        </table>
+      </div>`;
+    }).join("")}
 
-        <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:10px;">
-          ${strengths.length ? `<p><strong>💪 Strengths:</strong> ${strengths.join(", ")}</p>` : ""}
-          ${needs.length ? `<p><strong>🎯 Areas for Improvement:</strong> ${needs.join(", ")}</p>` : ""}
-        </div>
+    <!-- CHART -->
+    <div class="split-block trend-box">
+      <canvas id="trend-${admission}"></canvas>
+    </div>
 
-        ${recommendations.teacher.length ? `
-          <div style="margin:10px 0;padding:10px;border-left:4px solid #3498db;background:#f8fbff;">
-            <strong>👩🏽‍🏫 Teacher Actions</strong>
-            <ul>${recommendations.teacher.map(r => `<li>${r}</li>`).join("")}</ul>
-          </div>` : ""}
-
-        ${recommendations.parent.length ? `
-          <div style="margin:10px 0;padding:10px;border-left:4px solid #f39c12;background:#fffaf3;">
-            <strong>🏠 Parent Support</strong>
-            <ul>${recommendations.parent.map(r => `<li>${r}</li>`).join("")}</ul>
-          </div>` : ""}
-
-        ${recommendations.learner.length ? `
-          <div style="margin:10px 0;padding:10px;border-left:4px solid #2ecc71;background:#f6fffa;">
-            <strong>🎯 Learner Focus</strong>
-            <ul>${recommendations.learner.map(r => `<li>${r}</li>`).join("")}</ul>
-          </div>` : ""}
-
-        ${Object.entries(subjects).map(([subject, rows]) => {
-          if (subject === "__admission") return "";
-
-          const evidence = getEvidenceStatus(rows);
-
-          return `
-            <div style="margin-top:18px;">
-              <h5>📘 ${subject} — Assessments: <strong>${rows.length}</strong></h5>
-              <p style="font-weight:bold;color:${evidence.color};">
-                ${evidence.label} — <span style="font-weight:normal">${evidence.note}</span>
-              </p>
-
-              <table>
-                <thead>
-                  <tr>
-                    <th>Competency</th>
-                    <th>Achievement</th>
-                    <th>Remarks</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${rows.map(r => `
-                    <tr style="background:${levelColor[r.level]}">
-                      <td>${r.competency}</td>
-                      <td>${r.level}</td>
-                      <td>${r.remarks || "—"}</td>
-                    </tr>`).join("")}
-                </tbody>
-              </table>
-            </div>`;
-        }).join("")}
-
-        <div class="trend-box">
-          <canvas id="trend-${admission}"></canvas>
-        </div>
-
-      </div>
-    `;
+  </div>
+</div>
+`;
   }).join("");
 }
 
 
+
+
+function splitLearnerIntoPages() {
+  const pages = document.querySelectorAll(".a4-page");
+
+  pages.forEach(page => {
+    const card = page.querySelector(".learner-card");
+    if (!card) return;
+
+    const maxHeight = page.clientHeight;
+    let currentPage = page;
+
+    Array.from(card.children).forEach(block => {
+      if (!block.classList.contains("split-block")) return;
+
+      const blockBottom =
+        block.getBoundingClientRect().bottom -
+        currentPage.getBoundingClientRect().top;
+
+      if (blockBottom > maxHeight) {
+        // create new page
+        const newPage = document.createElement("div");
+        newPage.className = "a4-page learner-page";
+
+        const newCard = document.createElement("div");
+        newCard.className = "learner-card";
+
+        newPage.appendChild(newCard);
+        currentPage.after(newPage);
+
+        newCard.appendChild(block);
+        currentPage = newPage;
+      }
+    });
+  });
+}
+
+
+
+
+  
 
 function generateInsight(subjects) {
   const subjectScores = {};
@@ -803,6 +808,9 @@ function renderTrendChart(admission) {
   <h3>${termName} – ${SYSTEM_YEAR}</h3>
   ${renderGrouped(grouped)}
 `;
+requestAnimationFrame(() => {
+  splitLearnerIntoPages();
+});
 
 setTimeout(() => {
   Object.values(grouped).forEach(s => {
@@ -811,6 +819,7 @@ setTimeout(() => {
     }
   });
 }, 0);
+
 
   }
 
@@ -840,14 +849,20 @@ filtered.forEach(r => {
 
       reportDiv.innerHTML = renderGrouped(grouped);
     
+requestAnimationFrame(() => {
+  splitLearnerIntoPages();
+});
 
-    setTimeout(() => {
+setTimeout(() => {
   Object.values(grouped).forEach(s => {
     if (s.__admission) {
       renderTrendChart(s.__admission);
     }
   });
 }, 0);
+
+
+      
       });
   }
 
@@ -884,6 +899,10 @@ filtered.forEach(r => {
         ${renderGrouped(grouped)}
       `;
 
+requestAnimationFrame(() => {
+  splitLearnerIntoPages();
+});
+
 setTimeout(() => {
   Object.values(grouped).forEach(s => {
     if (s.__admission) {
@@ -891,6 +910,8 @@ setTimeout(() => {
     }
   });
 }, 0);
+
+      
       
     });
   }
@@ -944,22 +965,16 @@ window.downloadPDF = function () {
 
   const element = reportDiv;
 
- const opt = {
-margin: [15, 12, 15, 12],
 
-
-   // top, right, bottom, left
+const opt = {
+  margin: 0,
   filename,
   image: { type: "jpeg", quality: 0.98 },
   html2canvas: { scale: 2, useCORS: true },
-  jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-  pagebreak: {
-    mode: ["css"],
-    before: ".page-break"
-  }
+  jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
 };
 
-  html2pdf().set(opt).from(element).save();
+html2pdf().set(opt).from(reportDiv).save();
 };
 
 
