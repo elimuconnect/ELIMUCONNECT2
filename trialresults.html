@@ -120,84 +120,7 @@
     display: none !important;
   }
 
-  /* 🔑 Allow learner to FLOW across pages */
-  .learner-card {
-    box-shadow: none;
-    page-break-inside: auto;
-  }
-
-
-  h2, h3 {
-    page-break-after: avoid;
-  }
-
-  /* Prevent ugly splits */
-  table,
-  .no-break {
-    page-break-inside: avoid;
-    break-inside: avoid;
-  }
-
-  canvas {
-    max-height: 240px;
-  }
-}
-
-
-@media print {
-  thead {
-    display: table-header-group;
-  }
-}
-
-
-  
-
-.trend-box {
-  max-width: 420px;        /* keeps it compact */
-  height: 120px;           /* fixed, intentional height */
-  margin-top: 12px;
-}
-
-.trend-box canvas {
-  width: 100% !important;
-  height: 100% !important;
-}
-
-
-
-
-@media print {
-
-  /* Start EACH NEW learner on a new page */
-  .learner-wrapper {
-    page-break-before: always;
-    break-before: page;
-  }
-
-  /* But NOT the first learner */
-  .learner-wrapper:first-of-type {
-    page-break-before: auto;
-    break-before: auto;
-  }
-
-  /* Allow learner content to flow across pages */
-  .learner-card {
-    page-break-inside: auto;
-    break-inside: auto;
-  }
-
-  /* Prevent ugly splits */
-  table,
-  tr,
-  .no-break {
-    page-break-inside: avoid;
-    break-inside: avoid;
-  }
-}
-
-
-@media print {
+  /* 🔑 Explicit page breaks controlled by html2pdf */
   .page-break {
     page-break-before: always;
     break-before: page;
@@ -208,18 +131,35 @@
     display: none;
   }
 
+  /* Allow learner to FLOW across pages */
   .learner-card {
+    box-shadow: none;
     page-break-inside: auto;
     break-inside: auto;
   }
 
-  table, tr {
+  /* Prevent ugly splits */
+  table,
+  tr,
+  thead,
+  .no-break {
     page-break-inside: avoid;
     break-inside: avoid;
   }
+
+  thead {
+    display: table-header-group;
+  }
+
+  canvas {
+    max-height: 240px;
+  }
 }
 
-  
+
+
+
+
 </style>
 
 </head>
