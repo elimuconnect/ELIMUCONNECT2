@@ -106,8 +106,6 @@
     margin-bottom: 6px;
   }
 
-
-
 @media print {
   body {
     background: #fff;
@@ -123,20 +121,50 @@
 
   .learner-card {
     box-shadow: none;
-    page-break-inside: avoid;
+    margin-top: 10px;
   }
 
-  h2, h3 {
-    page-break-after: avoid;
+  h2 {
+    margin-top: 0;
+    margin-bottom: 6px;
+  }
+
+  h3 {
+    margin-bottom: 8px;
+  }
+
+  /* Prevent ugly splits INSIDE learner */
+  .trend-box,
+  table,
+  thead,
+  h4,
+  h5 {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Repeat table headers correctly */
+  thead {
+    display: table-header-group;
+  }
+
+  /* Force NEW learner on new page */
+  .page-break {
+    page-break-before: always;
+    break-before: page;
+  }
+
+  /* Allow first learner to start immediately after title */
+  #report > .learner-card:first-of-type {
+    page-break-before: auto !important;
+    break-before: auto !important;
   }
 }
 
-
-
+/* Chart sizing – screen & print */
 .trend-box {
-  max-width: 420px;        /* keeps it compact */
-  height: 120px;           /* fixed, intentional height */
-  margin-top: 12px;
+  height: 180px;
+  margin-top: 10px;
 }
 
 .trend-box canvas {
@@ -144,8 +172,15 @@
   height: 100% !important;
 }
 
+  @media print {
 
-  
+  .learner-card {
+    margin: 0 0 12px 0;   /* bottom spacing only */
+    padding: 14px;
+  }
+
+}
+
 </style>
 
 </head>
@@ -344,180 +379,118 @@ if (previousTerm) {
   }));
 
   
-
 function renderGrouped(grouped) {
-  return Object.entries(grouped).map(([student, subjects]) => {
+  return Object.entries(grouped).map(([student, subjects], index) => {
 
     const admission = subjects.__admission || "N/A";
 
-
-   const allScores = [];
-
-Object.entries(subjects).forEach(([subject, rows]) => {
-  if (subject === "__admission") return;
-
-  rows.forEach(r => {
-    const s = levelToScore(r.level);
-    if (s > 0) allScores.push(s);
-  });
-});
-
+    /* ===== COLLECT SCORES ===== */
+    const allScores = [];
+    Object.entries(subjects).forEach(([subject, rows]) => {
+      if (subject === "__admission") return;
+      rows.forEach(r => {
+        const s = levelToScore(r.level);
+        if (s > 0) allScores.push(s);
+      });
+    });
 
     const currentAvg =
       allScores.length
         ? allScores.reduce((a,b)=>a+b,0) / allScores.length
         : null;
 
-    /* ===== PREVIOUS AVERAGE ===== */
     const prevData = previousAverages[admission];
     const previousAvg = prevData
       ? prevData.total / prevData.count
       : null;
 
     const trend = getTrend(currentAvg, previousAvg);
-
-    /* ===== EXISTING FEATURES ===== */
     const supportFlag = generateSupportFlag(subjects);
     const insight = generateInsight(subjects);
     const { strengths, needs } = generateStrengthsAndNeeds(subjects);
     const recommendations = generateRecommendations(subjects, trend, supportFlag);
 
     return `
-     <div class="learner-card">
+    
 
-        <!-- STUDENT HEADER -->
+    <div class="learner-card ${index > 0 ? "page-break" : ""}">
+
+
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
-          <h4> 👤 ${student} <small style="font-size: 2em;"> (<strong>Adm: ${admission}</strong>) </small> </h4>
-          <div style="font-weight:bold;">
-            ${supportFlag}
-          </div>
+          <h4>👤 ${student} <small>(<strong>Adm: ${admission}</strong>)</small></h4>
+          <div style="font-weight:bold;">${supportFlag}</div>
         </div>
 
-        <!-- TREND -->
         <p style="margin:6px 0 10px 0;font-weight:bold;">
-          📊 Progress Trend: <span>${trend}</span>
+          📊 Progress Trend: ${trend}
         </p>
 
-        <!-- OVERALL INSIGHT -->
         ${insight}
 
-        <!-- STRENGTHS / NEEDS -->
         <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:10px;">
-          ${strengths.length ? `
-            <p style="margin:0;">
-              <strong>💪 Strengths:</strong> ${strengths.join(", ")}
-            </p>
-          ` : ""}
-          ${needs.length ? `
-            <p style="margin:0;">
-              <strong>🎯 Areas for Improvement:</strong> ${needs.join(", ")}
-            </p>
-          ` : ""}
+          ${strengths.length ? `<p><strong>💪 Strengths:</strong> ${strengths.join(", ")}</p>` : ""}
+          ${needs.length ? `<p><strong>🎯 Areas for Improvement:</strong> ${needs.join(", ")}</p>` : ""}
         </div>
 
-        <!-- RECOMMENDATIONS -->
         ${recommendations.teacher.length ? `
           <div style="margin:10px 0;padding:10px;border-left:4px solid #3498db;background:#f8fbff;">
             <strong>👩🏽‍🏫 Teacher Actions</strong>
-            <ul style="margin:6px 0 0 18px;">
-              ${recommendations.teacher.map(r => `<li>${r}</li>`).join("")}
-            </ul>
-          </div>
-        ` : ""}
+            <ul>${recommendations.teacher.map(r => `<li>${r}</li>`).join("")}</ul>
+          </div>` : ""}
 
         ${recommendations.parent.length ? `
           <div style="margin:10px 0;padding:10px;border-left:4px solid #f39c12;background:#fffaf3;">
             <strong>🏠 Parent Support</strong>
-            <ul style="margin:6px 0 0 18px;">
-              ${recommendations.parent.map(r => `<li>${r}</li>`).join("")}
-            </ul>
-          </div>
-        ` : ""}
+            <ul>${recommendations.parent.map(r => `<li>${r}</li>`).join("")}</ul>
+          </div>` : ""}
 
         ${recommendations.learner.length ? `
           <div style="margin:10px 0;padding:10px;border-left:4px solid #2ecc71;background:#f6fffa;">
             <strong>🎯 Learner Focus</strong>
-            <ul style="margin:6px 0 0 18px;">
-              ${recommendations.learner.map(r => `<li>${r}</li>`).join("")}
-            </ul>
-          </div>
-        ` : ""}
+            <ul>${recommendations.learner.map(r => `<li>${r}</li>`).join("")}</ul>
+          </div>` : ""}
 
-
-
-<p style="margin-top:16px;font-weight:bold;color:#555;">
-  📘 Subject Performance
-</p>
-
-
-
-
-
-        <!-- SUBJECTS -->
-      
-<!-- SUBJECTS --> ${Object.entries(subjects).map(([subject, rows]) => { if (subject === "__admission") return "";
+        ${Object.entries(subjects).map(([subject, rows]) => {
+          if (subject === "__admission") return "";
 
           const evidence = getEvidenceStatus(rows);
 
           return `
             <div style="margin-top:18px;">
-              <h5 style="margin-bottom:4px;">
-                📘 ${subject}
-                <span style="font-size:0.85em;font-weight:normal;color:#666;">
-                  — Assessments: <strong>${rows.length}</strong>
-                </span>
-              </h5>
-
-              <p style="margin:2px 0 8px 0;color:${evidence.color};font-weight:bold;">
-                ${evidence.label}
-                <span style="font-weight:normal;font-size:0.9em;">
-                  — ${evidence.note}
-                </span>
+              <h5>📘 ${subject} — Assessments: <strong>${rows.length}</strong></h5>
+              <p style="font-weight:bold;color:${evidence.color};">
+                ${evidence.label} — <span style="font-weight:normal">${evidence.note}</span>
               </p>
 
               <table>
-                <tr>
-                  <th>Competency</th>
-                  <th>Achievement</th>
-                  <th>Remarks</th>
-                </tr>
-
-                ${rows.map(r => `
-                  <tr style="background:${levelColor[r.level]}">
-                    <td>${r.competency}</td>
-                    <td>${r.level}</td>
-                    <td>${r.remarks || "—"}</td>
+                <thead>
+                  <tr>
+                    <th>Competency</th>
+                    <th>Achievement</th>
+                    <th>Remarks</th>
                   </tr>
-                `).join("")}
-
-                ${avgMap[student]?.[subject] ? `
-                  <tr style="background:${levelColor[avgMap[student][subject].achievement_level]}">
-                    <td><strong>SUBJECT AVERAGE</strong></td>
-                    <td colspan="2">
-                      <strong>
-                        ${avgMap[student][subject].achievement_level}
-                        (Score ${avgMap[student][subject].average_score})
-                      </strong>
-                    </td>
-                  </tr>
-                ` : ""}
+                </thead>
+                <tbody>
+                  ${rows.map(r => `
+                    <tr style="background:${levelColor[r.level]}">
+                      <td>${r.competency}</td>
+                      <td>${r.level}</td>
+                      <td>${r.remarks || "—"}</td>
+                    </tr>`).join("")}
+                </tbody>
               </table>
-            </div>
-          `;
+            </div>`;
         }).join("")}
 
-
-<div class="trend-box">
-  <canvas id="trend-${admission}"></canvas>
-</div>
-
+        <div class="trend-box">
+          <canvas id="trend-${admission}"></canvas>
+        </div>
 
       </div>
     `;
   }).join("");
 }
 
-  
 
 
 function generateInsight(subjects) {
@@ -966,21 +939,17 @@ window.downloadPDF = function () {
 
   const element = reportDiv;
 
-  const opt = {
-    margin: 10,
-    filename,
-    image: { type: "jpeg", quality: 0.98 },
-    html2canvas: {
-      scale: 2,
-      useCORS: true
-    },
-    jsPDF: {
-      unit: "mm",
-      format: "a4",
-      orientation: "portrait"
-    },
-    pagebreak: { mode: ["avoid-all", "css", "legacy"] }
-  };
+ const opt = {
+  margin: [8, 10, 8, 10],   // top, right, bottom, left
+  filename,
+  image: { type: "jpeg", quality: 0.98 },
+  html2canvas: { scale: 2, useCORS: true },
+  jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+  pagebreak: {
+    mode: ["css"],
+    before: ".page-break"
+  }
+};
 
   html2pdf().set(opt).from(element).save();
 };
