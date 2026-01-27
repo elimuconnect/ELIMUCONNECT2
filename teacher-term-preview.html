@@ -22,14 +22,14 @@ still gap is there, <!DOCTYPE html>
     margin: 0;
   }
 
-  .learner-card {
-    background: #ffffff;
-    border-radius: 8px;
-    padding: 16px;
-    margin: 20px 0;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-  }
 
+.learner-card {
+  background: #ffffff;
+  padding: 14px;
+  margin: 0;
+}
+
+  
   .learner-header {
     display: flex;
     justify-content: space-between;
@@ -106,7 +106,12 @@ still gap is there, <!DOCTYPE html>
     margin-bottom: 6px;
   }
 
+@page {
+  size: A4;
+  margin: 15mm 12mm 15mm 12mm;
+}
 
+  
 @media print {
 
   body {
@@ -121,7 +126,8 @@ still gap is there, <!DOCTYPE html>
     display: none !important;
   }
 
-  
+ 
+
 
   /* first learner does NOT break */
   #report > .learner-page:first-child {
@@ -136,23 +142,50 @@ still gap is there, <!DOCTYPE html>
     box-shadow: none;
   }
 
-  /* keep internals together */
-  table,
-  thead,
-  h4,
-  h5,
-  .trend-box {
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
 
+h4,
+h5,
+thead {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+table {
+  page-break-inside: auto;
+}
+
+tr {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.trend-box {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+
+  
   thead {
     display: table-header-group;
   }
 }
 
 
+@media print {
 
+  .learner-page {
+    page-break-before: always;
+    break-before: page;
+  }
+
+  /* Allow first learner to start normally */
+  .learner-page:first-child {
+    page-break-before: auto;
+    break-before: auto;
+  }
+}
+  
  .trend-box {
   height: 180px;
   margin-top: 12px;
@@ -921,7 +954,8 @@ window.downloadPDF = function () {
   const element = reportDiv;
 
  const opt = {
-margin: [4, 8, 6, 8],
+margin: [15, 12, 15, 12],
+
 
    // top, right, bottom, left
   filename,
