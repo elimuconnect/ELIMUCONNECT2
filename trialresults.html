@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>Term Report Preview</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
   body {
@@ -130,6 +131,20 @@
   }
 }
 
+
+
+.trend-box {
+  max-width: 420px;        /* keeps it compact */
+  height: 120px;           /* fixed, intentional height */
+  margin-top: 12px;
+}
+
+.trend-box canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+
   
 </style>
 
@@ -174,6 +189,7 @@ const supabase = createClient(
 
 const SYSTEM_YEAR = "2026";
 
+let trendMap = {};
 
 function levelToScore(level) {
   switch (level) {
@@ -227,6 +243,18 @@ async function loadReport() {
 
   const termName = terms.find(t => t.id === term_id)?.name;
 
+
+/* ===== LEARNER TERM AVERAGES FOR GRAPHS ===== */
+const { data: termAverages } = await supabase
+  .from("learner_term_averages") // ✅ the view you already created
+  .select("admission_number, term, average_score")
+  .eq("academic_year", SYSTEM_YEAR);
+
+
+
+
+
+  
   /* ===== AVERAGES ===== */
   const { data: averages } = await supabase
     .from("term_subject_report_view")
@@ -235,7 +263,14 @@ async function loadReport() {
     .eq("academic_year", SYSTEM_YEAR);
 
 
+trendMap = {};
 
+termAverages?.forEach(r => {
+  if (!trendMap[r.admission_number]) {
+    trendMap[r.admission_number] = {};
+  }
+  trendMap[r.admission_number][r.term] = Number(r.average_score);
+});
 
 
 const previousTerm = terms
@@ -316,12 +351,17 @@ function renderGrouped(grouped) {
     const admission = subjects.__admission || "N/A";
 
 
-    /* ===== CURRENT AVERAGE ===== */
-    const allScores = [];
-    Object.values(subjects).flat().forEach(r => {
-      const s = levelToScore(r.level);
-      if (s > 0) allScores.push(s);
-    });
+   const allScores = [];
+
+Object.entries(subjects).forEach(([subject, rows]) => {
+  if (subject === "__admission") return;
+
+  rows.forEach(r => {
+    const s = levelToScore(r.level);
+    if (s > 0) allScores.push(s);
+  });
+});
+
 
     const currentAvg =
       allScores.length
@@ -414,8 +454,8 @@ function renderGrouped(grouped) {
 
 
         <!-- SUBJECTS -->
-        ${Object.entries(subjects).map(([subject, rows]) => {
-          if (subject === "__admission") return "";
+      
+<!-- SUBJECTS --> ${Object.entries(subjects).map(([subject, rows]) => { if (subject === "__admission") return "";
 
           const evidence = getEvidenceStatus(rows);
 
@@ -465,6 +505,12 @@ function renderGrouped(grouped) {
             </div>
           `;
         }).join("")}
+
+
+<div class="trend-box">
+  <canvas id="trend-${admission}"></canvas>
+</div>
+
 
       </div>
     `;
@@ -681,6 +727,90 @@ function getEvidenceStatus(rows) {
 
 
 
+const achievementBandsPlugin = {
+  id: "achievementBands",
+  beforeDraw(chart) {
+    const { ctx, chartArea, scales } = chart;
+    if (!chartArea) return;
+
+    const y = scales.y;
+    const bands = [
+      { from: 1, to: 2, color: "rgba(248,215,218,0.35)" }, // Below
+      { from: 2, to: 3, color: "rgba(255,243,205,0.35)" }, // Approaching
+      { from: 3, to: 4, color: "rgba(212,237,218,0.35)" }, // Meeting
+      { from: 4, to: 5, color: "rgba(204,229,255,0.35)" }  // Exceeding
+    ];
+
+    ctx.save();
+    bands.forEach(b => {
+      const yTop = y.getPixelForValue(b.to);
+      const yBottom = y.getPixelForValue(b.from);
+      ctx.fillStyle = b.color;
+      ctx.fillRect(
+        chartArea.left,
+        yTop,
+        chartArea.right - chartArea.left,
+        yBottom - yTop
+      );
+    });
+    ctx.restore();
+  }
+};
+
+
+
+
+  
+function renderTrendChart(admission) {
+  const canvas = document.getElementById(`trend-${admission}`);
+  if (!canvas) return;
+
+  const learnerData = trendMap[admission] || {};
+  const terms = Object.keys(learnerData).sort();
+  const scores = terms.map(t => learnerData[t]);
+
+  /* ✅ DESTROY OLD CHART IF IT EXISTS */
+  if (canvas.chart) {
+    canvas.chart.destroy();
+  }
+
+  /* ✅ CREATE & STORE NEW CHART */
+ canvas.chart = new Chart(canvas, {
+  type: "line",
+  data: {
+    labels: terms,
+    datasets: [{
+      label: "Learner Progress",
+      data: scores,
+      tension: 0,
+      stepped: true,              // 🔑 honest CBC progression
+      borderWidth: 2,
+      pointRadius: 4,
+      borderColor: "#2c3e50",
+      backgroundColor: "#2c3e50"
+    }]
+  },
+  plugins: [achievementBandsPlugin], // 🔑 ADD THIS
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false }
+    },
+    scales: {
+      y: {
+        min: 1,
+        max: 4,
+        ticks: {
+          stepSize: 1,
+          callback: v =>
+            ["", "Below", "Approaching", "Meeting", "Exceeding"][v]
+        }
+      }
+    }
+  }
+});
+}
   
   /* ===== TERM VIEW ===== */
   if (viewMode.value === "term") {
@@ -692,9 +822,18 @@ function getEvidenceStatus(rows) {
   });
 
     reportDiv.innerHTML = `
-      <h3>${termName} – ${SYSTEM_YEAR}</h3>
-      ${renderGrouped(grouped)}
-    `;
+  <h3>${termName} – ${SYSTEM_YEAR}</h3>
+  ${renderGrouped(grouped)}
+`;
+
+setTimeout(() => {
+  Object.values(grouped).forEach(s => {
+    if (s.__admission) {
+      renderTrendChart(s.__admission);
+    }
+  });
+}, 0);
+
   }
 
   /* ===== STUDENT VIEW ===== */
@@ -722,7 +861,16 @@ filtered.forEach(r => {
 
 
       reportDiv.innerHTML = renderGrouped(grouped);
-    });
+    
+
+    setTimeout(() => {
+  Object.values(grouped).forEach(s => {
+    if (s.__admission) {
+      renderTrendChart(s.__admission);
+    }
+  });
+}, 0);
+      });
   }
 
   /* ===== SUBJECT VIEW ===== */
@@ -757,6 +905,15 @@ filtered.forEach(r => {
         <h3>${subject} – All Students</h3>
         ${renderGrouped(grouped)}
       `;
+
+setTimeout(() => {
+  Object.values(grouped).forEach(s => {
+    if (s.__admission) {
+      renderTrendChart(s.__admission);
+    }
+  });
+}, 0);
+      
     });
   }
 }
