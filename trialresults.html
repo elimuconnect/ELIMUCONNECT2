@@ -119,36 +119,36 @@
     display: none !important;
   }
 
+  .learner-card {
+    box-shadow: none;
+  }
+
+  /* Prevent ugly splits INSIDE learner */
+  .trend-box,
+  table,
+  thead,
+  tr,
+  h4,
+  h5,
+  canvas {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Repeat table headers correctly */
+  thead {
+    display: table-header-group;
+  }
+
+  /* Force NEW learner on new page */
   .page-break {
     page-break-before: always;
     break-before: page;
   }
 
-  .learner-card {
-    box-shadow: none;
-    page-break-inside: avoid;   /* 🔑 critical */
-    break-inside: avoid;
-  }
-
-  table,
-  tr,
-  thead {
-    page-break-inside: avoid;
-    break-inside: avoid;
-  }
-
-  thead {
-    display: table-header-group;
-  }
-
   canvas {
     max-height: 240px;
   }
-}
-
-.trend-box {
-  page-break-inside: avoid;
-  break-inside: avoid;
 }
 
 </style>
