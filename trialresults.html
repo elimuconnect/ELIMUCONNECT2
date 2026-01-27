@@ -126,8 +126,8 @@
 
   .learner-card {
     box-shadow: none;
-    page-break-inside: auto;
-    break-inside: auto;
+    page-break-inside: avoid;   /* 🔑 critical */
+    break-inside: avoid;
   }
 
   table,
@@ -146,6 +146,10 @@
   }
 }
 
+.trend-box {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
 
 </style>
 
