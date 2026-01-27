@@ -106,7 +106,6 @@
     margin-bottom: 6px;
   }
 
-
 @media print {
   body {
     background: #fff;
@@ -120,29 +119,20 @@
     display: none !important;
   }
 
-  /* 🔑 Explicit page breaks controlled by html2pdf */
   .page-break {
     page-break-before: always;
     break-before: page;
   }
 
-  /* First learner should not break */
-  .page-break:first-child {
-    display: none;
-  }
-
-  /* Allow learner to FLOW across pages */
   .learner-card {
     box-shadow: none;
     page-break-inside: auto;
     break-inside: auto;
   }
 
-  /* Prevent ugly splits */
   table,
   tr,
-  thead,
-  .no-break {
+  thead {
     page-break-inside: avoid;
     break-inside: avoid;
   }
@@ -155,9 +145,6 @@
     max-height: 240px;
   }
 }
-
-
-
 
 
 </style>
@@ -395,10 +382,11 @@ Object.entries(subjects).forEach(([subject, rows]) => {
     const insight = generateInsight(subjects);
     const { strengths, needs } = generateStrengthsAndNeeds(subjects);
     const recommendations = generateRecommendations(subjects, trend, supportFlag);
+eturn Object.entries(grouped).map(([student, subjects], index) => {
 
-    return `
-   <div class="page-break"></div>
-<div class="learner-card">
+  return `
+    ${index === 0 ? "" : `<div class="page-break"></div>`}
+    <div class="learner-card">
 
         <!-- STUDENT HEADER -->
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
