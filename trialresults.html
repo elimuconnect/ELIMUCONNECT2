@@ -278,8 +278,7 @@ const { data: termAverages } = await supabase
     .from("term_subject_report_view")
     .select("first_name,last_name,subject_name,average_score,achievement_level")
     .eq("term", termName)
-    .eq("academic_year", SYSTEM_YEAR);
-
+  
 
 trendMap = {};
 
