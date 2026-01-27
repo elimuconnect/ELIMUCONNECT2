@@ -172,7 +172,15 @@
   height: 100% !important;
 }
 
-  
+  @media print {
+
+  .learner-card {
+    margin: 0 0 12px 0;   /* bottom spacing only */
+    padding: 14px;
+  }
+
+}
+
 </style>
 
 </head>
@@ -403,9 +411,10 @@ function renderGrouped(grouped) {
     const recommendations = generateRecommendations(subjects, trend, supportFlag);
 
     return `
-      ${index === 0 ? "" : `<div class="page-break"></div>`}
+    
 
-      <div class="learner-card">
+    <div class="learner-card ${index > 0 ? "page-break" : ""}">
+
 
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
           <h4>👤 ${student} <small>(<strong>Adm: ${admission}</strong>)</small></h4>
@@ -930,8 +939,8 @@ window.downloadPDF = function () {
 
   const element = reportDiv;
 
-  const opt = {
-  margin: 10,
+ const opt = {
+  margin: [8, 10, 8, 10],   // top, right, bottom, left
   filename,
   image: { type: "jpeg", quality: 0.98 },
   html2canvas: { scale: 2, useCORS: true },
