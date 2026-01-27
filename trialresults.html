@@ -165,6 +165,28 @@
 }
 
 
+
+
+
+@media print {
+  .learner-wrapper {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  .learner-wrapper:first-child {
+    break-before: auto;
+    page-break-before: auto;
+  }
+
+  /* allow content to flow */
+  .learner-card {
+    page-break-inside: auto;
+    break-inside: auto;
+  }
+}
+
+
   
 </style>
 
