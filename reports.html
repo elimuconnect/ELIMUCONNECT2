@@ -170,16 +170,16 @@ tr:last-child td {
 <p id="status"></p>
 <hr />
 
+<div class="actions-box">
+  <button id="downloadPDFBtn">⬇️ Download PDF</button>
+</div>
 
 <div class="actions-box">
-
-  <button onclick="downloadPDF()">⬇️ Download PDF</button>
+  <button id="downloadSummaryPDFBtn">⬇️ Download Summary PDF</button>
 </div>
 
-  <div class="actions-box">
-  <button onclick="downloadSummaryPDF()">⬇️ Download Summary PDF</button>
-</div>
 
+ 
 <div id="report"></div>
 
 <script type="module">
@@ -466,8 +466,8 @@ function renderGrouped(grouped) {
   }).join("");
 }
 
-
-function renderSummaryReport(records) {
+// attach to window so sparklines can access it inside module
+window.renderSummaryReport = function(records) {
   const grouped = {};
   records.forEach(r => {
     grouped[r.student] ??= { __admission: r.admission, subjects: {} };
@@ -477,8 +477,6 @@ function renderSummaryReport(records) {
 
   return Object.entries(grouped).map(([student, info]) => {
     const admission = info.__admission;
-
-    // Mini sparkline container
     const sparklineId = `sparkline-${admission}`;
 
     const subjectsHtml = Object.entries(info.subjects).map(([subject, rows]) => {
@@ -515,53 +513,56 @@ function renderSummaryReport(records) {
       </div>
     `;
   }).join("");
-}
+};
 
 
 
+async function renderSparklines() {
+  const promises = Object.keys(trendMap).map(adm => {
+    return new Promise(resolve => {
+      const canvas = document.getElementById(`sparkline-${adm}`);
+      if (!canvas) return resolve();
 
+      const learnerData = trendMap[adm] || {};
+      const terms = Object.keys(learnerData).sort();
+      const scores = terms.map(t => learnerData[t]);
 
-function renderSparklines() {
-  Object.keys(trendMap).forEach(adm => {
-    const canvas = document.getElementById(`sparkline-${adm}`);
-    if (!canvas) return;
+      // destroy old chart if exists
+      if (canvas.chart) canvas.chart.destroy();
 
-    const learnerData = trendMap[adm] || {};
-    const terms = Object.keys(learnerData).sort();
-    const scores = terms.map(t => learnerData[t]);
-
-    // Destroy old chart if exists
-    if (canvas.chart) canvas.chart.destroy();
-
-    // Create minimal sparkline
-    canvas.chart = new Chart(canvas, {
-      type: 'line',
-      data: {
-        labels: terms,
-        datasets: [{
-          data: scores,
-          borderColor: "#2c3e50",
-          backgroundColor: "rgba(44,62,80,0.2)",
-          tension: 0,
-          fill: true,
-          pointRadius: 0
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { display: false },
-          y: { display: false, suggestedMin: 1, suggestedMax: 4 }
+      // draw new sparkline
+      canvas.chart = new Chart(canvas, {
+        type: 'line',
+        data: {
+          labels: terms,
+          datasets: [{
+            data: scores,
+            borderColor: "#2c3e50",
+            backgroundColor: "rgba(44,62,80,0.2)",
+            tension: 0,
+            fill: true,
+            pointRadius: 0
+          }]
         },
-        elements: { line: { borderWidth: 1 } }
-      }
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { display: false },
+            y: { display: false, suggestedMin: 1, suggestedMax: 4 }
+          },
+          elements: { line: { borderWidth: 1 } }
+        }
+      });
+
+      // wait a frame to ensure Chart.js finishes drawing
+      requestAnimationFrame(resolve);
     });
   });
+
+  return Promise.all(promises);
 }
-
-
 
 
 function splitLearnerIntoPages() {
@@ -1038,47 +1039,21 @@ function getTrend(currentAvg, previousAvg) {
 
 
 
-
-window.downloadPDF = function () {
-  if (!reportDiv.innerHTML.trim()) {
-    alert("No report to download");
-    return;
-  }
-
-  const term = termSelect.options[termSelect.selectedIndex]?.text || "Term";
-  const mode = viewMode.value;
-
-  let filename = `Report_${term}_${SYSTEM_YEAR}.pdf`;
-
-  if (mode === "student") filename = `Student_Report_${term}_${SYSTEM_YEAR}.pdf`;
-  if (mode === "subject") filename = `Subject_Report_${term}_${SYSTEM_YEAR}.pdf`;
-
-  const element = reportDiv;
-
-
-const opt = {
-  margin: 0,
-  filename,
-  image: { type: "jpeg", quality: 0.98 },
-  html2canvas: { scale: 2, useCORS: true },
-  jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
-};
-
-html2pdf().set(opt).from(reportDiv).save();
-};
-
-
-function downloadSummaryPDF() {
+// ======= Download Full Report PDF =======
+document.getElementById("downloadSummaryPDFBtn").addEventListener("click", async () => {
   if (!termSelect.value) return alert("Select a term first");
 
   const html = renderSummaryReport(records); 
-  const element = document.createElement("div");
-  element.innerHTML = html;
 
-  // Render mini sparklines in the temporary element
-  document.body.appendChild(element);  // Needed for Chart.js to render
-  renderSparklines();
-  
+  const element = document.createElement("div");
+  element.style.position = "absolute";
+  element.style.left = "-9999px"; // offscreen
+  element.innerHTML = html;
+  document.body.appendChild(element);
+
+  // wait for sparklines to render before generating PDF
+  await renderSparklines();
+
   html2pdf().set({
     margin: 10,
     filename: `Summary_${termSelect.options[termSelect.selectedIndex].text}_${SYSTEM_YEAR}.pdf`,
@@ -1086,11 +1061,10 @@ function downloadSummaryPDF() {
     html2canvas: { scale: 2, useCORS: true },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   }).from(element).save().finally(() => {
-    document.body.removeChild(element); // Clean up
+    document.body.removeChild(element); // clean up
   });
-}
+});
 
-window.downloadSummaryPDF = downloadSummaryPDF;
 
 
 </script>
