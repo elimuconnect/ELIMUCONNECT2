@@ -192,6 +192,7 @@ const supabase = createClient(
 const SYSTEM_YEAR = "2026";
 
 let trendMap = {};
+let records = [];
 
 function levelToScore(level) {
   switch (level) {
@@ -335,7 +336,8 @@ if (previousTerm) {
   }
 
   /* ===== NORMALIZED RECORDS ===== */
-  const records = data.map(r => ({
+ records = data.map(r => ({
+
     student: `${r.students.first_name} ${r.students.last_name}`,
     admission: r.students.admission_number,
     subject: r.competencies.subjects.name,
