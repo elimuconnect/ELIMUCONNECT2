@@ -517,7 +517,10 @@ window.renderSummaryReport = function(records) {
 
 
 
-async function renderSparklines() {
+
+
+// inside your module
+window.renderSparklines = async function() {
   const promises = Object.keys(trendMap).map(adm => {
     return new Promise(resolve => {
       const canvas = document.getElementById(`sparkline-${adm}`);
@@ -527,43 +530,24 @@ async function renderSparklines() {
       const terms = Object.keys(learnerData).sort();
       const scores = terms.map(t => learnerData[t]);
 
-      // destroy old chart if exists
       if (canvas.chart) canvas.chart.destroy();
 
-      // draw new sparkline
       canvas.chart = new Chart(canvas, {
         type: 'line',
-        data: {
-          labels: terms,
-          datasets: [{
-            data: scores,
-            borderColor: "#2c3e50",
-            backgroundColor: "rgba(44,62,80,0.2)",
-            tension: 0,
-            fill: true,
-            pointRadius: 0
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { display: false },
-            y: { display: false, suggestedMin: 1, suggestedMax: 4 }
-          },
-          elements: { line: { borderWidth: 1 } }
-        }
+        data: { labels: terms, datasets: [{ data: scores, borderColor: "#2c3e50", backgroundColor:"rgba(44,62,80,0.2)", tension:0, fill:true, pointRadius:0 }] },
+        options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{display:false}, y:{display:false, suggestedMin:1, suggestedMax:4}}, elements:{line:{borderWidth:1}} }
       });
 
-      // wait a frame to ensure Chart.js finishes drawing
       requestAnimationFrame(resolve);
     });
   });
 
   return Promise.all(promises);
-}
+};
 
+
+
+ 
 
 function splitLearnerIntoPages() {
   const pages = document.querySelectorAll(".a4-page");
@@ -1039,29 +1023,21 @@ function getTrend(currentAvg, previousAvg) {
 
 
 
-// ======= Download Full Report PDF =======
 document.getElementById("downloadSummaryPDFBtn").addEventListener("click", async () => {
   if (!termSelect.value) return alert("Select a term first");
 
   const html = renderSummaryReport(records); 
-
   const element = document.createElement("div");
   element.style.position = "absolute";
-  element.style.left = "-9999px"; // offscreen
+  element.style.left = "-9999px";
   element.innerHTML = html;
   document.body.appendChild(element);
 
-  // wait for sparklines to render before generating PDF
-  await renderSparklines();
+  // ✅ now works because renderSparklines is global
+  await window.renderSparklines();
 
-  html2pdf().set({
-    margin: 10,
-    filename: `Summary_${termSelect.options[termSelect.selectedIndex].text}_${SYSTEM_YEAR}.pdf`,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  }).from(element).save().finally(() => {
-    document.body.removeChild(element); // clean up
+  html2pdf().set({ margin:10, filename:`Summary_${termSelect.options[termSelect.selectedIndex].text}_${SYSTEM_YEAR}.pdf`, image:{type:'jpeg', quality:0.98}, html2canvas:{scale:2,useCORS:true}, jsPDF:{unit:'mm', format:'a4', orientation:'portrait'} }).from(element).save().finally(() => {
+    document.body.removeChild(element);
   });
 });
 
