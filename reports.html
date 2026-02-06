@@ -341,25 +341,23 @@ if (previousTerm) {
     remarks: r.remarks
   }));
 
- 
-function renderGrouped(grouped) {
+ function renderGrouped(grouped, avgMap) {
   return Object.entries(grouped).map(([student, subjects], index) => {
 
     const admission = subjects.__admission || "N/A";
 
-    /* ===== COLLECT SCORES ===== */
-    const allScores = [];
+    const currentAvgScores = [];
     Object.entries(subjects).forEach(([subject, rows]) => {
       if (subject === "__admission") return;
       rows.forEach(r => {
         const s = levelToScore(r.level);
-        if (s > 0) allScores.push(s);
+        if (s > 0) currentAvgScores.push(s);
       });
     });
 
     const currentAvg =
-      allScores.length
-        ? allScores.reduce((a,b)=>a+b,0) / allScores.length
+      currentAvgScores.length
+        ? currentAvgScores.reduce((a,b)=>a+b,0) / currentAvgScores.length
         : null;
 
     const prevData = previousAverages[admission];
@@ -372,6 +370,9 @@ function renderGrouped(grouped) {
     const insight = generateInsight(subjects);
     const { strengths, needs } = generateStrengthsAndNeeds(subjects);
     const recommendations = generateRecommendations(subjects, trend, supportFlag);
+
+    // Calculate overall average using backend averages
+    let overallSum = 0, overallCount = 0;
 
     return `
 <div class="a4-page learner-page">
@@ -422,6 +423,13 @@ function renderGrouped(grouped) {
 
       const evidence = getEvidenceStatus(rows);
 
+      // Get backend average
+      const backendAvg = avgMap[student]?.[subject]?.average_score || null;
+      if (backendAvg) {
+        overallSum += backendAvg;
+        overallCount++;
+      }
+
       return `
       <div class="split-block subject-block">
         <h5>📘 ${subject} — Assessments: <strong>${rows.length}</strong></h5>
@@ -446,8 +454,15 @@ function renderGrouped(grouped) {
               </tr>`).join("")}
           </tbody>
         </table>
+
+        ${backendAvg ? `<p style="text-align:right;font-weight:bold;margin-top:4px;">Subject Average: <strong>${backendAvg.toFixed(2)}</strong></p>` : ""}
       </div>`;
     }).join("")}
+
+    <!-- OVERALL AVERAGE -->
+    ${overallCount ? `<div class="split-block" style="margin-top:10px;text-align:right;font-weight:bold;">
+      Overall Term Average: ${ (overallSum/overallCount).toFixed(2) }
+    </div>` : ""}
 
     <!-- CHART -->
     <div class="split-block trend-box">
@@ -455,10 +470,10 @@ function renderGrouped(grouped) {
     </div>
 
   </div>
-</div>
-`;
+</div>`;
   }).join("");
 }
+
 
 
 
