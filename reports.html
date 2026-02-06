@@ -341,37 +341,40 @@ if (previousTerm) {
     remarks: r.remarks
   }));
 
+
+
+
+
  function renderGrouped(grouped, avgMap) {
-  return Object.entries(grouped).map(([student, subjects], index) => {
+  return Object.entries(grouped).map(([student, subjects]) => {
 
     const admission = subjects.__admission || "N/A";
 
-    const currentAvgScores = [];
+    // Collect raw scores for trends & support flags (not for averages)
+    const currentScores = [];
     Object.entries(subjects).forEach(([subject, rows]) => {
       if (subject === "__admission") return;
       rows.forEach(r => {
-        const s = levelToScore(r.level);
-        if (s > 0) currentAvgScores.push(s);
+        const score = levelToScore(r.level);
+        if (score > 0) currentScores.push(score);
       });
     });
 
-    const currentAvg =
-      currentAvgScores.length
-        ? currentAvgScores.reduce((a,b)=>a+b,0) / currentAvgScores.length
+    const currentAvgScore =
+      currentScores.length
+        ? currentScores.reduce((a, b) => a + b, 0) / currentScores.length
         : null;
 
     const prevData = previousAverages[admission];
-    const previousAvg = prevData
-      ? prevData.total / prevData.count
-      : null;
+    const previousAvg = prevData ? prevData.total / prevData.count : null;
 
-    const trend = getTrend(currentAvg, previousAvg);
+    const trend = getTrend(currentAvgScore, previousAvg);
     const supportFlag = generateSupportFlag(subjects);
     const insight = generateInsight(subjects);
     const { strengths, needs } = generateStrengthsAndNeeds(subjects);
     const recommendations = generateRecommendations(subjects, trend, supportFlag);
 
-    // Calculate overall average using backend averages
+    // Accumulate backend averages for overall term average
     let overallSum = 0, overallCount = 0;
 
     return `
@@ -404,13 +407,11 @@ if (previousTerm) {
         <strong>👩🏽‍🏫 Teacher Actions</strong>
         <ul>${recommendations.teacher.map(r => `<li>${r}</li>`).join("")}</ul>
       </div>` : ""}
-
     ${recommendations.parent.length ? `
       <div class="split-block" style="margin:10px 0;padding:10px;border-left:4px solid #f39c12;background:#fffaf3;">
         <strong>🏠 Parent Support</strong>
         <ul>${recommendations.parent.map(r => `<li>${r}</li>`).join("")}</ul>
       </div>` : ""}
-
     ${recommendations.learner.length ? `
       <div class="split-block" style="margin:10px 0;padding:10px;border-left:4px solid #2ecc71;background:#f6fffa;">
         <strong>🎯 Learner Focus</strong>
@@ -423,9 +424,9 @@ if (previousTerm) {
 
       const evidence = getEvidenceStatus(rows);
 
-      // Get backend average
-      const backendAvg = avgMap[student]?.[subject]?.average_score || null;
-      if (backendAvg) {
+      // Get backend average safely
+      const backendAvg = avgMap?.[student]?.[subject]?.average_score ?? null;
+      if (backendAvg !== null) {
         overallSum += backendAvg;
         overallCount++;
       }
@@ -455,13 +456,13 @@ if (previousTerm) {
           </tbody>
         </table>
 
-        ${backendAvg ? `<p style="text-align:right;font-weight:bold;margin-top:4px;">Subject Average: <strong>${backendAvg.toFixed(2)}</strong></p>` : ""}
+        ${backendAvg !== null ? `<p style="text-align:right;font-weight:bold;margin-top:4px;">Subject Average: <strong>${backendAvg.toFixed(2)}</strong></p>` : ""}
       </div>`;
     }).join("")}
 
-    <!-- OVERALL AVERAGE -->
+    <!-- OVERALL TERM AVERAGE -->
     ${overallCount ? `<div class="split-block" style="margin-top:10px;text-align:right;font-weight:bold;">
-      Overall Term Average: ${ (overallSum/overallCount).toFixed(2) }
+      Overall Term Average: ${ (overallSum / overallCount).toFixed(2) }
     </div>` : ""}
 
     <!-- CHART -->
@@ -473,6 +474,7 @@ if (previousTerm) {
 </div>`;
   }).join("");
 }
+
 
 
 
