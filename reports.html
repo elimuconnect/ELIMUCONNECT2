@@ -967,8 +967,7 @@ const achievementBandsPlugin = {
 
 
 
- 
-window.downloadPDF = function () {
+ window.downloadPDF = async function () {
   if (!reportDiv.innerHTML.trim()) {
     alert("No report to download");
     return;
@@ -981,16 +980,14 @@ window.downloadPDF = function () {
   if (mode === "student") filename = `Student_Report_${term}_${SYSTEM_YEAR}.pdf`;
   if (mode === "subject") filename = `Subject_Report_${term}_${SYSTEM_YEAR}.pdf`;
 
-  // Clone the report so the on-screen view is preserved
   const clone = reportDiv.cloneNode(true);
 
-  // Remove detailed subjects
-  clone.querySelectorAll(".subject-block").forEach(el => el.remove());
+  // Remove detailed subjects & on-screen trend boxes
+  clone.querySelectorAll(".subject-block, .trend-box").forEach(el => el.remove());
 
-  // Remove all per-subject trend boxes
-  clone.querySelectorAll(".trend-box").forEach(el => el.remove());
+  // Add PDF trend charts and wait until all are drawn
+  const drawPromises = [];
 
-  // Add one overall trend chart per student at the top of each learner-card
   clone.querySelectorAll(".learner-card").forEach(card => {
     const admission = card.querySelector("h4")?.innerText.match(/\(Adm: (\d+)\)/)?.[1];
     if (!admission) return;
@@ -999,47 +996,34 @@ window.downloadPDF = function () {
     canvas.id = `pdf-trend-${admission}`;
     canvas.style.height = "120px";
     canvas.style.marginBottom = "10px";
-
     card.insertBefore(canvas, card.firstChild);
 
-    // Render the trend chart for this student
     const learnerData = trendMap[admission] || {};
     const terms = Object.keys(learnerData).sort();
     const scores = terms.map(t => learnerData[t]);
 
-    new Chart(canvas, {
-      type: "line",
-      data: {
-        labels: terms,
-        datasets: [{
-          label: "Overall Progress",
-          data: scores,
-          tension: 0,
-          stepped: true,
-          borderWidth: 2,
-          pointRadius: 3,
-          borderColor: "#2c3e50",
-          backgroundColor: "#2c3e50"
-        }]
-      },
-      plugins: [achievementBandsPlugin], // colored bands for achievement levels
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          y: {
-            min: 1,
-            max: 4,
-            ticks: {
-              stepSize: 1,
-              callback: v => ["", "Below", "Approaching", "Meeting", "Exceeding"][v]
-            }
+    drawPromises.push(new Promise(resolve => {
+      new Chart(canvas, {
+        type: "line",
+        data: { labels: terms, datasets: [{ label: "Overall Progress", data: scores, tension: 0, stepped: true, borderWidth: 2, pointRadius: 3, borderColor: "#2c3e50", backgroundColor: "#2c3e50" }] },
+        plugins: [achievementBandsPlugin],
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          animation: {
+            onComplete: () => resolve() // resolve when chart is done drawing
+          },
+          scales: {
+            y: { min: 1, max: 4, ticks: { stepSize: 1, callback: v => ["", "Below", "Approaching", "Meeting", "Exceeding"][v] } }
           }
         }
-      }
-    });
+      });
+    }));
   });
+
+  // Wait for all charts to finish rendering
+  await Promise.all(drawPromises);
 
   // PDF options
   const opt = {
@@ -1053,6 +1037,7 @@ window.downloadPDF = function () {
   // Generate PDF
   html2pdf().set(opt).from(clone).save();
 };
+
 
 
 
