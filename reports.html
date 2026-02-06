@@ -425,13 +425,23 @@ averages.forEach(a => {
       const evidence = getEvidenceStatus(rows);
 
       // Get backend average safely
-    const backendAvg = avgMap?.[student]?.[subject.trim()]?.average_score ?? null;
 
-      if (backendAvg !== null) {
-        overallSum += backendAvg;
-        overallCount++;
-      }
 
+const backendAvg = avgMap?.[student]?.[subject.trim()]?.average_score ?? null;
+
+let subjectAvg = backendAvg;
+if (subjectAvg === null) {
+  // compute from actual scores
+  const scores = rows.map(r => levelToScore(r.level)).filter(s => s > 0);
+  subjectAvg = scores.length ? scores.reduce((a,b)=>a+b,0)/scores.length : null;
+}
+
+if (subjectAvg !== null) {
+  overallSum += subjectAvg;
+  overallCount++;
+}
+
+     
       return `
       <div class="split-block subject-block">
         <h5>📘 ${subject} — Assessments: <strong>${rows.length}</strong></h5>
