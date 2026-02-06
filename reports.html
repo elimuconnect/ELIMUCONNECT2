@@ -304,15 +304,15 @@ if (previousTerm) {
 
 
 
+ const avgMap = {};
+averages.forEach(a => {
+  const student = `${a.first_name} ${a.last_name}`;
+  const subj = a.subject_name.trim(); // remove extra spaces
+  avgMap[student] ??= {};
+  avgMap[student][subj] = a;
+});
+ 
   
-  
-
-  const avgMap = {};
-  averages.forEach(a => {
-    const student = `${a.first_name} ${a.last_name}`;
-    avgMap[student] ??= {};
-    avgMap[student][a.subject_name] = a;
-  });
 
   /* ===== RAW RESULTS ===== */
   const { data } = await supabase
@@ -425,7 +425,8 @@ if (previousTerm) {
       const evidence = getEvidenceStatus(rows);
 
       // Get backend average safely
-      const backendAvg = avgMap?.[student]?.[subject]?.average_score ?? null;
+    const backendAvg = avgMap?.[student]?.[subject.trim()]?.average_score ?? null;
+
       if (backendAvg !== null) {
         overallSum += backendAvg;
         overallCount++;
