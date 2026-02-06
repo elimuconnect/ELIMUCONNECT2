@@ -347,6 +347,7 @@ averages.forEach(a => {
 
 
 
+
  function renderGrouped(grouped, avgMap) {
   return Object.entries(grouped).map(([student, subjects]) => {
 
@@ -375,8 +376,6 @@ averages.forEach(a => {
     const insight = generateInsight(subjects);
     const { strengths, needs } = generateStrengthsAndNeeds(subjects);
     const recommendations = generateRecommendations(subjects, trend, supportFlag);
-
-    let overallSum = 0, overallCount = 0;
 
     return `
 <div class="a4-page learner-page">
@@ -430,11 +429,6 @@ averages.forEach(a => {
       if (subjectAvg === null) {
         const scores = rows.map(r => levelToScore(r.level)).filter(s => s > 0);
         subjectAvg = scores.length ? scores.reduce((a,b)=>a+b,0)/scores.length : null;
-      }
-
-      if (subjectAvg !== null) {
-        overallSum += subjectAvg;
-        overallCount++;
       }
 
       function getAchievementLabel(score) {
@@ -494,11 +488,6 @@ averages.forEach(a => {
         </table>
       </div>`;
     }).join("")}
-
-    <!-- OVERALL TERM AVERAGE -->
-    ${overallCount ? `<div class="split-block" style="margin-top:10px;text-align:right;font-weight:bold;">
-      Overall Term Average: ${ (overallSum / overallCount).toFixed(2) }
-    </div>` : ""}
 
     <!-- CHART -->
     <div class="split-block trend-box">
