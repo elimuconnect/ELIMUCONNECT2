@@ -180,17 +180,20 @@ tr:last-child td {
  
 <div id="report"></div>
 
+
+
 <div id="pdfContainer"
      style="
-       opacity:0;
        position:absolute;
-       left:0;
+       left:-9999px;
        top:0;
        width:210mm;
-       pointer-events:none;
+       background:white;
      ">
 </div>
 
+
+ 
  
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
@@ -553,7 +556,18 @@ window.renderSparklines = async function() {
       canvas.chart = new Chart(canvas, {
         type: 'line',
         data: { labels: terms, datasets: [{ data: scores, borderColor: "#2c3e50", backgroundColor:"rgba(44,62,80,0.2)", tension:0, fill:true, pointRadius:0 }] },
-        options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{display:false}, y:{display:false, suggestedMin:1, suggestedMax:4}}, elements:{line:{borderWidth:1}} }
+       options: {
+  animation: false,            // 🔑 REQUIRED
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { display:false } },
+  scales: {
+    x: { display:false },
+    y: { display:false, suggestedMin:1, suggestedMax:4 }
+  },
+  elements: { line: { borderWidth:1 } }
+}
+
       });
 
       requestAnimationFrame(resolve);
@@ -879,23 +893,23 @@ function renderTrendChart(admission) {
   },
   plugins: [achievementBandsPlugin], // 🔑 ADD THIS
   options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false }
-    },
-    scales: {
-      y: {
-        min: 1,
-        max: 4,
-        ticks: {
-          stepSize: 1,
-          callback: v =>
-            ["", "Below", "Approaching", "Meeting", "Exceeding"][v]
-        }
+  animation: false,            // 🔑 REQUIRED
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { display:false } },
+  scales: {
+    y: {
+      min: 1,
+      max: 4,
+      ticks: {
+        stepSize: 1,
+        callback: v =>
+          ["", "Below", "Approaching", "Meeting", "Exceeding"][v]
       }
     }
   }
+}
+
 });
 }
   
