@@ -170,9 +170,7 @@ tr:last-child td {
 <p id="status"></p>
 <hr />
 
-<div class="actions-box">
-  <button id="downloadPDFBtn">⬇️ Download PDF</button>
-</div>
+
 
 <div class="actions-box">
   <button id="downloadSummaryPDFBtn">⬇️ Download Summary PDF</button>
@@ -182,11 +180,14 @@ tr:last-child td {
  
 <div id="report"></div>
 
-
-
 <div id="pdfContainer"
-     style="position:absolute; left:-9999px; top:0; width:210mm;">
+     style="
+       visibility:hidden;
+       position:relative;
+       width:210mm;
+     ">
 </div>
+
 
  
 <script type="module">
@@ -514,7 +515,15 @@ window.renderSummaryReport = function(records) {
       <div class="a4-page learner-page">
         <div class="learner-card">
           <h4>👤 ${student} (Adm: ${admission})</h4>
-          <canvas id="${sparklineId}" style="height:30px;width:100%;margin-bottom:8px;"></canvas>
+
+<canvas
+  id="${sparklineId}"
+  height="30"
+  width="600"
+  style="display:block;margin-bottom:8px;"
+></canvas>
+
+        
           ${subjectsHtml}
         </div>
       </div>
@@ -1081,7 +1090,7 @@ document.getElementById("downloadSummaryPDFBtn")
 
 
 
-window.renderSparklines = renderSparklines;
+
 
 </script>
 
