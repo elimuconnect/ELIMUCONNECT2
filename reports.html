@@ -189,6 +189,7 @@ const supabase = createClient(
 const SYSTEM_YEAR = "2026";
 
 let trendMap = {};
+let avgMap = {}; // make it global so downloadPDF can access it
 
 function levelToScore(level) {
   switch (level) {
@@ -304,14 +305,14 @@ if (previousTerm) {
 
 
 
- const avgMap = {};
+avgMap = {}; // populate it as before
 averages.forEach(a => {
   const student = `${a.first_name} ${a.last_name}`;
-  const subj = a.subject_name.trim(); // remove extra spaces
+  const subj = a.subject_name.trim();
   avgMap[student] ??= {};
   avgMap[student][subj] = a;
 });
- 
+
   
 
   /* ===== RAW RESULTS ===== */
