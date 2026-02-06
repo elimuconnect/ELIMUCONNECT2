@@ -1,4 +1,3 @@
-
  <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -142,17 +141,8 @@ tr:last-child td {
   overflow: visible;
 }
 
-#pdfContainer {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 210mm;
-  background: white;
-  z-index: -1;          /* hidden behind page */
-  pointer-events: none;
-}
 
- 
+  
 </style>
 
   
@@ -180,29 +170,14 @@ tr:last-child td {
 <hr />
 
 
-
 <div class="actions-box">
-  <button id="downloadSummaryPDFBtn">⬇️ Download Summary PDF</button>
+
+  <button onclick="downloadPDF()">⬇️ Download PDF</button>
 </div>
 
-
- 
+  
 <div id="report"></div>
 
-
-
-<div id="pdfContainer"
-     style="
-       position:relative;
-       width:210mm;
-       min-height:297mm;
-       background:white;
-     ">
-</div>
-
- 
- 
- 
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -214,7 +189,6 @@ const supabase = createClient(
 const SYSTEM_YEAR = "2026";
 
 let trendMap = {};
-let records = [];
 
 function levelToScore(level) {
   switch (level) {
@@ -358,8 +332,7 @@ if (previousTerm) {
   }
 
   /* ===== NORMALIZED RECORDS ===== */
- records = data.map(r => ({
-
+  const records = data.map(r => ({
     student: `${r.students.first_name} ${r.students.last_name}`,
     admission: r.students.admission_number,
     subject: r.competencies.subjects.name,
@@ -487,108 +460,8 @@ function renderGrouped(grouped) {
   }).join("");
 }
 
-// attach to window so sparklines can access it inside module
-window.renderSummaryReport = function(records) {
-  const grouped = {};
-  records.forEach(r => {
-    grouped[r.student] ??= { __admission: r.admission, subjects: {} };
-    grouped[r.student].subjects[r.subject] ??= [];
-    grouped[r.student].subjects[r.subject].push(r);
-  });
-
-  return Object.entries(grouped).map(([student, info]) => {
-    const admission = info.__admission;
-    const sparklineId = `sparkline-${admission}`;
-
-    const subjectsHtml = Object.entries(info.subjects).map(([subject, rows]) => {
-      if (!rows.length) return "";
-
-      const topCompetencies = rows
-        .sort((a, b) => levelToScore(b.level) - levelToScore(a.level))
-        .slice(0, 4);
-
-      const avgScore = topCompetencies.reduce((a,b)=>a+levelToScore(b.level),0)/topCompetencies.length;
-      const overall = avgScore >= 3.5 ? "Exceeding Expectations" :
-                      avgScore >= 2.5 ? "Meeting Expectations" :
-                      avgScore >= 1.5 ? "Approaching Expectations" : "Below Expectations";
-
-      const remark = rows.find(r => r.remarks)?.remarks || "—";
-
-      return `
-        <div class="subject-block">
-          <h5>📘 ${subject}</h5>
-          <p><strong>Level:</strong> ${topCompetencies[0].level} | <strong>Average:</strong> ${overall}</p>
-          <p><strong>Key Competencies:</strong> ${topCompetencies.map(c => c.competency).join(", ")}</p>
-          <p><strong>Remark:</strong> ${remark}</p>
-        </div>
-      `;
-    }).join("");
-
-    return `
-      <div class="a4-page learner-page">
-      <div class="learner-card split-block">
-
-          <h4>👤 ${student} (Adm: ${admission})</h4>
-
-<canvas
-  id="${sparklineId}"
-  height="30"
-  width="600"
-  style="display:block;margin-bottom:8px;"
-></canvas>
-
-        
-          ${subjectsHtml}
-        </div>
-      </div>
-    `;
-  }).join("");
-};
 
 
-
-
-
-// inside your module
-window.renderSparklines = async function() {
-  const promises = Object.keys(trendMap).map(adm => {
-    return new Promise(resolve => {
-      const canvas = document.getElementById(`sparkline-${adm}`);
-      if (!canvas) return resolve();
-
-      const learnerData = trendMap[adm] || {};
-      const terms = Object.keys(learnerData).sort();
-      const scores = terms.map(t => learnerData[t]);
-
-      if (canvas.chart) canvas.chart.destroy();
-
-      canvas.chart = new Chart(canvas, {
-        type: 'line',
-        data: { labels: terms, datasets: [{ data: scores, borderColor: "#2c3e50", backgroundColor:"rgba(44,62,80,0.2)", tension:0, fill:true, pointRadius:0 }] },
-       options: {
-  animation: false,            // 🔑 REQUIRED
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: { legend: { display:false } },
-  scales: {
-    x: { display:false },
-    y: { display:false, suggestedMin:1, suggestedMax:4 }
-  },
-  elements: { line: { borderWidth:1 } }
-}
-
-      });
-
-      requestAnimationFrame(resolve);
-    });
-  });
-
-  return Promise.all(promises);
-};
-
-
-
- 
 
 function splitLearnerIntoPages() {
   const pages = document.querySelectorAll(".a4-page");
@@ -902,23 +775,23 @@ function renderTrendChart(admission) {
   },
   plugins: [achievementBandsPlugin], // 🔑 ADD THIS
   options: {
-  animation: false,            // 🔑 REQUIRED
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: { legend: { display:false } },
-  scales: {
-    y: {
-      min: 1,
-      max: 4,
-      ticks: {
-        stepSize: 1,
-        callback: v =>
-          ["", "Below", "Approaching", "Meeting", "Exceeding"][v]
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false }
+    },
+    scales: {
+      y: {
+        min: 1,
+        max: 4,
+        ticks: {
+          stepSize: 1,
+          callback: v =>
+            ["", "Below", "Approaching", "Meeting", "Exceeding"][v]
+        }
       }
     }
   }
-}
-
 });
 }
   
@@ -1061,57 +934,96 @@ function getTrend(currentAvg, previousAvg) {
 }
 
 
-document.getElementById("downloadSummaryPDFBtn")
-  .addEventListener("click", async () => {
 
-    if (!termSelect.value) {
-      alert("Select a term first");
-      return;
-    }
+window.downloadPDF = function () {
+  if (!reportDiv.innerHTML.trim()) {
+    alert("No report to download");
+    return;
+  }
 
-    const container = document.getElementById("pdfContainer");
+  const term = termSelect.options[termSelect.selectedIndex]?.text || "Term";
+  const mode = viewMode.value;
 
-    /* 1️⃣ Render HTML */
-    container.innerHTML = window.renderSummaryReport(records);
+  let filename = `Report_${term}_${SYSTEM_YEAR}.pdf`;
+  if (mode === "student") filename = `Student_Report_${term}_${SYSTEM_YEAR}.pdf`;
+  if (mode === "subject") filename = `Subject_Report_${term}_${SYSTEM_YEAR}.pdf`;
 
-    /* 2️⃣ Let DOM fully paint */
-    await new Promise(r => requestAnimationFrame(r));
-    await new Promise(r => requestAnimationFrame(r));
+  // Clone the report so the on-screen view is preserved
+  const clone = reportDiv.cloneNode(true);
 
-    /* 3️⃣ Render sparklines (Chart.js) */
-    await window.renderSparklines();
+  // Remove detailed subjects
+  clone.querySelectorAll(".subject-block").forEach(el => el.remove());
 
-    /* 4️⃣ Force layout + canvas paint */
-    container.style.display = "block";
-    container.getBoundingClientRect();
+  // Remove all per-subject trend boxes
+  clone.querySelectorAll(".trend-box").forEach(el => el.remove());
 
-    await new Promise(r => requestAnimationFrame(r));
-    await new Promise(r => requestAnimationFrame(r));
+  // Add one overall trend chart per student at the top of each learner-card
+  clone.querySelectorAll(".learner-card").forEach(card => {
+    const admission = card.querySelector("h4")?.innerText.match(/\(Adm: (\d+)\)/)?.[1];
+    if (!admission) return;
 
-    /* 5️⃣ Generate PDF (SINGLE call — IMPORTANT) */
-    await html2pdf(container, {
-      margin: 10,
-      filename: `Summary_${termSelect.options[termSelect.selectedIndex].text}_${SYSTEM_YEAR}.pdf`,
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: {
-        scale: 2,
-        backgroundColor: "#ffffff",
-        windowWidth: container.scrollWidth,
-        windowHeight: container.scrollHeight
+    const canvas = document.createElement("canvas");
+    canvas.id = `pdf-trend-${admission}`;
+    canvas.style.height = "120px";
+    canvas.style.marginBottom = "10px";
+
+    card.insertBefore(canvas, card.firstChild);
+
+    // Render the trend chart for this student
+    const learnerData = trendMap[admission] || {};
+    const terms = Object.keys(learnerData).sort();
+    const scores = terms.map(t => learnerData[t]);
+
+    new Chart(canvas, {
+      type: "line",
+      data: {
+        labels: terms,
+        datasets: [{
+          label: "Overall Progress",
+          data: scores,
+          tension: 0,
+          stepped: true,
+          borderWidth: 2,
+          pointRadius: 3,
+          borderColor: "#2c3e50",
+          backgroundColor: "#2c3e50"
+        }]
       },
-      jsPDF: {
-        unit: "mm",
-        format: "a4",
-        orientation: "portrait"
-      },
-      pagebreak: { mode: ["css"] }
+      plugins: [achievementBandsPlugin], // colored bands for achievement levels
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: {
+            min: 1,
+            max: 4,
+            ticks: {
+              stepSize: 1,
+              callback: v => ["", "Below", "Approaching", "Meeting", "Exceeding"][v]
+            }
+          }
+        }
+      }
     });
-
   });
 
+  // PDF options
+  const opt = {
+    margin: 10,
+    filename,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+  };
+
+  // Generate PDF
+  html2pdf().set(opt).from(clone).save();
+};
 
 
 
+  
 </script>
 
 
