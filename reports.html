@@ -966,8 +966,7 @@ const achievementBandsPlugin = {
 
 
 
-
- window.downloadPDF = async function () {
+window.downloadPDF = async function () {
   if (!reportDiv.innerHTML.trim()) {
     alert("No report to download");
     return;
@@ -982,48 +981,26 @@ const achievementBandsPlugin = {
 
   const clone = reportDiv.cloneNode(true);
 
-  // Remove detailed subjects & on-screen trend boxes
-  clone.querySelectorAll(".subject-block, .trend-box").forEach(el => el.remove());
+  // Remove on-screen trend boxes (we'll add images instead)
+  clone.querySelectorAll(".trend-box").forEach(el => el.remove());
 
-  // Add PDF trend charts and wait until all are drawn
-  const drawPromises = [];
+  // Replace charts with images
+  const cards = clone.querySelectorAll(".learner-card");
 
-  clone.querySelectorAll(".learner-card").forEach(card => {
+  for (const card of cards) {
     const admission = card.querySelector("h4")?.innerText.match(/\(Adm: (\d+)\)/)?.[1];
-    if (!admission) return;
+    if (!admission) continue;
 
-    const canvas = document.createElement("canvas");
-    canvas.id = `pdf-trend-${admission}`;
-    canvas.style.height = "120px";
-    canvas.style.marginBottom = "10px";
-    card.insertBefore(canvas, card.firstChild);
-
-    const learnerData = trendMap[admission] || {};
-    const terms = Object.keys(learnerData).sort();
-    const scores = terms.map(t => learnerData[t]);
-
-    drawPromises.push(new Promise(resolve => {
-      new Chart(canvas, {
-        type: "line",
-        data: { labels: terms, datasets: [{ label: "Overall Progress", data: scores, tension: 0, stepped: true, borderWidth: 2, pointRadius: 3, borderColor: "#2c3e50", backgroundColor: "#2c3e50" }] },
-        plugins: [achievementBandsPlugin],
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          animation: {
-            onComplete: () => resolve() // resolve when chart is done drawing
-          },
-          scales: {
-            y: { min: 1, max: 4, ticks: { stepSize: 1, callback: v => ["", "Below", "Approaching", "Meeting", "Exceeding"][v] } }
-          }
-        }
-      });
-    }));
-  });
-
-  // Wait for all charts to finish rendering
-  await Promise.all(drawPromises);
+    // Get the original chart canvas from the page
+    const origCanvas = document.getElementById(`trend-${admission}`);
+    if (origCanvas) {
+      const img = document.createElement("img");
+      img.src = origCanvas.toDataURL("image/png"); // convert canvas to image
+      img.style.width = "100%";
+      img.style.marginBottom = "10px";
+      card.insertBefore(img, card.firstChild);
+    }
+  }
 
   // PDF options
   const opt = {
