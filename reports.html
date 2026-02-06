@@ -935,6 +935,39 @@ function getTrend(currentAvg, previousAvg) {
 
 
 
+
+
+// ===== ACHIEVEMENT BANDS PLUGIN (global) =====
+const achievementBandsPlugin = {
+  id: "achievementBands",
+  beforeDraw(chart) {
+    const { ctx, chartArea, scales } = chart;
+    if (!chartArea) return;
+
+    const y = scales.y;
+    const bands = [
+      { from: 1, to: 2, color: "rgba(248,215,218,0.35)" }, // Below
+      { from: 2, to: 3, color: "rgba(255,243,205,0.35)" }, // Approaching
+      { from: 3, to: 4, color: "rgba(212,237,218,0.35)" }, // Meeting
+      { from: 4, to: 5, color: "rgba(204,229,255,0.35)" }  // Exceeding
+    ];
+
+    ctx.save();
+    bands.forEach(b => {
+      const yTop = y.getPixelForValue(b.to);
+      const yBottom = y.getPixelForValue(b.from);
+      ctx.fillStyle = b.color;
+      ctx.fillRect(chartArea.left, yTop, chartArea.right - chartArea.left, yBottom - yTop);
+    });
+    ctx.restore();
+  }
+};
+
+
+
+
+
+ 
 window.downloadPDF = function () {
   if (!reportDiv.innerHTML.trim()) {
     alert("No report to download");
