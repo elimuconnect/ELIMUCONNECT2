@@ -182,6 +182,13 @@ tr:last-child td {
  
 <div id="report"></div>
 
+
+
+<div id="pdfContainer"
+     style="position:absolute; left:-9999px; top:0; width:210mm;">
+</div>
+
+ 
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -1022,26 +1029,59 @@ function getTrend(currentAvg, previousAvg) {
 
 
 
+document.getElementById("downloadSummaryPDFBtn")
+  .addEventListener("click", async () => {
 
-document.getElementById("downloadSummaryPDFBtn").addEventListener("click", async () => {
-  if (!termSelect.value) return alert("Select a term first");
+  if (!termSelect.value) {
+    alert("Select a term first");
+    return;
+  }
 
-  const html = renderSummaryReport(records); 
-  const element = document.createElement("div");
-  element.style.position = "absolute";
-  element.style.left = "-9999px";
-  element.innerHTML = html;
-  document.body.appendChild(element);
+  const container = document.getElementById("pdfContainer");
 
-  // ✅ now works because renderSparklines is global
+  // 1️⃣ Render HTML
+  container.innerHTML = window.renderSummaryReport(records);
+
+  // 2️⃣ Allow DOM to paint
+  await new Promise(r => requestAnimationFrame(r));
+  await new Promise(r => requestAnimationFrame(r));
+
+  // 3️⃣ Render sparklines (Chart.js)
   await window.renderSparklines();
 
-  html2pdf().set({ margin:10, filename:`Summary_${termSelect.options[termSelect.selectedIndex].text}_${SYSTEM_YEAR}.pdf`, image:{type:'jpeg', quality:0.98}, html2canvas:{scale:2,useCORS:true}, jsPDF:{unit:'mm', format:'a4', orientation:'portrait'} }).from(element).save().finally(() => {
-    document.body.removeChild(element);
-  });
+  // 4️⃣ Give Chart.js time to finish drawing
+  await new Promise(r => setTimeout(r, 300));
+
+  // 5️⃣ Generate PDF
+  await html2pdf()
+    .set({
+      margin: 10,
+      filename: `Summary_${termSelect.options[termSelect.selectedIndex].text}_${SYSTEM_YEAR}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff"
+      },
+      jsPDF: {
+        unit: "mm",
+        format: "a4",
+        orientation: "portrait"
+      },
+      pagebreak: {
+        mode: ["css", "legacy"]
+      }
+    })
+    .from(container)
+    .save();
+
+  // 6️⃣ Cleanup
+  container.innerHTML = "";
 });
 
 
+
+window.renderSparklines = renderSparklines;
 
 </script>
 
