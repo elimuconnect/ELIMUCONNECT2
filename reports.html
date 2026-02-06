@@ -182,12 +182,14 @@ tr:last-child td {
 
 <div id="pdfContainer"
      style="
-       visibility:hidden;
-       position:relative;
+       opacity:0;
+       position:absolute;
+       left:0;
+       top:0;
        width:210mm;
+       pointer-events:none;
      ">
 </div>
-
 
  
 <script type="module">
@@ -1085,7 +1087,8 @@ document.getElementById("downloadSummaryPDFBtn")
     .save();
 
   // 6️⃣ Cleanup
-  container.innerHTML = "";
+  await new Promise(r => setTimeout(r, 200));
+container.innerHTML = "";
 });
 
 
