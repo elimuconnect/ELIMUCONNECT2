@@ -1006,7 +1006,6 @@ const achievementBandsPlugin = {
 
 
 
-
 window.downloadPDF = async function () {
   if (!reportDiv.innerHTML.trim()) {
     alert("No report to download");
@@ -1022,28 +1021,66 @@ window.downloadPDF = async function () {
 
   const clone = reportDiv.cloneNode(true);
 
-  // Remove on-screen trend boxes (we'll add images instead)
+  // ===== REMOVE DETAILED TABLES =====
+  clone.querySelectorAll(".subject-block table, .split-block.recommendations, .split-block.subject-block").forEach(el => {
+    // Keep only subject average row if exists
+    const tfoot = el.querySelector("tfoot");
+    if (tfoot) el.replaceWith(tfoot); // replace table with only average row
+    else el.remove();
+  });
+
+  // Remove on-screen trend boxes
   clone.querySelectorAll(".trend-box").forEach(el => el.remove());
 
-  // Replace charts with images
+  // ===== INSERT SMALL COMBINED CHARTS =====
   const cards = clone.querySelectorAll(".learner-card");
-
   for (const card of cards) {
+    const studentName = card.querySelector("h4")?.innerText.split("👤")[1]?.split("(Adm")[0]?.trim();
     const admission = card.querySelector("h4")?.innerText.match(/\(Adm: (\d+)\)/)?.[1];
     if (!admission) continue;
 
-    // Get the original chart canvas from the page
-    const origCanvas = document.getElementById(`trend-${admission}`);
-    if (origCanvas) {
-      const img = document.createElement("img");
-      img.src = origCanvas.toDataURL("image/png"); // convert canvas to image
-      img.style.width = "100%";
-      img.style.marginBottom = "10px";
-      card.insertBefore(img, card.firstChild);
-    }
+    // Gather all subjects for this student
+    const subjects = Object.keys(avgMap?.[studentName] || {});
+    if (!subjects.length) continue;
+
+    // Collect scores for each subject
+    const datasets = subjects.map(subj => {
+      const score = avgMap[studentName][subj]?.average_score ?? 0;
+      return {
+        label: subj,
+        data: [score], // only one term in download
+        borderColor: getRandomColor(subj),
+        backgroundColor: "transparent",
+        tension: 0.2,
+        pointRadius: 3
+      };
+    });
+
+    const canvas = document.createElement("canvas");
+    canvas.width = 300;  // small width
+    canvas.height = 120; // small height
+    card.appendChild(canvas);
+
+    new Chart(canvas, {
+      type: "line",
+      data: {
+        labels: ["Current Term"],
+        datasets: datasets
+      },
+      options: {
+        responsive: false,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: "bottom", labels: { font: { size: 8 } } }
+        },
+        scales: {
+          y: { min: 1, max: 4, ticks: { stepSize: 1 } }
+        }
+      }
+    });
   }
 
-  // PDF options
+  // ===== PDF OPTIONS =====
   const opt = {
     margin: 10,
     filename,
@@ -1052,12 +1089,17 @@ window.downloadPDF = async function () {
     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
   };
 
-  // Generate PDF
   html2pdf().set(opt).from(clone).save();
 };
 
-
-
+// ===== HELPER: RANDOM COLOR PER SUBJECT =====
+function getRandomColor(seed) {
+  // consistent color per subject
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+  const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
+  return "#" + "00000".substring(0, 6 - c.length) + c;
+}
 
   
 </script>
