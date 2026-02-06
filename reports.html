@@ -143,7 +143,11 @@ tr:last-child td {
 }
 
 
-  
+  #pdfContainer {
+  opacity: 0.01; /* NOT zero */
+  pointer-events: none;
+}
+
 </style>
 
   
@@ -184,15 +188,14 @@ tr:last-child td {
 
 <div id="pdfContainer"
      style="
-       position:absolute;
-       left:-9999px;
-       top:0;
+       position:relative;
        width:210mm;
+       min-height:297mm;
        background:white;
      ">
 </div>
 
-
+ 
  
  
 <script type="module">
@@ -518,7 +521,8 @@ window.renderSummaryReport = function(records) {
 
     return `
       <div class="a4-page learner-page">
-        <div class="learner-card">
+      <div class="learner-card split-block">
+
           <h4>👤 ${student} (Adm: ${admission})</h4>
 
 <canvas
