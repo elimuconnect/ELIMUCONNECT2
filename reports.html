@@ -947,6 +947,7 @@ if (viewMode.value === "student") {
 }
 
 /* ===== SUBJECT VIEW ===== */
+/* ===== SUBJECT VIEW ===== */
 if (viewMode.value === "subject") {
   const subjects = [...new Set(records.map(r => r.subject || "—"))];
 
@@ -975,18 +976,13 @@ if (viewMode.value === "subject") {
       const studentName = r.student || `${r.first_name || ""} ${r.last_name || ""}`.trim() || "Unknown Student";
       const subj = r.subject || "—";
 
-      // Ensure student object exists
       grouped[studentName] ??= {
         __admission: r.admission,
         __school: r.schoolName || "—",
         __class: r.className || "—"
       };
 
-      // Ensure subject is always an array
-      if (!Array.isArray(grouped[studentName][subj])) {
-        grouped[studentName][subj] = [];
-      }
-
+      if (!Array.isArray(grouped[studentName][subj])) grouped[studentName][subj] = [];
       grouped[studentName][subj].push(r);
     });
 
@@ -1003,13 +999,12 @@ if (viewMode.value === "subject") {
       });
     }, 0);
   });
-}
+} // ✅ CLOSE SUBJECT VIEW BLOCK
 
 termSelect.addEventListener("change", loadReport);
 viewMode.addEventListener("change", loadReport);
 
-
-
+// ===== HELPER FUNCTIONS =====
 function getTrend(currentAvg, previousAvg) {
   if (previousAvg === null) return "🆕 New Entry";
 
@@ -1020,12 +1015,8 @@ function getTrend(currentAvg, previousAvg) {
   return "➖ Stable";
 }
 
-
-
-
-
-  
 window.downloadPDF = async function () {
+ 
   if (!reportDiv.innerHTML.trim()) {
     alert("No report to download");
     return;
