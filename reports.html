@@ -351,15 +351,17 @@ const schoolName = data[0]?.students?.school?.name ?? "—";
 const className  = data[0]?.students?.classes?.name ?? "—";
 
   /* ===== NORMALIZED RECORDS ===== */
-  const records = data.map(r => ({
-    student: `${r.students.first_name} ${r.students.last_name}`,
-    admission: r.students.admission_number,
-    subject: r.competencies.subjects.name,
-    competency: r.competencies.name,
-    level: r.achievement_levels.label,
-    remarks: r.remarks
-  }));
-
+const records = data.map(r => ({
+  student: `${r.students.first_name} ${r.students.last_name}`,
+  admission: r.students.admission_number,
+  subject: r.competencies.subjects.name,
+  competency: r.competencies.name,
+  level: r.achievement_levels.label,
+  remarks: r.remarks,
+  school: r.students?.school?.name ?? "—",
+  className: r.students?.classes?.name ?? "—"
+}));
+ 
 
 
 function renderOverviewHeader({ school, className, term, year }) {
@@ -415,8 +417,8 @@ function renderOverviewHeader({ school, className, term, year }) {
 <div class="a4-page learner-page">
   <div class="learner-card">
 ${renderOverviewHeader({
-  school: schoolName,
-  className: className,
+  school: subjects.__school,
+  className: subjects.__className,
   term: termName,
   year: SYSTEM_YEAR
 })}
@@ -890,6 +892,15 @@ function renderTrendChart(admission) {
     grouped[r.student][r.subject] ??= [];
     grouped[r.student][r.subject].push(r);
   });
+records.forEach(r => {
+  grouped[r.student] ??= {
+    __admission: r.admission,
+    __school: r.school,
+    __className: r.className
+  };
+  grouped[r.student][r.subject] ??= [];
+  grouped[r.student][r.subject].push(r);
+});
 
     reportDiv.innerHTML = `
   <h3>${termName} – ${SYSTEM_YEAR}</h3>
@@ -911,96 +922,115 @@ setTimeout(() => {
   }
 
   /* ===== STUDENT VIEW ===== */
-  if (viewMode.value === "student") {
-    filterBox.innerHTML = `
-      <label>Admission Number</label><br />
-      <input id="admInput" />
-    `;
-
-    document.getElementById("admInput").addEventListener("input", e => {
-      const adm = e.target.value.trim();
-      const filtered = records.filter(r => r.admission === adm);
-
-      if (!filtered.length) {
-        reportDiv.innerHTML = "<p>No student found</p>";
-        return;
-      }
-
-      const grouped = {};
-filtered.forEach(r => {
-  grouped[r.student] ??= { __admission: r.admission };
-  grouped[r.student][r.subject] ??= [];
-  grouped[r.student][r.subject].push(r);
-});
-
-
-      reportDiv.innerHTML = renderGrouped(grouped);
-    
-requestAnimationFrame(() => {
-  splitLearnerIntoPages();
-});
-
-setTimeout(() => {
-  Object.values(grouped).forEach(s => {
-    if (s.__admission) {
-      renderTrendChart(s.__admission);
-    }
+ 
+/* ===== TERM VIEW ===== */
+if (viewMode.value === "term") {
+  const grouped = {};
+  records.forEach(r => {
+    grouped[r.student] ??= {
+      __admission: r.admission,
+      __school: r.school,
+      __className: r.className
+    };
+    grouped[r.student][r.subject] ??= [];
+    grouped[r.student][r.subject].push(r);
   });
-}, 0);
 
+  reportDiv.innerHTML = `
+    <h3>${termName} – ${SYSTEM_YEAR}</h3>
+    ${renderGrouped(grouped)}
+  `;
 
-      
-      });
-  }
+  requestAnimationFrame(() => splitLearnerIntoPages());
 
-  /* ===== SUBJECT VIEW ===== */
-  if (viewMode.value === "subject") {
-    const subjects = [...new Set(records.map(r => r.subject))];
-
-    filterBox.innerHTML = `
-      <label>Subject</label><br />
-      <select id="subjectSelect">
-        <option value="">Select subject</option>
-        ${subjects.map(s => `<option>${s}</option>`).join("")}
-      </select>
-    `;
-
-    document.getElementById("subjectSelect").addEventListener("change", e => {
-      const subject = e.target.value;
-      if (!subject) return;
-
-      const filtered = records.filter(r => r.subject === subject);
-
-const grouped = {};
-
-filtered.forEach(r => {
-  grouped[r.student] ??= { __admission: r.admission };
-  grouped[r.student][r.subject] ??= [];
-  grouped[r.student][r.subject].push(r);
-});
-
-
-      
-      reportDiv.innerHTML = `
-        <h3>${subject} – All Students</h3>
-        ${renderGrouped(grouped)}
-      `;
-
-requestAnimationFrame(() => {
-  splitLearnerIntoPages();
-});
-
-setTimeout(() => {
-  Object.values(grouped).forEach(s => {
-    if (s.__admission) {
-      renderTrendChart(s.__admission);
-    }
-  });
-}, 0);
-
-      
-      
+  setTimeout(() => {
+    Object.values(grouped).forEach(s => {
+      if (s.__admission) renderTrendChart(s.__admission);
     });
+  }, 0);
+}
+
+/* ===== STUDENT VIEW ===== */
+if (viewMode.value === "student") {
+  filterBox.innerHTML = `
+    <label>Admission Number</label><br />
+    <input id="admInput" />
+  `;
+
+  document.getElementById("admInput").addEventListener("input", e => {
+    const adm = e.target.value.trim();
+    const filtered = records.filter(r => r.admission === adm);
+
+    if (!filtered.length) {
+      reportDiv.innerHTML = "<p>No student found</p>";
+      return;
+    }
+
+    const grouped = {};
+    filtered.forEach(r => {
+      grouped[r.student] ??= {
+        __admission: r.admission,
+        __school: r.school,
+        __className: r.className
+      };
+      grouped[r.student][r.subject] ??= [];
+      grouped[r.student][r.subject].push(r);
+    });
+
+    reportDiv.innerHTML = renderGrouped(grouped);
+
+    requestAnimationFrame(() => splitLearnerIntoPages());
+
+    setTimeout(() => {
+      Object.values(grouped).forEach(s => {
+        if (s.__admission) renderTrendChart(s.__admission);
+      });
+    }, 0);
+  });
+}
+
+/* ===== SUBJECT VIEW ===== */
+if (viewMode.value === "subject") {
+  const subjects = [...new Set(records.map(r => r.subject))];
+
+  filterBox.innerHTML = `
+    <label>Subject</label><br />
+    <select id="subjectSelect">
+      <option value="">Select subject</option>
+      ${subjects.map(s => `<option>${s}</option>`).join("")}
+    </select>
+  `;
+
+  document.getElementById("subjectSelect").addEventListener("change", e => {
+    const subject = e.target.value;
+    if (!subject) return;
+
+    const filtered = records.filter(r => r.subject === subject);
+
+    const grouped = {};
+    filtered.forEach(r => {
+      grouped[r.student] ??= {
+        __admission: r.admission,
+        __school: r.school,
+        __className: r.className
+      };
+      grouped[r.student][r.subject] ??= [];
+      grouped[r.student][r.subject].push(r);
+    });
+
+    reportDiv.innerHTML = `
+      <h3>${subject} – All Students</h3>
+      ${renderGrouped(grouped)}
+    `;
+
+    requestAnimationFrame(() => splitLearnerIntoPages());
+
+    setTimeout(() => {
+      Object.values(grouped).forEach(s => {
+        if (s.__admission) renderTrendChart(s.__admission);
+      });
+    }, 0);
+  });   
   }
 }
 
