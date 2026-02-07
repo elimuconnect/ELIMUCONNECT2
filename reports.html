@@ -318,6 +318,7 @@ averages.forEach(a => {
 });
 
   
+/* ===== RAW RESULTS WITH SCHOOL & CLASS ===== */
 const { data, error } = await supabase
   .from("assessment_results")
   .select(`
@@ -326,8 +327,8 @@ const { data, error } = await supabase
       first_name,
       last_name,
       admission_number,
-      school ( name ),
-      classes ( name )
+      schools ( name ),   -- use the correct relationship name
+      classes ( name )    -- use the correct relationship name
     ),
     competencies (
       name,
@@ -338,28 +339,21 @@ const { data, error } = await supabase
   .eq("term", termName)
   .eq("academic_year", SYSTEM_YEAR);
 
-
 if (error) {
-  console.error("Assessment results error:", error);
-  status.innerText = "Failed to load results.";
+  console.error("Assessment results error: ", error);
+  status.innerText = "Error fetching assessment results.";
   return;
 }
 
-
-// ===== SCHOOL & CLASS (FROM FIRST RECORD) =====
-const schoolName =
-  data[0].students.school?.name ?? "";
-
-const className =
-  data[0].students.classes?.name ?? "";
-
-
-
- 
-if (!data || data.length === 0) {
+if (!data.length) {
   status.innerText = "No results found.";
   return;
 }
+
+/* ===== EXTRACT SCHOOL & CLASS ===== */
+const schoolName = data?.[0]?.students?.schools?.name ?? "N/A";
+const className = data?.[0]?.students?.classes?.name ?? "N/A";
+
 
 
   /* ===== NORMALIZED RECORDS ===== */
@@ -423,23 +417,22 @@ function renderOverviewHeader({ school, className, term, year }) {
     const { strengths, needs } = generateStrengthsAndNeeds(subjects);
     const recommendations = generateRecommendations(subjects, trend, supportFlag);
 
-    return `
+  return `
 <div class="a4-page learner-page">
   <div class="learner-card">
-renderOverviewHeader({
-  school: schoolName,
-  className,
-  term: termName,
-  year: SYSTEM_YEAR
-});
 
+    ${renderOverviewHeader({
+      school: schoolName,
+      className,
+      term: termName,
+      year: SYSTEM_YEAR
+    })}
 
     <!-- HEADER -->
     <div class="split-block learner-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
       <h4>👤 ${student} <small>(<strong>Adm: ${admission}</strong>)</small></h4>
       <div style="font-weight:bold;">${supportFlag}</div>
     </div>
-
     <!-- TREND SUMMARY -->
     <div class="split-block">
       <p style="margin:6px 0 10px 0;font-weight:bold;">
