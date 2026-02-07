@@ -383,13 +383,12 @@ function renderOverviewHeader({ school, className, term, year }) {
 }
 
 
-
 function renderGrouped(grouped, avgMap) {
   return Object.entries(grouped).map(([student, subjects]) => {
 
     const admission = subjects.__admission || "N/A";
 
-    // Collect raw scores for trends & support flags (not for averages)
+    // Collect raw scores for trends & support flags
     const currentScores = [];
     Object.entries(subjects).forEach(([subject, rows]) => {
       if (subject.startsWith("__")) return; // skip meta keys
@@ -505,9 +504,9 @@ function renderGrouped(grouped, avgMap) {
           </thead>
           <tbody>
             ${rows.map(r => `
-              <tr style="background:${levelColor[r.level]}">
-                <td>${r.competency}</td>
-                <td>${r.level}</td>
+              <tr style="background:${levelColor[r.level] || "#fff"}">
+                <td>${r.competency || "—"}</td>
+                <td>${r.level || "—"}</td>
                 <td>${r.remarks || "—"}</td>
               </tr>`).join("")}
           </tbody>
@@ -541,7 +540,6 @@ function renderGrouped(grouped, avgMap) {
 </div>`;
   }).join("");
 }
-
 
 
 
@@ -590,7 +588,6 @@ function splitLearnerIntoPages() {
 
 
   
-
 function generateInsight(subjects) {
   const subjectScores = {};
   let total = 0;
@@ -598,6 +595,11 @@ function generateInsight(subjects) {
 
   Object.entries(subjects).forEach(([subject, rows]) => {
     if (subject === "__admission") return;
+
+    if (!Array.isArray(rows)) {
+      console.warn("Expected array of rows for subject", subject, rows);
+      return; // skip invalid entries
+    }
 
     subjectScores[subject] = [];
 
@@ -646,7 +648,6 @@ function generateInsight(subjects) {
 }
 
 
-
 function generateSupportFlag(subjects) {
   let scores = [];
   let belowCount = 0;
@@ -654,6 +655,11 @@ function generateSupportFlag(subjects) {
 
   Object.entries(subjects).forEach(([subject, rows]) => {
     if (subject === "__admission") return;
+
+    if (!Array.isArray(rows)) {
+      console.warn("Expected array of rows for subject", subject, rows);
+      return; // skip invalid entries
+    }
 
     let subjectScores = [];
 
@@ -679,9 +685,9 @@ function generateSupportFlag(subjects) {
 
   /* 🔴 NEEDS SUPPORT */
   if (
-    overall < 2.3 ||                 // overall struggling
-    belowCount >= 3 ||                // repeated difficulty
-    subjectAverages.filter(a => a <= 2).length >= 2 // weak in 2+ subjects
+    overall < 2.3 ||                 
+    belowCount >= 3 ||                
+    subjectAverages.filter(a => a <= 2).length >= 2
   ) {
     return `<span style="color:#c0392b;font-weight:bold;">🔴 Needs Learning Support</span>`;
   }
@@ -701,7 +707,6 @@ function generateSupportFlag(subjects) {
 
 
 
-
 function generateStrengthsAndNeeds(subjects) {
   const strengths = [];
   const needs = [];
@@ -709,26 +714,28 @@ function generateStrengthsAndNeeds(subjects) {
   Object.entries(subjects).forEach(([subject, rows]) => {
     if (subject === "__admission") return;
 
+    if (!Array.isArray(rows)) {
+      console.warn("Expected array of rows for subject", subject, rows);
+      return;
+    }
+
     let scores = rows.map(r => levelToScore(r.level)).filter(s => s > 0);
     if (!scores.length) return;
 
     const avg = scores.reduce((a,b)=>a+b,0) / scores.length;
     const weakCount = scores.filter(s => s <= 2).length;
 
-  if (avg >= 3.5 && weakCount === 0) {
-  strengths.push(subject);
-}
+    if (avg >= 3.5 && weakCount === 0) {
+      strengths.push(subject);
+    }
 
-if (avg < 2.5 || weakCount >= 2) {
-  needs.push(subject);
-
-
+    if (avg < 2.5 || weakCount >= 2) {
+      needs.push(subject);
     }
   });
 
   return { strengths, needs };
 }
-
 
 
 function generateRecommendations(subjects, trend, supportFlag) {
@@ -779,6 +786,11 @@ function generateRecommendations(subjects, trend, supportFlag) {
 
 
 function getEvidenceStatus(rows) {
+  if (!Array.isArray(rows)) {
+    console.warn("Expected array of rows in getEvidenceStatus", rows);
+    rows = [];
+  }
+
   const count = rows.length;
 
   if (count >= 3) {
@@ -795,7 +807,6 @@ function getEvidenceStatus(rows) {
     note: "Consider additional assessment opportunities"
   };
 }
-
 
 
 const achievementBandsPlugin = {
