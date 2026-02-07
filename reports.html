@@ -982,14 +982,11 @@ if (viewMode.value === "subject") {
     `;
 
     requestAnimationFrame(() => splitLearnerIntoPages());
-
-    setTimeout(() => {
-      Object.values(grouped).forEach(s => {
-        if (s.__admission) renderTrendChart(s.__admission);
-      });
-    }, 0);
+setTimeout(() => {
+  Object.values(grouped).forEach(s => {
+    if (s.__admission) renderTrendChart(s.__admission);
   });
-}
+}, 0);
 
 termSelect.addEventListener("change", loadReport);
 viewMode.addEventListener("change", loadReport);
