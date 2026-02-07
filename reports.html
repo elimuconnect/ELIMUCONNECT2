@@ -463,8 +463,27 @@ ${renderOverviewHeader({
       </div>` : ""}
 
     <!-- SUBJECTS -->
-    ${Object.entries(subjects).map(([subject, rows]) => {
-      if (subject === "__admission") return "";
+  
+
+
+Object.entries(subjects).map(([subject, rows]) => {
+  if (subject === "__admission" || subject === "__school" || subject === "__className") return "";
+
+  if (!Array.isArray(rows)) {
+    console.warn("Expected array of rows for subject", subject, rows);
+    return "";
+  }
+
+  rows.forEach(r => {
+    const score = levelToScore(r.level);
+    if (score > 0) currentScores.push(score);
+  });
+});
+
+
+
+
+     
 
       const evidence = getEvidenceStatus(rows);
 
@@ -928,13 +947,15 @@ if (viewMode.value === "term") {
  const grouped = {};
 
 records.forEach(r => {
-  grouped[r.student] ??= {
+  const studentGroup = grouped[r.student] ??= {
     __admission: r.admission,
     __school: r.school,
     __className: r.className
   };
-  grouped[r.student][r.subject] ??= [];
-  grouped[r.student][r.subject].push(r);
+
+  const subj = r.subject ?? "Unknown Subject";
+  studentGroup[subj] ??= [];
+  studentGroup[subj].push(r);
 });
 
   reportDiv.innerHTML = `
@@ -970,14 +991,17 @@ if (viewMode.value === "student") {
    const grouped = {};
 
 records.forEach(r => {
-  grouped[r.student] ??= {
+  const studentGroup = grouped[r.student] ??= {
     __admission: r.admission,
     __school: r.school,
     __className: r.className
   };
-  grouped[r.student][r.subject] ??= [];
-  grouped[r.student][r.subject].push(r);
+
+  const subj = r.subject ?? "Unknown Subject";
+  studentGroup[subj] ??= [];
+  studentGroup[subj].push(r);
 });
+
 
     reportDiv.innerHTML = renderGrouped(grouped);
 
@@ -1012,14 +1036,17 @@ if (viewMode.value === "subject") {
   const grouped = {};
 
 records.forEach(r => {
-  grouped[r.student] ??= {
+  const studentGroup = grouped[r.student] ??= {
     __admission: r.admission,
     __school: r.school,
     __className: r.className
   };
-  grouped[r.student][r.subject] ??= [];
-  grouped[r.student][r.subject].push(r);
+
+  const subj = r.subject ?? "Unknown Subject";
+  studentGroup[subj] ??= [];
+  studentGroup[subj].push(r);
 });
+
 
 
     reportDiv.innerHTML = `
