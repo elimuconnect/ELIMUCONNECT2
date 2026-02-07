@@ -361,10 +361,6 @@ if (!data || data.length === 0) {
   return;
 }
 
-const schoolName = data[0]?.students?.school?.name ?? "—";
-
-
-const className  = data[0]?.students?.classes?.name ?? "—";
 
   /* ===== NORMALIZED RECORDS ===== */
   const records = data.map(r => ({
