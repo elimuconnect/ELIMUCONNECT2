@@ -191,6 +191,7 @@ const SYSTEM_YEAR = "2026";
 let trendMap = {};
 let avgMap = {}; // make it global so downloadPDF can access it
 
+
 function levelToScore(level) {
   switch (level) {
     case "Below Expectations": return 1;
@@ -232,6 +233,37 @@ termSelect.innerHTML =
   `<option value="">Select term</option>` +
   terms.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
 
+
+
+/* ========== LOAD SCHOOL & CLASS ========== */
+let schoolInfo = null;
+let classInfo = null;
+
+const { data: schoolData, error: schoolErr } = await supabase
+  .from("schools")
+  .select("id, name")
+  .single();
+
+if (schoolErr) {
+  console.error("School fetch error:", schoolErr);
+} else {
+  schoolInfo = schoolData;
+}
+
+const { data: classData, error: classErr } = await supabase
+  .from("classes")
+  .select("id, name")
+  .single();
+
+if (classErr) {
+  console.error("Class fetch error:", classErr);
+} else {
+  classInfo = classData;
+}
+
+
+
+ 
 /* ========== MAIN LOAD ========== */
 async function loadReport() {
   reportDiv.innerHTML = "";
@@ -346,6 +378,21 @@ averages.forEach(a => {
 
 
 
+function renderOverviewHeader({ school, className, term, year }) {
+  return `
+    <div class="report-overview no-split" style="
+      border-bottom: 2px solid #333;
+      padding-bottom: 6px;
+      margin-bottom: 10px;
+    ">
+      <h3 style="margin:0;">${school}</h3>
+      <div style="font-size:0.9em;color:#555;">
+        <strong>Class:</strong> ${className} &nbsp; | &nbsp;
+        <strong>Term:</strong> ${term} – ${year}
+      </div>
+    </div>
+  `;
+}
 
 
 
@@ -381,6 +428,13 @@ averages.forEach(a => {
     return `
 <div class="a4-page learner-page">
   <div class="learner-card">
+
+    ${renderOverviewHeader({
+      school: schoolInfo?.name ?? "—",
+      className: classInfo?.name ?? "—",
+      term: termName,
+      year: SYSTEM_YEAR
+    })}
 
     <!-- HEADER -->
     <div class="split-block learner-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
@@ -516,7 +570,11 @@ function splitLearnerIntoPages() {
     let currentPage = page;
 
     Array.from(card.children).forEach(block => {
-      if (!block.classList.contains("split-block")) return;
+    if (
+  !block.classList.contains("split-block") ||
+  block.classList.contains("no-split")
+) return;
+
 
       const blockBottom =
         block.getBoundingClientRect().bottom -
