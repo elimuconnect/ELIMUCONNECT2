@@ -141,6 +141,10 @@ tr:last-child td {
   overflow: visible;
 }
 
+.report-overview h3 {
+  font-size: 1.1em;
+  line-height: 1.2em;
+}
 
   
 </style>
@@ -358,16 +362,16 @@ const className  = data[0]?.students?.classes?.name ?? "—";
 
 
 
-
-
 function renderOverviewHeader({ school, className, term, year }) {
   return `
     <div class="report-overview no-split" style="
       border-bottom: 2px solid #333;
       padding-bottom: 6px;
       margin-bottom: 10px;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
     ">
-      <h3 style="margin:0;">${school}</h3>
+      <h3 style="margin:0; word-wrap: break-word; overflow-wrap: break-word;">${school}</h3>
       <div style="font-size:0.9em;color:#555;">
         <strong>Class:</strong> ${className} &nbsp; | &nbsp;
         <strong>Term:</strong> ${term} – ${year}
