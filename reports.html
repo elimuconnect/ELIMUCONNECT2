@@ -327,8 +327,8 @@ const { data, error } = await supabase
       first_name,
       last_name,
       admission_number,
-      schools ( name ),   -- use the correct relationship name
-      classes ( name )    -- use the correct relationship name
+      schools!inner(name),
+      classes!inner(name)
     ),
     competencies (
       name,
@@ -338,6 +338,7 @@ const { data, error } = await supabase
   `)
   .eq("term", termName)
   .eq("academic_year", SYSTEM_YEAR);
+
 
 if (error) {
   console.error("Assessment results error: ", error);
