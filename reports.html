@@ -1021,6 +1021,22 @@ termSelect.addEventListener("change", loadReport);
 viewMode.addEventListener("change", loadReport);
 
 
+
+function getTrend(currentAvg, previousAvg) {
+  if (previousAvg === null) return "🆕 New Entry";
+
+  const diff = currentAvg - previousAvg;
+
+  if (diff >= 0.3) return "📈 Improving";
+  if (diff <= -0.3) return "📉 Declining";
+  return "➖ Stable";
+}
+
+
+
+
+
+  
 window.downloadPDF = async function () {
   if (!reportDiv.innerHTML.trim()) {
     alert("No report to download");
