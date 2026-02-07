@@ -124,22 +124,18 @@ tr:last-child td {
 
 /* ===== A4 PAGE CANVAS ===== */
 .a4-page {
-  width: 210mm;
-  height: 297mm;
+  width: 100%;
+  min-height: 297mm;
 
-  padding: 15mm 12mm;
+  padding: 0;
+  margin: 0;
+
   box-sizing: border-box;
-
   background: white;
-  margin: 0 auto 12px auto;
 
-  overflow: visible; /* allow content measurement */
-}
-
-
-.a4-page {
   overflow: visible;
 }
+
 
 .report-overview h3 {
   font-size: 1.1em;
@@ -1029,96 +1025,69 @@ function getTrend(currentAvg, previousAvg) {
 
 
 
-
-
-
-  
 window.downloadPDF = async function () {
- 
   if (!reportDiv.innerHTML.trim()) {
     alert("No report to download");
     return;
   }
 
   const term = termSelect.options[termSelect.selectedIndex]?.text || "Term";
-  const mode = viewMode.value;
-
-  let filename = `Report_${term}_${SYSTEM_YEAR}.pdf`;
-  if (mode === "student") filename = `Student_Report_${term}_${SYSTEM_YEAR}.pdf`;
-  if (mode === "subject") filename = `Subject_Report_${term}_${SYSTEM_YEAR}.pdf`;
+  const filename = `Summary_Report_${term}_${SYSTEM_YEAR}.pdf`;
 
   const clone = reportDiv.cloneNode(true);
 
-  // ===== REMOVE DETAILED TABLES =====
-  clone.querySelectorAll(".subject-block table, .split-block.recommendations, .split-block.subject-block").forEach(el => {
-    // Keep only subject average row if exists
-    const tfoot = el.querySelector("tfoot");
-    if (tfoot) el.replaceWith(tfoot); // replace table with only average row
-    else el.remove();
+  /* ===============================
+     PDF-SAFE RESET
+  =============================== */
+  clone.style.width = "100%";
+  clone.style.margin = "0";
+  clone.style.padding = "0";
+  clone.style.boxSizing = "border-box";
+
+  clone.querySelectorAll("*").forEach(el => {
+    el.style.maxWidth = "100%";
+    el.style.boxSizing = "border-box";
   });
 
-  // Remove on-screen trend boxes
-  clone.querySelectorAll(".trend-box").forEach(el => el.remove());
+  /* ===============================
+     REMOVE DETAILS (SUMMARY PDF)
+  =============================== */
+  clone.querySelectorAll(
+    ".subject-block, .trend-box, ul, .split-block:not(.learner-header)"
+  ).forEach(el => el.remove());
 
-  // ===== INSERT SMALL COMBINED CHARTS =====
-  const cards = clone.querySelectorAll(".learner-card");
-  for (const card of cards) {
-    const studentName = card.querySelector("h4")?.innerText.split("👤")[1]?.split("(Adm")[0]?.trim();
-    const admission = card.querySelector("h4")?.innerText.match(/\(Adm: (\d+)\)/)?.[1];
-    if (!admission) continue;
+  clone.querySelectorAll(".learner-card").forEach(card => {
+    card.style.margin = "0";
+    card.style.padding = "0";
+    card.style.width = "100%";
+  });
 
-    // Gather all subjects for this student
-    const subjects = Object.keys(avgMap?.[studentName] || {});
-    if (!subjects.length) continue;
-
-    // Collect scores for each subject
-    const datasets = subjects.map(subj => {
-      const score = avgMap[studentName][subj]?.average_score ?? 0;
-      return {
-        label: subj,
-        data: [score], // only one term in download
-        borderColor: getRandomColor(subj),
-        backgroundColor: "transparent",
-        tension: 0.2,
-        pointRadius: 3
-      };
-    });
-
-    const canvas = document.createElement("canvas");
-    canvas.width = 300;  // small width
-    canvas.height = 120; // small height
-    card.appendChild(canvas);
-
-    new Chart(canvas, {
-      type: "line",
-      data: {
-        labels: ["Current Term"],
-        datasets: datasets
+  /* ===============================
+     EXPORT — jsPDF CONTROLS A4
+  =============================== */
+  html2pdf()
+    .set({
+      filename,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: {
+        scale: 2,
+        scrollY: 0,
+        windowWidth: 1200   // 🔑 prevents horizontal clipping
       },
-      options: {
-        responsive: false,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { position: "bottom", labels: { font: { size: 8 } } }
-        },
-        scales: {
-          y: { min: 1, max: 4, ticks: { stepSize: 1 } }
-        }
+      jsPDF: {
+        unit: "mm",
+        format: "a4",
+        orientation: "portrait",
+        margin: [15, 15, 15, 15] // TOP, RIGHT, BOTTOM, LEFT
       }
-    });
-  }
-
-  // ===== PDF OPTIONS =====
-  const opt = {
-    margin: 10,
-    filename,
-    image: { type: "jpeg", quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
-    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
-  };
-
-  html2pdf().set(opt).from(clone).save();
+    })
+    .from(clone)
+    .save();
 };
+
+
+
+ 
 
 // ===== HELPER: RANDOM COLOR PER SUBJECT =====
 function getRandomColor(seed) {
