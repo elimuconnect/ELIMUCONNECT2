@@ -346,9 +346,9 @@ if (!data.length) {
   status.innerText = "No results found.";
   return;
 }
-const schoolName = data[0]?.students?.school?.name ?? "—";
+const schoolName = data[0]?.students?.school_name ?? "—";
+const className  = data[0]?.students?.class_name ?? "—";
 
-const className  = data[0]?.students?.classes?.name ?? "—";
 
   /* ===== NORMALIZED RECORDS ===== */
   const records = data.map(r => ({
