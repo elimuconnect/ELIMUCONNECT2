@@ -1027,7 +1027,6 @@ function getTrend(currentAvg, previousAvg) {
 }
 
 
-
 window.downloadPDF = async function () {
   if (!reportDiv.innerHTML.trim()) {
     alert("No report to download");
@@ -1047,19 +1046,36 @@ window.downloadPDF = async function () {
   ).forEach(el => el.remove());
 
   /* ===============================
+     🔑 PREVENT CONTENT FROM CUTTING
+  =============================== */
+  clone.querySelectorAll(".learner-card, table").forEach(el => {
+    el.style.pageBreakInside = "avoid";
+    el.style.breakInside = "avoid";
+  });
+
+  /* ===============================
+     HELPER: COMMENT BY SCORE
+  =============================== */
+  function getCommentFromScore(avg) {
+    if (avg < 2) return "Put more effort";
+    if (avg < 3) return "Fair work";
+    if (avg < 3.5) return "Good progress";
+    return "Excellent work";
+  }
+
+  /* ===============================
      2. BUILD SUMMARY PER LEARNER
   =============================== */
   const cards = clone.querySelectorAll(".learner-card");
 
   cards.forEach(card => {
-    const studentName =
-      card.querySelector("h4")?.innerText
-        .replace("👤", "")
-        .replace(/\(.*?\)/, "")
-        .trim();
+    const header = card.querySelector("h4");
+    if (!header) return;
 
-    const admission =
-      card.querySelector("h4")?.innerText.match(/\(Adm:\s*(\d+)\)/)?.[1];
+    const studentName = header.innerText
+      .replace("👤", "")
+      .replace(/\(.*?\)/, "")
+      .trim();
 
     const subjectData = avgMap?.[studentName];
     if (!subjectData) return;
@@ -1070,6 +1086,7 @@ window.downloadPDF = async function () {
     table.style.borderCollapse = "collapse";
     table.style.marginTop = "10px";
     table.style.fontSize = "12px";
+    table.style.pageBreakInside = "avoid";
 
     table.innerHTML = `
       <thead>
@@ -1081,29 +1098,34 @@ window.downloadPDF = async function () {
         </tr>
       </thead>
       <tbody>
-        ${Object.entries(subjectData).map(([subject, d]) => `
-          <tr>
-            <td style="border:1px solid #000;padding:6px;">${subject}</td>
-            <td style="border:1px solid #000;padding:6px;text-align:center;">
-              ${Number(d.average_score).toFixed(2)}
-            </td>
-            <td style="border:1px solid #000;padding:6px;">
-              ${d.achievement_level}
-            </td>
-            <td style="border:1px solid #000;padding:6px;">Fair work</td>
-          </tr>
-        `).join("")}
+        ${Object.entries(subjectData)
+          .filter(([_, d]) => d && d.average_score != null)
+          .map(([subject, d]) => `
+            <tr>
+              <td style="border:1px solid #000;padding:6px;">${subject}</td>
+              <td style="border:1px solid #000;padding:6px;text-align:center;">
+                ${Number(d.average_score).toFixed(2)}
+              </td>
+              <td style="border:1px solid #000;padding:6px;">
+                ${d.achievement_level || "—"}
+              </td>
+              <td style="border:1px solid #000;padding:6px;">
+                ${getCommentFromScore(Number(d.average_score))}
+              </td>
+            </tr>
+          `).join("")}
       </tbody>
     `;
 
     card.appendChild(table);
 
     /* ===============================
-       3. ONE COMBINED SUBJECT GRAPH
+       3. COMPACT SUBJECT GRAPH
     =============================== */
     const canvas = document.createElement("canvas");
-    canvas.height = 180;
-    canvas.style.marginTop = "14px";
+    canvas.height = 160;
+    canvas.style.marginTop = "12px";
+    canvas.style.pageBreakInside = "avoid";
     card.appendChild(canvas);
 
     new Chart(canvas, {
@@ -1111,7 +1133,6 @@ window.downloadPDF = async function () {
       data: {
         labels: Object.keys(subjectData),
         datasets: [{
-          label: "Subject Performance",
           data: Object.values(subjectData).map(d => d.average_score),
           backgroundColor: "#2c3e50"
         }]
@@ -1145,9 +1166,6 @@ window.downloadPDF = async function () {
     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
   }).from(clone).save();
 };
-
-
-
 
  
 // ===== HELPER: RANDOM COLOR PER SUBJECT =====
