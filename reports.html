@@ -888,18 +888,6 @@ function renderTrendChart(admission) {
   
 
 
-function getTrend(currentAvg, previousAvg) {
-  if (previousAvg === null) return "🆕 New Entry";
-
-  const diff = currentAvg - previousAvg;
-
-  if (diff >= 0.3) return "📈 Improving";
-  if (diff <= -0.3) return "📉 Declining";
-  return "➖ Stable";
-}
-
-
-
 
 /* ===== TERM VIEW ===== */
 /* ===== STUDENT VIEW ===== */
