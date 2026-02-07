@@ -1,38 +1,185 @@
-<!DOCTYPE html>
+<!DOCTYPE html>  
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>Term Report Preview</title>
-  <style>
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      margin-top: 16px;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-    }
-    th {
-      background: #f5f5f5;
-    }
-  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+
+<style>
+/* ================== BASE ================== */
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #f7f9fb;
+  color: #222;
+  line-height: 1.5;
+}
+
+h2, h3 {
+  margin-bottom: 6px;
+}
+
+h4 {
+  margin: 0;
+}
+
+h5 {
+  margin-top: 18px;
+  margin-bottom: 4px;
+}
+
+/* ================== LAYOUT ================== */
+.learner-card {
+  background: #ffffff;
+  padding: 14px;
+  margin: 0;
+}
+
+.learner-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+}
+
+.learner-meta {
+  font-size: 0.95em;
+  color: #555;
+}
+
+.summary-box {
+  background: #f3f6fa;
+  border-left: 5px solid #3498db;
+  padding: 10px 14px;
+  margin: 12px 0;
+  border-radius: 4px;
+}
+
+.pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 0.85em;
+  background: #eee;
+  margin-right: 6px;
+}
+
+.actions-box {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 4px;
+  background: #fafafa;
+}
+
+/* ================== TABLES ================== */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 6px;
+  font-size: 0.85em;
+}
+
+th, td {
+  padding: 5px 6px;
+  border-bottom: 1px solid #ddd;
+}
+
+th {
+  background: #f0f0f0;
+  text-align: left;
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+.subject-block {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px dashed #ccc;
+}
+
+.evidence-note {
+  font-size: 0.85em;
+  margin-bottom: 6px;
+}
+
+
+
+/* ================== CHART ================== */
+.trend-box {
+  height: 180px;
+  margin-top: 12px;
+}
+
+.trend-box canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+
+/* ===== A4 PAGE CANVAS ===== */
+.a4-page {
+  width: 210mm;
+  height: 297mm;
+
+  padding: 15mm 12mm;
+  box-sizing: border-box;
+
+  background: white;
+  margin: 0 auto 12px auto;
+
+  overflow: visible; /* allow content measurement */
+}
+
+
+.a4-page {
+  overflow: visible;
+}
+
+.report-overview h3 {
+  font-size: 1.1em;
+  line-height: 1.2em;
+}
+
+  
+</style>
+
+  
+
 </head>
 <body>
 
 <h2>Teacher Term Report Preview</h2>
 
+<label>Academic Year</label><br />
+<input value="2026" disabled /><br /><br />
+
 <label>Term</label><br />
 <select id="termSelect"></select><br /><br />
 
-<label>Learner</label><br />
-<select id="studentSelect"></select><br /><br />
+<label>View As</label><br />
+<select id="viewMode">
+  <option value="term">Term Results</option>
+  <option value="student">Student (Admission No)</option>
+  <option value="subject">Subject</option>
+</select><br /><br />
 
-<button id="loadReport">Load Report</button>
-
+<div id="filterBox"></div>
 <p id="status"></p>
 <hr />
 
+
+<div class="actions-box">
+
+  <button onclick="downloadPDF()">⬇️ Download PDF</button>
+</div>
+
+  
 <div id="report"></div>
 
 <script type="module">
@@ -43,138 +190,948 @@ const supabase = createClient(
   "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
 );
 
-/* 🔐 Auth check */
-const { data: { user } } = await supabase.auth.getUser();
-if (!user) {
-  window.location.href = "index.html";
-  throw new Error("Not logged in");
+const SYSTEM_YEAR = "2026";
+
+let trendMap = {};
+let avgMap = {}; // make it global so downloadPDF can access it
+
+
+function levelToScore(level) {
+  switch (level) {
+    case "Below Expectations": return 1;
+    case "Approaching Expectations": return 2;
+    case "Meeting Expectations": return 3;
+    case "Exceeding Expectations": return 4;
+    default: return 0;
+  }
 }
 
+  
+
+const levelColor = {
+  "Below Expectations": "#f8d7da",
+  "Approaching Expectations": "#fff3cd",
+  "Meeting Expectations": "#d4edda",
+  "Exceeding Expectations": "#cce5ff"
+};
+
+
+  
 const termSelect = document.getElementById("termSelect");
-const studentSelect = document.getElementById("studentSelect");
+const viewMode = document.getElementById("viewMode");
+const filterBox = document.getElementById("filterBox");
 const reportDiv = document.getElementById("report");
 const status = document.getElementById("status");
 
-/* ===============================
-   1️⃣ LOAD TERMS
-================================ */
-const { data: terms, error: termError } = await supabase
-  .from("terms")
-  .select("name")
-  .order("name");
+/* ========== AUTH ========== */
+const { data: { user } } = await supabase.auth.getUser();
+if (!user) location.href = "index.html";
 
-if (termError || !terms.length) {
-  status.innerText = "Failed to load terms.";
-  throw termError;
-}
+/* ========== LOAD TERMS ========== */
+const { data: terms } = await supabase
+  .from("terms")
+  .select("id, name")
+  .order("name");
 
 termSelect.innerHTML =
   `<option value="">Select term</option>` +
-  terms.map(t => `<option value="${t.name}">${t.name}</option>`).join("");
+  terms.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
 
-/* ===============================
-   2️⃣ LOAD LEARNERS
-   (same source parent view uses)
-================================ */
-const selectedStudents =
-  JSON.parse(localStorage.getItem("selected_students") || "[]");
 
-if (!selectedStudents.length) {
-  status.innerText = "No learners available.";
-  throw new Error("No learners");
-}
 
-const { data: students, error: studentError } = await supabase
-  .from("students")
-.select("id, first_name, last_name")
-
-  .in("id", selectedStudents);
-
-if (studentError || !students.length) {
-  status.innerText = "Failed to load learners.";
-  throw studentError;
-}
-
-studentSelect.innerHTML =
-  `<option value="">Select learner</option>` +
-  students
-    .map(
-      s => `<option value="${s.id}">
-        ${(s.first_name ?? "").trim()} ${(s.last_name ?? "").trim()}
-      </option>`
-    )
-    .join("");
-
-/* ===============================
-   3️⃣ LOAD REPORT
-================================ */
-document.getElementById("loadReport").onclick = async () => {
+ 
+/* ========== MAIN LOAD ========== */
+async function loadReport() {
   reportDiv.innerHTML = "";
+  filterBox.innerHTML = "";
   status.innerText = "";
 
-  const term = termSelect.value;
-  const student_id = studentSelect.value;
+  const term_id = termSelect.value;
+  if (!term_id) return;
 
-  if (!term || !student_id) {
-    status.innerText = "Select term and learner.";
-    return;
+  const termName = terms.find(t => t.id === term_id)?.name;
+
+
+/* ===== LEARNER TERM AVERAGES FOR GRAPHS ===== */
+const { data: termAverages } = await supabase
+  .from("learner_term_averages") // ✅ the view you already created
+  .select("admission_number, term, average_score")
+  .eq("academic_year", SYSTEM_YEAR);
+
+
+
+
+
+  
+  /* ===== AVERAGES ===== */
+  const { data: averages } = await supabase
+    .from("term_subject_report_view")
+    .select("first_name,last_name,subject_name,average_score,achievement_level")
+    .eq("term", termName)
+  
+
+trendMap = {};
+
+termAverages?.forEach(r => {
+  if (!trendMap[r.admission_number]) {
+    trendMap[r.admission_number] = {};
+  }
+  trendMap[r.admission_number][r.term] = Number(r.average_score);
+});
+
+
+const previousTerm = terms
+  .map(t => t.name)
+  .sort()
+  .filter(t => t < termName)
+  .slice(-1)[0];
+
+let previousAverages = {};
+
+if (previousTerm) {
+  const { data: prev } = await supabase
+    .from("assessment_results")
+    .select(`
+      students(admission_number),
+      achievement_levels(label)
+    `)
+    .eq("term", previousTerm)
+    .eq("academic_year", SYSTEM_YEAR);
+
+  prev?.forEach(r => {
+    const adm = r.students.admission_number;
+    const score = levelToScore(r.achievement_levels.label);
+
+    if (!previousAverages[adm]) {
+      previousAverages[adm] = { total: 0, count: 0 };
+    }
+
+    previousAverages[adm].total += score;
+    previousAverages[adm].count++;
+  });
+}
+
+
+
+avgMap = {}; // populate it as before
+averages.forEach(a => {
+  const student = `${a.first_name} ${a.last_name}`;
+  const subj = a.subject_name.trim();
+  avgMap[student] ??= {};
+  avgMap[student][subj] = a;
+});
+
+  
+
+  /* ===== RAW RESULTS ===== */
+
+const { data, error } = await supabase
+  .from("assessment_results_view")
+  .select("*")
+  .eq("term", termName)
+  .eq("academic_year", SYSTEM_YEAR);
+
+if (error) {
+  console.error("Supabase fetch error:", error);
+  status.innerText = "Error fetching report";
+  return;
+}
+
+if (!data?.length) {
+  status.innerText = "No results found.";
+  return;
+}
+
+// school and class
+const schoolName = data[0]?.school_name ?? "—";
+const className  = data[0]?.class_name ?? "—";
+
+// normalized records
+const records = data.map(r => ({
+  student: `${r.first_name} ${r.last_name}`,
+  admission: r.admission_number,
+  className: r.class_name,
+  schoolName: r.school_name,
+  subject: r.subject,
+  competency: r.competency,
+  level: r.achievement_level,
+  remarks: r.remarks
+}));
+
+
+function renderOverviewHeader({ school, className, term, year }) {
+  return `
+    <div class="report-overview no-split" style="
+      border-bottom: 2px solid #333;
+      padding-bottom: 6px;
+      margin-bottom: 10px;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    ">
+      <h3 style="margin:0; word-wrap: break-word; overflow-wrap: break-word;">${school}</h3>
+      <div style="font-size:0.9em;color:#555;">
+        <strong>Class:</strong> ${className} &nbsp; | &nbsp;
+        <strong>Term:</strong> ${term} – ${year}
+      </div>
+    </div>
+  `;
+}
+
+
+
+ function renderGrouped(grouped, avgMap) {
+  return Object.entries(grouped).map(([student, subjects]) => {
+
+    const admission = subjects.__admission || "N/A";
+
+    // Collect raw scores for trends & support flags (not for averages)
+    const currentScores = [];
+    Object.entries(subjects).forEach(([subject, rows]) => {
+      if (subject === "__admission") return;
+      rows.forEach(r => {
+        const score = levelToScore(r.level);
+        if (score > 0) currentScores.push(score);
+      });
+    });
+
+    const currentAvgScore =
+      currentScores.length
+        ? currentScores.reduce((a, b) => a + b, 0) / currentScores.length
+        : null;
+
+    const prevData = previousAverages[admission];
+    const previousAvg = prevData ? prevData.total / prevData.count : null;
+
+    const trend = getTrend(currentAvgScore, previousAvg);
+    const supportFlag = generateSupportFlag(subjects);
+    const insight = generateInsight(subjects);
+    const { strengths, needs } = generateStrengthsAndNeeds(subjects);
+    const recommendations = generateRecommendations(subjects, trend, supportFlag);
+
+    return `
+<div class="a4-page learner-page">
+  <div class="learner-card">
+  ${renderOverviewHeader({
+  school: subjects.__school || schoolName,
+  className: subjects.__class || className,
+  term: termName,
+  year: SYSTEM_YEAR
+})}
+
+
+
+    <!-- HEADER -->
+    <div class="split-block learner-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+      <h4>👤 ${student} <small>(<strong>Adm: ${admission}</strong>)</small></h4>
+      <div style="font-weight:bold;">${supportFlag}</div>
+    </div>
+
+    <!-- TREND SUMMARY -->
+    <div class="split-block">
+      <p style="margin:6px 0 10px 0;font-weight:bold;">
+        📊 Progress Trend: ${trend}
+      </p>
+      ${insight}
+    </div>
+
+    <!-- STRENGTHS / NEEDS -->
+    <div class="split-block" style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:10px;">
+      ${strengths.length ? `<p><strong>💪 Strengths:</strong> ${strengths.join(", ")}</p>` : ""}
+      ${needs.length ? `<p><strong>🎯 Areas for Improvement:</strong> ${needs.join(", ")}</p>` : ""}
+    </div>
+
+    <!-- RECOMMENDATIONS -->
+    ${recommendations.teacher.length ? `
+      <div class="split-block" style="margin:10px 0;padding:10px;border-left:4px solid #3498db;background:#f8fbff;">
+        <strong>👩🏽‍🏫 Teacher Actions</strong>
+        <ul>${recommendations.teacher.map(r => `<li>${r}</li>`).join("")}</ul>
+      </div>` : ""}
+    ${recommendations.parent.length ? `
+      <div class="split-block" style="margin:10px 0;padding:10px;border-left:4px solid #f39c12;background:#fffaf3;">
+        <strong>🏠 Parent Support</strong>
+        <ul>${recommendations.parent.map(r => `<li>${r}</li>`).join("")}</ul>
+      </div>` : ""}
+    ${recommendations.learner.length ? `
+      <div class="split-block" style="margin:10px 0;padding:10px;border-left:4px solid #2ecc71;background:#f6fffa;">
+        <strong>🎯 Learner Focus</strong>
+        <ul>${recommendations.learner.map(r => `<li>${r}</li>`).join("")}</ul>
+      </div>` : ""}
+
+    <!-- SUBJECTS -->
+    ${Object.entries(subjects).map(([subject, rows]) => {
+      if (subject === "__admission") return "";
+
+      const evidence = getEvidenceStatus(rows);
+
+      // compute subject average
+      let subjectAvg = avgMap?.[student]?.[subject.trim()]?.average_score ?? null;
+      if (subjectAvg === null) {
+        const scores = rows.map(r => levelToScore(r.level)).filter(s => s > 0);
+        subjectAvg = scores.length ? scores.reduce((a,b)=>a+b,0)/scores.length : null;
+      }
+
+      function getAchievementLabel(score) {
+        if (score >= 3.5) return "Exceeding Expectations";
+        if (score >= 2.5) return "Meeting Expectations";
+        if (score >= 1.5) return "Approaching Expectations";
+        return "Below Expectations";
+      }
+
+      function getAvgColor(score) {
+        if (score >= 3.5) return "#2ecc71";
+        if (score >= 2.5) return "#3498db";
+        if (score >= 1.5) return "#f1c40f";
+        return "#e74c3c";
+      }
+
+      return `
+      <div class="split-block subject-block">
+        <h5>📘 ${subject} — Assessments: <strong>${rows.length}</strong></h5>
+        <p style="font-weight:bold;color:${evidence.color};">
+          ${evidence.label} — <span style="font-weight:normal">${evidence.note}</span>
+        </p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Competency</th>
+              <th>Achievement</th>
+              <th>Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(r => `
+              <tr style="background:${levelColor[r.level]}">
+                <td>${r.competency}</td>
+                <td>${r.level}</td>
+                <td>${r.remarks || "—"}</td>
+              </tr>`).join("")}
+          </tbody>
+          ${subjectAvg !== null ? `
+          <tfoot>
+            <tr style="font-weight:bold; background:#f0f0f0;">
+              <td>SUBJECT AVERAGE</td>
+              <td colspan="2">
+                <span style="
+                  padding: 3px 8px;
+                  border-radius: 12px;
+                  font-weight:bold;
+                  color:white;
+                  background:${getAvgColor(subjectAvg)};
+                ">
+                  ${subjectAvg.toFixed(2)} — ${getAchievementLabel(subjectAvg)}
+                </span>
+              </td>
+            </tr>
+          </tfoot>` : ""}
+        </table>
+      </div>`;
+    }).join("")}
+
+    <!-- CHART -->
+    <div class="split-block trend-box">
+      <canvas id="trend-${admission}"></canvas>
+    </div>
+
+  </div>
+</div>`;
+  }).join("");
+}
+
+
+
+
+
+
+function splitLearnerIntoPages() {
+  const pages = document.querySelectorAll(".a4-page");
+
+  pages.forEach(page => {
+    const card = page.querySelector(".learner-card");
+    if (!card) return;
+
+    const maxHeight = page.clientHeight;
+    let currentPage = page;
+
+    Array.from(card.children).forEach(block => {
+    if (
+  !block.classList.contains("split-block") ||
+  block.classList.contains("no-split")
+) return;
+
+
+      const blockBottom =
+        block.getBoundingClientRect().bottom -
+        currentPage.getBoundingClientRect().top;
+
+      if (blockBottom > maxHeight) {
+        // create new page
+        const newPage = document.createElement("div");
+        newPage.className = "a4-page learner-page";
+
+        const newCard = document.createElement("div");
+        newCard.className = "learner-card";
+
+        newPage.appendChild(newCard);
+        currentPage.after(newPage);
+
+        newCard.appendChild(block);
+        currentPage = newPage;
+      }
+    });
+  });
+}
+
+
+
+
+  
+
+function generateInsight(subjects) {
+  const subjectScores = {};
+  let total = 0;
+  let count = 0;
+
+  Object.entries(subjects).forEach(([subject, rows]) => {
+    if (subject === "__admission") return;
+
+    subjectScores[subject] = [];
+
+    rows.forEach(r => {
+      const score = levelToScore(r.level);
+      if (score > 0) {
+        subjectScores[subject].push(score);
+        total += score;
+        count++;
+      }
+    });
+  });
+
+  if (!count) return "";
+
+  const overallAvg = total / count;
+
+  const overall =
+    overallAvg >= 3.5 ? "exceeding expectations" :
+    overallAvg >= 2.5 ? "meeting expectations" :
+    overallAvg >= 1.5 ? "approaching expectations" :
+    "below expectations";
+
+  const subjectsArray = Object.entries(subjectScores)
+    .map(([s, scores]) => ({
+      subject: s,
+      avg: scores.reduce((a,b)=>a+b,0) / scores.length
+    }))
+    .sort((a,b)=>b.avg - a.avg);
+
+  let strengthSentence = "";
+
+  if (
+    subjectsArray.length > 1 &&
+    subjectsArray[0].avg >= 3 &&
+    subjectsArray[0].avg - subjectsArray[1].avg >= 0.5
+  ) {
+    strengthSentence = `, with stronger performance in <strong>${subjectsArray[0].subject}</strong>`;
   }
 
-  const { data, error } = await supabase
-  .from("latest_competency_results")
-  .select(`
-    term,
-    academic_year,
-    remarks,
-    subject_name,
-    competency_name,
-    achievement_level
-  `)
-  .eq("student_id", student_id)
-  .eq("term", term)
-  .order("subject_name")
-  .order("competency_name");
+  return `
+    <p style="margin:6px 0 12px 0;font-style:italic;color:#444;">
+      Overall, based on current evidence, the learner is <strong>${overall}</strong>${strengthSentence}.
+    </p>
+  `;
+}
 
 
-  if (error || !data.length) {
-    status.innerText = "No results found for this term.";
-    return;
+
+function generateSupportFlag(subjects) {
+  let scores = [];
+  let belowCount = 0;
+  let subjectAverages = [];
+
+  Object.entries(subjects).forEach(([subject, rows]) => {
+    if (subject === "__admission") return;
+
+    let subjectScores = [];
+
+    rows.forEach(r => {
+      const score = levelToScore(r.level);
+      if (score > 0) {
+        scores.push(score);
+        subjectScores.push(score);
+        if (score === 1) belowCount++;
+      }
+    });
+
+    if (subjectScores.length) {
+      subjectAverages.push(
+        subjectScores.reduce((a, b) => a + b, 0) / subjectScores.length
+      );
+    }
+  });
+
+  if (!scores.length) return "";
+
+  const overall = scores.reduce((a, b) => a + b, 0) / scores.length;
+
+  /* 🔴 NEEDS SUPPORT */
+  if (
+    overall < 2.3 ||                 // overall struggling
+    belowCount >= 3 ||                // repeated difficulty
+    subjectAverages.filter(a => a <= 2).length >= 2 // weak in 2+ subjects
+  ) {
+    return `<span style="color:#c0392b;font-weight:bold;">🔴 Needs Learning Support</span>`;
   }
 
-  /* ===============================
-     RENDER REPORT
-  ============================== */
- const grouped = data.reduce((acc, row) => {
-  acc[row.subject_name] = acc[row.subject_name] || [];
-  acc[row.subject_name].push(row);
-  return acc;
-}, {});
+  /* 🟢 HIGH POTENTIAL */
+  if (
+    overall >= 3.5 &&
+    subjectAverages.every(a => a >= 3) &&
+    subjectAverages.some(a => a >= 4)
+  ) {
+    return `<span style="color:#1e8449;font-weight:bold;">🟢 High Potential</span>`;
+  }
 
-reportDiv.innerHTML = `
-  <h3>${term} – ${data[0].academic_year}</h3>
+  /* 🟡 DEFAULT */
+  return `<span style="color:#b9770e;font-weight:bold;">🟡 On Track</span>`;
+}
 
-  ${Object.entries(grouped).map(([subject, rows]) => `
-    <h4>${subject}</h4>
-    <table>
-      <tr>
-        <th>Competency</th>
-        <th>Achievement Level</th>
-        <th>Remarks</th>
-      </tr>
-      ${rows.map(r => `
-        <tr>
-          <td>${r.competency_name}</td>
-          <td>${r.achievement_level}</td>
-          <td>${r.remarks || ""}</td>
-        </tr>
-      `).join("")}
-    </table>
-  `).join("")}
-  </table>
-`;
 
+
+
+function generateStrengthsAndNeeds(subjects) {
+  const strengths = [];
+  const needs = [];
+
+  Object.entries(subjects).forEach(([subject, rows]) => {
+    if (subject === "__admission") return;
+
+    let scores = rows.map(r => levelToScore(r.level)).filter(s => s > 0);
+    if (!scores.length) return;
+
+    const avg = scores.reduce((a,b)=>a+b,0) / scores.length;
+    const weakCount = scores.filter(s => s <= 2).length;
+
+  if (avg >= 3.5 && weakCount === 0) {
+  strengths.push(subject);
+}
+
+if (avg < 2.5 || weakCount >= 2) {
+  needs.push(subject);
+
+
+    }
+  });
+
+  return { strengths, needs };
+}
+
+
+
+function generateRecommendations(subjects, trend, supportFlag) {
+  const teacher = [];
+  const parent = [];
+  const learner = [];
+
+  const { strengths, needs } = generateStrengthsAndNeeds(subjects);
+
+  /* ===== TEACHER ===== */
+  if (supportFlag.includes("Needs Learning Support")) {
+    teacher.push("Provide targeted remediation on identified weak competencies");
+    teacher.push("Use differentiated instruction and more formative checks");
+  }
+
+  if (trend === "📉 Declining") {
+    teacher.push("Review recent assessments to identify emerging gaps");
+  }
+
+  if (strengths.length) {
+    teacher.push(`Encourage learner through strengths in ${strengths.join(", ")}`);
+  }
+
+  /* ===== PARENT ===== */
+  if (needs.length) {
+    parent.push(`Support practice in ${needs.join(", ")} at home`);
+  }
+
+  if (trend === "📉 Declining") {
+    parent.push("Monitor homework completion and provide routine study time");
+  }
+
+  parent.push("Maintain communication with class teacher");
+
+  /* ===== LEARNER ===== */
+  if (strengths.length) {
+    learner.push(`Build confidence by applying strengths in ${strengths.join(", ")}`);
+  }
+
+  if (needs.length) {
+    learner.push(`Focus revision on ${needs.join(", ")}`);
+  }
+
+  learner.push("Ask for help when concepts are unclear");
+
+  return { teacher, parent, learner };
+}
+
+
+function getEvidenceStatus(rows) {
+  const count = rows.length;
+
+  if (count >= 3) {
+    return {
+      label: "🧾 Adequate Evidence",
+      color: "#1e8449",
+      note: "Sufficient assessment records to support judgement"
+    };
+  }
+
+  return {
+    label: "⚠️ Limited Evidence",
+    color: "#b9770e",
+    note: "Consider additional assessment opportunities"
+  };
+}
+
+
+const achievementBandsPlugin = {
+  id: "achievementBands",
+  beforeDraw(chart) {
+    const { ctx, chartArea, scales } = chart;
+    if (!chartArea) return;
+
+    const y = scales.y;
+    const bands = [
+      { from: 1, to: 2, color: "rgba(248,215,218,0.35)" }, // Below
+      { from: 2, to: 3, color: "rgba(255,243,205,0.35)" }, // Approaching
+      { from: 3, to: 4, color: "rgba(212,237,218,0.35)" }, // Meeting
+      { from: 4, to: 4.999, color: "rgba(204,229,255,0.35)" }  // Exceeding (slightly below max)
+    ];
+
+    ctx.save();
+    bands.forEach(b => {
+      const yTop = y.getPixelForValue(b.to);
+      const yBottom = y.getPixelForValue(b.from);
+      ctx.fillStyle = b.color;
+      ctx.fillRect(chartArea.left, yTop, chartArea.right - chartArea.left, yBottom - yTop);
+    });
+    ctx.restore();
+  }
 };
+
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { display: false } },
+  scales: {
+    y: {
+      min: 1,
+      max: 5, // match the Exceeding band
+      ticks: {
+        stepSize: 1,
+        callback: v => ["", "Below", "Approaching", "Meeting", "Exceeding"][v]
+      }
+    }
+  }
+};
+
+
+
+
+function renderTrendChart(admission) {
+  const canvas = document.getElementById(`trend-${admission}`);
+  if (!canvas) return;
+
+  const learnerData = trendMap[admission] || {};
+  const terms = Object.keys(learnerData).sort();
+  const scores = terms.map(t => learnerData[t]);
+
+  /* ✅ DESTROY OLD CHART IF IT EXISTS */
+  if (canvas.chart) {
+    canvas.chart.destroy();
+  }
+
+  /* ✅ CREATE & STORE NEW CHART */
+ canvas.chart = new Chart(canvas, {
+  type: "line",
+  data: {
+    labels: terms,
+    datasets: [{
+      label: "Learner Progress",
+      data: scores,
+      tension: 0,
+      stepped: true,              // 🔑 honest CBC progression
+      borderWidth: 2,
+      pointRadius: 4,
+      borderColor: "#2c3e50",
+      backgroundColor: "#2c3e50"
+    }]
+  },
+  plugins: [achievementBandsPlugin], // 🔑 ADD THIS
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false }
+    },
+    scales: {
+      y: {
+        min: 1,
+        max: 4,
+        ticks: {
+          stepSize: 1,
+          callback: v =>
+            ["", "Below", "Approaching", "Meeting", "Exceeding"][v]
+        }
+      }
+    }
+  }
+});
+}
+  
+  /* ===== TERM VIEW ===== */
+  if (viewMode.value === "term") {
+  const grouped = {};
+  records.forEach(r => {
+    grouped[r.student] ??= { __admission: r.admission };
+    grouped[r.student][r.subject] ??= [];
+    grouped[r.student][r.subject].push(r);
+  });
+
+    reportDiv.innerHTML = `
+  <h3>${termName} – ${SYSTEM_YEAR}</h3>
+  ${renderGrouped(grouped)}
+`;
+requestAnimationFrame(() => {
+  splitLearnerIntoPages();
+});
+
+setTimeout(() => {
+  Object.values(grouped).forEach(s => {
+    if (s.__admission) {
+      renderTrendChart(s.__admission);
+    }
+  });
+}, 0);
+
+
+  }
+
+  /* ===== STUDENT VIEW ===== */
+  if (viewMode.value === "student") {
+    filterBox.innerHTML = `
+      <label>Admission Number</label><br />
+      <input id="admInput" />
+    `;
+
+    document.getElementById("admInput").addEventListener("input", e => {
+      const adm = e.target.value.trim();
+      const filtered = records.filter(r => r.admission === adm);
+
+      if (!filtered.length) {
+        reportDiv.innerHTML = "<p>No student found</p>";
+        return;
+      }
+
+      const grouped = {};
+filtered.forEach(r => {
+  grouped[r.student] ??= { __admission: r.admission };
+  grouped[r.student][r.subject] ??= [];
+  grouped[r.student][r.subject].push(r);
+});
+
+
+      reportDiv.innerHTML = renderGrouped(grouped);
+    
+requestAnimationFrame(() => {
+  splitLearnerIntoPages();
+});
+
+setTimeout(() => {
+  Object.values(grouped).forEach(s => {
+    if (s.__admission) {
+      renderTrendChart(s.__admission);
+    }
+  });
+}, 0);
+
+
+      
+      });
+  }
+
+  /* ===== SUBJECT VIEW ===== */
+  if (viewMode.value === "subject") {
+    const subjects = [...new Set(records.map(r => r.subject))];
+
+    filterBox.innerHTML = `
+      <label>Subject</label><br />
+      <select id="subjectSelect">
+        <option value="">Select subject</option>
+        ${subjects.map(s => `<option>${s}</option>`).join("")}
+      </select>
+    `;
+
+    document.getElementById("subjectSelect").addEventListener("change", e => {
+      const subject = e.target.value;
+      if (!subject) return;
+
+      const filtered = records.filter(r => r.subject === subject);
+
+const grouped = {};
+
+filtered.forEach(r => {
+  grouped[r.student] ??= { __admission: r.admission };
+  grouped[r.student][r.subject] ??= [];
+  grouped[r.student][r.subject].push(r);
+});
+
+
+      
+      reportDiv.innerHTML = `
+        <h3>${subject} – All Students</h3>
+        ${renderGrouped(grouped)}
+      `;
+
+requestAnimationFrame(() => {
+  splitLearnerIntoPages();
+});
+
+setTimeout(() => {
+  Object.values(grouped).forEach(s => {
+    if (s.__admission) {
+      renderTrendChart(s.__admission);
+    }
+  });
+}, 0);
+
+      
+      
+    });
+  }
+}
+
+termSelect.addEventListener("change", loadReport);
+viewMode.addEventListener("change", loadReport);
+
+
+
+
+function getTrend(currentAvg, previousAvg) {
+  if (previousAvg === null) return "🆕 New Entry";
+
+  const diff = currentAvg - previousAvg;
+
+  if (diff >= 0.3) return "📈 Improving";
+  if (diff <= -0.3) return "📉 Declining";
+  return "➖ Stable";
+}
+
+
+
+
+
+
+
+  
+window.downloadPDF = async function () {
+ 
+  if (!reportDiv.innerHTML.trim()) {
+    alert("No report to download");
+    return;
+  }
+
+  const term = termSelect.options[termSelect.selectedIndex]?.text || "Term";
+  const mode = viewMode.value;
+
+  let filename = `Report_${term}_${SYSTEM_YEAR}.pdf`;
+  if (mode === "student") filename = `Student_Report_${term}_${SYSTEM_YEAR}.pdf`;
+  if (mode === "subject") filename = `Subject_Report_${term}_${SYSTEM_YEAR}.pdf`;
+
+  const clone = reportDiv.cloneNode(true);
+
+  // ===== REMOVE DETAILED TABLES =====
+  clone.querySelectorAll(".subject-block table, .split-block.recommendations, .split-block.subject-block").forEach(el => {
+    // Keep only subject average row if exists
+    const tfoot = el.querySelector("tfoot");
+    if (tfoot) el.replaceWith(tfoot); // replace table with only average row
+    else el.remove();
+  });
+
+  // Remove on-screen trend boxes
+  clone.querySelectorAll(".trend-box").forEach(el => el.remove());
+
+  // ===== INSERT SMALL COMBINED CHARTS =====
+  const cards = clone.querySelectorAll(".learner-card");
+  for (const card of cards) {
+    const studentName = card.querySelector("h4")?.innerText.split("👤")[1]?.split("(Adm")[0]?.trim();
+    const admission = card.querySelector("h4")?.innerText.match(/\(Adm: (\d+)\)/)?.[1];
+    if (!admission) continue;
+
+    // Gather all subjects for this student
+    const subjects = Object.keys(avgMap?.[studentName] || {});
+    if (!subjects.length) continue;
+
+    // Collect scores for each subject
+    const datasets = subjects.map(subj => {
+      const score = avgMap[studentName][subj]?.average_score ?? 0;
+      return {
+        label: subj,
+        data: [score], // only one term in download
+        borderColor: getRandomColor(subj),
+        backgroundColor: "transparent",
+        tension: 0.2,
+        pointRadius: 3
+      };
+    });
+
+    const canvas = document.createElement("canvas");
+    canvas.width = 300;  // small width
+    canvas.height = 120; // small height
+    card.appendChild(canvas);
+
+    new Chart(canvas, {
+      type: "line",
+      data: {
+        labels: ["Current Term"],
+        datasets: datasets
+      },
+      options: {
+        responsive: false,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: "bottom", labels: { font: { size: 8 } } }
+        },
+        scales: {
+          y: { min: 1, max: 4, ticks: { stepSize: 1 } }
+        }
+      }
+    });
+  }
+
+  // ===== PDF OPTIONS =====
+  const opt = {
+    margin: 10,
+    filename,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+  };
+
+  html2pdf().set(opt).from(clone).save();
+};
+
+// ===== HELPER: RANDOM COLOR PER SUBJECT =====
+function getRandomColor(seed) {
+  // consistent color per subject
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+  const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
+  return "#" + "00000".substring(0, 6 - c.length) + c;
+}
+
+  
 </script>
+
 
 </body>
 </html>
