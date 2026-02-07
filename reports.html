@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>  
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -351,16 +351,14 @@ const schoolName = data[0]?.students?.school?.name ?? "—";
 const className  = data[0]?.students?.classes?.name ?? "—";
 
   /* ===== NORMALIZED RECORDS ===== */
-const records = data.map(r => ({
-  student: `${r.students.first_name} ${r.students.last_name}`,
-  admission: r.students.admission_number,
-  subject: r.competencies.subjects.name,
-  competency: r.competencies.name,
-  level: r.achievement_levels.label,
-  remarks: r.remarks,
-  school: r.students?.school?.name ?? "—",
-  studentClass: r.students?.classes?.name ?? "—" // renamed
-}));
+  const records = data.map(r => ({
+    student: `${r.students.first_name} ${r.students.last_name}`,
+    admission: r.students.admission_number,
+    subject: r.competencies.subjects.name,
+    competency: r.competencies.name,
+    level: r.achievement_levels.label,
+    remarks: r.remarks
+  }));
 
 
 
@@ -383,17 +381,16 @@ function renderOverviewHeader({ school, className, term, year }) {
 }
 
 
-function renderGrouped(grouped, avgMap) {
+
+ function renderGrouped(grouped, avgMap) {
   return Object.entries(grouped).map(([student, subjects]) => {
 
     const admission = subjects.__admission || "N/A";
 
-    // Collect raw scores for trends & support flags
+    // Collect raw scores for trends & support flags (not for averages)
     const currentScores = [];
     Object.entries(subjects).forEach(([subject, rows]) => {
-      if (subject.startsWith("__")) return; // skip meta keys
-      if (!Array.isArray(rows)) return;
-
+      if (subject === "__admission") return;
       rows.forEach(r => {
         const score = levelToScore(r.level);
         if (score > 0) currentScores.push(score);
@@ -405,7 +402,7 @@ function renderGrouped(grouped, avgMap) {
         ? currentScores.reduce((a, b) => a + b, 0) / currentScores.length
         : null;
 
-    const prevData = previousAverages?.[admission];
+    const prevData = previousAverages[admission];
     const previousAvg = prevData ? prevData.total / prevData.count : null;
 
     const trend = getTrend(currentAvgScore, previousAvg);
@@ -417,12 +414,14 @@ function renderGrouped(grouped, avgMap) {
     return `
 <div class="a4-page learner-page">
   <div class="learner-card">
-    ${renderOverviewHeader({
-      school: subjects.__school,
-      className: subjects.__class,
-      term: termName,
-      year: SYSTEM_YEAR
-    })}
+${renderOverviewHeader({
+  school: schoolName,
+  className: className,
+  term: termName,
+  year: SYSTEM_YEAR
+})}
+
+
 
     <!-- HEADER -->
     <div class="split-block learner-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
@@ -463,7 +462,7 @@ function renderGrouped(grouped, avgMap) {
 
     <!-- SUBJECTS -->
     ${Object.entries(subjects).map(([subject, rows]) => {
-      if (subject.startsWith("__") || !Array.isArray(rows)) return "";
+      if (subject === "__admission") return "";
 
       const evidence = getEvidenceStatus(rows);
 
@@ -494,6 +493,7 @@ function renderGrouped(grouped, avgMap) {
         <p style="font-weight:bold;color:${evidence.color};">
           ${evidence.label} — <span style="font-weight:normal">${evidence.note}</span>
         </p>
+
         <table>
           <thead>
             <tr>
@@ -504,9 +504,9 @@ function renderGrouped(grouped, avgMap) {
           </thead>
           <tbody>
             ${rows.map(r => `
-              <tr style="background:${levelColor[r.level] || "#fff"}">
-                <td>${r.competency || "—"}</td>
-                <td>${r.level || "—"}</td>
+              <tr style="background:${levelColor[r.level]}">
+                <td>${r.competency}</td>
+                <td>${r.level}</td>
                 <td>${r.remarks || "—"}</td>
               </tr>`).join("")}
           </tbody>
@@ -540,6 +540,7 @@ function renderGrouped(grouped, avgMap) {
 </div>`;
   }).join("");
 }
+
 
 
 
@@ -588,6 +589,7 @@ function splitLearnerIntoPages() {
 
 
   
+
 function generateInsight(subjects) {
   const subjectScores = {};
   let total = 0;
@@ -595,11 +597,6 @@ function generateInsight(subjects) {
 
   Object.entries(subjects).forEach(([subject, rows]) => {
     if (subject === "__admission") return;
-
-    if (!Array.isArray(rows)) {
-      console.warn("Expected array of rows for subject", subject, rows);
-      return; // skip invalid entries
-    }
 
     subjectScores[subject] = [];
 
@@ -648,6 +645,7 @@ function generateInsight(subjects) {
 }
 
 
+
 function generateSupportFlag(subjects) {
   let scores = [];
   let belowCount = 0;
@@ -655,11 +653,6 @@ function generateSupportFlag(subjects) {
 
   Object.entries(subjects).forEach(([subject, rows]) => {
     if (subject === "__admission") return;
-
-    if (!Array.isArray(rows)) {
-      console.warn("Expected array of rows for subject", subject, rows);
-      return; // skip invalid entries
-    }
 
     let subjectScores = [];
 
@@ -685,9 +678,9 @@ function generateSupportFlag(subjects) {
 
   /* 🔴 NEEDS SUPPORT */
   if (
-    overall < 2.3 ||                 
-    belowCount >= 3 ||                
-    subjectAverages.filter(a => a <= 2).length >= 2
+    overall < 2.3 ||                 // overall struggling
+    belowCount >= 3 ||                // repeated difficulty
+    subjectAverages.filter(a => a <= 2).length >= 2 // weak in 2+ subjects
   ) {
     return `<span style="color:#c0392b;font-weight:bold;">🔴 Needs Learning Support</span>`;
   }
@@ -707,6 +700,7 @@ function generateSupportFlag(subjects) {
 
 
 
+
 function generateStrengthsAndNeeds(subjects) {
   const strengths = [];
   const needs = [];
@@ -714,28 +708,26 @@ function generateStrengthsAndNeeds(subjects) {
   Object.entries(subjects).forEach(([subject, rows]) => {
     if (subject === "__admission") return;
 
-    if (!Array.isArray(rows)) {
-      console.warn("Expected array of rows for subject", subject, rows);
-      return;
-    }
-
     let scores = rows.map(r => levelToScore(r.level)).filter(s => s > 0);
     if (!scores.length) return;
 
     const avg = scores.reduce((a,b)=>a+b,0) / scores.length;
     const weakCount = scores.filter(s => s <= 2).length;
 
-    if (avg >= 3.5 && weakCount === 0) {
-      strengths.push(subject);
-    }
+  if (avg >= 3.5 && weakCount === 0) {
+  strengths.push(subject);
+}
 
-    if (avg < 2.5 || weakCount >= 2) {
-      needs.push(subject);
+if (avg < 2.5 || weakCount >= 2) {
+  needs.push(subject);
+
+
     }
   });
 
   return { strengths, needs };
 }
+
 
 
 function generateRecommendations(subjects, trend, supportFlag) {
@@ -786,11 +778,6 @@ function generateRecommendations(subjects, trend, supportFlag) {
 
 
 function getEvidenceStatus(rows) {
-  if (!Array.isArray(rows)) {
-    console.warn("Expected array of rows in getEvidenceStatus", rows);
-    rows = [];
-  }
-
   const count = rows.length;
 
   if (count >= 3) {
@@ -807,6 +794,7 @@ function getEvidenceStatus(rows) {
     note: "Consider additional assessment opportunities"
   };
 }
+
 
 
 const achievementBandsPlugin = {
@@ -896,20 +884,13 @@ function renderTrendChart(admission) {
   
   /* ===== TERM VIEW ===== */
   if (viewMode.value === "term") {
+  const grouped = {};
+  records.forEach(r => {
+    grouped[r.student] ??= { __admission: r.admission };
+    grouped[r.student][r.subject] ??= [];
+    grouped[r.student][r.subject].push(r);
+  });
 
-const grouped = {};
-records.forEach(r => {
-  grouped[r.student] ??= {
-    __admission: r.admission,
-    __school: r.school,
-    __class: r.studentClass  // safe
-  };
-  grouped[r.student][r.subject] ??= [];
-  grouped[r.student][r.subject].push(r);
-});
-
-
-   
     reportDiv.innerHTML = `
   <h3>${termName} – ${SYSTEM_YEAR}</h3>
   ${renderGrouped(grouped)}
@@ -930,121 +911,96 @@ setTimeout(() => {
   }
 
   /* ===== STUDENT VIEW ===== */
- 
-/* ===== TERM VIEW ===== */
-if (viewMode.value === "term") {
- const grouped = {};
-
-records.forEach(r => {
-  const studentGroup = grouped[r.student] ??= {
-    __admission: r.admission,
-    __school: r.school,
-    __className: r.className
-  };
-
-  const subj = r.subject ?? "Unknown Subject";
-  studentGroup[subj] ??= [];
-  studentGroup[subj].push(r);
-});
-
-  reportDiv.innerHTML = `
-    <h3>${termName} – ${SYSTEM_YEAR}</h3>
-    ${renderGrouped(grouped)}
-  `;
-
-  requestAnimationFrame(() => splitLearnerIntoPages());
-
-  setTimeout(() => {
-    Object.values(grouped).forEach(s => {
-      if (s.__admission) renderTrendChart(s.__admission);
-    });
-  }, 0);
-}
-
-/* ===== STUDENT VIEW ===== */
-if (viewMode.value === "student") {
-  filterBox.innerHTML = `
-    <label>Admission Number</label><br />
-    <input id="admInput" />
-  `;
-
-  document.getElementById("admInput").addEventListener("input", e => {
-    const adm = e.target.value.trim();
-    const filtered = records.filter(r => r.admission === adm);
-
-    if (!filtered.length) {
-      reportDiv.innerHTML = "<p>No student found</p>";
-      return;
-    }
-
-   const grouped = {};
-records.forEach(r => {
-  grouped[r.student] ??= {
-    __admission: r.admission,
-    __school: r.school,
-    __class: r.studentClass  // safe
-  };
-  grouped[r.student][r.subject] ??= [];
-  grouped[r.student][r.subject].push(r);
-});
-
-
-    reportDiv.innerHTML = renderGrouped(grouped);
-
-    requestAnimationFrame(() => splitLearnerIntoPages());
-
-    setTimeout(() => {
-      Object.values(grouped).forEach(s => {
-        if (s.__admission) renderTrendChart(s.__admission);
-      });
-    }, 0);
-  });
-}
-
-/* ===== SUBJECT VIEW ===== */
-if (viewMode.value === "subject") {
-  const subjects = [...new Set(records.map(r => r.subject))];
-
-  filterBox.innerHTML = `
-    <label>Subject</label><br />
-    <select id="subjectSelect">
-      <option value="">Select subject</option>
-      ${subjects.map(s => `<option>${s}</option>`).join("")}
-    </select>
-  `;
-
-  document.getElementById("subjectSelect").addEventListener("change", e => {
-    const subject = e.target.value;
-    if (!subject) return;
-
-    const filtered = records.filter(r => r.subject === subject);
-
-const grouped = {};
-records.forEach(r => {
-  grouped[r.student] ??= {
-    __admission: r.admission,
-    __school: r.school,
-    __class: r.studentClass  // safe
-  };
-  grouped[r.student][r.subject] ??= [];
-  grouped[r.student][r.subject].push(r);
-});
-
-
-
-    reportDiv.innerHTML = `
-      <h3>${subject} – All Students</h3>
-      ${renderGrouped(grouped)}
+  if (viewMode.value === "student") {
+    filterBox.innerHTML = `
+      <label>Admission Number</label><br />
+      <input id="admInput" />
     `;
 
-    requestAnimationFrame(() => splitLearnerIntoPages());
+    document.getElementById("admInput").addEventListener("input", e => {
+      const adm = e.target.value.trim();
+      const filtered = records.filter(r => r.admission === adm);
 
-    setTimeout(() => {
-      Object.values(grouped).forEach(s => {
-        if (s.__admission) renderTrendChart(s.__admission);
+      if (!filtered.length) {
+        reportDiv.innerHTML = "<p>No student found</p>";
+        return;
+      }
+
+      const grouped = {};
+filtered.forEach(r => {
+  grouped[r.student] ??= { __admission: r.admission };
+  grouped[r.student][r.subject] ??= [];
+  grouped[r.student][r.subject].push(r);
+});
+
+
+      reportDiv.innerHTML = renderGrouped(grouped);
+    
+requestAnimationFrame(() => {
+  splitLearnerIntoPages();
+});
+
+setTimeout(() => {
+  Object.values(grouped).forEach(s => {
+    if (s.__admission) {
+      renderTrendChart(s.__admission);
+    }
+  });
+}, 0);
+
+
+      
       });
-    }, 0);
-  });   
+  }
+
+  /* ===== SUBJECT VIEW ===== */
+  if (viewMode.value === "subject") {
+    const subjects = [...new Set(records.map(r => r.subject))];
+
+    filterBox.innerHTML = `
+      <label>Subject</label><br />
+      <select id="subjectSelect">
+        <option value="">Select subject</option>
+        ${subjects.map(s => `<option>${s}</option>`).join("")}
+      </select>
+    `;
+
+    document.getElementById("subjectSelect").addEventListener("change", e => {
+      const subject = e.target.value;
+      if (!subject) return;
+
+      const filtered = records.filter(r => r.subject === subject);
+
+const grouped = {};
+
+filtered.forEach(r => {
+  grouped[r.student] ??= { __admission: r.admission };
+  grouped[r.student][r.subject] ??= [];
+  grouped[r.student][r.subject].push(r);
+});
+
+
+      
+      reportDiv.innerHTML = `
+        <h3>${subject} – All Students</h3>
+        ${renderGrouped(grouped)}
+      `;
+
+requestAnimationFrame(() => {
+  splitLearnerIntoPages();
+});
+
+setTimeout(() => {
+  Object.values(grouped).forEach(s => {
+    if (s.__admission) {
+      renderTrendChart(s.__admission);
+    }
+  });
+}, 0);
+
+      
+      
+    });
   }
 }
 
