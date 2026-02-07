@@ -384,7 +384,7 @@ function renderOverviewHeader({ school, className, term, year }) {
 
 
 
- function renderGrouped(grouped, avgMap) {
+function renderGrouped(grouped, avgMap) {
   return Object.entries(grouped).map(([student, subjects]) => {
 
     const admission = subjects.__admission || "N/A";
@@ -392,7 +392,9 @@ function renderOverviewHeader({ school, className, term, year }) {
     // Collect raw scores for trends & support flags (not for averages)
     const currentScores = [];
     Object.entries(subjects).forEach(([subject, rows]) => {
-      if (subject === "__admission") return;
+      if (subject.startsWith("__")) return; // skip meta keys
+      if (!Array.isArray(rows)) return;
+
       rows.forEach(r => {
         const score = levelToScore(r.level);
         if (score > 0) currentScores.push(score);
@@ -404,7 +406,7 @@ function renderOverviewHeader({ school, className, term, year }) {
         ? currentScores.reduce((a, b) => a + b, 0) / currentScores.length
         : null;
 
-    const prevData = previousAverages[admission];
+    const prevData = previousAverages?.[admission];
     const previousAvg = prevData ? prevData.total / prevData.count : null;
 
     const trend = getTrend(currentAvgScore, previousAvg);
@@ -416,14 +418,12 @@ function renderOverviewHeader({ school, className, term, year }) {
     return `
 <div class="a4-page learner-page">
   <div class="learner-card">
-${renderOverviewHeader({
-  school: subjects.__school,
-  className: subjects.__class,  // match the new safe name
-  term: termName,
-  year: SYSTEM_YEAR
-})}
-
-
+    ${renderOverviewHeader({
+      school: subjects.__school,
+      className: subjects.__class,
+      term: termName,
+      year: SYSTEM_YEAR
+    })}
 
     <!-- HEADER -->
     <div class="split-block learner-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
@@ -463,27 +463,8 @@ ${renderOverviewHeader({
       </div>` : ""}
 
     <!-- SUBJECTS -->
-  
-
-
-Object.entries(subjects).map(([subject, rows]) => {
-  if (subject === "__admission" || subject === "__school" || subject === "__className") return "";
-
-  if (!Array.isArray(rows)) {
-    console.warn("Expected array of rows for subject", subject, rows);
-    return "";
-  }
-
-  rows.forEach(r => {
-    const score = levelToScore(r.level);
-    if (score > 0) currentScores.push(score);
-  });
-});
-
-
-
-
-     
+    ${Object.entries(subjects).map(([subject, rows]) => {
+      if (subject.startsWith("__") || !Array.isArray(rows)) return "";
 
       const evidence = getEvidenceStatus(rows);
 
@@ -514,7 +495,6 @@ Object.entries(subjects).map(([subject, rows]) => {
         <p style="font-weight:bold;color:${evidence.color};">
           ${evidence.label} — <span style="font-weight:normal">${evidence.note}</span>
         </p>
-
         <table>
           <thead>
             <tr>
