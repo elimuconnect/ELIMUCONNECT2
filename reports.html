@@ -885,52 +885,14 @@ function renderTrendChart(admission) {
 }
   
   /* ===== TERM VIEW ===== */
-  if (viewMode.value === "term") {
-  const grouped = {};
-  records.forEach(r => {
-    grouped[r.student] ??= { __admission: r.admission };
-    grouped[r.student][r.subject] ??= [];
-    grouped[r.student][r.subject].push(r);
-  });
-records.forEach(r => {
-  grouped[r.student] ??= {
-    __admission: r.admission,
-    __school: r.school,
-    __className: r.className
-  };
-  grouped[r.student][r.subject] ??= [];
-  grouped[r.student][r.subject].push(r);
-});
-
-    reportDiv.innerHTML = `
-  <h3>${termName} – ${SYSTEM_YEAR}</h3>
-  ${renderGrouped(grouped)}
-`;
-requestAnimationFrame(() => {
-  splitLearnerIntoPages();
-});
-
-setTimeout(() => {
-  Object.values(grouped).forEach(s => {
-    if (s.__admission) {
-      renderTrendChart(s.__admission);
-    }
-  });
-}, 0);
-
-
-  }
-
-  /* ===== STUDENT VIEW ===== */
- 
 /* ===== TERM VIEW ===== */
 if (viewMode.value === "term") {
   const grouped = {};
   records.forEach(r => {
     grouped[r.student] ??= {
       __admission: r.admission,
-      __school: r.school,
-      __className: r.className
+      __school: r.school ?? "—",
+      __className: r.className ?? "—"
     };
     grouped[r.student][r.subject] ??= [];
     grouped[r.student][r.subject].push(r);
@@ -949,6 +911,7 @@ if (viewMode.value === "term") {
     });
   }, 0);
 }
+
 
 /* ===== STUDENT VIEW ===== */
 if (viewMode.value === "student") {
@@ -970,8 +933,8 @@ if (viewMode.value === "student") {
     filtered.forEach(r => {
       grouped[r.student] ??= {
         __admission: r.admission,
-        __school: r.school,
-        __className: r.className
+        __school: r.school ?? "—",
+        __className: r.className ?? "—"
       };
       grouped[r.student][r.subject] ??= [];
       grouped[r.student][r.subject].push(r);
@@ -988,6 +951,7 @@ if (viewMode.value === "student") {
     }, 0);
   });
 }
+
 
 /* ===== SUBJECT VIEW ===== */
 if (viewMode.value === "subject") {
@@ -1011,8 +975,8 @@ if (viewMode.value === "subject") {
     filtered.forEach(r => {
       grouped[r.student] ??= {
         __admission: r.admission,
-        __school: r.school,
-        __className: r.className
+        __school: r.school ?? "—",
+        __className: r.className ?? "—"
       };
       grouped[r.student][r.subject] ??= [];
       grouped[r.student][r.subject].push(r);
@@ -1030,8 +994,9 @@ if (viewMode.value === "subject") {
         if (s.__admission) renderTrendChart(s.__admission);
       });
     }, 0);
-  });   
-  }
+  });
+}
+
 }
 
 termSelect.addEventListener("change", loadReport);
