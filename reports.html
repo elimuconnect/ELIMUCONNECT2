@@ -462,10 +462,8 @@ ${renderOverviewHeader({
         <ul>${recommendations.learner.map(r => `<li>${r}</li>`).join("")}</ul>
       </div>` : ""}
 
-    <!-- SUBJECTS -->
-    ${Object.entries(subjects).map(([subject, rows]) => {
-      if (subject === "__admission") return "";
-
+    Object.entries(subjects).map(([subject, rows]) => {
+  if (subject.startsWith("__")) return ""; // skip __admission, __school, __className
       const evidence = getEvidenceStatus(rows);
 
       // compute subject average
