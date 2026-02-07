@@ -319,30 +319,30 @@ averages.forEach(a => {
 
   
 
- const { data, error } = await supabase
+  /* ===== RAW RESULTS ===== */
+  /* ===== RAW RESULTS ===== */
+const { data } = await supabase
   .from("assessment_results")
   .select(`
     remarks,
-    students(first_name,last_name,admission_number),
+  students(
+  first_name,
+  last_name,
+  admission_number,
+  classes(name),
+  school:schools(name)
+),
+
     competencies(name,subjects(name)),
     achievement_levels(label)
   `)
   .eq("term", termName)
   .eq("academic_year", SYSTEM_YEAR);
-
-if (error) {
-  console.error("Assessment results error:", error);
-  status.innerText = "Failed to load results.";
-  return;
-}
-
-if (!data || data.length === 0) {
+if (!data.length) {
   status.innerText = "No results found.";
   return;
 }
-
 const schoolName = data[0]?.students?.school?.name ?? "—";
-
 
 const className  = data[0]?.students?.classes?.name ?? "—";
 
