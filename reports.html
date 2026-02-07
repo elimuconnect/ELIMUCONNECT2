@@ -793,7 +793,6 @@ function getEvidenceStatus(rows) {
 }
 
 
-
 const achievementBandsPlugin = {
   id: "achievementBands",
   beforeDraw(chart) {
@@ -805,7 +804,7 @@ const achievementBandsPlugin = {
       { from: 1, to: 2, color: "rgba(248,215,218,0.35)" }, // Below
       { from: 2, to: 3, color: "rgba(255,243,205,0.35)" }, // Approaching
       { from: 3, to: 4, color: "rgba(212,237,218,0.35)" }, // Meeting
-      { from: 4, to: 5, color: "rgba(204,229,255,0.35)" }  // Exceeding
+      { from: 4, to: 4.999, color: "rgba(204,229,255,0.35)" }  // Exceeding (slightly below max)
     ];
 
     ctx.save();
@@ -813,19 +812,27 @@ const achievementBandsPlugin = {
       const yTop = y.getPixelForValue(b.to);
       const yBottom = y.getPixelForValue(b.from);
       ctx.fillStyle = b.color;
-      ctx.fillRect(
-        chartArea.left,
-        yTop,
-        chartArea.right - chartArea.left,
-        yBottom - yTop
-      );
+      ctx.fillRect(chartArea.left, yTop, chartArea.right - chartArea.left, yBottom - yTop);
     });
     ctx.restore();
   }
 };
 
-
-
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { display: false } },
+  scales: {
+    y: {
+      min: 1,
+      max: 5, // match the Exceeding band
+      ticks: {
+        stepSize: 1,
+        callback: v => ["", "Below", "Approaching", "Meeting", "Exceeding"][v]
+      }
+    }
+  }
+};
 
   
 function renderTrendChart(admission) {
@@ -880,44 +887,23 @@ function renderTrendChart(admission) {
 }
   
  /* ===== TERM VIEW ===== */
-if (viewMode.value === "term") {
-  const grouped = {};
-  records.forEach(r => {
-    grouped[r.student] ??= {
-      __admission: r.admission,
-      __school: r.schoolName,
-      __class: r.className
-    };
-    grouped[r.student][r.subject] ??= [];
-    grouped[r.student][r.subject].push(r);
-  });
-
-  reportDiv.innerHTML = `
-    <h3>${termName} – ${SYSTEM_YEAR}</h3>
-    ${renderGrouped(grouped)}
-  `;
-
-  requestAnimationFrame(() => {
-    splitLearnerIntoPages();
-  });
-
-  setTimeout(() => {
-    Object.values(grouped).forEach(s => {
-      if (s.__admission) renderTrendChart(s.__admission);
-    });
-  }, 0);
-}
-
 /* ===== STUDENT VIEW ===== */
 if (viewMode.value === "student") {
   filterBox.innerHTML = `
     <label>Admission Number</label><br />
-    <input id="admInput" />
+    <input id="admInput" placeholder="Enter admission number" />
   `;
 
-  document.getElementById("admInput").addEventListener("input", e => {
+  const admInput = document.getElementById("admInput");
+  admInput.addEventListener("input", e => {
     const adm = e.target.value.trim();
-    const filtered = records.filter(r => r.admission === adm);
+    if (!adm) {
+      reportDiv.innerHTML = "<p>Please enter an admission number</p>";
+      return;
+    }
+
+    // Ensure admission numbers are compared as strings
+    const filtered = records.filter(r => String(r.admission) === adm);
 
     if (!filtered.length) {
       reportDiv.innerHTML = "<p>No student found</p>";
@@ -926,13 +912,17 @@ if (viewMode.value === "student") {
 
     const grouped = {};
     filtered.forEach(r => {
-      grouped[r.student] ??= {
+      const studentName = r.student || `${r.first_name} ${r.last_name}` || "Unknown Student";
+      const subject = r.subject || "—";
+
+      grouped[studentName] ??= {
         __admission: r.admission,
-        __school: r.schoolName,
-        __class: r.className
+        __school: r.schoolName || "—",
+        __class: r.className || "—"
       };
-      grouped[r.student][r.subject] ??= [];
-      grouped[r.student][r.subject].push(r);
+
+      grouped[studentName][subject] ??= [];
+      grouped[studentName][subject].push(r);
     });
 
     reportDiv.innerHTML = renderGrouped(grouped);
@@ -949,31 +939,41 @@ if (viewMode.value === "student") {
 
 /* ===== SUBJECT VIEW ===== */
 if (viewMode.value === "subject") {
-  const subjects = [...new Set(records.map(r => r.subject))];
+  const subjects = [...new Set(records.map(r => r.subject || "—"))];
 
   filterBox.innerHTML = `
     <label>Subject</label><br />
     <select id="subjectSelect">
       <option value="">Select subject</option>
-      ${subjects.map(s => `<option>${s}</option>`).join("")}
+      ${subjects.map(s => `<option value="${s}">${s}</option>`).join("")}
     </select>
   `;
 
-  document.getElementById("subjectSelect").addEventListener("change", e => {
+  const subjectSelect = document.getElementById("subjectSelect");
+  subjectSelect.addEventListener("change", e => {
     const subject = e.target.value;
     if (!subject) return;
 
-    const filtered = records.filter(r => r.subject === subject);
+    const filtered = records.filter(r => (r.subject || "—") === subject);
+
+    if (!filtered.length) {
+      reportDiv.innerHTML = `<p>No records found for ${subject}</p>`;
+      return;
+    }
 
     const grouped = {};
     filtered.forEach(r => {
-      grouped[r.student] ??= {
+      const studentName = r.student || `${r.first_name} ${r.last_name}` || "Unknown Student";
+      const subj = r.subject || "—";
+
+      grouped[studentName] ??= {
         __admission: r.admission,
-        __school: r.schoolName,
-        __class: r.className
+        __school: r.schoolName || "—",
+        __class: r.className || "—"
       };
-      grouped[r.student][r.subject] ??= [];
-      grouped[r.student][r.subject].push(r);
+
+      grouped[studentName][subj] ??= [];
+      grouped[studentName][subj].push(r);
     });
 
     reportDiv.innerHTML = `
@@ -986,19 +986,13 @@ if (viewMode.value === "subject") {
     setTimeout(() => {
       Object.values(grouped).forEach(s => {
         if (s.__admission) renderTrendChart(s.__admission);
-      }
+      });
+    }, 0);
   });
-}, 0);
-
-      
-      
-    });
-  }
 }
 
 termSelect.addEventListener("change", loadReport);
 viewMode.addEventListener("change", loadReport);
-
 
 
 function getTrend(currentAvg, previousAvg) {
@@ -1010,6 +1004,36 @@ function getTrend(currentAvg, previousAvg) {
   if (diff <= -0.3) return "📉 Declining";
   return "➖ Stable";
 }
+
+
+
+
+
+// ===== ACHIEVEMENT BANDS PLUGIN (global) =====
+const achievementBandsPlugin = {
+  id: "achievementBands",
+  beforeDraw(chart) {
+    const { ctx, chartArea, scales } = chart;
+    if (!chartArea) return;
+
+    const y = scales.y;
+    const bands = [
+      { from: 1, to: 2, color: "rgba(248,215,218,0.35)" }, // Below
+      { from: 2, to: 3, color: "rgba(255,243,205,0.35)" }, // Approaching
+      { from: 3, to: 4, color: "rgba(212,237,218,0.35)" }, // Meeting
+      { from: 4, to: 5, color: "rgba(204,229,255,0.35)" }  // Exceeding
+    ];
+
+    ctx.save();
+    bands.forEach(b => {
+      const yTop = y.getPixelForValue(b.to);
+      const yBottom = y.getPixelForValue(b.from);
+      ctx.fillStyle = b.color;
+      ctx.fillRect(chartArea.left, yTop, chartArea.right - chartArea.left, yBottom - yTop);
+    });
+    ctx.restore();
+  }
+};
 
 
 
