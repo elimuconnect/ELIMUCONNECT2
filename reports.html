@@ -325,13 +325,14 @@ const { data } = await supabase
   .from("assessment_results")
   .select(`
     remarks,
-  students(
+students(
   first_name,
   last_name,
   admission_number,
   classes(name),
-  school:schools(name)
+  school(name)
 ),
+
 
     competencies(name,subjects(name)),
     achievement_levels(label)
@@ -343,6 +344,7 @@ if (!data.length) {
   return;
 }
 const schoolName = data[0]?.students?.school?.name ?? "—";
+
 
 const className  = data[0]?.students?.classes?.name ?? "—";
 
