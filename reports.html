@@ -235,34 +235,6 @@ termSelect.innerHTML =
 
 
 
-/* ========== LOAD SCHOOL & CLASS ========== */
-let schoolInfo = null;
-let classInfo = null;
-
-const { data: schoolData, error: schoolErr } = await supabase
-  .from("schools")
-  .select("id, name")
-  .single();
-
-if (schoolErr) {
-  console.error("School fetch error:", schoolErr);
-} else {
-  schoolInfo = schoolData;
-}
-
-const { data: classData, error: classErr } = await supabase
-  .from("classes")
-  .select("id, name")
-  .single();
-
-if (classErr) {
-  console.error("Class fetch error:", classErr);
-} else {
-  classInfo = classData;
-}
-
-
-
  
 /* ========== MAIN LOAD ========== */
 async function loadReport() {
@@ -348,21 +320,29 @@ averages.forEach(a => {
   
 
   /* ===== RAW RESULTS ===== */
-  const { data } = await supabase
-    .from("assessment_results")
-    .select(`
-      remarks,
-      students(first_name,last_name,admission_number),
-      competencies(name,subjects(name)),
-      achievement_levels(label)
-    `)
-    .eq("term", termName)
-    .eq("academic_year", SYSTEM_YEAR);
-
-  if (!data.length) {
-    status.innerText = "No results found.";
-    return;
-  }
+  /* ===== RAW RESULTS ===== */
+const { data } = await supabase
+  .from("assessment_results")
+  .select(`
+    remarks,
+    students(
+      first_name,
+      last_name,
+      admission_number,
+      classes(name),
+      schools(name)
+    ),
+    competencies(name,subjects(name)),
+    achievement_levels(label)
+  `)
+  .eq("term", termName)
+  .eq("academic_year", SYSTEM_YEAR);
+if (!data.length) {
+  status.innerText = "No results found.";
+  return;
+}
+const schoolName = data[0]?.students?.schools?.name ?? "—";
+const className  = data[0]?.students?.classes?.name ?? "—";
 
   /* ===== NORMALIZED RECORDS ===== */
   const records = data.map(r => ({
@@ -428,13 +408,14 @@ function renderOverviewHeader({ school, className, term, year }) {
     return `
 <div class="a4-page learner-page">
   <div class="learner-card">
+${renderOverviewHeader({
+  school: schoolName,
+  className: className,
+  term: termName,
+  year: SYSTEM_YEAR
+})}
 
-    ${renderOverviewHeader({
-      school: schoolInfo?.name ?? "—",
-      className: classInfo?.name ?? "—",
-      term: termName,
-      year: SYSTEM_YEAR
-    })}
+
 
     <!-- HEADER -->
     <div class="split-block learner-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
