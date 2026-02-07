@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -318,7 +318,6 @@ averages.forEach(a => {
 });
 
   
-/* ===== RAW RESULTS WITH SCHOOL & CLASS ===== */
 const { data, error } = await supabase
   .from("assessment_results")
   .select(`
@@ -327,8 +326,8 @@ const { data, error } = await supabase
       first_name,
       last_name,
       admission_number,
-      schools!inner(name),
-      classes!inner(name)
+      school ( name ),
+      classes ( name )
     ),
     competencies (
       name,
@@ -341,21 +340,31 @@ const { data, error } = await supabase
 
 
 if (error) {
-  console.error("Assessment results error: ", error);
-  status.innerText = "Error fetching assessment results.";
+  console.error("Assessment results error:", error);
+  status.innerText = "Failed to load results.";
   return;
 }
 
-if (!data.length) {
+
+// ===== SCHOOL & CLASS (FROM FIRST RECORD) =====
+const schoolName =
+  data[0].students.school?.name ?? "";
+
+const className =
+  data[0].students.classes?.name ?? "";
+
+
+
+ 
+if (!data || data.length === 0) {
   status.innerText = "No results found.";
   return;
 }
 
-/* ===== EXTRACT SCHOOL & CLASS ===== */
-const schoolName = data?.[0]?.students?.schools?.name ?? "N/A";
-const className = data?.[0]?.students?.classes?.name ?? "N/A";
+const schoolName = data[0]?.students?.school?.name ?? "—";
 
 
+const className  = data[0]?.students?.classes?.name ?? "—";
 
   /* ===== NORMALIZED RECORDS ===== */
   const records = data.map(r => ({
@@ -418,22 +427,23 @@ function renderOverviewHeader({ school, className, term, year }) {
     const { strengths, needs } = generateStrengthsAndNeeds(subjects);
     const recommendations = generateRecommendations(subjects, trend, supportFlag);
 
-  return `
+    return `
 <div class="a4-page learner-page">
   <div class="learner-card">
+renderOverviewHeader({
+  school: schoolName,
+  className,
+  term: termName,
+  year: SYSTEM_YEAR
+});
 
-    ${renderOverviewHeader({
-      school: schoolName,
-      className,
-      term: termName,
-      year: SYSTEM_YEAR
-    })}
 
     <!-- HEADER -->
     <div class="split-block learner-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
       <h4>👤 ${student} <small>(<strong>Adm: ${admission}</strong>)</small></h4>
       <div style="font-weight:bold;">${supportFlag}</div>
     </div>
+
     <!-- TREND SUMMARY -->
     <div class="split-block">
       <p style="margin:6px 0 10px 0;font-weight:bold;">
