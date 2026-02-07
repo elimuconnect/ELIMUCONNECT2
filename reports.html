@@ -986,9 +986,14 @@ if (viewMode.value === "subject") {
     setTimeout(() => {
       Object.values(grouped).forEach(s => {
         if (s.__admission) renderTrendChart(s.__admission);
-      });
-    }, 0);
+      }
   });
+}, 0);
+
+      
+      
+    });
+  }
 }
 
 termSelect.addEventListener("change", loadReport);
