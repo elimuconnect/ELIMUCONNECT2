@@ -325,13 +325,14 @@ const { data } = await supabase
   .from("assessment_results")
   .select(`
     remarks,
-    students(
-      first_name,
-      last_name,
-      admission_number,
-      classes(name),
-      schools(name)
-    ),
+  students(
+  first_name,
+  last_name,
+  admission_number,
+  classes(name),
+  school:schools(name)
+),
+
     competencies(name,subjects(name)),
     achievement_levels(label)
   `)
@@ -341,7 +342,8 @@ if (!data.length) {
   status.innerText = "No results found.";
   return;
 }
-const schoolName = data[0]?.students?.schools?.name ?? "—";
+const schoolName = data[0]?.students?.school?.name ?? "—";
+
 const className  = data[0]?.students?.classes?.name ?? "—";
 
   /* ===== NORMALIZED RECORDS ===== */
