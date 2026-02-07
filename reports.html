@@ -326,36 +326,27 @@ averages.forEach(a => {
   /* ===== RAW RESULTS ===== */
 
 const { data, error } = await supabase
-  .from("assessment_results")
-  .select(`
-    remarks,
-    first_name,
-    last_name,
-    admission_number,
-    class_name,
-    school_name,
-    subject,
-    competency,
-    achievement_level
-  `)
+  .from("assessment_results_view")
+  .select("*")
   .eq("term", termName)
   .eq("academic_year", SYSTEM_YEAR);
 
 if (error) {
   console.error("Supabase fetch error:", error);
-  status.innerText = "Failed to load results.";
+  status.innerText = "Error fetching report";
   return;
 }
 
-if (!data || !data.length) {
+if (!data?.length) {
   status.innerText = "No results found.";
   return;
 }
 
+// school and class
 const schoolName = data[0]?.school_name ?? "—";
 const className  = data[0]?.class_name ?? "—";
 
-/* ===== NORMALIZED RECORDS ===== */
+// normalized records
 const records = data.map(r => ({
   student: `${r.first_name} ${r.last_name}`,
   admission: r.admission_number,
@@ -420,9 +411,9 @@ function renderOverviewHeader({ school, className, term, year }) {
     return `
 <div class="a4-page learner-page">
   <div class="learner-card">
-${renderOverviewHeader({
-  school: schoolName,
-  className: className,
+  ${renderOverviewHeader({
+  school: subjects.__school || schoolName,
+  className: subjects.__class || className,
   term: termName,
   year: SYSTEM_YEAR
 })}
@@ -888,126 +879,116 @@ function renderTrendChart(admission) {
 });
 }
   
-  /* ===== TERM VIEW ===== */
-  if (viewMode.value === "term") {
+ /* ===== TERM VIEW ===== */
+if (viewMode.value === "term") {
   const grouped = {};
   records.forEach(r => {
-    grouped[r.student] ??= { __admission: r.admission };
+    grouped[r.student] ??= {
+      __admission: r.admission,
+      __school: r.schoolName,
+      __class: r.className
+    };
     grouped[r.student][r.subject] ??= [];
     grouped[r.student][r.subject].push(r);
   });
 
-    reportDiv.innerHTML = `
-  <h3>${termName} – ${SYSTEM_YEAR}</h3>
-  ${renderGrouped(grouped)}
-`;
-requestAnimationFrame(() => {
-  splitLearnerIntoPages();
-});
+  reportDiv.innerHTML = `
+    <h3>${termName} – ${SYSTEM_YEAR}</h3>
+    ${renderGrouped(grouped)}
+  `;
 
-setTimeout(() => {
-  Object.values(grouped).forEach(s => {
-    if (s.__admission) {
-      renderTrendChart(s.__admission);
-    }
+  requestAnimationFrame(() => {
+    splitLearnerIntoPages();
   });
-}, 0);
 
-
-  }
-
-  /* ===== STUDENT VIEW ===== */
-  if (viewMode.value === "student") {
-    filterBox.innerHTML = `
-      <label>Admission Number</label><br />
-      <input id="admInput" />
-    `;
-
-    document.getElementById("admInput").addEventListener("input", e => {
-      const adm = e.target.value.trim();
-      const filtered = records.filter(r => r.admission === adm);
-
-      if (!filtered.length) {
-        reportDiv.innerHTML = "<p>No student found</p>";
-        return;
-      }
-
-      const grouped = {};
-filtered.forEach(r => {
-  grouped[r.student] ??= { __admission: r.admission };
-  grouped[r.student][r.subject] ??= [];
-  grouped[r.student][r.subject].push(r);
-});
-
-
-      reportDiv.innerHTML = renderGrouped(grouped);
-    
-requestAnimationFrame(() => {
-  splitLearnerIntoPages();
-});
-
-setTimeout(() => {
-  Object.values(grouped).forEach(s => {
-    if (s.__admission) {
-      renderTrendChart(s.__admission);
-    }
-  });
-}, 0);
-
-
-      
-      });
-  }
-
-  /* ===== SUBJECT VIEW ===== */
-  if (viewMode.value === "subject") {
-    const subjects = [...new Set(records.map(r => r.subject))];
-
-    filterBox.innerHTML = `
-      <label>Subject</label><br />
-      <select id="subjectSelect">
-        <option value="">Select subject</option>
-        ${subjects.map(s => `<option>${s}</option>`).join("")}
-      </select>
-    `;
-
-    document.getElementById("subjectSelect").addEventListener("change", e => {
-      const subject = e.target.value;
-      if (!subject) return;
-
-      const filtered = records.filter(r => r.subject === subject);
-
-const grouped = {};
-
-filtered.forEach(r => {
-  grouped[r.student] ??= { __admission: r.admission };
-  grouped[r.student][r.subject] ??= [];
-  grouped[r.student][r.subject].push(r);
-});
-
-
-      
-      reportDiv.innerHTML = `
-        <h3>${subject} – All Students</h3>
-        ${renderGrouped(grouped)}
-      `;
-
-requestAnimationFrame(() => {
-  splitLearnerIntoPages();
-});
-
-setTimeout(() => {
-  Object.values(grouped).forEach(s => {
-    if (s.__admission) {
-      renderTrendChart(s.__admission);
-    }
-  });
-}, 0);
-
-      
-      
+  setTimeout(() => {
+    Object.values(grouped).forEach(s => {
+      if (s.__admission) renderTrendChart(s.__admission);
     });
-  }
+  }, 0);
+}
+
+/* ===== STUDENT VIEW ===== */
+if (viewMode.value === "student") {
+  filterBox.innerHTML = `
+    <label>Admission Number</label><br />
+    <input id="admInput" />
+  `;
+
+  document.getElementById("admInput").addEventListener("input", e => {
+    const adm = e.target.value.trim();
+    const filtered = records.filter(r => r.admission === adm);
+
+    if (!filtered.length) {
+      reportDiv.innerHTML = "<p>No student found</p>";
+      return;
+    }
+
+    const grouped = {};
+    filtered.forEach(r => {
+      grouped[r.student] ??= {
+        __admission: r.admission,
+        __school: r.schoolName,
+        __class: r.className
+      };
+      grouped[r.student][r.subject] ??= [];
+      grouped[r.student][r.subject].push(r);
+    });
+
+    reportDiv.innerHTML = renderGrouped(grouped);
+
+    requestAnimationFrame(() => splitLearnerIntoPages());
+
+    setTimeout(() => {
+      Object.values(grouped).forEach(s => {
+        if (s.__admission) renderTrendChart(s.__admission);
+      });
+    }, 0);
+  });
+}
+
+/* ===== SUBJECT VIEW ===== */
+if (viewMode.value === "subject") {
+  const subjects = [...new Set(records.map(r => r.subject))];
+
+  filterBox.innerHTML = `
+    <label>Subject</label><br />
+    <select id="subjectSelect">
+      <option value="">Select subject</option>
+      ${subjects.map(s => `<option>${s}</option>`).join("")}
+    </select>
+  `;
+
+  document.getElementById("subjectSelect").addEventListener("change", e => {
+    const subject = e.target.value;
+    if (!subject) return;
+
+    const filtered = records.filter(r => r.subject === subject);
+
+    const grouped = {};
+    filtered.forEach(r => {
+      grouped[r.student] ??= {
+        __admission: r.admission,
+        __school: r.schoolName,
+        __class: r.className
+      };
+      grouped[r.student][r.subject] ??= [];
+      grouped[r.student][r.subject].push(r);
+    });
+
+    reportDiv.innerHTML = `
+      <h3>${subject} – All Students</h3>
+      ${renderGrouped(grouped)}
+    `;
+
+    requestAnimationFrame(() => splitLearnerIntoPages());
+
+    setTimeout(() => {
+      Object.values(grouped).forEach(s => {
+        if (s.__admission) renderTrendChart(s.__admission);
+      });
+    }, 0);
+  });
 }
 
 termSelect.addEventListener("change", loadReport);
