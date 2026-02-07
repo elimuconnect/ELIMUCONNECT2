@@ -359,9 +359,9 @@ const records = data.map(r => ({
   level: r.achievement_levels.label,
   remarks: r.remarks,
   school: r.students?.school?.name ?? "—",
-  className: r.students?.classes?.name ?? "—"
+  studentClass: r.students?.classes?.name ?? "—" // renamed
 }));
- 
+
 
 
 function renderOverviewHeader({ school, className, term, year }) {
@@ -418,7 +418,7 @@ function renderOverviewHeader({ school, className, term, year }) {
   <div class="learner-card">
 ${renderOverviewHeader({
   school: subjects.__school,
-  className: subjects.__className,
+  className: subjects.__class,  // match the new safe name
   term: termName,
   year: SYSTEM_YEAR
 })}
@@ -905,22 +905,20 @@ function renderTrendChart(admission) {
   
   /* ===== TERM VIEW ===== */
   if (viewMode.value === "term") {
-  const grouped = {};
-  records.forEach(r => {
-    grouped[r.student] ??= { __admission: r.admission };
-    grouped[r.student][r.subject] ??= [];
-    grouped[r.student][r.subject].push(r);
-  });
+
+const grouped = {};
 records.forEach(r => {
   grouped[r.student] ??= {
     __admission: r.admission,
     __school: r.school,
-    __className: r.className
+    __class: r.studentClass  // safe
   };
   grouped[r.student][r.subject] ??= [];
   grouped[r.student][r.subject].push(r);
 });
 
+
+   
     reportDiv.innerHTML = `
   <h3>${termName} – ${SYSTEM_YEAR}</h3>
   ${renderGrouped(grouped)}
@@ -989,17 +987,14 @@ if (viewMode.value === "student") {
     }
 
    const grouped = {};
-
 records.forEach(r => {
-  const studentGroup = grouped[r.student] ??= {
+  grouped[r.student] ??= {
     __admission: r.admission,
     __school: r.school,
-    __className: r.className
+    __class: r.studentClass  // safe
   };
-
-  const subj = r.subject ?? "Unknown Subject";
-  studentGroup[subj] ??= [];
-  studentGroup[subj].push(r);
+  grouped[r.student][r.subject] ??= [];
+  grouped[r.student][r.subject].push(r);
 });
 
 
@@ -1033,18 +1028,15 @@ if (viewMode.value === "subject") {
 
     const filtered = records.filter(r => r.subject === subject);
 
-  const grouped = {};
-
+const grouped = {};
 records.forEach(r => {
-  const studentGroup = grouped[r.student] ??= {
+  grouped[r.student] ??= {
     __admission: r.admission,
     __school: r.school,
-    __className: r.className
+    __class: r.studentClass  // safe
   };
-
-  const subj = r.subject ?? "Unknown Subject";
-  studentGroup[subj] ??= [];
-  studentGroup[subj].push(r);
+  grouped[r.student][r.subject] ??= [];
+  grouped[r.student][r.subject].push(r);
 });
 
 
