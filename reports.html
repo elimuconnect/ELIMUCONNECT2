@@ -318,17 +318,26 @@ averages.forEach(a => {
 });
 
   
-
- const { data, error } = await supabase
+const { data, error } = await supabase
   .from("assessment_results")
   .select(`
     remarks,
-    students(first_name,last_name,admission_number),
-    competencies(name,subjects(name)),
-    achievement_levels(label)
+    students (
+      first_name,
+      last_name,
+      admission_number,
+      school ( name ),
+      classes ( name )
+    ),
+    competencies (
+      name,
+      subjects ( name )
+    ),
+    achievement_levels ( label )
   `)
   .eq("term", termName)
   .eq("academic_year", SYSTEM_YEAR);
+
 
 if (error) {
   console.error("Assessment results error:", error);
@@ -336,6 +345,17 @@ if (error) {
   return;
 }
 
+
+// ===== SCHOOL & CLASS (FROM FIRST RECORD) =====
+const schoolName =
+  data[0].students.school?.name ?? "";
+
+const className =
+  data[0].students.classes?.name ?? "";
+
+
+
+ 
 if (!data || data.length === 0) {
   status.innerText = "No results found.";
   return;
@@ -410,13 +430,12 @@ function renderOverviewHeader({ school, className, term, year }) {
     return `
 <div class="a4-page learner-page">
   <div class="learner-card">
-${renderOverviewHeader({
+renderOverviewHeader({
   school: schoolName,
-  className: className,
+  className,
   term: termName,
   year: SYSTEM_YEAR
-})}
-
+});
 
 
     <!-- HEADER -->
