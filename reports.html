@@ -325,7 +325,7 @@ averages.forEach(a => {
 
   /* ===== RAW RESULTS ===== */
 
-const { data } = await supabase
+const { data, error } = await supabase
   .from("assessment_results")
   .select(`
     remarks,
@@ -334,35 +334,38 @@ const { data } = await supabase
     admission_number,
     class_name,
     school_name,
-    competencies(name, subjects(name)),
-    achievement_levels(label)
+    subject,
+    competency,
+    achievement_level
   `)
   .eq("term", termName)
   .eq("academic_year", SYSTEM_YEAR);
 
+if (error) {
+  console.error("Supabase fetch error:", error);
+  status.innerText = "Failed to load results.";
+  return;
+}
 
-  
-if (!data.length) {
+if (!data || !data.length) {
   status.innerText = "No results found.";
   return;
 }
+
 const schoolName = data[0]?.school_name ?? "—";
 const className  = data[0]?.class_name ?? "—";
 
-
-
-  /* ===== NORMALIZED RECORDS ===== */
+/* ===== NORMALIZED RECORDS ===== */
 const records = data.map(r => ({
   student: `${r.first_name} ${r.last_name}`,
   admission: r.admission_number,
   className: r.class_name,
   schoolName: r.school_name,
-  subject: r.competencies.subjects.name,
-  competency: r.competencies.name,
-  level: r.achievement_levels.label,
+  subject: r.subject,
+  competency: r.competency,
+  level: r.achievement_level,
   remarks: r.remarks
 }));
- 
 
 
 function renderOverviewHeader({ school, className, term, year }) {
