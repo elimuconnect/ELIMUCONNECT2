@@ -124,22 +124,21 @@ tr:last-child td {
 
 /* ===== A4 PAGE CANVAS ===== */
 .a4-page {
-  width: 210mm;
-  height: 297mm;
+  width: 186mm;        /* 210 - margins */
+  min-height: 267mm;   /* 297 - margins */
 
-  padding: 15mm 12mm;
-  box-sizing: border-box;
+  padding: 0;
+  margin: 0 auto 10px auto;
 
   background: white;
-  margin: 0 auto 12px auto;
+  box-sizing: border-box;
+}
+
 
   overflow: visible; /* allow content measurement */
 }
 
 
-.a4-page {
-  overflow: visible;
-}
 
 .report-overview h3 {
   font-size: 1.1em;
