@@ -1060,6 +1060,9 @@ function getTrend(currentAvg, previousAvg) {
   return "➖ Stable";
 }
 
+
+
+
 window.downloadPDF = async function () {
   if (!reportDiv.innerHTML.trim()) {
     alert("No report to download");
@@ -1114,11 +1117,12 @@ window.downloadPDF = async function () {
       : 0;
 
     // ===== EXTRACT TREND, STRENGTHS & NEEDS SAFELY =====
-    const trendText = card.querySelector(".split-block p")?.innerText || "🆕 New Entry";
+    let trendText = card.querySelector(".split-block p")?.innerText || "";
+    // Remove repeated "📊 Progress Trend" or teacher action lines
+    trendText = trendText.replace(/^📊 Progress Trend:.*$/m, "").trim();
 
     let strengthsText = "";
     let needsText = "";
-
     const strongElems = card.querySelectorAll(".split-block p strong");
     strongElems.forEach(el => {
       const text = el.innerText;
@@ -1130,14 +1134,17 @@ window.downloadPDF = async function () {
       }
     });
 
+    // Remove teacher action mentions like Life Skills, English, Kiswahili
+    strengthsText = strengthsText.replace(/Life Skills, English, Kiswahili/g, "").trim();
+
     // ===== SUMMARY BLOCK =====
     const summaryBlock = document.createElement("div");
-    summaryBlock.style.marginBottom = "12px";
-    summaryBlock.style.fontSize = "12px";
+    summaryBlock.style.marginBottom = "6px"; // reduced gap
+    summaryBlock.style.fontSize = "11px";     // smaller font
     summaryBlock.innerHTML = `
-      <p style="margin:4px 0;font-weight:bold;">${trendText}</p>
-      ${strengthsText ? `<p>💪 Strengths: ${strengthsText}</p>` : ""}
-      ${needsText ? `<p>🎯 Areas for Improvement: ${needsText}</p>` : ""}
+      ${trendText ? `<p style="margin:2px 0;font-weight:bold;">${trendText}</p>` : ""}
+      ${strengthsText ? `<p style="margin:2px 0;">💪 Strengths: ${strengthsText}</p>` : ""}
+      ${needsText ? `<p style="margin:2px 0;">🎯 Areas for Improvement: ${needsText}</p>` : ""}
     `;
 
     // ===== HELPER FUNCTIONS =====
@@ -1166,7 +1173,7 @@ window.downloadPDF = async function () {
     const table = document.createElement("table");
     table.style.width = "100%";
     table.style.borderCollapse = "collapse";
-    table.style.marginTop = "12px";
+    table.style.marginTop = "6px";
     table.style.fontSize = "12px";
     table.style.tableLayout = "fixed";
 
@@ -1196,10 +1203,11 @@ window.downloadPDF = async function () {
 
     // ===== GENERAL PERFORMANCE BLOCK =====
     const generalBlock = document.createElement("div");
-    generalBlock.style.marginTop = "14px";
+    generalBlock.style.marginTop = "10px";
     generalBlock.style.fontSize = "12px";
+
     generalBlock.innerHTML = `
-      <table style="width:100%;border-collapse:collapse;margin-top:8px;">
+      <table style="width:100%;border-collapse:collapse;margin-top:6px;">
         <tr>
           <td style="border:1px solid #000;padding:6px;width:40%;">
             <strong>Learner's General Performance Level</strong>
@@ -1217,12 +1225,14 @@ window.downloadPDF = async function () {
           </td>
         </tr>
       </table>
-      <div style="margin-top:18px;">
-        <div style="display:flex;justify-content:space-between;margin-top:20px;">
+
+      <div style="margin-top:12px;">
+        <div style="display:flex;justify-content:space-between;margin-top:14px;">
           <div>Closing Date: ____________________</div>
           <div>Opening Date: ____________________</div>
         </div>
-        <div style="display:flex;justify-content:space-between;margin-top:30px;">
+
+        <div style="display:flex;justify-content:space-between;margin-top:18px;">
           <div>Class Teacher Signature: ____________________</div>
           <div>Head of Institution Signature: ____________________</div>
         </div>
@@ -1245,6 +1255,7 @@ window.downloadPDF = async function () {
   }).from(clone).save();
 };
 
+  
 
 </script>
 </body>
