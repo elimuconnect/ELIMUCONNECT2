@@ -1188,67 +1188,59 @@ function generalComment(score){
         }).join("")}
       </tbody>
     `;
-
-    card.appendChild(table);
-
-    /* ===============================
-       COMBINED SUBJECT GRAPH
-    =============================== */
-    const canvas = document.createElement("canvas");
-    canvas.height = 160;
-    canvas.style.marginTop = "14px";
-    card.appendChild(canvas);
+card.appendChild(table);
 
 /* ===============================
-   GENERAL PERFORMANCE BLOCK
+   GENERAL PERFORMANCE BLOCK (BOTTOM)
 ================================ */
 const generalBlock = document.createElement("div");
-generalBlock.style.marginTop = "14px";
-generalBlock.style.fontSize = "12px";
+generalBlock.style.marginTop = "10px";
+generalBlock.style.fontSize = "11px";
+generalBlock.style.pageBreakInside = "avoid";
 
 generalBlock.innerHTML = `
-  <table style="width:100%;border-collapse:collapse;margin-top:8px;">
+  <table style="width:100%;border-collapse:collapse;margin-top:6px;">
     <tr>
-      <td style="border:1px solid #000;padding:6px;width:40%;">
+      <td style="border:1px solid #000;padding:5px;width:40%;">
         <strong>Learner's General Performance Level</strong>
       </td>
-      <td style="border:1px solid #000;padding:6px;">
+      <td style="border:1px solid #000;padding:5px;">
         ${overallAvg.toFixed(2)} — ${overallLevel(overallAvg)}
       </td>
     </tr>
 
     <tr>
-      <td style="border:1px solid #000;padding:6px;">
+      <td style="border:1px solid #000;padding:5px;">
         <strong>Teacher's General Comment</strong>
       </td>
-      <td style="border:1px solid #000;padding:12px;">
+      <td style="border:1px solid #000;padding:10px;">
         ${generalComment(overallAvg)}
       </td>
     </tr>
   </table>
 
-  <div style="margin-top:18px;">
-    <div style="display:flex;justify-content:space-between;margin-top:20px;">
-      <div>
-        Closing Date: ____________________
-      </div>
-      <div>
-        Opening Date: ____________________
-      </div>
+  <div style="margin-top:12px;">
+    <div style="display:flex;justify-content:space-between;margin-top:12px;">
+      <div>Closing Date: ____________</div>
+      <div>Opening Date: ____________</div>
     </div>
 
-    <div style="display:flex;justify-content:space-between;margin-top:30px;">
-      <div>
-        Class Teacher Signature: ____________________
-      </div>
-      <div>
-        Head of Institution Signature: ____________________
-      </div>
+    <div style="display:flex;justify-content:space-between;margin-top:18px;">
+      <div>Class Teacher Signature: ____________</div>
+      <div>Head of Institution Signature: ____________</div>
     </div>
   </div>
 `;
 
 card.appendChild(generalBlock);
+
+/* ===============================
+   GRAPH LAST (OPTIONAL)
+================================ */
+const canvas = document.createElement("canvas");
+canvas.height = 120; // reduced height
+canvas.style.marginTop = "8px";
+card.appendChild(canvas);
 
 
     
