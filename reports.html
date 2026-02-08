@@ -1113,21 +1113,29 @@ window.downloadPDF = async function () {
       : 0;
 
     // ===== EXTRACT TREND, STRENGTHS & NEEDS =====
-    let trendText = card.querySelector(".split-block p")?.innerText || "";
-    trendText = trendText.replace(/^📊 Progress Trend:.*$/m, "").trim();
+   // ===== EXTRACT TREND, STRENGTHS & NEEDS (NO REPETITION) =====
+let trendText = "";
+let strengthsText = "";
+let needsText = "";
 
-    let strengthsText = "";
-    let needsText = "";
-    const strongElems = card.querySelectorAll(".split-block p strong");
-    strongElems.forEach(el => {
-      const text = el.innerText;
-      const parentText = el.parentNode?.innerText || "";
-      if (text.includes("💪 Strengths")) {
-        strengthsText = parentText.replace("💪 Strengths:", "").trim();
-      } else if (text.includes("🎯 Areas for Improvement")) {
-        needsText = parentText.replace("🎯 Areas for Improvement:", "").trim();
-      }
-    });
+// Only take the first matching <p> for trend
+const trendP = card.querySelector(".split-block p");
+if (trendP) {
+  trendText = trendP.innerText.replace(/^📊 Progress Trend:.*$/m, "").trim();
+}
+
+// Only take the first matching strong element for strengths and needs
+const strongElems = card.querySelectorAll(".split-block p strong");
+strongElems.forEach(el => {
+  const text = el.innerText;
+  const parentText = el.parentNode?.innerText || "";
+  if (!strengthsText && text.includes("💪 Strengths")) {
+    strengthsText = parentText.replace("💪 Strengths:", "").trim();
+  } else if (!needsText && text.includes("🎯 Areas for Improvement")) {
+    needsText = parentText.replace("🎯 Areas for Improvement:", "").trim();
+  }
+});
+
 
     strengthsText = strengthsText.replace(/Life Skills, English, Kiswahili/g, "").trim();
 
