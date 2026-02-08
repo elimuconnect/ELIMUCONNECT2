@@ -1186,31 +1186,42 @@ window.downloadPDF = async function () {
     `;
 
     // ===== GENERAL PERFORMANCE BLOCK =====
-    const generalBlock = document.createElement("div");
-    generalBlock.style.marginTop = "14px";
-    generalBlock.style.fontSize = "12px";
-    generalBlock.innerHTML = `
-      <table style="width:100%;border-collapse:collapse;margin-top:8px;">
-        <tr>
-          <td style="border:1px solid #000;padding:6px;width:40%;"><strong>Learner's General Performance Level</strong></td>
-          <td style="border:1px solid #000;padding:6px;">${overallAvg.toFixed(2)} — ${overallLevel(overallAvg)}</td>
-        </tr>
-        <tr>
-          <td style="border:1px solid #000;padding:6px;"><strong>Teacher's General Comment</strong></td>
-          <td style="border:1px solid #000;padding:12px;">${generalComment(overallAvg)}</td>
-        </tr>
-      </table>
-      <div style="margin-top:18px;">
-        <div style="display:flex;justify-content:space-between;margin-top:20px;">
-          <div>Closing Date: ____________________</div>
-          <div>Opening Date: ____________________</div>
-        </div>
-        <div style="display:flex;justify-content:space-between;margin-top:30px;">
-          <div>Class Teacher Signature: ____________________</div>
-          <div>Head of Institution Signature: ____________________</div>
-        </div>
-      </div>
-    `;
+   const generalBlock = document.createElement("div");
+generalBlock.style.marginTop = "14px";
+generalBlock.style.fontSize = "12px";
+
+generalBlock.innerHTML = `
+  <table style="width:100%;border-collapse:collapse;margin-top:8px;">
+    <tr>
+      <td style="border:1px solid #000;padding:6px;width:40%;">
+        <strong>Learner's General Performance Level</strong>
+      </td>
+      <td style="border:1px solid #000;padding:6px;">
+        ${overallAvg.toFixed(2)} — ${overallLevel(overallAvg)}
+      </td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #000;padding:6px;">
+        <strong>Teacher's General Comment</strong>
+      </td>
+      <td style="border:1px solid #000;padding:12px;">
+        ${generalComment(overallAvg)}
+      </td>
+    </tr>
+  </table>
+
+  <div style="margin-top:18px;">
+    <div style="display:flex;justify-content:space-between;margin-top:20px;">
+      <div>Closing Date: ____________________</div>
+      <div>Opening Date: ____________________</div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;margin-top:30px;">
+      <div>Class Teacher Signature: ____________________</div>
+      <div>Head of Institution Signature: ____________________</div>
+    </div>
+  </div>
+`;
 
     // ===== APPEND ELEMENTS SAFELY =====
     card.appendChild(summaryBlock);
