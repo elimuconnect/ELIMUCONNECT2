@@ -17,6 +17,13 @@ body {
   line-height: 1.5;
 }
 
+
+* {
+  max-width: 100%;
+}
+
+
+  
 h2, h3 {
   margin-bottom: 6px;
 }
@@ -81,6 +88,8 @@ table {
   width: 100%;
   margin-top: 6px;
   font-size: 0.85em;
+  table-layout: fixed;
+  word-break: break-word;
 }
 
 th, td {
@@ -124,22 +133,18 @@ tr:last-child td {
 
 /* ===== A4 PAGE CANVAS ===== */
 .a4-page {
-  width: 210mm;
-  height: 297mm;
+  width: 186mm;        /* 210 - margins */
+  min-height: 267mm;   /* 297 - margins */
 
-  padding: 15mm 12mm;
-  box-sizing: border-box;
+  padding: 0;
+  margin: 0 auto 10px auto;
 
   background: white;
-  margin: 0 auto 12px auto;
-
+  box-sizing: border-box;
   overflow: visible; /* allow content measurement */
 }
 
 
-.a4-page {
-  overflow: visible;
-}
 
 .report-overview h3 {
   font-size: 1.1em;
@@ -1026,100 +1031,159 @@ function getTrend(currentAvg, previousAvg) {
   return "➖ Stable";
 }
 
-
-
-
-
-
-
-  
 window.downloadPDF = async function () {
- 
   if (!reportDiv.innerHTML.trim()) {
     alert("No report to download");
     return;
   }
 
   const term = termSelect.options[termSelect.selectedIndex]?.text || "Term";
-  const mode = viewMode.value;
-
-  let filename = `Report_${term}_${SYSTEM_YEAR}.pdf`;
-  if (mode === "student") filename = `Student_Report_${term}_${SYSTEM_YEAR}.pdf`;
-  if (mode === "subject") filename = `Subject_Report_${term}_${SYSTEM_YEAR}.pdf`;
+  const filename = `Summary_Report_${term}_${SYSTEM_YEAR}.pdf`;
 
   const clone = reportDiv.cloneNode(true);
 
-  // ===== REMOVE DETAILED TABLES =====
-  clone.querySelectorAll(".subject-block table, .split-block.recommendations, .split-block.subject-block").forEach(el => {
-    // Keep only subject average row if exists
-    const tfoot = el.querySelector("tfoot");
-    if (tfoot) el.replaceWith(tfoot); // replace table with only average row
-    else el.remove();
-  });
+  /* ===============================
+     FORCE CLEAN A4 LAYOUT
+  =============================== */
+clone.style.width = "190mm";
+clone.style.margin = "0 auto";
+  clone.style.padding = "0";
+  clone.style.boxSizing = "border-box";
 
-  // Remove on-screen trend boxes
-  clone.querySelectorAll(".trend-box").forEach(el => el.remove());
+  /* ===============================
+     REMOVE DETAILED CONTENT
+  =============================== */
+  clone.querySelectorAll(
+    ".subject-block, .trend-box, ul, .split-block:not(.learner-header)"
+  ).forEach(el => el.remove());
 
-  // ===== INSERT SMALL COMBINED CHARTS =====
   const cards = clone.querySelectorAll(".learner-card");
-  for (const card of cards) {
-    const studentName = card.querySelector("h4")?.innerText.split("👤")[1]?.split("(Adm")[0]?.trim();
-    const admission = card.querySelector("h4")?.innerText.match(/\(Adm: (\d+)\)/)?.[1];
-    if (!admission) continue;
 
-    // Gather all subjects for this student
-    const subjects = Object.keys(avgMap?.[studentName] || {});
-    if (!subjects.length) continue;
+  cards.forEach(card => {
+    /* ===== RESET CARD POSITION ===== */
+    card.style.margin = "0";
+    card.style.padding = "0";
+    card.style.boxSizing = "border-box";
 
-    // Collect scores for each subject
-    const datasets = subjects.map(subj => {
-      const score = avgMap[studentName][subj]?.average_score ?? 0;
-      return {
-        label: subj,
-        data: [score], // only one term in download
-        borderColor: getRandomColor(subj),
-        backgroundColor: "transparent",
-        tension: 0.2,
-        pointRadius: 3
-      };
-    });
+    /* ===== STRONG HEADER ===== */
+    const header = card.querySelector(".learner-header");
+    if (header) {
+      header.style.marginTop = "0";
+      header.style.paddingTop = "0";
+      header.style.fontSize = "18px";
+      header.style.fontWeight = "700";
+    }
 
+    const studentName =
+      card.querySelector("h4")?.innerText
+        .replace("👤", "")
+        .replace(/\(.*?\)/, "")
+        .trim();
+
+    const subjectData = avgMap?.[studentName];
+    if (!subjectData) return;
+
+    /* ===============================
+       COMMENT BY SCORE
+    =============================== */
+    function commentFromScore(score) {
+      if (score >= 3.5) return "Excellent work";
+      if (score >= 2.5) return "Good progress";
+      if (score >= 1.5) return "Fair work";
+      return "Put more effort";
+    }
+
+    /* ===============================
+       SUMMARY TABLE
+    =============================== */
+    const table = document.createElement("table");
+    table.style.width = "100%";
+    table.style.borderCollapse = "collapse";
+    table.style.marginTop = "12px";
+    table.style.fontSize = "12px";
+    table.style.tableLayout = "fixed";
+
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th style="border:1px solid #000;padding:6px;width:30%;">Learning Area</th>
+          <th style="border:1px solid #000;padding:6px;width:15%;">Average</th>
+          <th style="border:1px solid #000;padding:6px;width:25%;">Performance Level</th>
+          <th style="border:1px solid #000;padding:6px;width:30%;">Teacher Comment</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${Object.entries(subjectData).map(([subject, d]) => {
+          const avg = Number(d.average_score);
+          return `
+            <tr>
+              <td style="border:1px solid #000;padding:6px;">${subject}</td>
+              <td style="border:1px solid #000;padding:6px;text-align:center;">
+                ${avg.toFixed(2)}
+              </td>
+              <td style="border:1px solid #000;padding:6px;">
+                ${d.achievement_level}
+              </td>
+              <td style="border:1px solid #000;padding:6px;">
+                ${commentFromScore(avg)}
+              </td>
+            </tr>
+          `;
+        }).join("")}
+      </tbody>
+    `;
+
+    card.appendChild(table);
+
+    /* ===============================
+       COMBINED SUBJECT GRAPH
+    =============================== */
     const canvas = document.createElement("canvas");
-    canvas.width = 300;  // small width
-    canvas.height = 120; // small height
+    canvas.height = 160;
+    canvas.style.marginTop = "14px";
     card.appendChild(canvas);
 
     new Chart(canvas, {
-      type: "line",
+      type: "bar",
       data: {
-        labels: ["Current Term"],
-        datasets: datasets
+        labels: Object.keys(subjectData),
+        datasets: [{
+          data: Object.values(subjectData).map(d => d.average_score),
+          backgroundColor: "#2c3e50"
+        }]
       },
       options: {
         responsive: false,
         maintainAspectRatio: false,
-        plugins: {
-          legend: { position: "bottom", labels: { font: { size: 8 } } }
-        },
+        plugins: { legend: { display: false } },
         scales: {
-          y: { min: 1, max: 4, ticks: { stepSize: 1 } }
+          y: {
+            min: 1,
+            max: 4,
+            ticks: {
+              stepSize: 1,
+              callback: v =>
+                ["", "Below", "Approaching", "Meeting", "Exceeding"][v]
+            }
+          }
         }
       }
     });
-  }
+  });
 
-  // ===== PDF OPTIONS =====
-  const opt = {
-    margin: 10,
+  /* ===============================
+     EXPORT PDF (TOP-ALIGNED)
+  =============================== */
+  html2pdf().set({
+    margin: [10, 10, 10, 10], // TOP, RIGHT, BOTTOM, LEFT
     filename,
     image: { type: "jpeg", quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
+    html2canvas: { scale: 2, scrollY: 0, useCORS: true },
     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
-  };
-
-  html2pdf().set(opt).from(clone).save();
+  }).from(clone).save();
 };
 
+ 
 // ===== HELPER: RANDOM COLOR PER SUBJECT =====
 function getRandomColor(seed) {
   // consistent color per subject
@@ -1135,3 +1199,4 @@ function getRandomColor(seed) {
 
 </body>
 </html>
+
