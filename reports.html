@@ -1234,15 +1234,26 @@ window.downloadPDF = async function () {
     `;
 
     // ===== FORCE SECOND PAGE FOR TABLE + GENERAL BLOCK =====
-    const secondPageContainer = document.createElement("div");
-    secondPageContainer.style.pageBreakBefore = "always"; // always start on new page
-    secondPageContainer.appendChild(table);
-    secondPageContainer.appendChild(generalBlock);
+    // ===== GENERAL PERFORMANCE BLOCK + TABLE ON SECOND PAGE =====
+const secondPageContainer = document.createElement("div");
+secondPageContainer.style.pageBreakBefore = "always"; // force page 2
 
-    // ===== APPEND ELEMENTS =====
-    card.appendChild(summaryBlock);           // first page content
-    card.appendChild(secondPageContainer);    // second page content
-  });
+// Increase font size and add row padding
+table.style.fontSize = "14px";
+table.querySelectorAll("td, th").forEach(cell => {
+  cell.style.padding = "10px 6px"; // taller rows
+});
+
+generalBlock.style.fontSize = "14px";
+generalBlock.style.lineHeight = "1.5"; // better spacing for text
+
+// Append to container
+secondPageContainer.appendChild(table);
+secondPageContainer.appendChild(generalBlock);
+
+// ===== APPEND ELEMENTS =====
+card.appendChild(summaryBlock);           // page 1
+card.appendChild(secondPageContainer);    // page 2
 
   // ===== EXPORT PDF =====
   html2pdf().set({
