@@ -17,6 +17,13 @@ body {
   line-height: 1.5;
 }
 
+
+* {
+  max-width: 100%;
+}
+
+
+  
 h2, h3 {
   margin-bottom: 6px;
 }
@@ -81,6 +88,8 @@ table {
   width: 100%;
   margin-top: 6px;
   font-size: 0.85em;
+  table-layout: fixed;
+  word-break: break-word;
 }
 
 th, td {
@@ -132,9 +141,6 @@ tr:last-child td {
 
   background: white;
   box-sizing: border-box;
-}
-
-
   overflow: visible; /* allow content measurement */
 }
 
@@ -1039,8 +1045,8 @@ window.downloadPDF = async function () {
   /* ===============================
      FORCE CLEAN A4 LAYOUT
   =============================== */
-  clone.style.width = "210mm";
-  clone.style.margin = "0";
+clone.style.width = "190mm";
+clone.style.margin = "0 auto";
   clone.style.padding = "0";
   clone.style.boxSizing = "border-box";
 
