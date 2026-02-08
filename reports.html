@@ -1062,7 +1062,6 @@ function getTrend(currentAvg, previousAvg) {
 
 
 
-
 window.downloadPDF = async function () {
   if (!reportDiv.innerHTML.trim()) {
     alert("No report to download");
@@ -1087,12 +1086,10 @@ window.downloadPDF = async function () {
   const cards = clone.querySelectorAll(".learner-card");
 
   cards.forEach(card => {
-    // Reset card layout
     card.style.margin = "0";
     card.style.padding = "0";
     card.style.boxSizing = "border-box";
 
-    // Format header
     const header = card.querySelector(".learner-header");
     if (header) {
       header.style.marginTop = "0";
@@ -1101,50 +1098,54 @@ window.downloadPDF = async function () {
       header.style.fontWeight = "700";
     }
 
-    // Get student name safely
     const studentName = card.querySelector("h4")?.innerText
       .replace("👤", "")
       .replace(/\(.*?\)/, "")
       .trim();
 
     const subjectData = avgMap?.[studentName];
-    if (!subjectData) return; // skip if no data
+    if (!subjectData) return;
 
-    // ===== CALCULATE OVERALL AVERAGE =====
     const subjectScores = Object.values(subjectData).map(d => Number(d.average_score));
     const overallAvg = subjectScores.length
       ? subjectScores.reduce((a, b) => a + b, 0) / subjectScores.length
       : 0;
 
-    // ===== EXTRACT TREND, STRENGTHS & NEEDS SAFELY =====
-    let trendText = card.querySelector(".split-block p")?.innerText || "";
-    // Remove repeated "📊 Progress Trend" or teacher action lines
-    trendText = trendText.replace(/^📊 Progress Trend:.*$/m, "").trim();
+    // ===== EXTRACT CLEAN SUMMARY =====
+    const summaryBlock = document.createElement("div");
+    summaryBlock.style.marginBottom = "2px"; // very small gap
+    summaryBlock.style.fontSize = "11px";    // smaller font for parent view
 
-    let strengthsText = "";
-    let needsText = "";
-    const strongElems = card.querySelectorAll(".split-block p strong");
-    strongElems.forEach(el => {
-      const text = el.innerText;
-      const parentText = el.parentNode?.innerText || "";
-      if (text.includes("💪 Strengths")) {
-        strengthsText = parentText.replace("💪 Strengths:", "").trim();
-      } else if (text.includes("🎯 Areas for Improvement")) {
-        needsText = parentText.replace("🎯 Areas for Improvement:", "").trim();
+    let trendText = "", strengthsText = "", needsText = "";
+    const paragraphs = card.querySelectorAll(".split-block p");
+
+    paragraphs.forEach(p => {
+      const text = p.innerText || "";
+
+      // Skip teacher action lines
+      if (/Teacher Actions/i.test(text)) return;
+
+      // Keep only first Progress Trend
+      if (/📊 Progress Trend/i.test(text)) {
+        if (!trendText) trendText = text.replace(/^📊 Progress Trend:\s*/, "");
+        return;
+      }
+
+      if (/💪 Strengths/i.test(text)) {
+        strengthsText = text.replace(/💪 Strengths:|Life Skills, English, Kiswahili/g, "").trim();
+        return;
+      }
+
+      if (/🎯 Areas for Improvement/i.test(text)) {
+        needsText = text.replace(/🎯 Areas for Improvement:/, "").trim();
+        return;
       }
     });
 
-    // Remove teacher action mentions like Life Skills, English, Kiswahili
-    strengthsText = strengthsText.replace(/Life Skills, English, Kiswahili/g, "").trim();
-
-    // ===== SUMMARY BLOCK =====
-    const summaryBlock = document.createElement("div");
-    summaryBlock.style.marginBottom = "6px"; // reduced gap
-    summaryBlock.style.fontSize = "11px";     // smaller font
     summaryBlock.innerHTML = `
-      ${trendText ? `<p style="margin:2px 0;font-weight:bold;">${trendText}</p>` : ""}
-      ${strengthsText ? `<p style="margin:2px 0;">💪 Strengths: ${strengthsText}</p>` : ""}
-      ${needsText ? `<p style="margin:2px 0;">🎯 Areas for Improvement: ${needsText}</p>` : ""}
+      ${trendText ? `<p style="margin:0;font-weight:bold;">${trendText}</p>` : ""}
+      ${strengthsText ? `<p style="margin:0;">💪 Strengths: ${strengthsText}</p>` : ""}
+      ${needsText ? `<p style="margin:0;">🎯 Areas for Improvement: ${needsText}</p>` : ""}
     `;
 
     // ===== HELPER FUNCTIONS =====
@@ -1254,8 +1255,6 @@ window.downloadPDF = async function () {
     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
   }).from(clone).save();
 };
-
-  
 
 </script>
 </body>
