@@ -207,10 +207,9 @@ tr:last-child td {
 <p id="status"></p>
 <hr />
 
-
 <div class="actions-box">
-
-  <button onclick="downloadPDF()">⬇️ Download Summary report PDF</button>
+  <button onclick="downloadPDF()">⬇️ Download Summary PDF</button>
+  <button onclick="downloadDetailedPDF()">⬇️ Download Detailed PDF</button>
 </div>
 
   
@@ -1274,6 +1273,52 @@ card.appendChild(secondPageContainer);    // page 2
 };
 
 
+
+
+window.downloadDetailedPDF = async function () {
+  if (!reportDiv.innerHTML.trim()) {
+    alert("No report to download");
+    return;
+  }
+
+  const term = termSelect.options[termSelect.selectedIndex]?.text || "Term";
+  const filename = `Detailed_Report_${term}_${SYSTEM_YEAR}.pdf`;
+
+  // Clone the report div for clean PDF export
+  const clone = reportDiv.cloneNode(true);
+
+  // Force A4 layout
+  clone.style.width = "190mm";
+  clone.style.margin = "0 auto";
+  clone.style.padding = "0";
+  clone.style.boxSizing = "border-box";
+
+  // Keep everything visible — no removals
+  // Just increase charts and table clarity if needed
+  clone.querySelectorAll("canvas").forEach(c => {
+    c.style.width = "100%";
+    c.style.height = "200px";
+  });
+
+  // Optional: increase table font size for clarity
+  clone.querySelectorAll("table").forEach(table => {
+    table.style.fontSize = "14px";
+    table.querySelectorAll("td, th").forEach(cell => {
+      cell.style.padding = "8px";
+    });
+  });
+
+  html2pdf().set({
+    margin: [10, 10, 10, 10],
+    filename,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: { scale: 2, scrollY: 0, useCORS: true },
+    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+  }).from(clone).save();
+};
+
+
+  
 </script>
 </body>
 </html>
