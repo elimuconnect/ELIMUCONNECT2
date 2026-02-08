@@ -1239,13 +1239,13 @@ const secondPageContainer = document.createElement("div");
 secondPageContainer.style.pageBreakBefore = "always"; // force page 2
 
 // Increase font size and add row padding
-table.style.fontSize = "14px";
+table.style.fontSize = "16px";
 table.querySelectorAll("td, th").forEach(cell => {
   cell.style.padding = "10px 6px"; // taller rows
 });
 
-generalBlock.style.fontSize = "14px";
-generalBlock.style.lineHeight = "1.5"; // better spacing for text
+generalBlock.style.fontSize = "16px";
+generalBlock.style.lineHeight = "2"; // better spacing for text
 
 // Append to container
 secondPageContainer.appendChild(table);
