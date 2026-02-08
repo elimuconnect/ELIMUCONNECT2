@@ -1060,8 +1060,6 @@ function getTrend(currentAvg, previousAvg) {
   return "➖ Stable";
 }
 
-
-
 window.downloadPDF = async function () {
   if (!reportDiv.innerHTML.trim()) {
     alert("No report to download");
@@ -1115,13 +1113,24 @@ window.downloadPDF = async function () {
       ? subjectScores.reduce((a, b) => a + b, 0) / subjectScores.length
       : 0;
 
-    // ===== SUMMARY BLOCK =====
+    // ===== EXTRACT TREND, STRENGTHS & NEEDS SAFELY =====
     const trendText = card.querySelector(".split-block p")?.innerText || "🆕 New Entry";
-    const strengthsText = card.querySelector(".split-block p strong:contains('💪 Strengths')')?.parentNode?.innerText
-      .replace("💪 Strengths:", "").trim() || "";
-    const needsText = card.querySelector(".split-block p strong:contains('🎯 Areas for Improvement')')?.parentNode?.innerText
-      .replace("🎯 Areas for Improvement:", "").trim() || "";
 
+    let strengthsText = "";
+    let needsText = "";
+
+    const strongElems = card.querySelectorAll(".split-block p strong");
+    strongElems.forEach(el => {
+      const text = el.innerText;
+      const parentText = el.parentNode?.innerText || "";
+      if (text.includes("💪 Strengths")) {
+        strengthsText = parentText.replace("💪 Strengths:", "").trim();
+      } else if (text.includes("🎯 Areas for Improvement")) {
+        needsText = parentText.replace("🎯 Areas for Improvement:", "").trim();
+      }
+    });
+
+    // ===== SUMMARY BLOCK =====
     const summaryBlock = document.createElement("div");
     summaryBlock.style.marginBottom = "12px";
     summaryBlock.style.fontSize = "12px";
@@ -1186,44 +1195,41 @@ window.downloadPDF = async function () {
     `;
 
     // ===== GENERAL PERFORMANCE BLOCK =====
-   const generalBlock = document.createElement("div");
-generalBlock.style.marginTop = "14px";
-generalBlock.style.fontSize = "12px";
+    const generalBlock = document.createElement("div");
+    generalBlock.style.marginTop = "14px";
+    generalBlock.style.fontSize = "12px";
+    generalBlock.innerHTML = `
+      <table style="width:100%;border-collapse:collapse;margin-top:8px;">
+        <tr>
+          <td style="border:1px solid #000;padding:6px;width:40%;">
+            <strong>Learner's General Performance Level</strong>
+          </td>
+          <td style="border:1px solid #000;padding:6px;">
+            ${overallAvg.toFixed(2)} — ${overallLevel(overallAvg)}
+          </td>
+        </tr>
+        <tr>
+          <td style="border:1px solid #000;padding:6px;">
+            <strong>Teacher's General Comment</strong>
+          </td>
+          <td style="border:1px solid #000;padding:12px;">
+            ${generalComment(overallAvg)}
+          </td>
+        </tr>
+      </table>
+      <div style="margin-top:18px;">
+        <div style="display:flex;justify-content:space-between;margin-top:20px;">
+          <div>Closing Date: ____________________</div>
+          <div>Opening Date: ____________________</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:30px;">
+          <div>Class Teacher Signature: ____________________</div>
+          <div>Head of Institution Signature: ____________________</div>
+        </div>
+      </div>
+    `;
 
-generalBlock.innerHTML = `
-  <table style="width:100%;border-collapse:collapse;margin-top:8px;">
-    <tr>
-      <td style="border:1px solid #000;padding:6px;width:40%;">
-        <strong>Learner's General Performance Level</strong>
-      </td>
-      <td style="border:1px solid #000;padding:6px;">
-        ${overallAvg.toFixed(2)} — ${overallLevel(overallAvg)}
-      </td>
-    </tr>
-    <tr>
-      <td style="border:1px solid #000;padding:6px;">
-        <strong>Teacher's General Comment</strong>
-      </td>
-      <td style="border:1px solid #000;padding:12px;">
-        ${generalComment(overallAvg)}
-      </td>
-    </tr>
-  </table>
-
-  <div style="margin-top:18px;">
-    <div style="display:flex;justify-content:space-between;margin-top:20px;">
-      <div>Closing Date: ____________________</div>
-      <div>Opening Date: ____________________</div>
-    </div>
-
-    <div style="display:flex;justify-content:space-between;margin-top:30px;">
-      <div>Class Teacher Signature: ____________________</div>
-      <div>Head of Institution Signature: ____________________</div>
-    </div>
-  </div>
-`;
-
-    // ===== APPEND ELEMENTS SAFELY =====
+    // ===== APPEND ELEMENTS =====
     card.appendChild(summaryBlock);
     card.appendChild(table);
     card.appendChild(generalBlock);
@@ -1239,7 +1245,7 @@ generalBlock.innerHTML = `
   }).from(clone).save();
 };
 
-  
+
 </script>
 </body>
 </html>
