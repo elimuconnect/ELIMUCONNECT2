@@ -1615,7 +1615,6 @@ card.appendChild(summaryBlock);
 
 
 
-
 window.downloadDetailedPDF = async function () {
   if (!reportDiv.innerHTML.trim()) {
     alert("No report to download");
@@ -1625,7 +1624,6 @@ window.downloadDetailedPDF = async function () {
   const term = termSelect.options[termSelect.selectedIndex]?.text || "Term";
   const filename = `Detailed_Report_${term}_${SYSTEM_YEAR}.pdf`;
 
-  // Clone the report div for clean PDF export
   const clone = reportDiv.cloneNode(true);
 
   // Force A4 layout
@@ -1634,19 +1632,35 @@ window.downloadDetailedPDF = async function () {
   clone.style.padding = "0";
   clone.style.boxSizing = "border-box";
 
-  // Keep everything visible — no removals
-  // Just increase charts and table clarity if needed
+  // Improve charts clarity
   clone.querySelectorAll("canvas").forEach(c => {
     c.style.width = "100%";
     c.style.height = "200px";
   });
 
-  // Optional: increase table font size for clarity
+  // Improve table readability
   clone.querySelectorAll("table").forEach(table => {
     table.style.fontSize = "14px";
     table.querySelectorAll("td, th").forEach(cell => {
       cell.style.padding = "8px";
     });
+  });
+
+  // ✅ CBC COMPLIANCE FOOTER (per learner)
+  clone.querySelectorAll(".learner-card").forEach(card => {
+    const footer = document.createElement("div");
+    footer.style.fontSize = "10px";
+    footer.style.color = "#555";
+    footer.style.textAlign = "center";
+    footer.style.marginTop = "12px";
+    footer.style.borderTop = "1px solid #ddd";
+    footer.style.paddingTop = "6px";
+    footer.style.pageBreakInside = "avoid";
+
+    footer.innerText =
+      "Assessment is competency-based and evidence-driven, guided by KICD CBC curriculum designs.";
+
+    card.appendChild(footer);
   });
 
   html2pdf().set({
