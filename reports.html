@@ -232,6 +232,7 @@ const supabase = createClient(
 );
 
 const SYSTEM_YEAR = "2026";
+let results = [];
 
 let trendMap = {};
 let avgMap = {}; // make it global so downloadPDF can access it
@@ -380,11 +381,13 @@ if (error) {
   status.innerText = "Error fetching report";
   return;
 }
-
 if (!data?.length) {
   status.innerText = "No results found.";
   return;
 }
+
+results = data;
+
 
 // school and class
 const schoolName = data[0]?.school_name ?? "—";
@@ -1382,7 +1385,12 @@ function getTrend(currentAvg, previousAvg) {
 }
 
 
+
+
+
+  
 window.downloadPDF = async function () {
+
   if (!reportDiv.innerHTML.trim()) {
     alert("No report to download");
     return;
@@ -1391,46 +1399,71 @@ window.downloadPDF = async function () {
   const term = termSelect.options[termSelect.selectedIndex]?.text || "Term";
   const filename = `Summary_Report_${term}_${SYSTEM_YEAR}.pdf`;
 
-  // Clone the report for clean PDF rendering
   const clone = reportDiv.cloneNode(true);
 
-  // ===== FORCE CLEAN A4 LAYOUT =====
+  // ===== A4 Layout =====
   clone.style.width = "190mm";
   clone.style.margin = "0 auto";
   clone.style.padding = "0";
   clone.style.boxSizing = "border-box";
 
-  // ===== REMOVE DETAILED CONTENT =====
+  // ===== Remove Detailed Sections =====
   clone.querySelectorAll(".subject-block, .trend-box").forEach(el => el.remove());
 
   const cards = clone.querySelectorAll(".learner-card");
 
-cards.forEach(card => {
+  // ===== GET SCHOOL INFO =====
+  const first = results?.[0];
 
-  // ===== CARD STYLING =====
-  card.style.margin = "0";
-  card.style.padding = "0";
-  card.style.boxSizing = "border-box";
+  if (first) {
 
-  const header = card.querySelector(".learner-header");
-  if (header) {
-    header.style.marginTop = "0";
-    header.style.paddingTop = "0";
-    header.style.fontSize = "18px";
-    header.style.fontWeight = "700";
+    const header = document.createElement("div");
+
+    header.style.textAlign = "center";
+    header.style.marginBottom = "10px";
+    header.style.paddingBottom = "8px";
+    header.style.borderBottom = "1px solid #000";
+
+    header.innerHTML = `
+      <div style="font-size:18px;font-weight:bold;">
+        ${first.school_name?.toUpperCase() || ""}
+      </div>
+
+      <div style="font-size:11px;">
+        ${first.po_box ? `P.O. Box ${first.po_box}` : ""}
+        ${first.postal_code ? ` - ${first.postal_code}` : ""}
+        ${first.town ? `, ${first.town}` : ""}
+      </div>
+
+      <div style="font-size:11px;">
+        ${first.phone ? `Tel: ${first.phone}` : ""}
+        ${first.email ? ` | Email: ${first.email}` : ""}
+      </div>
+    `;
+
+    clone.prepend(header);
   }
 
-  // ===== CBC FOOTER =====
-  const footer = document.createElement("div");
-  footer.style.fontSize = "10px";
-  footer.style.color = "#555";
-  footer.style.textAlign = "center";
-  footer.style.marginTop = "12px";
-  footer.style.borderTop = "1px solid #ddd";
-  footer.style.paddingTop = "6px";
-  footer.style.pageBreakInside = "avoid";
-  footer.innerText =
-    "Assessment is competency-based and evidence-driven, guided by KICD CBE curriculum designs.";
+  // ===== STYLE CARDS + ADD FOOTER =====
+  cards.forEach(card => {
+
+    card.style.margin = "0";
+    card.style.padding = "0";
+    card.style.boxSizing = "border-box";
+
+    const footer = document.createElement("div");
+
+    footer.style.fontSize = "10px";
+    footer.style.color = "#555";
+    footer.style.textAlign = "center";
+    footer.style.marginTop = "12px";
+    footer.style.borderTop = "1px solid #ddd";
+    footer.style.paddingTop = "6px";
+    footer.style.pageBreakInside = "avoid";
+
+    footer.innerText =
+      "Assessment is competency-based and evidence-driven, guided by KICD CBE curriculum designs.";
+
 
   // ===== STUDENT NAME =====
   const studentName = card.querySelector("h4")?.innerText
@@ -1495,9 +1528,7 @@ strongElems.forEach(el => {
     summaryBlock.style.fontSize = "11px";
     summaryBlock.innerHTML = `
     
-   
-
-  ${strengthsText ? `<p style="margin:2px 0;"><strong>💪 Strengths:</strong> ${strengthsText}</p>` : ""}
+  
 `;
 
     
