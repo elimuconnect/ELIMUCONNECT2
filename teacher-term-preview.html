@@ -207,10 +207,16 @@ tr:last-child td {
 <p id="status"></p>
 <hr />
 
-
 <div class="actions-box">
+  <button onclick="downloadPDF()">
+    ⬇️ Download Summary Report<br>
+    <small>Recommended for parents & learners</small>
+  </button>
 
-  <button onclick="downloadPDF()">⬇️ Download PDF</button>
+  <button onclick="downloadDetailedPDF()">
+    ⬇️ Download Detailed Assessment Report<br>
+    <small>For teachers & internal review</small>
+  </button>
 </div>
 
   
@@ -413,6 +419,156 @@ function renderOverviewHeader({ school, className, term, year }) {
 
 
 
+
+function renderSchoolAnalytics(records, termName, year) {
+
+  let classMap = {};
+  let subjectMap = {};
+  let bandCount = { below: 0, approaching: 0, meeting: 0, exceeding: 0 };
+
+  // ===== PROCESS DATA =====
+  records.forEach(r => {
+
+    const score = levelToScore(r.level);
+
+    // CLASS MEAN
+    classMap[r.className] ??= [];
+    if (score > 0) classMap[r.className].push(score);
+
+    // SUBJECT MEAN
+    subjectMap[r.subject] ??= [];
+    if (score > 0) subjectMap[r.subject].push(score);
+
+    // BAND DISTRIBUTION
+    if (score === 1) bandCount.below++;
+    if (score === 2) bandCount.approaching++;
+    if (score === 3) bandCount.meeting++;
+    if (score === 4) bandCount.exceeding++;
+  });
+
+  // ===== AT-RISK COUNT =====
+  const atRiskLearners = records.filter(
+    r => r.level === "Below Expectations"
+  ).length;
+
+  // ===== AVERAGE FUNCTION =====
+  function avg(arr) {
+    return arr.length
+      ? arr.reduce((a, b) => a + b, 0) / arr.length
+      : 0;
+  }
+
+  // ===== CLASS SUMMARY =====
+  const classSummary = Object.entries(classMap).map(([cls, scores]) => {
+
+    const mean = avg(scores);
+    const risk = mean < 2.5
+      ? `<span style="color:#c0392b;font-weight:bold;">🔴 Needs Intervention</span>`
+      : `<span style="color:#1e8449;font-weight:bold;">🟢 Stable</span>`;
+
+    return `
+      <tr>
+        <td>${cls}</td>
+        <td>${mean.toFixed(2)}</td>
+        <td>${risk}</td>
+      </tr>
+    `;
+  }).join("");
+
+  // ===== SUBJECT ALERTS =====
+  const subjectAlerts = Object.entries(subjectMap).map(([sub, scores]) => {
+
+    const mean = avg(scores);
+
+    const alert = mean < 2.3
+      ? `<span style="color:#c0392b;font-weight:bold;">⚠ Immediate Review Required</span>`
+      : "";
+
+    return `
+      <tr>
+        <td>${sub}</td>
+        <td>${mean.toFixed(2)}</td>
+        <td>${alert}</td>
+      </tr>
+    `;
+  }).join("");
+
+  // ===== RETURN FULL ANALYTICS PAGE =====
+  return `
+  <div class="a4-page">
+    <div class="learner-card">
+
+      <h3>📊 School Performance Analytics — ${termName} ${year}</h3>
+
+      <!-- 1️⃣ CLASS MEAN -->
+      <h4>1️⃣ Class Mean Overview</h4>
+      <table>
+        <thead>
+          <tr>
+            <th>Class</th>
+            <th>Mean Score</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${classSummary}
+        </tbody>
+      </table>
+
+      <!-- 2️⃣ SUBJECT ANALYSIS -->
+      <h4 style="margin-top:20px;">2️⃣ Subject Mean Analysis</h4>
+      <table>
+        <thead>
+          <tr>
+            <th>Subject</th>
+            <th>Mean Score</th>
+            <th>Alert</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${subjectAlerts}
+        </tbody>
+      </table>
+
+      <!-- 3️⃣ BAND DISTRIBUTION -->
+      <h4 style="margin-top:20px;">3️⃣ Performance Band Distribution</h4>
+      <p>
+        🔴 Below: ${bandCount.below} |
+        🟡 Approaching: ${bandCount.approaching} |
+        🔵 Meeting: ${bandCount.meeting} |
+        🟢 Exceeding: ${bandCount.exceeding}
+      </p>
+
+      <!-- 4️⃣ RISK SUMMARY -->
+      <h4 style="margin-top:20px;">4️⃣ Learner Risk Overview</h4>
+      <p>
+        ${atRiskLearners} learners currently below expectations require structured intervention.
+      </p>
+
+      <!-- 5️⃣ TERM GROWTH -->
+      <h4 style="margin-top:20px;">5️⃣ Term Growth Insight</h4>
+      <p>
+        Compare this term with the previous term to identify:
+        <br>• Classes improving above 0.3 average increase  
+        <br>• Learners declining below -0.3 change  
+        <br>• Subjects with consistent growth trends  
+      </p>
+
+      <!-- 6️⃣ STRATEGIC ACTION -->
+      <h4 style="margin-top:20px;">6️⃣ Strategic Recommendations</h4>
+      <ul>
+        <li>Conduct targeted remediation for subjects below 2.3 mean.</li>
+        <li>Organize teacher review meetings for declining performance trends.</li>
+        <li>Introduce peer tutoring for learners below expectations.</li>
+        <li>Recognize and reward high-performing classes.</li>
+      </ul>
+
+    </div>
+  </div>
+  `;
+}
+
+  
  function renderGrouped(grouped, avgMap) {
   return Object.entries(grouped).map(([student, subjects]) => {
 
@@ -931,10 +1087,14 @@ function renderTrendChart(admission) {
     grouped[r.student][r.subject].push(r);
   });
 
-    reportDiv.innerHTML = `
-  <h3>${termName} – ${SYSTEM_YEAR}</h3>
+
+reportDiv.innerHTML = `
+  ${renderSchoolAnalytics(records, termName, SYSTEM_YEAR)}
   ${renderGrouped(grouped)}
 `;
+
+
+    
 requestAnimationFrame(() => {
   splitLearnerIntoPages();
 });
@@ -1113,21 +1273,29 @@ window.downloadPDF = async function () {
       : 0;
 
     // ===== EXTRACT TREND, STRENGTHS & NEEDS =====
-    let trendText = card.querySelector(".split-block p")?.innerText || "";
-    trendText = trendText.replace(/^📊 Progress Trend:.*$/m, "").trim();
+   // ===== EXTRACT TREND, STRENGTHS & NEEDS (NO REPETITION) =====
+let trendText = "";
+let strengthsText = "";
+let needsText = "";
 
-    let strengthsText = "";
-    let needsText = "";
-    const strongElems = card.querySelectorAll(".split-block p strong");
-    strongElems.forEach(el => {
-      const text = el.innerText;
-      const parentText = el.parentNode?.innerText || "";
-      if (text.includes("💪 Strengths")) {
-        strengthsText = parentText.replace("💪 Strengths:", "").trim();
-      } else if (text.includes("🎯 Areas for Improvement")) {
-        needsText = parentText.replace("🎯 Areas for Improvement:", "").trim();
-      }
-    });
+// Only take the first matching <p> for trend
+const trendP = card.querySelector(".split-block p");
+if (trendP) {
+  trendText = trendP.innerText.replace(/^📊 Progress Trend:.*$/m, "").trim();
+}
+
+// Only take the first matching strong element for strengths and needs
+const strongElems = card.querySelectorAll(".split-block p strong");
+strongElems.forEach(el => {
+  const text = el.innerText;
+  const parentText = el.parentNode?.innerText || "";
+  if (!strengthsText && text.includes("💪 Strengths")) {
+    strengthsText = parentText.replace("💪 Strengths:", "").trim();
+  } else if (!needsText && text.includes("🎯 Areas for Improvement")) {
+    needsText = parentText.replace("🎯 Areas for Improvement:", "").trim();
+  }
+});
+
 
     strengthsText = strengthsText.replace(/Life Skills, English, Kiswahili/g, "").trim();
 
@@ -1136,9 +1304,9 @@ window.downloadPDF = async function () {
     summaryBlock.style.marginBottom = "6px";
     summaryBlock.style.fontSize = "11px";
     summaryBlock.innerHTML = `
-      ${trendText ? `<p style="margin:2px 0;font-weight:bold;">${trendText}</p>` : ""}
+    
       ${strengthsText ? `<p style="margin:2px 0;">💪 Strengths: ${strengthsText}</p>` : ""}
-      ${needsText ? `<p style="margin:2px 0;">🎯 Areas for Improvement: ${needsText}</p>` : ""}
+     
     `;
 
     // ===== HELPER FUNCTIONS =====
@@ -1266,6 +1434,52 @@ card.appendChild(secondPageContainer);    // page 2
 };
 
 
+
+
+window.downloadDetailedPDF = async function () {
+  if (!reportDiv.innerHTML.trim()) {
+    alert("No report to download");
+    return;
+  }
+
+  const term = termSelect.options[termSelect.selectedIndex]?.text || "Term";
+  const filename = `Detailed_Report_${term}_${SYSTEM_YEAR}.pdf`;
+
+  // Clone the report div for clean PDF export
+  const clone = reportDiv.cloneNode(true);
+
+  // Force A4 layout
+  clone.style.width = "190mm";
+  clone.style.margin = "0 auto";
+  clone.style.padding = "0";
+  clone.style.boxSizing = "border-box";
+
+  // Keep everything visible — no removals
+  // Just increase charts and table clarity if needed
+  clone.querySelectorAll("canvas").forEach(c => {
+    c.style.width = "100%";
+    c.style.height = "200px";
+  });
+
+  // Optional: increase table font size for clarity
+  clone.querySelectorAll("table").forEach(table => {
+    table.style.fontSize = "14px";
+    table.querySelectorAll("td, th").forEach(cell => {
+      cell.style.padding = "8px";
+    });
+  });
+
+  html2pdf().set({
+    margin: [10, 10, 10, 10],
+    filename,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: { scale: 2, scrollY: 0, useCORS: true },
+    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+  }).from(clone).save();
+};
+
+
+  
 </script>
 </body>
 </html>
