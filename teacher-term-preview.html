@@ -1522,17 +1522,7 @@ strongElems.forEach(el => {
 
     strengthsText = strengthsText.replace(/Life Skills, English, Kiswahili/g, "").trim();
 
-    // ===== SUMMARY BLOCK =====
-    const summaryBlock = document.createElement("div");
-    summaryBlock.style.marginBottom = "6px";
-    summaryBlock.style.fontSize = "11px";
-    summaryBlock.innerHTML = `
-    
-   
-
-  ${strengthsText ? `<p style="margin:2px 0;"><strong>💪 Strengths:</strong> ${strengthsText}</p>` : ""}
-`;
-
+  
     
     // ===== HELPER FUNCTIONS =====
    function overallLevel(score) {
