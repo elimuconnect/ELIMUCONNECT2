@@ -232,6 +232,7 @@ const supabase = createClient(
 );
 
 const SYSTEM_YEAR = "2026";
+let results = [];
 
 let trendMap = {};
 let avgMap = {}; // make it global so downloadPDF can access it
@@ -380,11 +381,13 @@ if (error) {
   status.innerText = "Error fetching report";
   return;
 }
-
 if (!data?.length) {
   status.innerText = "No results found.";
   return;
 }
+
+results = data;
+
 
 // school and class
 const schoolName = data[0]?.school_name ?? "—";
