@@ -1411,14 +1411,45 @@ cards.forEach(card => {
   card.style.margin = "0";
   card.style.padding = "0";
   card.style.boxSizing = "border-box";
+const first = results[0];
 
-  const header = card.querySelector(".learner-header");
-  if (header) {
-    header.style.marginTop = "0";
-    header.style.paddingTop = "0";
-    header.style.fontSize = "18px";
-    header.style.fontWeight = "700";
-  }
+doc.setFontSize(16);
+doc.setFont("helvetica", "bold");
+doc.text(first.school_name.toUpperCase(), 105, 20, { align: "center" });
+
+doc.setFontSize(10);
+doc.setFont("helvetica", "normal");
+
+let addressLine = "";
+
+if (first.po_box) {
+  addressLine += `P.O. Box ${first.po_box}`;
+}
+
+if (first.postal_code) {
+  addressLine += ` - ${first.postal_code}`;
+}
+
+if (first.town) {
+  addressLine += `, ${first.town}`;
+}
+
+doc.text(addressLine, 105, 27, { align: "center" });
+
+let contactLine = "";
+
+if (first.phone) {
+  contactLine += `Tel: ${first.phone}   `;
+}
+
+if (first.email) {
+  contactLine += `Email: ${first.email}`;
+}
+
+doc.text(contactLine, 105, 33, { align: "center" });
+
+doc.line(20, 37, 190, 37);
+}
 
   // ===== CBC FOOTER =====
   const footer = document.createElement("div");
