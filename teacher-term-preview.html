@@ -1428,10 +1428,18 @@ window.downloadPDF = async function () {
     if (!subjectData) return;
 
     // ===== CALCULATE OVERALL AVERAGE =====
-    const subjectScores = Object.values(subjectData).map(d => Number(d.average_score));
-    const overallAvg = subjectScores.length
-      ? subjectScores.reduce((a, b) => a + b, 0) / subjectScores.length
-      : 0;
+  const subjectScores = Object.values(subjectData)
+  .map(d => parseFloat(d.average_score))
+  .filter(score => !isNaN(score) && score > 0);
+
+let overallAvg = 0;
+
+if (subjectScores.length) {
+  const total = subjectScores.reduce((sum, score) => sum + score, 0);
+  overallAvg = total / subjectScores.length;
+}
+
+overallAvg = Number(overallAvg.toFixed(2));
 
   
    // ===== EXTRACT TREND, STRENGTHS & NEEDS (NO REPETITION) =====
@@ -1478,12 +1486,13 @@ strongElems.forEach(el => {
 
     
     // ===== HELPER FUNCTIONS =====
-    function overallLevel(score) {
-      if (score >= 3.5) return "Exceeding Expectations";
-      if (score >= 2.5) return "Meeting Expectations";
-      if (score >= 1.5) return "Approaching Expectations";
-      return "Below Expectations";
-    }
+   function overallLevel(score) {
+  if (!score || score < 1) return "No Data";
+  if (score >= 3.5) return "Exceeding Expectations";
+  if (score >= 2.5) return "Meeting Expectations";
+  if (score >= 1.5) return "Approaching Expectations";
+  return "Below Expectations";
+}
 
     function generalComment(score) {
       if (score >= 3.5) return "Excellent performance. Keep it up.";
