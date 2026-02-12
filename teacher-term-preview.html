@@ -1170,7 +1170,7 @@ const chartOptions = {
   scales: {
     y: {
       min: 1,
-      max: 5, // match the Exceeding band
+      max: 4, // match the Exceeding band
       ticks: {
         stepSize: 1,
         callback: v => ["", "Below", "Approaching", "Meeting", "Exceeding"][v]
@@ -1212,24 +1212,8 @@ function renderTrendChart(admission) {
     }]
   },
   plugins: [achievementBandsPlugin], // 🔑 ADD THIS
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false }
-    },
-    scales: {
-      y: {
-        min: 1,
-        max: 4,
-        ticks: {
-          stepSize: 1,
-          callback: v =>
-            ["", "Below", "Approaching", "Meeting", "Exceeding"][v]
-        }
-      }
-    }
-  }
+options: chartOptions
+
 });
 }
   
