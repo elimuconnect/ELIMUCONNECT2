@@ -724,7 +724,7 @@ ${intelligence.schoolImprovement !== null ? `
 }
 
   
- function ${renderGrouped(grouped, avgMap)} {
+function renderGrouped(grouped, avgMap){
   return Object.entries(grouped).map(([student, subjects]) => {
 
     const admission = subjects.__admission || "N/A";
