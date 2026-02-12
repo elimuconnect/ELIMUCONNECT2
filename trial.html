@@ -234,7 +234,9 @@ const SYSTEM_YEAR = "2026";
 
 let trendMap = {};
 let avgMap = {}; // make it global so downloadPDF can access it
-
+ 
+let previousRecords = [];
+let previousAverages = {};
 
 function levelToScore(level) {
   switch (level) {
@@ -326,21 +328,22 @@ const previousTerm = terms
   .filter(t => t < termName)
   .slice(-1)[0];
 
-let previousAverages = {};
+
+ 
 
 if (previousTerm) {
-  const { data: prev } = await supabase
-    .from("assessment_results")
-    .select(`
-      students(admission_number),
-      achievement_levels(label)
-    `)
+
+  const { data } = await supabase
+    .from("assessment_results_view")
+    .select("*")
     .eq("term", previousTerm)
     .eq("academic_year", SYSTEM_YEAR);
 
-  prev?.forEach(r => {
-    const adm = r.students.admission_number;
-    const score = levelToScore(r.achievement_levels.label);
+  previousRecords = data || [];
+
+  previousRecords.forEach(r => {
+    const adm = r.admission_number;
+    const score = levelToScore(r.achievement_level);
 
     if (!previousAverages[adm]) {
       previousAverages[adm] = { total: 0, count: 0 };
@@ -419,8 +422,128 @@ function renderOverviewHeader({ school, className, term, year }) {
 
 
 
+function calculateTermIntelligence(records, previousRecords, previousTerm) {
 
-function renderSchoolAnalytics(records, termName, year) {
+  if (!previousTerm || !previousRecords?.length) {
+    return {
+      schoolImprovement: null,
+      improvedClasses: [],
+      decliningSubjects: [],
+      improvingLearners: 0
+    };
+  }
+
+  const learnerMap = {};
+  const classMap = {};
+  const subjectMap = {};
+
+  const prevLearnerMap = {};
+  const prevClassMap = {};
+  const prevSubjectMap = {};
+
+  // ===== CURRENT TERM PROCESSING =====
+  records.forEach(r => {
+    const score = levelToScore(r.level);
+    if (!score) return;
+
+    learnerMap[r.admission] ??= [];
+    learnerMap[r.admission].push(score);
+
+    classMap[r.className] ??= [];
+    classMap[r.className].push(score);
+
+    subjectMap[r.subject] ??= [];
+    subjectMap[r.subject].push(score);
+  });
+
+  // ===== PREVIOUS TERM PROCESSING =====
+  previousRecords.forEach(r => {
+    const score = levelToScore(r.achievement_level);
+    if (!score) return;
+
+    const adm = r.admission_number;
+    const cls = r.class_name;
+    const sub = r.subject;
+
+    prevLearnerMap[adm] ??= [];
+    prevLearnerMap[adm].push(score);
+
+    prevClassMap[cls] ??= [];
+    prevClassMap[cls].push(score);
+
+    prevSubjectMap[sub] ??= [];
+    prevSubjectMap[sub].push(score);
+  });
+
+  function avg(arr) {
+    return arr.length
+      ? arr.reduce((a,b)=>a+b,0) / arr.length
+      : null;
+  }
+
+  // ===== SCHOOL IMPROVEMENT =====
+  const currentSchoolAvg = avg(Object.values(classMap).flat());
+  const previousSchoolAvg = avg(Object.values(prevClassMap).flat());
+
+  let schoolImprovement = null;
+
+  if (previousSchoolAvg && previousSchoolAvg > 0) {
+    schoolImprovement =
+      ((currentSchoolAvg - previousSchoolAvg) / previousSchoolAvg) * 100;
+  }
+
+  // ===== IMPROVING LEARNERS =====
+  let improvingLearners = 0;
+
+  Object.entries(learnerMap).forEach(([adm, scores]) => {
+    if (!prevLearnerMap[adm]) return;
+
+    const currentAvg = avg(scores);
+    const prevAvg = avg(prevLearnerMap[adm]);
+
+    if (currentAvg - prevAvg >= 0.3) improvingLearners++;
+  });
+
+  // ===== TRUE IMPROVED CLASSES =====
+  const improvedClasses = [];
+
+  Object.entries(classMap).forEach(([cls, scores]) => {
+    if (!prevClassMap[cls]) return;
+
+    const currentAvg = avg(scores);
+    const prevAvg = avg(prevClassMap[cls]);
+
+    if (currentAvg - prevAvg >= 0.3) {
+      improvedClasses.push(cls);
+    }
+  });
+
+  // ===== TRUE DECLINING SUBJECTS =====
+  const decliningSubjects = [];
+
+  Object.entries(subjectMap).forEach(([sub, scores]) => {
+    if (!prevSubjectMap[sub]) return;
+
+    const currentAvg = avg(scores);
+    const prevAvg = avg(prevSubjectMap[sub]);
+
+    if (currentAvg - prevAvg <= -0.3) {
+      decliningSubjects.push(sub);
+    }
+  });
+
+  return {
+    schoolImprovement,
+    improvedClasses,
+    decliningSubjects,
+    improvingLearners
+  };
+}
+
+
+
+  
+function renderSchoolAnalytics(records, termName, year, intelligence) {
 
   let classMap = {};
   let subjectMap = {};
@@ -445,6 +568,7 @@ function renderSchoolAnalytics(records, termName, year) {
     if (score === 3) bandCount.meeting++;
     if (score === 4) bandCount.exceeding++;
   });
+
 
   // ===== AT-RISK COUNT =====
   const atRiskLearners = records.filter(
@@ -499,6 +623,37 @@ function renderSchoolAnalytics(records, termName, year) {
     <div class="learner-card">
 
       <h3>📊 School Performance Analytics — ${termName} ${year}</h3>
+
+<!-- 🧠 TERM INTELLIGENCE -->
+<h4 style="margin-top:20px;">🧠 Term Intelligence Summary</h4>
+${intelligence.schoolImprovement !== null ? `
+<p>
+  📊 School Performance Change: 
+  <strong style="color:${intelligence.schoolImprovement >= 0 ? '#1e8449' : '#c0392b'};">
+    ${intelligence.schoolImprovement.toFixed(2)}%
+  </strong>
+</p>
+
+<p>📈 Improving Learners: <strong>${intelligence.improvingLearners}</strong></p>
+
+<p>🏫 Improved Classes: 
+  ${intelligence.improvedClasses.length
+    ? intelligence.improvedClasses.join(", ")
+    : "None"}
+</p>
+
+<p>📉 Subjects Requiring Attention: 
+  ${intelligence.decliningSubjects.length
+    ? intelligence.decliningSubjects.join(", ")
+    : "None"}
+</p>
+` : `
+<p>🆕 No previous term data available for comparison.</p>
+`}
+
+
+
+
 
       <!-- 1️⃣ CLASS MEAN -->
       <h4>1️⃣ Class Mean Overview</h4>
@@ -569,7 +724,7 @@ function renderSchoolAnalytics(records, termName, year) {
 }
 
   
- function renderGrouped(grouped, avgMap) {
+function renderGrouped(grouped, avgMap){
   return Object.entries(grouped).map(([student, subjects]) => {
 
     const admission = subjects.__admission || "N/A";
@@ -1088,8 +1243,14 @@ function renderTrendChart(admission) {
   });
 
 
+const intelligence = calculateTermIntelligence(
+  records,
+  previousRecords,
+  previousTerm
+);
+
 reportDiv.innerHTML = `
-  ${renderSchoolAnalytics(records, termName, SYSTEM_YEAR)}
+  ${renderSchoolAnalytics(records, termName, SYSTEM_YEAR, intelligence)}
   ${renderGrouped(grouped)}
 `;
 
@@ -1272,7 +1433,7 @@ window.downloadPDF = async function () {
       ? subjectScores.reduce((a, b) => a + b, 0) / subjectScores.length
       : 0;
 
-    // ===== EXTRACT TREND, STRENGTHS & NEEDS =====
+  
    // ===== EXTRACT TREND, STRENGTHS & NEEDS (NO REPETITION) =====
 let trendText = "";
 let strengthsText = "";
