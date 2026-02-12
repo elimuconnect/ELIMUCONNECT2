@@ -180,7 +180,8 @@ tr:last-child td {
   letter-spacing: 0.3px;
 }
 
-  
+ 
+
 </style>
 
   
@@ -1389,18 +1390,33 @@ window.downloadPDF = async function () {
 
   const cards = clone.querySelectorAll(".learner-card");
 
-  cards.forEach(card => {
-    card.style.margin = "0";
-    card.style.padding = "0";
-    card.style.boxSizing = "border-box";
+ cards.forEach(card => {
+  card.style.margin = "0";
+  card.style.padding = "0";
+  card.style.boxSizing = "border-box";
 
-    const header = card.querySelector(".learner-header");
-    if (header) {
-      header.style.marginTop = "0";
-      header.style.paddingTop = "0";
-      header.style.fontSize = "18px";
-      header.style.fontWeight = "700";
-    }
+  const header = card.querySelector(".learner-header");
+  if (header) {
+    header.style.marginTop = "0";
+    header.style.paddingTop = "0";
+    header.style.fontSize = "18px";
+    header.style.fontWeight = "700";
+  }
+
+  // ✅ CBC COMPLIANCE FOOTER (always added)
+  const footer = document.createElement("div");
+  footer.style.fontSize = "10px";
+  footer.style.color = "#555";
+  footer.style.textAlign = "center";
+  footer.style.marginTop = "12px";
+  footer.style.borderTop = "1px solid #ddd";
+  footer.style.paddingTop = "6px";
+  footer.style.pageBreakInside = "avoid";
+  footer.innerText =
+    "Assessment is competency-based and evidence-driven, guided by KICD CBC curriculum designs.";
+
+  card.appendChild(footer);
+});
 
     // Get student name
     const studentName = card.querySelector("h4")?.innerText
