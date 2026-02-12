@@ -234,7 +234,9 @@ const SYSTEM_YEAR = "2026";
 
 let trendMap = {};
 let avgMap = {}; // make it global so downloadPDF can access it
-
+ 
+let previousRecords = [];
+let previousAverages = {};
 
 function levelToScore(level) {
   switch (level) {
@@ -326,23 +328,22 @@ const previousTerm = terms
   .filter(t => t < termName)
   .slice(-1)[0];
 
-let previousAverages = {};
+
+ 
 
 if (previousTerm) {
 
-const { data: previousRecords } = await supabase
-  .from("assessment_results_view")
-  .select("*")
-  .eq("term", previousTerm)
-  .eq("academic_year", SYSTEM_YEAR);
-
-  
+  const { data } = await supabase
+    .from("assessment_results_view")
+    .select("*")
     .eq("term", previousTerm)
     .eq("academic_year", SYSTEM_YEAR);
 
-  prev?.forEach(r => {
-    const adm = r.students.admission_number;
-    const score = levelToScore(r.achievement_levels.label);
+  previousRecords = data || [];
+
+  previousRecords.forEach(r => {
+    const adm = r.admission_number;
+    const score = levelToScore(r.achievement_level);
 
     if (!previousAverages[adm]) {
       previousAverages[adm] = { total: 0, count: 0 };
@@ -622,7 +623,6 @@ function renderSchoolAnalytics(records, termName, year, intelligence) {
     <div class="learner-card">
 
       <h3>📊 School Performance Analytics — ${termName} ${year}</h3>
-<h3>📊 School Performance Analytics — ${termName} ${year}</h3>
 
 <!-- 🧠 TERM INTELLIGENCE -->
 <h4 style="margin-top:20px;">🧠 Term Intelligence Summary</h4>
@@ -724,7 +724,7 @@ ${intelligence.schoolImprovement !== null ? `
 }
 
   
- function renderGrouped(grouped, avgMap) {
+ function ${renderGrouped(grouped, avgMap)} {
   return Object.entries(grouped).map(([student, subjects]) => {
 
     const admission = subjects.__admission || "N/A";
