@@ -1381,8 +1381,8 @@ function getTrend(currentAvg, previousAvg) {
   return "➖ Stable";
 }
 
-
 window.downloadPDF = async function () {
+
   if (!reportDiv.innerHTML.trim()) {
     alert("No report to download");
     return;
@@ -1391,77 +1391,71 @@ window.downloadPDF = async function () {
   const term = termSelect.options[termSelect.selectedIndex]?.text || "Term";
   const filename = `Summary_Report_${term}_${SYSTEM_YEAR}.pdf`;
 
-  // Clone the report for clean PDF rendering
   const clone = reportDiv.cloneNode(true);
 
-  // ===== FORCE CLEAN A4 LAYOUT =====
+  // ===== A4 Layout =====
   clone.style.width = "190mm";
   clone.style.margin = "0 auto";
   clone.style.padding = "0";
   clone.style.boxSizing = "border-box";
 
-  // ===== REMOVE DETAILED CONTENT =====
+  // ===== Remove Detailed Sections =====
   clone.querySelectorAll(".subject-block, .trend-box").forEach(el => el.remove());
 
   const cards = clone.querySelectorAll(".learner-card");
 
-cards.forEach(card => {
+  // ===== GET SCHOOL INFO =====
+  const first = results?.[0];
 
-  // ===== CARD STYLING =====
-  card.style.margin = "0";
-  card.style.padding = "0";
-  card.style.boxSizing = "border-box";
-const first = results[0];
+  if (first) {
 
-doc.setFontSize(16);
-doc.setFont("helvetica", "bold");
-doc.text(first.school_name.toUpperCase(), 105, 20, { align: "center" });
+    const header = document.createElement("div");
 
-doc.setFontSize(10);
-doc.setFont("helvetica", "normal");
+    header.style.textAlign = "center";
+    header.style.marginBottom = "10px";
+    header.style.paddingBottom = "8px";
+    header.style.borderBottom = "1px solid #000";
 
-let addressLine = "";
+    header.innerHTML = `
+      <div style="font-size:18px;font-weight:bold;">
+        ${first.school_name?.toUpperCase() || ""}
+      </div>
 
-if (first.po_box) {
-  addressLine += `P.O. Box ${first.po_box}`;
-}
+      <div style="font-size:11px;">
+        ${first.po_box ? `P.O. Box ${first.po_box}` : ""}
+        ${first.postal_code ? ` - ${first.postal_code}` : ""}
+        ${first.town ? `, ${first.town}` : ""}
+      </div>
 
-if (first.postal_code) {
-  addressLine += ` - ${first.postal_code}`;
-}
+      <div style="font-size:11px;">
+        ${first.phone ? `Tel: ${first.phone}` : ""}
+        ${first.email ? ` | Email: ${first.email}` : ""}
+      </div>
+    `;
 
-if (first.town) {
-  addressLine += `, ${first.town}`;
-}
+    clone.prepend(header);
+  }
 
-doc.text(addressLine, 105, 27, { align: "center" });
+  // ===== STYLE CARDS + ADD FOOTER =====
+  cards.forEach(card => {
 
-let contactLine = "";
+    card.style.margin = "0";
+    card.style.padding = "0";
+    card.style.boxSizing = "border-box";
 
-if (first.phone) {
-  contactLine += `Tel: ${first.phone}   `;
-}
+    const footer = document.createElement("div");
 
-if (first.email) {
-  contactLine += `Email: ${first.email}`;
-}
+    footer.style.fontSize = "10px";
+    footer.style.color = "#555";
+    footer.style.textAlign = "center";
+    footer.style.marginTop = "12px";
+    footer.style.borderTop = "1px solid #ddd";
+    footer.style.paddingTop = "6px";
+    footer.style.pageBreakInside = "avoid";
 
-doc.text(contactLine, 105, 33, { align: "center" });
+    footer.innerText =
+      "Assessment is competency-based and evidence-driven, guided by KICD CBE curriculum designs.";
 
-doc.line(20, 37, 190, 37);
-}
-
-  // ===== CBC FOOTER =====
-  const footer = document.createElement("div");
-  footer.style.fontSize = "10px";
-  footer.style.color = "#555";
-  footer.style.textAlign = "center";
-  footer.style.marginTop = "12px";
-  footer.style.borderTop = "1px solid #ddd";
-  footer.style.paddingTop = "6px";
-  footer.style.pageBreakInside = "avoid";
-  footer.innerText =
-    "Assessment is competency-based and evidence-driven, guided by KICD CBE curriculum designs.";
 
   // ===== STUDENT NAME =====
   const studentName = card.querySelector("h4")?.innerText
