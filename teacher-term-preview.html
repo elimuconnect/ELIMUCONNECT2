@@ -1390,7 +1390,9 @@ window.downloadPDF = async function () {
 
   const cards = clone.querySelectorAll(".learner-card");
 
- cards.forEach(card => {
+cards.forEach(card => {
+
+  // ===== CARD STYLING =====
   card.style.margin = "0";
   card.style.padding = "0";
   card.style.boxSizing = "border-box";
@@ -1403,7 +1405,7 @@ window.downloadPDF = async function () {
     header.style.fontWeight = "700";
   }
 
-  // ✅ CBC COMPLIANCE FOOTER (always added)
+  // ===== CBC FOOTER =====
   const footer = document.createElement("div");
   footer.style.fontSize = "10px";
   footer.style.color = "#555";
@@ -1415,18 +1417,17 @@ window.downloadPDF = async function () {
   footer.innerText =
     "Assessment is competency-based and evidence-driven, guided by KICD CBC curriculum designs.";
 
-  card.appendChild(footer);
-});
+  // ===== STUDENT NAME =====
+  const studentName = card.querySelector("h4")?.innerText
+    .replace("👤", "")
+    .replace(/\(.*?\)/, "")
+    .trim();
 
-    // Get student name
-    const studentName = card.querySelector("h4")?.innerText
-      .replace("👤", "")
-      .replace(/\(.*?\)/, "")
-      .trim();
+  const subjectData = avgMap?.[studentName];
+  if (!subjectData) return;
 
-    const subjectData = avgMap?.[studentName];
-    if (!subjectData) return;
 
+  
     // ===== CALCULATE OVERALL AVERAGE =====
   const subjectScores = Object.values(subjectData)
   .map(d => parseFloat(d.average_score))
@@ -1597,9 +1598,11 @@ secondPageContainer.appendChild(table);
 secondPageContainer.appendChild(generalBlock);
 
 // ===== APPEND ELEMENTS =====
-card.appendChild(summaryBlock);           // page 1
-card.appendChild(secondPageContainer);    // page 2
- });
+card.appendChild(summaryBlock);
+  card.appendChild(secondPageContainer);
+  card.appendChild(footer);
+});
+  
   // ===== EXPORT PDF =====
   html2pdf().set({
     margin: [10, 10, 10, 10],
