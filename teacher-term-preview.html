@@ -544,7 +544,7 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
 
 
   
-function renderSchoolAnalytics(records, termName, year, intelligence) {
+function renderSchoolAnalytics(records, termName, year, intelligence, schoolName, className) {
 
   let classMap = {};
   let subjectMap = {};
@@ -621,10 +621,25 @@ function renderSchoolAnalytics(records, termName, year, intelligence) {
   // ===== RETURN FULL ANALYTICS PAGE =====
   return `
   <div class="a4-page">
-    <div class="learner-card">
 
-      <h3>📊 School Performance Analytics — ${termName} ${year}</h3>
+<div class="learner-card">
 
+  <!-- SCHOOL & CLASS HEADER -->
+  <div class="report-overview no-split" style="
+    border-bottom: 2px solid #333;
+    padding-bottom: 6px;
+    margin-bottom: 12px;
+  ">
+    <h3 style="margin:0;">${schoolName}</h3>
+    <div style="font-size:0.9em;color:#555;">
+      <strong>Class:</strong> ${className} &nbsp; | &nbsp;
+      <strong>Term:</strong> ${termName} – ${year}
+    </div>
+  </div>
+
+  <h3>📊 School Performance Analytics</h3>
+
+    
 <!-- 🧠 TERM INTELLIGENCE -->
 <h4 style="margin-top:20px;">🧠 Term Intelligence Summary</h4>
 ${intelligence.schoolImprovement !== null ? `
@@ -1235,7 +1250,14 @@ const intelligence = calculateTermIntelligence(
 );
 
 reportDiv.innerHTML = `
-  ${renderSchoolAnalytics(records, termName, SYSTEM_YEAR, intelligence)}
+  ${renderSchoolAnalytics(
+    records,
+    termName,
+    SYSTEM_YEAR,
+    intelligence,
+    schoolName,
+    className
+  )}
   ${renderGrouped(grouped)}
 `;
 
