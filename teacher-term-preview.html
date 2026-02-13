@@ -737,6 +737,33 @@ ${intelligence.schoolImprovement !== null ? `
   `;
 }
 
+
+function getSubjectBadge(score) {
+  const { code, level } = levelScoreToRubric(score);
+
+  let bgColor = "#e74c3c"; // default Below Expectations
+  switch(level){
+    case "Exceeding Expectations": bgColor = "#2ecc71"; break;
+    case "Meeting Expectations": bgColor = "#3498db"; break;
+    case "Approaching Expectations": bgColor = "#f1c40f"; break;
+    case "Below Expectations": bgColor = "#e74c3c"; break;
+  }
+
+  return `
+    <span style="
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-weight:bold;
+      color:white;
+      background:${bgColor};
+    ">
+      ${score.toFixed(2)} (${scoreToPercent(score)}%) — ${code} / ${level}
+    </span>
+  `;
+}
+
+
+
   
 function renderGrouped(grouped, avgMap){
   return Object.entries(grouped).map(([student, subjects]) => {
@@ -872,19 +899,8 @@ function renderGrouped(grouped, avgMap){
             <tr style="font-weight:bold; background:#f0f0f0;">
               <td>SUBJECT/LEARNING AREA AVERAGE</td>
               <td colspan="2">
-                <span style="
-                  padding: 3px 8px;
-                  border-radius: 12px;
-                  font-weight:bold;
-                  color:white;
-                  background:${getAvgColor(subjectAvg)};
-                ">
-               ${subjectAvg.toFixed(2)} 
-(${scoreToPercent(subjectAvg)}%) 
-— ${levelScoreToRubric(subjectAvg).code}
+                ${getSubjectBadge(subjectAvg)}
 
-
-                </span>
               </td>
             </tr>
           </tfoot>` : ""}
