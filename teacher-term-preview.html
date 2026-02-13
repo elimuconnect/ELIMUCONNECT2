@@ -1621,7 +1621,10 @@ strongElems.forEach(el => {
           return `
             <tr>
               <td style="border:1px solid #000;padding:6px;">${subject}</td>
-              <td style="border:1px solid #000;padding:6px;text-align:center;">${avg.toFixed(2)}</td>
+            <td style="border:1px solid #000;padding:6px;text-align:center;">
+  ${avg.toFixed(2)} (${scoreToPercent(avg)}%)
+</td>
+
               <td style="border:1px solid #000;padding:6px;">${d.achievement_level}</td>
               <td style="border:1px solid #000;padding:6px;">${commentFromScore(avg)}</td>
             </tr>
