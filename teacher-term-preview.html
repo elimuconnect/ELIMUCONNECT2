@@ -42,8 +42,9 @@ h5 {
   background: #ffffff;
   padding: 14px;
   margin: 0;
-  page-break-inside: avoid;   /* Prevent splitting card mid-page */
+  page-break-inside: auto;   /* allow content to split across pages */
 }
+
 
 .learner-header {
   display: flex;
@@ -156,7 +157,7 @@ tr:last-child td {
 /* ===== A4 PAGE CANVAS ===== */
 .a4-page {
   width: 186mm;        /* A4 width minus margins */
-  min-height: 267mm;   /* A4 height minus margins */
+  min-height: 260mm;   /* A4 height minus margins */
   padding: 0;
   margin: 0 auto 10px auto;
   background: white;
@@ -178,6 +179,9 @@ tr:last-child td {
   letter-spacing: 0.3px;
 }
 
+table, .trend-box {
+  page-break-inside: auto;  /* allow tables to split if too long */
+}
  
 
 </style>
@@ -915,32 +919,46 @@ function splitLearnerIntoPages() {
     const card = page.querySelector(".learner-card");
     if (!card) return;
 
-    const maxHeight = page.clientHeight;
+    const maxHeight = page.clientHeight - 20; // leave a small margin
     let currentPage = page;
 
-    Array.from(card.children).forEach(block => {
-    if (
-  !block.classList.contains("split-block") ||
-  block.classList.contains("no-split")
-) return;
+    // Collect all "splittable" blocks (everything except .no-split)
+    const blocks = Array.from(card.children);
 
+    blocks.forEach(block => {
+      if (block.classList.contains("no-split")) return; // skip headers/overview
 
-      const blockBottom =
-        block.getBoundingClientRect().bottom -
-        currentPage.getBoundingClientRect().top;
+      const blockRect = block.getBoundingClientRect();
+      const cardRect = currentPage.getBoundingClientRect();
+      const blockBottom = blockRect.bottom - cardRect.top;
 
-      if (blockBottom > maxHeight) {
-        // create new page
+      // If the block is taller than the page itself, leave it but start new page after
+      if (block.offsetHeight > maxHeight) {
         const newPage = document.createElement("div");
         newPage.className = "a4-page learner-page";
 
         const newCard = document.createElement("div");
         newCard.className = "learner-card";
 
-        newPage.appendChild(newCard);
         currentPage.after(newPage);
+        newPage.appendChild(newCard);
 
-        newCard.appendChild(block);
+        currentPage = newPage;
+        return;
+      }
+
+      // If adding this block exceeds page, move to next page
+      if (blockBottom > maxHeight) {
+        const newPage = document.createElement("div");
+        newPage.className = "a4-page learner-page";
+
+        const newCard = document.createElement("div");
+        newCard.className = "learner-card";
+
+        currentPage.after(newPage);
+        newPage.appendChild(newCard);
+
+        newCard.appendChild(block); // move block to new page
         currentPage = newPage;
       }
     });
@@ -949,7 +967,7 @@ function splitLearnerIntoPages() {
 
 
 
-
+  
   
 
 function generateInsight(subjects) {
