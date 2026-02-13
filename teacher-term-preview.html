@@ -1277,8 +1277,9 @@ reportDiv.innerHTML = `
     schoolName,
     className
   )}
-  ${renderGrouped(grouped)}
+  ${renderGrouped(grouped, avgMap)}
 `;
+
 
 
     
@@ -1321,7 +1322,8 @@ filtered.forEach(r => {
 });
 
 
-      reportDiv.innerHTML = renderGrouped(grouped);
+    reportDiv.innerHTML = renderGrouped(grouped, avgMap);
+
     
 requestAnimationFrame(() => {
   splitLearnerIntoPages();
@@ -1368,10 +1370,10 @@ filtered.forEach(r => {
 
 
       
-      reportDiv.innerHTML = `
-        <h3>${subject} – All Students</h3>
-        ${renderGrouped(grouped)}
-      `;
+     reportDiv.innerHTML = `
+  <h3>${subject} – All Students</h3>
+  ${renderGrouped(grouped, avgMap)}
+`;
 
 requestAnimationFrame(() => {
   splitLearnerIntoPages();
