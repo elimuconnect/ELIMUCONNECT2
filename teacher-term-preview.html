@@ -615,7 +615,8 @@ function renderSchoolAnalytics(records, termName, year, intelligence, schoolName
     return `
       <tr>
         <td>${sub}</td>
-        <td>${mean.toFixed(2)}</td>
+       <td>${mean.toFixed(2)} (${scoreToPercent(mean)}%)</td>
+
         <td>${alert}</td>
       </tr>
     `;
@@ -879,7 +880,10 @@ function renderGrouped(grouped, avgMap){
                   color:white;
                   background:${getAvgColor(subjectAvg)};
                 ">
-                ${subjectAvg.toFixed(2)} — ${levelScoreToRubric(subjectAvg).code}
+               ${subjectAvg.toFixed(2)} 
+(${scoreToPercent(subjectAvg)}%) 
+— ${levelScoreToRubric(subjectAvg).code}
+
 
                 </span>
               </td>
@@ -1391,6 +1395,10 @@ function getTrend(currentAvg, previousAvg) {
 
 
 
+function scoreToPercent(score) {
+  if (score === null || isNaN(score)) return "-";
+  return Math.round((score / 4) * 100);
+}
 
 
 function rawMarksToRubric(mark) {
@@ -1634,7 +1642,8 @@ strongElems.forEach(el => {
             <strong>Learner's General Performance Level</strong>
           </td>
           <td style="border:1px solid #000;padding:6px;">
-            ${overallAvg.toFixed(2)} — ${overallLevel(overallAvg)}
+           ${overallAvg.toFixed(2)} (${scoreToPercent(overallAvg)}%) — ${overallLevel(overallAvg)}
+
           </td>
         </tr>
         <tr>
