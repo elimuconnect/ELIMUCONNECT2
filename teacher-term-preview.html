@@ -405,8 +405,7 @@ const records = data.map(r => ({
   remarks: r.remarks
 }));
 
-
-function renderOverviewHeader({ school, className, term, year }) {
+function renderOverviewHeader({ school, poBox, postal, town, phone, email, className, term, year }) {
   return `
     <div class="report-overview no-split" style="
       border-bottom: 2px solid #333;
@@ -417,12 +416,18 @@ function renderOverviewHeader({ school, className, term, year }) {
     ">
       <h3 style="margin:0; word-wrap: break-word; overflow-wrap: break-word;">${school}</h3>
       <div style="font-size:0.9em;color:#555;">
+        <strong>P.O. Box:</strong> ${poBox} - ${postal} &nbsp; | &nbsp;
+        <strong>Town:</strong> ${town} <br />
+        <strong>Tel:</strong> ${phone} &nbsp; | &nbsp; <strong>Email:</strong> ${email}
+      </div>
+      <div style="font-size:0.9em;color:#555;margin-top:4px;">
         <strong>Class:</strong> ${className} &nbsp; | &nbsp;
         <strong>Term:</strong> ${term} – ${year}
       </div>
     </div>
   `;
 }
+
 
 
 
@@ -766,14 +771,21 @@ function renderGrouped(grouped, avgMap){
     const recommendations = generateRecommendations(subjects, trend, supportFlag);
 
     return `
-<div class="a4-page learner-page">
+<div class="a4-page learner-page" style="page-break-before: always;">
+
   <div class="learner-card">
-  ${renderOverviewHeader({
-  school: subjects.__school || schoolName,
+${renderOverviewHeader({
+  school: subjects.__school || results[0]?.school_name || "Demo CBC School",
+  poBox: results[0]?.po_box || "12345",
+  postal: results[0]?.postal_code || "00100",
+  town: results[0]?.town || "Nairobi",
+  phone: results[0]?.phone || "0700123456",
+  email: results[0]?.email || "info@democbc.ac.ke",
   className: subjects.__class || className,
   term: termName,
   year: SYSTEM_YEAR
 })}
+
 
 
 
