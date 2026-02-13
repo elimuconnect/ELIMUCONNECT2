@@ -38,11 +38,31 @@ h5 {
 }
 
 /* ================== LAYOUT ================== */
-.learner-card {
-  background: #ffffff;
-  padding: 14px;
-  margin: 0;
-  page-break-inside: avoid;   /* Prevent splitting card mid-page */
+/* Update these specific sections in your <style> tag */
+
+.a4-page {
+  width: 100%; /* Let html2pdf handle the scaling */
+  margin: 0 auto;
+  background: white;
+  box-sizing: border-box;
+  /* Remove min-height and page-break-after from here */
+}
+
+.learner-page {
+  page-break-after: always; /* Forces each student to start a NEW page */
+  page-break-inside: avoid; /* Tries to keep the student card together */
+}
+
+.subject-block {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px dashed #ccc;
+  page-break-inside: avoid; /* CRITICAL: Prevents a subject table from splitting in half */
+}
+
+/* Ensure images/charts don't get cut */
+canvas, .trend-box {
+  page-break-inside: avoid;
 }
 
 .learner-header {
@@ -153,16 +173,7 @@ tr:last-child td {
 }
 
 
-/* ===== A4 PAGE CANVAS ===== */
-.a4-page {
-  width: 186mm;        /* A4 width minus margins */
-  min-height: 267mm;   /* A4 height minus margins */
-  padding: 0;
-  margin: 0 auto 10px auto;
-  background: white;
-  box-sizing: border-box;
-  page-break-after: always;  /* Force each page to end cleanly */
-}
+
 
 
 .report-overview h3 {
@@ -178,7 +189,18 @@ tr:last-child td {
   letter-spacing: 0.3px;
 }
 
- 
+ @media print {
+  table { page-break-inside:auto }
+  tr    { page-break-inside:avoid; page-break-after:auto }
+  thead { display:table-header-group }
+  tfoot { display:table-footer-group }
+}
+
+/* Prevents the 'cut-off' look on containers */
+.learner-card {
+  overflow: visible !important;
+  height: auto !important;
+}
 
 </style>
 
@@ -1396,8 +1418,7 @@ function getTrend(currentAvg, previousAvg) {
 
 
 
-  
-window.downloadPDF = async function () {
+  window.downloadPDF = async function () {
 
   if (!reportDiv.innerHTML.trim()) {
     alert("No report to download");
@@ -1424,9 +1445,7 @@ window.downloadPDF = async function () {
   const first = results?.[0];
 
   if (first) {
-
     const header = document.createElement("div");
-
     header.style.textAlign = "center";
     header.style.marginBottom = "10px";
     header.style.paddingBottom = "8px";
@@ -1436,31 +1455,29 @@ window.downloadPDF = async function () {
       <div style="font-size:18px;font-weight:bold;">
         ${first.school_name?.toUpperCase() || ""}
       </div>
-
       <div style="font-size:11px;">
         ${first.po_box ? `P.O. Box ${first.po_box}` : ""}
         ${first.postal_code ? ` - ${first.postal_code}` : ""}
         ${first.town ? `, ${first.town}` : ""}
       </div>
-
       <div style="font-size:11px;">
         ${first.phone ? `Tel: ${first.phone}` : ""}
         ${first.email ? ` | Email: ${first.email}` : ""}
       </div>
     `;
-
     clone.prepend(header);
   }
 
   // ===== STYLE CARDS + ADD FOOTER =====
   cards.forEach(card => {
-
+    // FIX: Ensure the entire student report doesn't get split awkwardly
     card.style.margin = "0";
     card.style.padding = "0";
     card.style.boxSizing = "border-box";
+    card.style.pageBreakAfter = "always"; 
+    card.style.pageBreakInside = "avoid";
 
     const footer = document.createElement("div");
-
     footer.style.fontSize = "10px";
     footer.style.color = "#555";
     footer.style.textAlign = "center";
@@ -1472,82 +1489,65 @@ window.downloadPDF = async function () {
     footer.innerText =
       "Assessment is competency-based and evidence-driven, guided by KICD CBE curriculum designs.";
 
+    // ===== STUDENT NAME =====
+    const studentName = card.querySelector("h4")?.innerText
+      .replace("👤", "")
+      .replace(/\(.*?\)/, "")
+      .trim();
 
-  // ===== STUDENT NAME =====
-  const studentName = card.querySelector("h4")?.innerText
-    .replace("👤", "")
-    .replace(/\(.*?\)/, "")
-    .trim();
+    const subjectData = avgMap?.[studentName];
+    if (!subjectData) return;
 
-  const subjectData = avgMap?.[studentName];
-  if (!subjectData) return;
-
-
-  
     // ===== CALCULATE OVERALL AVERAGE =====
-  const subjectScores = Object.values(subjectData)
-  .map(d => parseFloat(d.average_score))
-  .filter(score => !isNaN(score) && score > 0);
+    const subjectScores = Object.values(subjectData)
+      .map(d => parseFloat(d.average_score))
+      .filter(score => !isNaN(score) && score > 0);
 
-let overallAvg = 0;
+    let overallAvg = 0;
+    if (subjectScores.length) {
+      const total = subjectScores.reduce((sum, score) => sum + score, 0);
+      overallAvg = total / subjectScores.length;
+    }
+    overallAvg = Number(overallAvg.toFixed(2));
 
-if (subjectScores.length) {
-  const total = subjectScores.reduce((sum, score) => sum + score, 0);
-  overallAvg = total / subjectScores.length;
-}
+    // ===== EXTRACT TREND, STRENGTHS & NEEDS =====
+    let trendText = "";
+    let strengthsText = "";
+    let needsText = "";
 
-overallAvg = Number(overallAvg.toFixed(2));
+    const trendElement = Array.from(card.querySelectorAll("p"))
+      .find(p => p.innerText.includes("📊 Progress Trend"));
 
-  
-   // ===== EXTRACT TREND, STRENGTHS & NEEDS (NO REPETITION) =====
-let trendText = "";
-let strengthsText = "";
-let needsText = "";
+    if (trendElement) {
+      trendText = trendElement.innerText.replace("📊 Progress Trend:", "").trim();
+    }
 
-// Find the exact trend paragraph
-const trendElement = Array.from(card.querySelectorAll("p"))
-  .find(p => p.innerText.includes("📊 Progress Trend"));
-
-if (trendElement) {
-  trendText = trendElement.innerText
-    .replace("📊 Progress Trend:", "")
-    .trim();
-}
-
-
-// Only take the first matching strong element for strengths and needs
-const strongElems = card.querySelectorAll(".split-block p strong");
-strongElems.forEach(el => {
-  const text = el.innerText;
-  const parentText = el.parentNode?.innerText || "";
-  if (!strengthsText && text.includes("💪 Strengths")) {
-    strengthsText = parentText.replace("💪 Strengths:", "").trim();
-  } else if (!needsText && text.includes("🎯 Areas for Improvement")) {
-    needsText = parentText.replace("🎯 Areas for Improvement:", "").trim();
-  }
-});
-
+    const strongElems = card.querySelectorAll(".split-block p strong");
+    strongElems.forEach(el => {
+      const text = el.innerText;
+      const parentText = el.parentNode?.innerText || "";
+      if (!strengthsText && text.includes("💪 Strengths")) {
+        strengthsText = parentText.replace("💪 Strengths:", "").trim();
+      } else if (!needsText && text.includes("🎯 Areas for Improvement")) {
+        needsText = parentText.replace("🎯 Areas for Improvement:", "").trim();
+      }
+    });
 
     strengthsText = strengthsText.replace(/Life Skills, English, Kiswahili/g, "").trim();
 
-    // ===== SUMMARY BLOCK =====
     const summaryBlock = document.createElement("div");
     summaryBlock.style.marginBottom = "6px";
     summaryBlock.style.fontSize = "11px";
-    summaryBlock.innerHTML = `
-    
-  
-`;
+    summaryBlock.innerHTML = ``;
 
-    
     // ===== HELPER FUNCTIONS =====
-   function overallLevel(score) {
-  if (!score || score < 1) return "No Data";
-  if (score >= 3.5) return "Exceeding Expectations";
-  if (score >= 2.5) return "Meeting Expectations";
-  if (score >= 1.5) return "Approaching Expectations";
-  return "Below Expectations";
-}
+    function overallLevel(score) {
+      if (!score || score < 1) return "No Data";
+      if (score >= 3.5) return "Exceeding Expectations";
+      if (score >= 2.5) return "Meeting Expectations";
+      if (score >= 1.5) return "Approaching Expectations";
+      return "Below Expectations";
+    }
 
     function generalComment(score) {
       if (score >= 3.5) return "Excellent performance. Keep it up.";
@@ -1603,29 +1603,19 @@ strongElems.forEach(el => {
     generalBlock.innerHTML = `
       <table style="width:100%;border-collapse:collapse;margin-top:6px;">
         <tr>
-          <td style="border:1px solid #000;padding:6px;width:40%;">
-            <strong>Learner's General Performance Level</strong>
-          </td>
-          <td style="border:1px solid #000;padding:6px;">
-            ${overallAvg.toFixed(2)} — ${overallLevel(overallAvg)}
-          </td>
+          <td style="border:1px solid #000;padding:6px;width:40%;"><strong>Learner's General Performance Level</strong></td>
+          <td style="border:1px solid #000;padding:6px;">${overallAvg.toFixed(2)} — ${overallLevel(overallAvg)}</td>
         </tr>
         <tr>
-          <td style="border:1px solid #000;padding:6px;">
-            <strong>Teacher's General Comment</strong>
-          </td>
-          <td style="border:1px solid #000;padding:12px;">
-            ${generalComment(overallAvg)}
-          </td>
+          <td style="border:1px solid #000;padding:6px;"><strong>Teacher's General Comment</strong></td>
+          <td style="border:1px solid #000;padding:12px;">${generalComment(overallAvg)}</td>
         </tr>
       </table>
-
       <div style="margin-top:12px;">
         <div style="display:flex;justify-content:space-between;margin-top:14px;">
           <div>Closing Date: ____________________</div>
           <div>Opening Date: ____________________</div>
         </div>
-
         <div style="display:flex;justify-content:space-between;margin-top:18px;">
           <div>Class Teacher Signature: ____________________</div>
           <div>Head of Institution Signature: ____________________</div>
@@ -1633,41 +1623,36 @@ strongElems.forEach(el => {
       </div>
     `;
 
-    // ===== FORCE SECOND PAGE FOR TABLE + GENERAL BLOCK =====
-    // ===== GENERAL PERFORMANCE BLOCK + TABLE ON SECOND PAGE =====
-const secondPageContainer = document.createElement("div");
-secondPageContainer.style.pageBreakBefore = "always"; // force page 2
+    const secondPageContainer = document.createElement("div");
+    // FIX: avoid-all mode handles the break better than a forced "always" on a sub-element
+    secondPageContainer.style.pageBreakBefore = "auto"; 
+    secondPageContainer.style.pageBreakInside = "avoid";
 
-// Increase font size and add row padding
-table.style.fontSize = "16px";
-table.querySelectorAll("td, th").forEach(cell => {
-  cell.style.padding = "10px 6px"; // taller rows
-});
+    table.style.fontSize = "16px";
+    table.querySelectorAll("td, th").forEach(cell => { cell.style.padding = "10px 6px"; });
 
-generalBlock.style.fontSize = "16px";
-generalBlock.style.lineHeight = "2"; // better spacing for text
+    generalBlock.style.fontSize = "16px";
+    generalBlock.style.lineHeight = "2";
 
-// Append to container
-secondPageContainer.appendChild(table);
-secondPageContainer.appendChild(generalBlock);
+    secondPageContainer.appendChild(table);
+    secondPageContainer.appendChild(generalBlock);
 
-// ===== APPEND ELEMENTS =====
-card.appendChild(summaryBlock);
-  card.appendChild(secondPageContainer);
-  card.appendChild(footer);
-});
-  
+    card.appendChild(summaryBlock);
+    card.appendChild(secondPageContainer);
+    card.appendChild(footer);
+  });
+
   // ===== EXPORT PDF =====
   html2pdf().set({
     margin: [10, 10, 10, 10],
     filename,
     image: { type: "jpeg", quality: 0.98 },
-    html2canvas: { scale: 2, scrollY: 0, useCORS: true },
-    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+    html2canvas: { scale: 2, scrollY: 0, useCORS: true, letterRendering: true },
+    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+    // THE FIX: mode 'avoid-all' prevents cutting text and tables across pages
+    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
   }).from(clone).save();
 };
-
-
 
 window.downloadDetailedPDF = async function () {
   if (!reportDiv.innerHTML.trim()) {
