@@ -906,6 +906,8 @@ function renderGrouped(grouped, avgMap){
 
 
 
+
+
 function splitLearnerIntoPages() {
   const pages = document.querySelectorAll(".a4-page");
 
@@ -917,60 +919,18 @@ function splitLearnerIntoPages() {
     let currentPage = page;
 
     Array.from(card.children).forEach(block => {
-      if (block.classList.contains("no-split")) return;
+    if (
+  !block.classList.contains("split-block") ||
+  block.classList.contains("no-split")
+) return;
 
-      // Check if block is too tall
-      const blockBottom = block.getBoundingClientRect().bottom - currentPage.getBoundingClientRect().top;
+
+      const blockBottom =
+        block.getBoundingClientRect().bottom -
+        currentPage.getBoundingClientRect().top;
 
       if (blockBottom > maxHeight) {
-
-        // Special handling for tables
-        if (block.tagName === "DIV" && block.querySelector("table")) {
-          const table = block.querySelector("table");
-          const tbody = table.querySelector("tbody");
-          const rows = Array.from(tbody.children);
-
-          // Move rows one by one to new page until fits
-          let newTbody = tbody.cloneNode(false);
-          let newPage, newCard;
-
-          for (let row of rows) {
-            tbody.removeChild(row);
-
-            // Create new page if needed
-            if (!newPage) {
-              newPage = document.createElement("div");
-              newPage.className = "a4-page learner-page";
-
-              newCard = document.createElement("div");
-              newCard.className = "learner-card";
-
-              newPage.appendChild(newCard);
-              currentPage.after(newPage);
-              currentPage = newPage;
-            }
-
-            newTbody.appendChild(row);
-
-            const tempTable = table.cloneNode(false);
-            tempTable.appendChild(newTbody);
-            block.appendChild(tempTable);
-
-            const blockBottomCheck = block.getBoundingClientRect().bottom - currentPage.getBoundingClientRect().top;
-            if (blockBottomCheck > maxHeight) {
-              // Move table to new page
-              newCard.appendChild(tempTable);
-              newTbody = tbody.cloneNode(false);
-              newPage = null;
-            }
-          }
-
-          // Remove original table if empty
-          if (!tbody.children.length) block.remove();
-          return;
-        }
-
-        // Normal block handling
+        // create new page
         const newPage = document.createElement("div");
         newPage.className = "a4-page learner-page";
 
@@ -986,6 +946,8 @@ function splitLearnerIntoPages() {
     });
   });
 }
+
+
 
 
   
