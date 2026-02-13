@@ -1388,6 +1388,27 @@ function getTrend(currentAvg, previousAvg) {
 
 
 
+
+function rawMarksToRubric(mark) {
+  if (mark >= 90) return { code: "EE1", level: "Exceeding Expectations", points: 8 };
+  if (mark >= 75) return { code: "EE2", level: "Exceeding Expectations", points: 7 };
+  if (mark >= 58) return { code: "ME1", level: "Meeting Expectations", points: 6 };
+  if (mark >= 41) return { code: "ME2", level: "Meeting Expectations", points: 5 };
+  if (mark >= 31) return { code: "AE1", level: "Approaching Expectations", points: 4 };
+  if (mark >= 21) return { code: "AE2", level: "Approaching Expectations", points: 3 };
+  if (mark >= 11) return { code: "BE1", level: "Below Expectations", points: 2 };
+  if (mark >= 1)  return { code: "BE2", level: "Below Expectations", points: 1 };
+  return { code: "-", level: "No Data", points: 0 };
+}
+
+
+
+
+
+
+
+
+  
   
 window.downloadPDF = async function () {
 
