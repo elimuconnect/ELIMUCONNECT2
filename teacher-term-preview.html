@@ -42,9 +42,8 @@ h5 {
   background: #ffffff;
   padding: 14px;
   margin: 0;
-  page-break-inside: auto;   /* allow content to split across pages */
+  page-break-inside: avoid;   /* Prevent splitting card mid-page */
 }
-
 
 .learner-header {
   display: flex;
@@ -157,7 +156,7 @@ tr:last-child td {
 /* ===== A4 PAGE CANVAS ===== */
 .a4-page {
   width: 186mm;        /* A4 width minus margins */
-  min-height: 260mm;   /* A4 height minus margins */
+  min-height: 267mm;   /* A4 height minus margins */
   padding: 0;
   margin: 0 auto 10px auto;
   background: white;
@@ -179,9 +178,6 @@ tr:last-child td {
   letter-spacing: 0.3px;
 }
 
-table, .trend-box {
-  page-break-inside: auto;  /* allow tables to split if too long */
-}
  
 
 </style>
@@ -772,7 +768,7 @@ function renderGrouped(grouped, avgMap){
     const { strengths, needs } = generateStrengthsAndNeeds(subjects);
     const recommendations = generateRecommendations(subjects, trend, supportFlag);
 
-  
+  return Object.entries(grouped).map(([student, subjects]) => {
   return `
 <div class="a4-page learner-page">
   <div class="learner-card">
@@ -919,46 +915,32 @@ function splitLearnerIntoPages() {
     const card = page.querySelector(".learner-card");
     if (!card) return;
 
-    const maxHeight = page.clientHeight - 20; // leave a small margin
+    const maxHeight = page.clientHeight;
     let currentPage = page;
 
-    // Collect all "splittable" blocks (everything except .no-split)
-    const blocks = Array.from(card.children);
+    Array.from(card.children).forEach(block => {
+    if (
+  !block.classList.contains("split-block") ||
+  block.classList.contains("no-split")
+) return;
 
-    blocks.forEach(block => {
-      if (block.classList.contains("no-split")) return; // skip headers/overview
 
-      const blockRect = block.getBoundingClientRect();
-      const cardRect = currentPage.getBoundingClientRect();
-      const blockBottom = blockRect.bottom - cardRect.top;
+      const blockBottom =
+        block.getBoundingClientRect().bottom -
+        currentPage.getBoundingClientRect().top;
 
-      // If the block is taller than the page itself, leave it but start new page after
-      if (block.offsetHeight > maxHeight) {
-        const newPage = document.createElement("div");
-        newPage.className = "a4-page learner-page";
-
-        const newCard = document.createElement("div");
-        newCard.className = "learner-card";
-
-        currentPage.after(newPage);
-        newPage.appendChild(newCard);
-
-        currentPage = newPage;
-        return;
-      }
-
-      // If adding this block exceeds page, move to next page
       if (blockBottom > maxHeight) {
+        // create new page
         const newPage = document.createElement("div");
         newPage.className = "a4-page learner-page";
 
         const newCard = document.createElement("div");
         newCard.className = "learner-card";
 
-        currentPage.after(newPage);
         newPage.appendChild(newCard);
+        currentPage.after(newPage);
 
-        newCard.appendChild(block); // move block to new page
+        newCard.appendChild(block);
         currentPage = newPage;
       }
     });
@@ -967,7 +949,7 @@ function splitLearnerIntoPages() {
 
 
 
-  
+
   
 
 function generateInsight(subjects) {
