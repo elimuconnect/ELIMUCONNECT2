@@ -42,6 +42,7 @@ h5 {
   background: #ffffff;
   padding: 14px;
   margin: 0;
+  page-break-inside: avoid;   /* Prevent splitting card mid-page */
 }
 
 .learner-header {
@@ -154,17 +155,14 @@ tr:last-child td {
 
 /* ===== A4 PAGE CANVAS ===== */
 .a4-page {
-  width: 186mm;        /* 210 - margins */
-  min-height: 267mm;   /* 297 - margins */
-
+  width: 186mm;        /* A4 width minus margins */
+  min-height: 267mm;   /* A4 height minus margins */
   padding: 0;
   margin: 0 auto 10px auto;
-
   background: white;
   box-sizing: border-box;
-  overflow: visible; /* allow content measurement */
+  page-break-after: always;  /* Force each page to end cleanly */
 }
-
 
 
 .report-overview h3 {
@@ -770,23 +768,21 @@ function renderGrouped(grouped, avgMap){
     const { strengths, needs } = generateStrengthsAndNeeds(subjects);
     const recommendations = generateRecommendations(subjects, trend, supportFlag);
 
-    return `
-<div class="a4-page learner-page" style="page-break-before: always;">
-
+  return Object.entries(grouped).map(([student, subjects]) => {
+  return `
+<div class="a4-page learner-page">
   <div class="learner-card">
-${renderOverviewHeader({
-  school: subjects.__school || results[0]?.school_name || "Demo CBC School",
-  poBox: results[0]?.po_box || "12345",
-  postal: results[0]?.postal_code || "00100",
-  town: results[0]?.town || "Nairobi",
-  phone: results[0]?.phone || "0700123456",
-  email: results[0]?.email || "info@democbc.ac.ke",
-  className: subjects.__class || className,
-  term: termName,
-  year: SYSTEM_YEAR
-})}
-
-
+    ${renderOverviewHeader({
+      school: subjects.__school || results[0]?.school_name || "Demo CBC School",
+      poBox: results[0]?.po_box || "12345",
+      postal: results[0]?.postal_code || "00100",
+      town: results[0]?.town || "Nairobi",
+      phone: results[0]?.phone || "0700123456",
+      email: results[0]?.email || "info@democbc.ac.ke",
+      className: subjects.__class || className,
+      term: termName,
+      year: SYSTEM_YEAR
+    })}
 
 
     <!-- HEADER -->
