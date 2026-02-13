@@ -853,6 +853,7 @@ function renderGrouped(grouped, avgMap){
             <tr>
               <th>Competency</th>
               <th>Achievement</th>
+              <th>Code</th>
               <th>Remarks</th>
             </tr>
           </thead>
@@ -861,6 +862,8 @@ function renderGrouped(grouped, avgMap){
               <tr style="background:${levelColor[r.level]}">
                 <td>${r.competency}</td>
                 <td>${r.level}</td>
+<td>${levelScoreToRubric(levelToScore(r.level)).code}</td>
+
                 <td>${r.remarks || "—"}</td>
               </tr>`).join("")}
           </tbody>
@@ -876,7 +879,8 @@ function renderGrouped(grouped, avgMap){
                   color:white;
                   background:${getAvgColor(subjectAvg)};
                 ">
-                  ${subjectAvg.toFixed(2)} — ${getAchievementLabel(subjectAvg)}
+                ${subjectAvg.toFixed(2)} — ${levelScoreToRubric(subjectAvg).code}
+
                 </span>
               </td>
             </tr>
@@ -1402,6 +1406,16 @@ function rawMarksToRubric(mark) {
 }
 
 
+function levelScoreToRubric(score) {
+  if (score >= 3.5) return { code: "EE1", level: "Exceeding Expectations", points: 8 };
+  if (score >= 3.0) return { code: "EE2", level: "Exceeding Expectations", points: 7 };
+  if (score >= 2.5) return { code: "ME1", level: "Meeting Expectations", points: 6 };
+  if (score >= 2.0) return { code: "ME2", level: "Meeting Expectations", points: 5 };
+  if (score >= 1.5) return { code: "AE1", level: "Approaching Expectations", points: 4 };
+  if (score >= 1.0) return { code: "AE2", level: "Approaching Expectations", points: 3 };
+  if (score > 0)  return { code: "BE1", level: "Below Expectations", points: 2 };
+  return { code: "BE2", level: "Below Expectations", points: 1 };
+}
 
 
 
