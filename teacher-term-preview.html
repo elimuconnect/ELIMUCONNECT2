@@ -310,8 +310,7 @@ const { data: termAverages } = await supabase
   /* ===== AVERAGES ===== */
   const { data: averages } = await supabase
     .from("term_subject_report_view")
-   .select("first_name,last_name,subject_name,average_score,achievement_level,rubric_code")
-
+    .select("first_name,last_name,subject_name,average_score,achievement_level")
     .eq("term", termName)
   
 
@@ -616,8 +615,7 @@ function renderSchoolAnalytics(records, termName, year, intelligence, schoolName
     return `
       <tr>
         <td>${sub}</td>
-       <td>${mean.toFixed(2)} (${scoreToPercent(mean)}%)</td>
-
+        <td>${mean.toFixed(2)}</td>
         <td>${alert}</td>
       </tr>
     `;
@@ -737,33 +735,6 @@ ${intelligence.schoolImprovement !== null ? `
   `;
 }
 
-
-function getSubjectBadge(score) {
-  const { code, level } = levelScoreToRubric(score);
-
-  let bgColor = "#e74c3c"; // default Below Expectations
-  switch(level){
-    case "Exceeding Expectations": bgColor = "#2ecc71"; break;
-    case "Meeting Expectations": bgColor = "#3498db"; break;
-    case "Approaching Expectations": bgColor = "#f1c40f"; break;
-    case "Below Expectations": bgColor = "#e74c3c"; break;
-  }
-
-  return `
-    <span style="
-      padding: 3px 8px;
-      border-radius: 12px;
-      font-weight:bold;
-      color:white;
-      background:${bgColor};
-    ">
-      ${score.toFixed(2)} (${scoreToPercent(score)}%) — ${code} / ${level}
-    </span>
-  `;
-}
-
-
-
   
 function renderGrouped(grouped, avgMap){
   return Object.entries(grouped).map(([student, subjects]) => {
@@ -856,10 +827,12 @@ function renderGrouped(grouped, avgMap){
         subjectAvg = scores.length ? scores.reduce((a,b)=>a+b,0)/scores.length : null;
       }
 
-     function getAchievementLabel(score) {
-  return levelScoreToRubric(score).level;
-}
-
+      function getAchievementLabel(score) {
+        if (score >= 3.5) return "Exceeding Expectations";
+        if (score >= 2.5) return "Meeting Expectations";
+        if (score >= 1.5) return "Approaching Expectations";
+        return "Below Expectations";
+      }
 
       function getAvgColor(score) {
         if (score >= 3.5) return "#2ecc71";
@@ -880,7 +853,6 @@ function renderGrouped(grouped, avgMap){
             <tr>
               <th>Competency</th>
               <th>Achievement</th>
-              <th>Code</th>
               <th>Remarks</th>
             </tr>
           </thead>
@@ -889,8 +861,6 @@ function renderGrouped(grouped, avgMap){
               <tr style="background:${levelColor[r.level]}">
                 <td>${r.competency}</td>
                 <td>${r.level}</td>
-<td>${levelScoreToRubric(levelToScore(r.level)).code}</td>
-
                 <td>${r.remarks || "—"}</td>
               </tr>`).join("")}
           </tbody>
@@ -899,8 +869,15 @@ function renderGrouped(grouped, avgMap){
             <tr style="font-weight:bold; background:#f0f0f0;">
               <td>SUBJECT/LEARNING AREA AVERAGE</td>
               <td colspan="2">
-                ${getSubjectBadge(subjectAvg)}
-
+                <span style="
+                  padding: 3px 8px;
+                  border-radius: 12px;
+                  font-weight:bold;
+                  color:white;
+                  background:${getAvgColor(subjectAvg)};
+                ">
+                  ${subjectAvg.toFixed(2)} — ${getAchievementLabel(subjectAvg)}
+                </span>
               </td>
             </tr>
           </tfoot>` : ""}
@@ -1277,9 +1254,8 @@ reportDiv.innerHTML = `
     schoolName,
     className
   )}
-  ${renderGrouped(grouped, avgMap)}
+  ${renderGrouped(grouped)}
 `;
-
 
 
     
@@ -1322,8 +1298,7 @@ filtered.forEach(r => {
 });
 
 
-    reportDiv.innerHTML = renderGrouped(grouped, avgMap);
-
+      reportDiv.innerHTML = renderGrouped(grouped);
     
 requestAnimationFrame(() => {
   splitLearnerIntoPages();
@@ -1370,10 +1345,10 @@ filtered.forEach(r => {
 
 
       
-     reportDiv.innerHTML = `
-  <h3>${subject} – All Students</h3>
-  ${renderGrouped(grouped, avgMap)}
-`;
+      reportDiv.innerHTML = `
+        <h3>${subject} – All Students</h3>
+        ${renderGrouped(grouped)}
+      `;
 
 requestAnimationFrame(() => {
   splitLearnerIntoPages();
@@ -1412,42 +1387,7 @@ function getTrend(currentAvg, previousAvg) {
 
 
 
-function scoreToPercent(score) {
-  if (score === null || isNaN(score)) return "-";
-  return Math.round((score / 4) * 100);
-}
 
-
-function rawMarksToRubric(mark) {
-  if (mark >= 90) return { code: "EE1", level: "Exceeding Expectations", points: 8 };
-  if (mark >= 75) return { code: "EE2", level: "Exceeding Expectations", points: 7 };
-  if (mark >= 58) return { code: "ME1", level: "Meeting Expectations", points: 6 };
-  if (mark >= 41) return { code: "ME2", level: "Meeting Expectations", points: 5 };
-  if (mark >= 31) return { code: "AE1", level: "Approaching Expectations", points: 4 };
-  if (mark >= 21) return { code: "AE2", level: "Approaching Expectations", points: 3 };
-  if (mark >= 11) return { code: "BE1", level: "Below Expectations", points: 2 };
-  if (mark >= 1)  return { code: "BE2", level: "Below Expectations", points: 1 };
-  return { code: "-", level: "No Data", points: 0 };
-}
-
-
-function levelScoreToRubric(score) {
-  if (score >= 3.5) return { code: "EE1", level: "Exceeding Expectations", points: 8 };
-  if (score >= 3.0) return { code: "EE2", level: "Exceeding Expectations", points: 7 };
-  if (score >= 2.5) return { code: "ME1", level: "Meeting Expectations", points: 6 };
-  if (score >= 2.0) return { code: "ME2", level: "Meeting Expectations", points: 5 };
-  if (score >= 1.5) return { code: "AE1", level: "Approaching Expectations", points: 4 };
-  if (score >= 1.0) return { code: "AE2", level: "Approaching Expectations", points: 3 };
-  if (score > 0)  return { code: "BE1", level: "Below Expectations", points: 2 };
-  return { code: "BE2", level: "Below Expectations", points: 1 };
-}
-
-
-
-
-
-
-  
   
 window.downloadPDF = async function () {
 
@@ -1624,45 +1564,26 @@ strongElems.forEach(el => {
     table.style.tableLayout = "fixed";
 
     table.innerHTML = `
-     <thead>
-  <tr>
-    <th style="border:1px solid #000;padding:6px;width:25%;">Learning Area/Subject</th>
-    <th style="border:1px solid #000;padding:6px;width:15%;">Score</th>
-    <th style="border:1px solid #000;padding:6px;width:15%;">Code</th>
-    <th style="border:1px solid #000;padding:6px;width:20%;">Performance Level</th>
-    <th style="border:1px solid #000;padding:6px;width:25%;">Teacher Comment</th>
-  </tr>
-</thead>
-
+      <thead>
+        <tr>
+          <th style="border:1px solid #000;padding:6px;width:30%;">Learning Area/Subject</th>
+          <th style="border:1px solid #000;padding:6px;width:15%;">Score</th>
+          <th style="border:1px solid #000;padding:6px;width:25%;">Performance Level</th>
+          <th style="border:1px solid #000;padding:6px;width:30%;">Teacher Comment</th>
+        </tr>
+      </thead>
       <tbody>
-       ${Object.entries(subjectData).map(([subject, d]) => {
-  const avg = Number(d.average_score);
-
-  return `
-    <tr>
-      <td style="border:1px solid #000;padding:6px;">
-        ${subject}
-      </td>
-
-      <td style="border:1px solid #000;padding:6px;text-align:center;">
-        ${avg.toFixed(2)} (${scoreToPercent(avg)}%)
-      </td>
-
-      <td style="border:1px solid #000;padding:6px;text-align:center;">
-        ${d.rubric_code}
-      </td>
-
-      <td style="border:1px solid #000;padding:6px;">
-        ${d.achievement_level}
-      </td>
-
-      <td style="border:1px solid #000;padding:6px;">
-        ${commentFromScore(avg)}
-      </td>
-    </tr>
-  `;
-}).join("")}
-
+        ${Object.entries(subjectData).map(([subject, d]) => {
+          const avg = Number(d.average_score);
+          return `
+            <tr>
+              <td style="border:1px solid #000;padding:6px;">${subject}</td>
+              <td style="border:1px solid #000;padding:6px;text-align:center;">${avg.toFixed(2)}</td>
+              <td style="border:1px solid #000;padding:6px;">${d.achievement_level}</td>
+              <td style="border:1px solid #000;padding:6px;">${commentFromScore(avg)}</td>
+            </tr>
+          `;
+        }).join("")}
       </tbody>
     `;
 
@@ -1671,19 +1592,6 @@ strongElems.forEach(el => {
     generalBlock.style.marginTop = "10px";
     generalBlock.style.fontSize = "12px";
 
-
-const subjectValues = Object.values(subjectData);
-
-
-
-if (subjectValues.length > 0) {
-  overallAvg =
-    subjectValues.reduce((sum, d) => sum + Number(d.average_score || 0), 0) /
-    subjectValues.length;
-}
-
-
-    
     generalBlock.innerHTML = `
       <table style="width:100%;border-collapse:collapse;margin-top:6px;">
         <tr>
@@ -1691,8 +1599,7 @@ if (subjectValues.length > 0) {
             <strong>Learner's General Performance Level</strong>
           </td>
           <td style="border:1px solid #000;padding:6px;">
-        ${overallAvg.toFixed(2)} (${scoreToPercent(overallAvg)}%) 
-
+            ${overallAvg.toFixed(2)} — ${overallLevel(overallAvg)}
           </td>
         </tr>
         <tr>
