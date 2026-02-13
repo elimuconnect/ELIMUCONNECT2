@@ -829,12 +829,10 @@ function renderGrouped(grouped, avgMap){
         subjectAvg = scores.length ? scores.reduce((a,b)=>a+b,0)/scores.length : null;
       }
 
-      function getAchievementLabel(score) {
-        if (score >= 3.5) return "Exceeding Expectations";
-        if (score >= 2.5) return "Meeting Expectations";
-        if (score >= 1.5) return "Approaching Expectations";
-        return "Below Expectations";
-      }
+     function getAchievementLabel(score) {
+  return levelScoreToRubric(score).level;
+}
+
 
       function getAvgColor(score) {
         if (score >= 3.5) return "#2ecc71";
