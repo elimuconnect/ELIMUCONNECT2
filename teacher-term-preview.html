@@ -1658,9 +1658,14 @@ strongElems.forEach(el => {
 
 const subjectValues = Object.values(subjectData);
 
-const overallAvg =
-  subjectValues.reduce((sum, d) => sum + Number(d.average_score || 0), 0) /
-  (subjectValues.length || 1);
+let overallAvg = 0;
+
+if (subjectValues.length > 0) {
+  overallAvg =
+    subjectValues.reduce((sum, d) => sum + Number(d.average_score || 0), 0) /
+    subjectValues.length;
+}
+
 
     
     generalBlock.innerHTML = `
