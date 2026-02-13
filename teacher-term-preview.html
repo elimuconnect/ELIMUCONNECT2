@@ -310,7 +310,8 @@ const { data: termAverages } = await supabase
   /* ===== AVERAGES ===== */
   const { data: averages } = await supabase
     .from("term_subject_report_view")
-    .select("first_name,last_name,subject_name,average_score,achievement_level")
+   .select("first_name,last_name,subject_name,average_score,achievement_level,rubric_code")
+
     .eq("term", termName)
   
 
@@ -1618,31 +1619,34 @@ strongElems.forEach(el => {
 </thead>
 
       <tbody>
-        ${Object.entries(subjectData).map(([subject, d]) => {
-          const avg = Number(d.average_score);
-          return `
-          <tr>
-  <td style="border:1px solid #000;padding:6px;">${subject}</td>
+       ${Object.entries(subjectData).map(([subject, d]) => {
+  const avg = Number(d.average_score);
 
-  <td style="border:1px solid #000;padding:6px;text-align:center;">
-    ${avg.toFixed(2)} (${scoreToPercent(avg)}%)
-  </td>
+  return `
+    <tr>
+      <td style="border:1px solid #000;padding:6px;">
+        ${subject}
+      </td>
 
-  <td style="border:1px solid #000;padding:6px;text-align:center;">
-    ${levelScoreToRubric(avg).code}
-  </td>
+      <td style="border:1px solid #000;padding:6px;text-align:center;">
+        ${avg.toFixed(2)} (${scoreToPercent(avg)}%)
+      </td>
 
-  <td style="border:1px solid #000;padding:6px;">
-    ${d.achievement_level}
-  </td>
+      <td style="border:1px solid #000;padding:6px;text-align:center;">
+        ${d.rubric_code}
+      </td>
 
-  <td style="border:1px solid #000;padding:6px;">
-    ${commentFromScore(avg)}
-  </td>
-</tr>
+      <td style="border:1px solid #000;padding:6px;">
+        ${d.achievement_level}
+      </td>
 
-          `;
-        }).join("")}
+      <td style="border:1px solid #000;padding:6px;">
+        ${commentFromScore(avg)}
+      </td>
+    </tr>
+  `;
+}).join("")}
+
       </tbody>
     `;
 
