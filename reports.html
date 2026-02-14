@@ -1303,10 +1303,13 @@ document.getElementById("schoolAnalytics").innerHTML =
 reportDiv.innerHTML = renderGrouped(grouped);
 
 
-    
-requestAnimationFrame(() => {
-  splitLearnerIntoPages();
-});
+    if (!window.__EXPORTING_PDF__) {
+  requestAnimationFrame(() => {
+    splitLearnerIntoPages();
+  });
+}
+
+
 
 setTimeout(() => {
   Object.values(grouped).forEach(s => {
