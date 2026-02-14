@@ -199,6 +199,9 @@ tr:last-child td {
   text-align: center;
 }
 
+table {
+  page-break-inside: avoid;
+}
 
   
 </style>
@@ -1458,28 +1461,24 @@ window.downloadPDF = async function () {
   clone.style.boxSizing = "border-box";
 
   const first = results?.[0];
-
-  
-/* ===========================
-   PAGE 2 — FORCED BLANK PAGE
-=========================== */
-const blankPage = document.createElement("div");
-blankPage.style.pageBreakBefore = "always";
-blankPage.innerHTML = `<div style="height:250mm;"></div>`;
-clone.appendChild(blankPage);
-
-
-    
+ 
   const cards = clone.querySelectorAll(".learner-card");
 
-  cards.forEach((card, index) => {
 
-    /* =========================
-       FORCE EACH LEARNER NEW PAGE
-    ========================== */
-    if (index !== 0) {
-      card.style.pageBreakBefore = "always";
-    }
+// 🔥 CLEAN ANY EXISTING PAGE BREAKS (CRITICAL)
+clone.querySelectorAll(".learner-card").forEach(card => {
+  card.style.pageBreakBefore = "";
+});
+
+
+  
+
+  cards.forEach((card, index) => {
+  if (index !== 0) {
+    card.style.pageBreakBefore = "always";
+  }
+
+
 
     card.style.margin = "0";
     card.style.padding = "0";
@@ -1623,7 +1622,7 @@ footer.innerText =
    TABLE BLOCK (NEW PAGE)
 ========================= */
 const tableWrapper = document.createElement("div");
-tableWrapper.style.pageBreakBefore = "always";
+
 
 tableWrapper.appendChild(table);
 tableWrapper.appendChild(generalBlock);
