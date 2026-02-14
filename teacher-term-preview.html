@@ -1271,8 +1271,8 @@ reportDiv.innerHTML = renderGrouped(grouped);
   requestAnimationFrame(() => {
     splitLearnerIntoPages();
   });
-}
-  }
+
+ }); 
 
   /* ===== STUDENT VIEW ===== */
   if (viewMode.value === "student") {
@@ -1303,8 +1303,8 @@ filtered.forEach(r => {
 requestAnimationFrame(() => {
   splitLearnerIntoPages();
 });
-  }
-    }                                                       
+ }); 
+                                                           
   /* ===== SUBJECT VIEW ===== */
   if (viewMode.value === "subject") {
     const subjects = [...new Set(records.map(r => r.subject))];
@@ -1342,8 +1342,8 @@ requestAnimationFrame(() => {
   splitLearnerIntoPages();
 });
 
-  }
-}
+ }); 
+
 
 termSelect.addEventListener("change", loadReport);
 viewMode.addEventListener("change", loadReport);
