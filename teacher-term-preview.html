@@ -235,6 +235,13 @@ tr:last-child td {
     ⬇️ Download Detailed Assessment Report<br>
     <small>For teachers & internal review</small>
   </button>
+
+
+  <button onclick="downloadSchoolAnalyticsPDF()">
+  ⬇️ Download School Analysis Report<br>
+  <small>For school leadership & QA</small>
+</button>
+
 </div>
 
   
@@ -645,7 +652,8 @@ function renderSchoolAnalytics(records, termName, year, intelligence, schoolName
 
   // ===== RETURN FULL ANALYTICS PAGE =====
   return `
-  <div class="a4-page">
+ <div class="a4-page school-analytics">
+
 
 <div class="learner-card">
 
@@ -1643,7 +1651,11 @@ tableWrapper.appendChild(footer);
 
 card.appendChild(tableWrapper);
 });
-  
+ /* =========================
+   REMOVE SCHOOL ANALYTICS
+========================= */
+clone.querySelectorAll(".school-analytics").forEach(el => el.remove());
+ 
   /* =========================
      EXPORT PDF
   ========================== */
@@ -1729,6 +1741,37 @@ clone.querySelectorAll(".a4-page").forEach(page => {
   }).from(clone).save();
 };
 
+window.downloadSchoolAnalyticsPDF = async function () {
+
+  if (!reportDiv.innerHTML.trim()) {
+    alert("No report to download");
+    return;
+  }
+
+  const term = termSelect.options[termSelect.selectedIndex]?.text || "Term";
+  const filename = `School_Analysis_${term}_${SYSTEM_YEAR}.pdf`;
+
+  const clone = reportDiv.cloneNode(true);
+
+  /* =========================
+     KEEP ONLY SCHOOL ANALYTICS
+  ========================== */
+  clone.querySelectorAll(":not(.school-analytics)").forEach(el => {
+    if (el.closest(".school-analytics")) return;
+    el.remove();
+  });
+
+  clone.style.width = "190mm";
+  clone.style.margin = "0 auto";
+
+  html2pdf().set({
+    margin: [10, 10, 10, 10],
+    filename,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: { scale: 2, scrollY: 0, useCORS: true },
+    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+  }).from(clone).save();
+};
 
   
 </script>
