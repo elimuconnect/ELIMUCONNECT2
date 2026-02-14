@@ -245,7 +245,9 @@ tr:last-child td {
 </div>
 
   
+<div id="schoolAnalytics" style="display:none;"></div>
 <div id="report"></div>
+
 
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
@@ -1280,17 +1282,18 @@ const intelligence = calculateTermIntelligence(
   previousTerm
 );
 
-reportDiv.innerHTML = `
-  ${renderSchoolAnalytics(
+
+document.getElementById("schoolAnalytics").innerHTML =
+  renderSchoolAnalytics(
     records,
     termName,
     SYSTEM_YEAR,
     intelligence,
     schoolName,
     className
-  )}
-  ${renderGrouped(grouped)}
-`;
+  );
+
+reportDiv.innerHTML = renderGrouped(grouped);
 
 
     
@@ -1651,10 +1654,7 @@ tableWrapper.appendChild(footer);
 
 card.appendChild(tableWrapper);
 });
- /* =========================
-   REMOVE SCHOOL ANALYTICS
-========================= */
-clone.querySelectorAll(".school-analytics").forEach(el => el.remove());
+
  
   /* =========================
      EXPORT PDF
@@ -1741,26 +1741,24 @@ clone.querySelectorAll(".a4-page").forEach(page => {
   }).from(clone).save();
 };
 
-window.downloadSchoolAnalyticsPDF = async function () {
 
-  if (!reportDiv.innerHTML.trim()) {
-    alert("No report to download");
+
+
+  window.downloadSchoolAnalyticsPDF = async function () {
+
+  const analyticsDiv = document.getElementById("schoolAnalytics");
+
+  if (!analyticsDiv.innerHTML.trim()) {
+    alert("No school analysis available");
     return;
   }
 
   const term = termSelect.options[termSelect.selectedIndex]?.text || "Term";
   const filename = `School_Analysis_${term}_${SYSTEM_YEAR}.pdf`;
 
-  const clone = reportDiv.cloneNode(true);
+  const clone = analyticsDiv.cloneNode(true);
 
-  /* =========================
-     KEEP ONLY SCHOOL ANALYTICS
-  ========================== */
-  clone.querySelectorAll(":not(.school-analytics)").forEach(el => {
-    if (el.closest(".school-analytics")) return;
-    el.remove();
-  });
-
+  clone.style.display = "block";
   clone.style.width = "190mm";
   clone.style.margin = "0 auto";
 
@@ -1772,6 +1770,7 @@ window.downloadSchoolAnalyticsPDF = async function () {
     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
   }).from(clone).save();
 };
+
 
   
 </script>
