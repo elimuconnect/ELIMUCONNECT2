@@ -41,12 +41,14 @@ h5 {
 /* Update these specific sections in your <style> tag */
 
 .a4-page {
-  width: 100%; /* Let html2pdf handle the scaling */
+  width: 100%;
+  max-width: 600px; /* phone-friendly width */
   margin: 0 auto;
   background: white;
   box-sizing: border-box;
-  /* Remove min-height and page-break-after from here */
+  padding: 12px; /* some breathing space */
 }
+
 
 
 .subject-block {
@@ -116,14 +118,22 @@ canvas, .trend-box {
 
 /* ================== TABLES ================== */
 table {
-  border-collapse: collapse;
   width: 100%;
-  margin-top: 6px;
+  border-collapse: collapse;
   font-size: 14px;
-  table-layout: fixed;
+  table-layout: auto;
   word-break: break-word;
 }
 
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 12px;
+}
+
+
+
+  
 th, td {
   padding: 5px 6px;
   border-bottom: 1px solid #ddd;
@@ -891,7 +901,7 @@ function renderGrouped(grouped, avgMap){
         <p style="font-weight:bold;color:${evidence.color};">
           ${evidence.label} — <span style="font-weight:normal">${evidence.note}</span>
         </p>
-
+     <div class="table-wrapper">
         <table>
           <thead>
             <tr>
@@ -926,6 +936,7 @@ function renderGrouped(grouped, avgMap){
             </tr>
           </tfoot>` : ""}
         </table>
+       </div>
       </div>`;
     }).join("")}
 
