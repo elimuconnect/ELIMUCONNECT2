@@ -197,6 +197,23 @@ tr:last-child td {
   height: auto !important;
 }
 
+
+
+.pdf-page {
+  width: 190mm;
+  min-height: 277mm;
+  padding: 15mm;
+  box-sizing: border-box;
+  page-break-after: always;
+  background: white;
+}
+
+.no-break {
+  page-break-inside: avoid;
+}
+
+
+  
 </style>
 
   
@@ -1411,9 +1428,7 @@ function getTrend(currentAvg, previousAvg) {
 
 
 
-
-
-  window.downloadPDF = async function () {
+window.downloadPDF = async function () {
 
   if (!reportDiv.innerHTML.trim()) {
     alert("No report to download");
@@ -1423,33 +1438,30 @@ function getTrend(currentAvg, previousAvg) {
   const term = termSelect.options[termSelect.selectedIndex]?.text || "Term";
   const filename = `Summary_Report_${term}_${SYSTEM_YEAR}.pdf`;
 
-const original = reportDiv;  // your main container
-const clone = original.cloneNode(true);
+  const original = reportDiv;
+  const clone = original.cloneNode(true);
 
-// Remove screen pagination wrappers (.a4-page)
-clone.querySelectorAll(".a4-page").forEach(page => {
-  const parent = page.parentNode;
-  while (page.firstChild) {
-    parent.insertBefore(page.firstChild, page);
-  }
-  parent.removeChild(page);
-});
+  /* =========================
+     REMOVE SCREEN PAGINATION
+  ========================== */
+  clone.querySelectorAll(".a4-page").forEach(page => {
+    const parent = page.parentNode;
+    while (page.firstChild) {
+      parent.insertBefore(page.firstChild, page);
+    }
+    parent.removeChild(page);
+  });
 
-
-  // ===== A4 Layout =====
   clone.style.width = "190mm";
   clone.style.margin = "0 auto";
   clone.style.padding = "0";
   clone.style.boxSizing = "border-box";
 
-  // ===== Remove Detailed Sections =====
-  clone.querySelectorAll(".subject-block, .trend-box").forEach(el => el.remove());
-
-  const cards = clone.querySelectorAll(".learner-card");
-
-  // ===== GET SCHOOL INFO =====
   const first = results?.[0];
 
+  /* =========================
+     SCHOOL HEADER (PAGE 1)
+  ========================== */
   if (first) {
     const header = document.createElement("div");
     header.style.textAlign = "center";
@@ -1471,30 +1483,33 @@ clone.querySelectorAll(".a4-page").forEach(page => {
         ${first.email ? ` | Email: ${first.email}` : ""}
       </div>
     `;
+
     clone.prepend(header);
   }
 
-  // ===== STYLE CARDS + ADD FOOTER =====
-  cards.forEach(card => {
-    // FIX: Ensure the entire student report doesn't get split awkwardly
+  const cards = clone.querySelectorAll(".learner-card");
+
+  cards.forEach((card, index) => {
+
+    /* =========================
+       FORCE EACH LEARNER NEW PAGE
+    ========================== */
+    if (index !== 0) {
+      card.style.pageBreakBefore = "always";
+    }
+
     card.style.margin = "0";
     card.style.padding = "0";
     card.style.boxSizing = "border-box";
-   
-   
-    const footer = document.createElement("div");
-    footer.style.fontSize = "10px";
-    footer.style.color = "#555";
-    footer.style.textAlign = "center";
-    footer.style.marginTop = "12px";
-    footer.style.borderTop = "1px solid #ddd";
-    footer.style.paddingTop = "6px";
-    footer.style.pageBreakInside = "avoid";
 
-    footer.innerText =
-      "Assessment is competency-based and evidence-driven, guided by KICD CBE curriculum designs.";
+    /* =========================
+       REMOVE OLD TABLE BLOCKS
+    ========================== */
+    card.querySelectorAll(".subject-block, .trend-box").forEach(el => el.remove());
 
-    // ===== STUDENT NAME =====
+    /* =========================
+       STUDENT NAME
+    ========================== */
     const studentName = card.querySelector("h4")?.innerText
       .replace("👤", "")
       .replace(/\(.*?\)/, "")
@@ -1503,7 +1518,9 @@ clone.querySelectorAll(".a4-page").forEach(page => {
     const subjectData = avgMap?.[studentName];
     if (!subjectData) return;
 
-    // ===== CALCULATE OVERALL AVERAGE =====
+    /* =========================
+       CALCULATE OVERALL AVERAGE
+    ========================== */
     const subjectScores = Object.values(subjectData)
       .map(d => parseFloat(d.average_score))
       .filter(score => !isNaN(score) && score > 0);
@@ -1515,37 +1532,6 @@ clone.querySelectorAll(".a4-page").forEach(page => {
     }
     overallAvg = Number(overallAvg.toFixed(2));
 
-    // ===== EXTRACT TREND, STRENGTHS & NEEDS =====
-    let trendText = "";
-    let strengthsText = "";
-    let needsText = "";
-
-    const trendElement = Array.from(card.querySelectorAll("p"))
-      .find(p => p.innerText.includes("📊 Progress Trend"));
-
-    if (trendElement) {
-      trendText = trendElement.innerText.replace("📊 Progress Trend:", "").trim();
-    }
-
-    const strongElems = card.querySelectorAll(".split-block p strong");
-    strongElems.forEach(el => {
-      const text = el.innerText;
-      const parentText = el.parentNode?.innerText || "";
-      if (!strengthsText && text.includes("💪 Strengths")) {
-        strengthsText = parentText.replace("💪 Strengths:", "").trim();
-      } else if (!needsText && text.includes("🎯 Areas for Improvement")) {
-        needsText = parentText.replace("🎯 Areas for Improvement:", "").trim();
-      }
-    });
-
-    strengthsText = strengthsText.replace(/Life Skills, English, Kiswahili/g, "").trim();
-
-    const summaryBlock = document.createElement("div");
-    summaryBlock.style.marginBottom = "6px";
-    summaryBlock.style.fontSize = "11px";
-    summaryBlock.innerHTML = ``;
-
-    // ===== HELPER FUNCTIONS =====
     function overallLevel(score) {
       if (!score || score < 1) return "No Data";
       if (score >= 3.5) return "Exceeding Expectations";
@@ -1568,21 +1554,30 @@ clone.querySelectorAll(".a4-page").forEach(page => {
       return "Put more effort";
     }
 
-    // ===== SUBJECT TABLE =====
+    /* =========================
+       DESCRIPTION PAGE BREAK
+    ========================== */
+    const descriptionBreak = document.createElement("div");
+    descriptionBreak.style.pageBreakAfter = "always";
+    card.appendChild(descriptionBreak);
+
+    /* =========================
+       SUBJECT TABLE (PAGE 2)
+    ========================== */
     const table = document.createElement("table");
     table.style.width = "100%";
     table.style.borderCollapse = "collapse";
     table.style.marginTop = "6px";
-    table.style.fontSize = "12px";
+    table.style.fontSize = "14px";
     table.style.tableLayout = "fixed";
 
     table.innerHTML = `
       <thead>
         <tr>
-          <th style="border:1px solid #000;padding:6px;width:30%;">Learning Area/Subject</th>
-          <th style="border:1px solid #000;padding:6px;width:15%;">Score</th>
-          <th style="border:1px solid #000;padding:6px;width:25%;">Performance Level</th>
-          <th style="border:1px solid #000;padding:6px;width:30%;">Teacher Comment</th>
+          <th style="border:1px solid #000;padding:8px;width:30%;">Learning Area/Subject</th>
+          <th style="border:1px solid #000;padding:8px;width:15%;">Score</th>
+          <th style="border:1px solid #000;padding:8px;width:25%;">Performance Level</th>
+          <th style="border:1px solid #000;padding:8px;width:30%;">Teacher Comment</th>
         </tr>
       </thead>
       <tbody>
@@ -1590,33 +1585,36 @@ clone.querySelectorAll(".a4-page").forEach(page => {
           const avg = Number(d.average_score);
           return `
             <tr>
-              <td style="border:1px solid #000;padding:6px;">${subject}</td>
-              <td style="border:1px solid #000;padding:6px;text-align:center;">${avg.toFixed(2)}</td>
-              <td style="border:1px solid #000;padding:6px;">${d.achievement_level}</td>
-              <td style="border:1px solid #000;padding:6px;">${commentFromScore(avg)}</td>
+              <td style="border:1px solid #000;padding:8px;">${subject}</td>
+              <td style="border:1px solid #000;padding:8px;text-align:center;">${avg.toFixed(2)}</td>
+              <td style="border:1px solid #000;padding:8px;">${d.achievement_level}</td>
+              <td style="border:1px solid #000;padding:8px;">${commentFromScore(avg)}</td>
             </tr>
           `;
         }).join("")}
       </tbody>
     `;
 
-    // ===== GENERAL PERFORMANCE BLOCK =====
+    /* =========================
+       GENERAL PERFORMANCE BLOCK
+    ========================== */
     const generalBlock = document.createElement("div");
     generalBlock.style.marginTop = "10px";
-    generalBlock.style.fontSize = "12px";
+    generalBlock.style.fontSize = "14px";
+    generalBlock.style.lineHeight = "1.8";
 
     generalBlock.innerHTML = `
       <table style="width:100%;border-collapse:collapse;margin-top:6px;">
         <tr>
-          <td style="border:1px solid #000;padding:6px;width:40%;"><strong>Learner's General Performance Level</strong></td>
-          <td style="border:1px solid #000;padding:6px;">${overallAvg.toFixed(2)} — ${overallLevel(overallAvg)}</td>
+          <td style="border:1px solid #000;padding:8px;width:40%;"><strong>Learner's General Performance Level</strong></td>
+          <td style="border:1px solid #000;padding:8px;">${overallAvg.toFixed(2)} — ${overallLevel(overallAvg)}</td>
         </tr>
         <tr>
-          <td style="border:1px solid #000;padding:6px;"><strong>Teacher's General Comment</strong></td>
+          <td style="border:1px solid #000;padding:8px;"><strong>Teacher's General Comment</strong></td>
           <td style="border:1px solid #000;padding:12px;">${generalComment(overallAvg)}</td>
         </tr>
       </table>
-      <div style="margin-top:12px;">
+      <div style="margin-top:20px;">
         <div style="display:flex;justify-content:space-between;margin-top:14px;">
           <div>Closing Date: ____________________</div>
           <div>Opening Date: ____________________</div>
@@ -1628,39 +1626,43 @@ clone.querySelectorAll(".a4-page").forEach(page => {
       </div>
     `;
 
-    const secondPageContainer = document.createElement("div");
-    // FIX: avoid-all mode handles the break better than a forced "always" on a sub-element
-   
+    card.appendChild(table);
+    card.appendChild(generalBlock);
 
-    table.style.fontSize = "16px";
-    table.querySelectorAll("td, th").forEach(cell => { cell.style.padding = "10px 6px"; });
+    /* =========================
+       FOOTER
+    ========================== */
+    const footer = document.createElement("div");
+    footer.style.fontSize = "10px";
+    footer.style.textAlign = "center";
+    footer.style.marginTop = "12px";
+    footer.style.borderTop = "1px solid #ddd";
+    footer.style.paddingTop = "6px";
 
-    generalBlock.style.fontSize = "16px";
-    generalBlock.style.lineHeight = "2";
+    footer.innerText =
+      "Assessment is competency-based and evidence-driven, guided by KICD CBE curriculum designs.";
 
-    secondPageContainer.appendChild(table);
-    secondPageContainer.appendChild(generalBlock);
-
-    card.appendChild(summaryBlock);
-    card.appendChild(secondPageContainer);
     card.appendChild(footer);
   });
 
-
-    
-  // ===== EXPORT PDF =====
+  /* =========================
+     EXPORT PDF
+  ========================== */
   html2pdf().set({
     margin: [10, 10, 10, 10],
     filename,
     image: { type: "jpeg", quality: 0.98 },
     html2canvas: { scale: 2, scrollY: 0, useCORS: true, letterRendering: true },
     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-    // THE FIX: mode 'avoid-all' prevents cutting text and tables across pages
-   pagebreak: { mode: ['css'] }
-
+    pagebreak: { mode: ['css'] }
   }).from(clone).save();
 };
 
+
+
+
+
+  
 window.downloadDetailedPDF = async function () {
   if (!reportDiv.innerHTML.trim()) {
     alert("No report to download");
