@@ -1304,7 +1304,7 @@ requestAnimationFrame(() => {
   splitLearnerIntoPages();
 });
  }); 
-                                                           
+  }                                                         
   /* ===== SUBJECT VIEW ===== */
   if (viewMode.value === "subject") {
     const subjects = [...new Set(records.map(r => r.subject))];
@@ -1343,7 +1343,7 @@ requestAnimationFrame(() => {
 });
 
  }); 
-
+  }
 
 termSelect.addEventListener("change", loadReport);
 viewMode.addEventListener("change", loadReport);
