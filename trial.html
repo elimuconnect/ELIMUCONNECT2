@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Term Report Preview</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 
 
 
@@ -929,11 +929,7 @@ function renderGrouped(grouped, avgMap){
       </div>`;
     }).join("")}
 
-    <!-- CHART -->
-    <div class="split-block trend-box">
-      <canvas id="trend-${admission}"></canvas>
-    </div>
-
+  
   </div>
 </div>`;
   }).join("");
@@ -1237,42 +1233,40 @@ const chartOptions = {
 
 
 
+/* ===== TERM VIEW ===== */
+if (viewMode.value === "term") {
+  const grouped = {};
+  records.forEach(r => {
+    grouped[r.student] ??= { __admission: r.admission };
+    grouped[r.student][r.subject] ??= [];
+    grouped[r.student][r.subject].push(r);
+  });
 
-function renderTrendChart(admission) {
-  const canvas = document.getElementById(`trend-${admission}`);
-  if (!canvas) return;
+  const intelligence = calculateTermIntelligence(
+    records,
+    previousRecords,
+    previousTerm
+  );
 
-  const learnerData = trendMap[admission] || {};
-  const terms = Object.keys(learnerData).sort();
-  const scores = terms.map(t => learnerData[t]);
+  document.getElementById("schoolAnalytics").innerHTML =
+    renderSchoolAnalytics(
+      records,
+      termName,
+      SYSTEM_YEAR,
+      intelligence,
+      schoolName,
+      className
+    );
 
-  /* ✅ DESTROY OLD CHART IF IT EXISTS */
-  if (canvas.chart) {
-    canvas.chart.destroy();
+  reportDiv.innerHTML = renderGrouped(grouped);
+
+  if (!window.__EXPORTING_PDF__) {
+    requestAnimationFrame(() => {
+      splitLearnerIntoPages();
+    });
   }
-
-  /* ✅ CREATE & STORE NEW CHART */
- canvas.chart = new Chart(canvas, {
-  type: "line",
-  data: {
-    labels: terms,
-    datasets: [{
-      label: "Learner Progress",
-      data: scores,
-      tension: 0,
-      stepped: true,              // 🔑 honest CBC progression
-      borderWidth: 2,
-      pointRadius: 4,
-      borderColor: "#2c3e50",
-      backgroundColor: "#2c3e50"
-    }]
-  },
-  plugins: [achievementBandsPlugin], // 🔑 ADD THIS
-options: chartOptions
-
-});
 }
-  
+
   /* ===== TERM VIEW ===== */
   if (viewMode.value === "term") {
   const grouped = {};
@@ -1309,17 +1303,6 @@ reportDiv.innerHTML = renderGrouped(grouped);
   });
 }
 
-
-
-setTimeout(() => {
-  Object.values(grouped).forEach(s => {
-    if (s.__admission) {
-      renderTrendChart(s.__admission);
-    }
-  });
-}, 0);
-
-
   }
 
   /* ===== STUDENT VIEW ===== */
@@ -1351,17 +1334,7 @@ filtered.forEach(r => {
 requestAnimationFrame(() => {
   splitLearnerIntoPages();
 });
-
-setTimeout(() => {
-  Object.values(grouped).forEach(s => {
-    if (s.__admission) {
-      renderTrendChart(s.__admission);
-    }
-  });
-}, 0);
-
-
-      
+   
       });
   }
 
@@ -1400,26 +1373,13 @@ filtered.forEach(r => {
 
 requestAnimationFrame(() => {
   splitLearnerIntoPages();
-});
-
-setTimeout(() => {
-  Object.values(grouped).forEach(s => {
-    if (s.__admission) {
-      renderTrendChart(s.__admission);
-    }
-  });
-}, 0);
-
-      
-      
+});   
     });
   }
 }
 
 termSelect.addEventListener("change", loadReport);
 viewMode.addEventListener("change", loadReport);
-
-
 
 
 function getTrend(currentAvg, previousAvg) {
