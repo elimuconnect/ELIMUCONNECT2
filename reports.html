@@ -1202,6 +1202,42 @@ function getEvidenceStatus(rows) {
 
 
 
+
+
+function createChartDatasets(admission) {
+  const studentData = trendMap[admission];
+  if (!studentData) return { labels: [], datasets: [] };
+
+  // Collect all terms across all subjects
+  const allTermsSet = new Set();
+  Object.values(studentData).forEach(subject => {
+    Object.keys(subject).forEach(term => allTermsSet.add(term));
+  });
+  const terms = Array.from(allTermsSet).sort(); // sort alphabetically or by custom order
+
+  // Create datasets for each subject
+  const datasets = Object.entries(studentData).map(([subject, termScores]) => {
+    const data = terms.map(term => termScores[term] ?? null); // null if no score
+    const color = `hsl(${Math.random() * 360}, 70%, 50%)`; // random color
+
+    return {
+      label: subject,
+      data,
+      tension: 0.2,
+      borderWidth: 2,
+      pointRadius: 4,
+      borderColor: color,
+      backgroundColor: color,
+      stepped: true
+    };
+  });
+
+  return { labels: terms, datasets };
+}
+
+
+
+  
 const achievementBandsPlugin = {
   id: "achievementBands",
   beforeDatasetsDraw(chart) { // <-- draw **before datasets** for background
@@ -1247,25 +1283,27 @@ const chartOptions = {
 
 
 
-  
 function renderTrendChart(admission) {
   const canvas = document.getElementById(`trend-${admission}`);
   if (!canvas) return;
 
+  // Destroy previous chart if it exists
   if (canvas.chart) canvas.chart.destroy();
 
+  // --- Create datasets dynamically (matches createChartDatasets approach) ---
   const studentData = trendMap[admission] || {};
-  const allTerms = new Set();
+  const allTermsSet = new Set();
 
   Object.values(studentData).forEach(sub => {
-    Object.keys(sub).forEach(t => allTerms.add(t));
+    Object.keys(sub).forEach(term => allTermsSet.add(term));
   });
-  const terms = Array.from(allTerms).sort();
+
+  const terms = Array.from(allTermsSet).sort();
 
   const datasets = Object.entries(studentData)
     .filter(([subject, scores]) => Object.values(scores).some(v => v !== null))
     .map(([subject, termScores]) => {
-      const data = terms.map(t => termScores[t] ?? null);
+      const data = terms.map(term => termScores[term] ?? null);
       const color = `hsl(${Math.random() * 360}, 70%, 50%)`;
       return {
         label: subject,
@@ -1279,6 +1317,7 @@ function renderTrendChart(admission) {
       };
     });
 
+  // --- Render the chart ---
   canvas.chart = new Chart(canvas, {
     type: "line",
     data: {
@@ -1306,57 +1345,10 @@ function renderTrendChart(admission) {
   });
 }
 
+
+
+
   
-  
-  /* ===== TERM VIEW ===== */
-  if (viewMode.value === "term") {
-  const grouped = {};
-  records.forEach(r => {
-    grouped[r.student] ??= { __admission: r.admission };
-    grouped[r.student][r.subject] ??= [];
-    grouped[r.student][r.subject].push(r);
-  });
-
-
-const intelligence = calculateTermIntelligence(
-  records,
-  previousRecords,
-  previousTerm
-);
-
-
-document.getElementById("schoolAnalytics").innerHTML =
-  renderSchoolAnalytics(
-    records,
-    termName,
-    SYSTEM_YEAR,
-    intelligence,
-    schoolName,
-    className
-  );
-
-reportDiv.innerHTML = renderGrouped(grouped);
-
-
-    if (!window.__EXPORTING_PDF__) {
-  requestAnimationFrame(() => {
-    splitLearnerIntoPages();
-  });
-}
-
-
-
-setTimeout(() => {
-  Object.values(grouped).forEach(s => {
-    if (s.__admission) {
-      renderTrendChart(s.__admission);
-    }
-  });
-}, 0);
-
-
-  }
-
   /* ===== STUDENT VIEW ===== */
   if (viewMode.value === "student") {
     filterBox.innerHTML = `
