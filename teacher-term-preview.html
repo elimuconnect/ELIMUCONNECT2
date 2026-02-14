@@ -965,7 +965,7 @@ function splitLearnerIntoPages() {
         block.getBoundingClientRect().bottom -
         currentPage.getBoundingClientRect().top;
 
-      if (blockBottom > maxHeight) {
+      if (blockBottom > maxHeight + 20)  {
         // create new page
         const newPage = document.createElement("div");
         newPage.className = "a4-page learner-page";
@@ -1303,10 +1303,13 @@ document.getElementById("schoolAnalytics").innerHTML =
 reportDiv.innerHTML = renderGrouped(grouped);
 
 
-    
-requestAnimationFrame(() => {
-  splitLearnerIntoPages();
-});
+    if (!window.__EXPORTING_PDF__) {
+  requestAnimationFrame(() => {
+    splitLearnerIntoPages();
+  });
+}
+
+
 
 setTimeout(() => {
   Object.values(grouped).forEach(s => {
@@ -1463,12 +1466,6 @@ window.downloadPDF = async function () {
   const first = results?.[0];
  
   const cards = clone.querySelectorAll(".learner-card");
-
-
-// 🔥 CLEAN ANY EXISTING PAGE BREAKS (CRITICAL)
-clone.querySelectorAll(".learner-card").forEach(card => {
-  card.style.pageBreakBefore = "";
-});
 
 
   
