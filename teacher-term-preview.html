@@ -575,54 +575,36 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
 
 
 
-  
-function renderSchoolAnalytics(records, termName, year, intelligence, schoolName, className) {
-
+  function renderSchoolAnalytics(records, termName, year, intelligence, schoolName, className) {
   let classMap = {};
   let subjectMap = {};
   let bandCount = { below: 0, approaching: 0, meeting: 0, exceeding: 0 };
 
-  // ===== PROCESS DATA =====
+  // Process data
   records.forEach(r => {
-
     const score = levelToScore(r.level);
 
-    // CLASS MEAN
     classMap[r.className] ??= [];
     if (score > 0) classMap[r.className].push(score);
 
-    // SUBJECT MEAN
     subjectMap[r.subject] ??= [];
     if (score > 0) subjectMap[r.subject].push(score);
 
-    // BAND DISTRIBUTION
     if (score === 1) bandCount.below++;
     if (score === 2) bandCount.approaching++;
     if (score === 3) bandCount.meeting++;
     if (score === 4) bandCount.exceeding++;
   });
 
-
-  // ===== AT-RISK COUNT =====
-  const atRiskLearners = records.filter(
-    r => r.level === "Below Expectations"
-  ).length;
-
-  // ===== AVERAGE FUNCTION =====
   function avg(arr) {
-    return arr.length
-      ? arr.reduce((a, b) => a + b, 0) / arr.length
-      : 0;
+    return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
   }
 
-  // ===== CLASS SUMMARY =====
   const classSummary = Object.entries(classMap).map(([cls, scores]) => {
-
     const mean = avg(scores);
     const risk = mean < 2.5
       ? `<span style="color:#c0392b;font-weight:bold;">🔴 Needs Intervention</span>`
       : `<span style="color:#1e8449;font-weight:bold;">🟢 Stable</span>`;
-
     return `
       <tr>
         <td>${cls}</td>
@@ -632,15 +614,11 @@ function renderSchoolAnalytics(records, termName, year, intelligence, schoolName
     `;
   }).join("");
 
-  // ===== SUBJECT ALERTS =====
   const subjectAlerts = Object.entries(subjectMap).map(([sub, scores]) => {
-
     const mean = avg(scores);
-
     const alert = mean < 2.3
       ? `<span style="color:#c0392b;font-weight:bold;">⚠ Immediate Review Required</span>`
       : "";
-
     return `
       <tr>
         <td>${sub}</td>
@@ -650,60 +628,39 @@ function renderSchoolAnalytics(records, termName, year, intelligence, schoolName
     `;
   }).join("");
 
-  // ===== RETURN FULL ANALYTICS PAGE =====
+  const atRiskLearners = records.filter(r => r.level === "Below Expectations").length;
+
   return `
-  <div class="a4-page">
+  <!-- SCHOOL PAGE -->
+  <div class="a4-page school-page">
 
-<div class="learner-card">
+    <!-- 1️⃣ Overview Header (Page 1) -->
+    <div class="split-block no-split">
+      <div class="report-overview" style="border-bottom: 2px solid #333; padding-bottom:6px; margin-bottom:10px;">
+        <h3 style="margin:0;">${schoolName}</h3>
+        <div style="font-size:0.9em;color:#555;">
+          <strong>Class:</strong> ${className} &nbsp; | &nbsp;
+          <strong>Term:</strong> ${termName} – ${year}
+        </div>
+      </div>
 
-  <!-- SCHOOL & CLASS HEADER -->
-  <div class="report-overview no-split" style="
-    border-bottom: 2px solid #333;
-    padding-bottom: 6px;
-    margin-bottom: 12px;
-  ">
-    <h3 style="margin:0;">${schoolName}</h3>
-    <div style="font-size:0.9em;color:#555;">
-      <strong>Class:</strong> ${className} &nbsp; | &nbsp;
-      <strong>Term:</strong> ${termName} – ${year}
+      <h3>📊 School Performance Analytics</h3>
+
+      <h4 style="margin-top:10px;">🧠 Term Intelligence Summary</h4>
+      ${intelligence.schoolImprovement !== null ? `
+        <p>📊 School Performance Change: 
+          <strong style="color:${intelligence.schoolImprovement >= 0 ? '#1e8449' : '#c0392b'};">
+            ${intelligence.schoolImprovement.toFixed(2)}%
+          </strong>
+        </p>
+        <p>📈 Improving Learners: <strong>${intelligence.improvingLearners}</strong></p>
+        <p>🏫 Improved Classes: ${intelligence.improvedClasses.length ? intelligence.improvedClasses.join(", ") : "None"}</p>
+        <p>📉 Subjects Requiring Attention: ${intelligence.decliningSubjects.length ? intelligence.decliningSubjects.join(", ") : "None"}</p>
+      ` : `<p>🆕 No previous term data available for comparison.</p>`}
     </div>
-  </div>
 
-  <h3>📊 School Performance Analytics</h3>
-
-    
-<!-- 🧠 TERM INTELLIGENCE -->
-<h4 style="margin-top:20px;">🧠 Term Intelligence Summary</h4>
-${intelligence.schoolImprovement !== null ? `
-<p>
-  📊 School Performance Change: 
-  <strong style="color:${intelligence.schoolImprovement >= 0 ? '#1e8449' : '#c0392b'};">
-    ${intelligence.schoolImprovement.toFixed(2)}%
-  </strong>
-</p>
-
-<p>📈 Improving Learners: <strong>${intelligence.improvingLearners}</strong></p>
-
-<p>🏫 Improved Classes: 
-  ${intelligence.improvedClasses.length
-    ? intelligence.improvedClasses.join(", ")
-    : "None"}
-</p>
-
-<p>📉 Subjects Requiring Attention: 
-  ${intelligence.decliningSubjects.length
-    ? intelligence.decliningSubjects.join(", ")
-    : "None"}
-</p>
-` : `
-<p>🆕 No previous term data available for comparison.</p>
-`}
-
-
-
-
-
-      <!-- 1️⃣ CLASS MEAN -->
+    <!-- 2️⃣ Tables (Page 2) -->
+    <div class="split-block" style="page-break-before: always;">
       <h4>1️⃣ Class Mean Overview</h4>
       <table>
         <thead>
@@ -718,7 +675,6 @@ ${intelligence.schoolImprovement !== null ? `
         </tbody>
       </table>
 
-      <!-- 2️⃣ SUBJECT ANALYSIS -->
       <h4 style="margin-top:20px;">2️⃣ Subject/Learning Area Mean Analysis</h4>
       <table>
         <thead>
@@ -732,8 +688,10 @@ ${intelligence.schoolImprovement !== null ? `
           ${subjectAlerts}
         </tbody>
       </table>
+    </div>
 
-      <!-- 3️⃣ BAND DISTRIBUTION -->
+    <!-- 3️⃣ Band Distribution -->
+    <div class="split-block">
       <h4 style="margin-top:20px;">3️⃣ Performance Band Distribution</h4>
       <p>
         🔴 Below: ${bandCount.below} |
@@ -741,16 +699,16 @@ ${intelligence.schoolImprovement !== null ? `
         🔵 Meeting: ${bandCount.meeting} |
         🟢 Exceeding: ${bandCount.exceeding}
       </p>
+    </div>
 
-      <!-- 4️⃣ RISK SUMMARY -->
+    <!-- 4️⃣ Learner Risk Overview -->
+    <div class="split-block">
       <h4 style="margin-top:20px;">4️⃣ Learner Risk Overview</h4>
-      <p>
-        ${atRiskLearners} learners currently below expectations require structured intervention.
-      </p>
+      <p>${atRiskLearners} learners currently below expectations require structured intervention.</p>
+    </div>
 
-     
-
-      <!-- 5️⃣ STRATEGIC ACTION -->
+    <!-- 5️⃣ Strategic Recommendations -->
+    <div class="split-block">
       <h4 style="margin-top:20px;">5️⃣ Strategic Recommendations</h4>
       <ul>
         <li>Conduct targeted remediation for subjects below 2.3 mean.</li>
@@ -758,8 +716,8 @@ ${intelligence.schoolImprovement !== null ? `
         <li>Introduce peer tutoring for learners below expectations.</li>
         <li>Recognize and reward high-performing classes.</li>
       </ul>
-
     </div>
+
   </div>
   `;
 }
