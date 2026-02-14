@@ -195,6 +195,9 @@ tr:last-child td {
 
 
 
+@media print {
+  .screen-only { display: none; }
+}
 
 
 
@@ -206,7 +209,8 @@ tr:last-child td {
 </head>
 <body>
 
-<h2>Teacher Term Report Preview</h2>
+<h2 class="screen-only">Teacher Term Report Preview</h2>
+
 
 <label>Academic Year</label><br />
 <input value="2026" disabled /><br /><br />
@@ -665,7 +669,8 @@ function renderSchoolAnalytics(records, termName, year, intelligence, schoolName
     padding-bottom: 6px;
     margin-bottom: 12px;
   ">
-    <h3 style="margin:0;">${schoolName}</h3>
+    <h3 style="margin:0; text-align:center;">${schoolName}</h3>
+
     <div style="font-size:0.9em;color:#555;">
       <strong>Class:</strong> ${className} &nbsp; | &nbsp;
       <strong>Term:</strong> ${termName} – ${year}
