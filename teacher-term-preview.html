@@ -267,7 +267,7 @@ const supabase = createClient(
 const SYSTEM_YEAR = "2026";
 let results = [];
 
-let trendMap = {};
+
 let avgMap = {}; // make it global so downloadPDF can access it
  
 let previousRecords = [];
@@ -347,14 +347,6 @@ const { data: termAverages } = await supabase
     .eq("term", termName)
   
 
-trendMap = {};
-
-termAverages?.forEach(r => {
-  if (!trendMap[r.admission_number]) {
-    trendMap[r.admission_number] = {};
-  }
-  trendMap[r.admission_number][r.term] = Number(r.average_score);
-});
 
 
 const previousTerm = terms
