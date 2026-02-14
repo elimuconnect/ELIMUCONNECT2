@@ -1201,9 +1201,10 @@ function getEvidenceStatus(rows) {
 }
 
 
+
 const achievementBandsPlugin = {
   id: "achievementBands",
-  beforeDraw(chart) {
+  beforeDatasetsDraw(chart) { // <-- draw **before datasets** for background
     const { ctx, chartArea, scales } = chart;
     if (!chartArea) return;
 
@@ -1212,7 +1213,7 @@ const achievementBandsPlugin = {
       { from: 1, to: 2, color: "rgba(248,215,218,0.35)" }, // Below
       { from: 2, to: 3, color: "rgba(255,243,205,0.35)" }, // Approaching
       { from: 3, to: 4, color: "rgba(212,237,218,0.35)" }, // Meeting
-      { from: 4, to: 4.999, color: "rgba(204,229,255,0.35)" }  // Exceeding (slightly below max)
+      { from: 4, to: 4.999, color: "rgba(204,229,255,0.35)" }  // Exceeding
     ];
 
     ctx.save();
@@ -1229,14 +1230,16 @@ const achievementBandsPlugin = {
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
-  plugins: { legend: { display: false } },
+  plugins: {
+    legend: { display: true, position: "bottom" }
+  },
   scales: {
     y: {
       min: 1,
-      max: 4, // match the Exceeding band
+      max: 4,
       ticks: {
         stepSize: 1,
-        callback: v => ["", "Below", "Approaching", "Meeting", "Exceeding"][v]
+        callback: v => ["", "Below", "Approaching", "Meeting", "Exceeding"][Math.round(v)]
       }
     }
   }
@@ -1244,7 +1247,7 @@ const chartOptions = {
 
 
 
-
+  
 function renderTrendChart(admission) {
   const canvas = document.getElementById(`trend-${admission}`);
   if (!canvas) return;
@@ -1254,40 +1257,54 @@ function renderTrendChart(admission) {
   const studentData = trendMap[admission] || {};
   const allTerms = new Set();
 
-  // Collect all terms across subjects
   Object.values(studentData).forEach(sub => {
     Object.keys(sub).forEach(t => allTerms.add(t));
   });
   const terms = Array.from(allTerms).sort();
 
-  const datasets = Object.entries(studentData).map(([subject, termScores]) => {
-    const data = terms.map(t => termScores[t] ?? null); // null if no score
-    const color = `hsl(${Math.random() * 360}, 70%, 50%)`;
-
-    return {
-      label: subject,
-      data,
-      tension: 0,
-      stepped: true,
-      borderWidth: 2,
-      pointRadius: 4,
-      borderColor: color,
-      backgroundColor: color
-    };
-  });
+  const datasets = Object.entries(studentData)
+    .filter(([subject, scores]) => Object.values(scores).some(v => v !== null))
+    .map(([subject, termScores]) => {
+      const data = terms.map(t => termScores[t] ?? null);
+      const color = `hsl(${Math.random() * 360}, 70%, 50%)`;
+      return {
+        label: subject,
+        data,
+        fill: false,
+        tension: 0.3,
+        borderWidth: 2,
+        pointRadius: 4,
+        borderColor: color,
+        backgroundColor: color
+      };
+    });
 
   canvas.chart = new Chart(canvas, {
     type: "line",
-    data: { labels: terms, datasets },
+    data: {
+      labels: terms,
+      datasets
+    },
     plugins: [achievementBandsPlugin],
     options: {
-      ...chartOptions,
-      plugins: { legend: { display: true, position: 'bottom' } }
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, position: "bottom" }
+      },
+      scales: {
+        y: {
+          min: 1,
+          max: 4,
+          ticks: {
+            stepSize: 1,
+            callback: v => ["", "Below", "Approaching", "Meeting", "Exceeding"][Math.round(v)]
+          }
+        }
+      }
     }
   });
 }
-
-
 
   
   
