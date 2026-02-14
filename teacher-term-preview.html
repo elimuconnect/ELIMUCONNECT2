@@ -48,10 +48,6 @@ h5 {
   /* Remove min-height and page-break-after from here */
 }
 
-.learner-page {
-  page-break-after: always; /* Forces each student to start a NEW page */
- 
-}
 
 .subject-block {
   margin-top: 14px;
@@ -199,18 +195,7 @@ tr:last-child td {
 
 
 
-.pdf-page {
-  width: 190mm;
-  min-height: 277mm;
-  padding: 15mm;
-  box-sizing: border-box;
-  page-break-after: always;
-  background: white;
-}
 
-.no-break {
-  page-break-inside: avoid;
-}
 
 
   
@@ -1484,9 +1469,19 @@ window.downloadPDF = async function () {
       </div>
     `;
 
-    clone.prepend(header);
-  }
+clone.prepend(header);
+}
 
+/* ===========================
+   PAGE 2 — FORCED BLANK PAGE
+=========================== */
+const blankPage = document.createElement("div");
+blankPage.style.pageBreakBefore = "always";
+blankPage.innerHTML = `<div style="height:250mm;"></div>`;
+clone.appendChild(blankPage);
+
+
+    
   const cards = clone.querySelectorAll(".learner-card");
 
   cards.forEach((card, index) => {
@@ -1554,13 +1549,7 @@ window.downloadPDF = async function () {
       return "Put more effort";
     }
 
-    /* =========================
-       DESCRIPTION PAGE BREAK
-    ========================== */
-    const descriptionBreak = document.createElement("div");
-    descriptionBreak.style.pageBreakAfter = "always";
-    card.appendChild(descriptionBreak);
-
+   
     /* =========================
        SUBJECT TABLE (PAGE 2)
     ========================== */
@@ -1626,25 +1615,35 @@ window.downloadPDF = async function () {
       </div>
     `;
 
-    card.appendChild(table);
-    card.appendChild(generalBlock);
+
 
     /* =========================
-       FOOTER
-    ========================== */
-    const footer = document.createElement("div");
-    footer.style.fontSize = "10px";
-    footer.style.textAlign = "center";
-    footer.style.marginTop = "12px";
-    footer.style.borderTop = "1px solid #ddd";
-    footer.style.paddingTop = "6px";
+   FOOTER (CREATE FIRST)
+========================= */
+const footer = document.createElement("div");
+footer.style.fontSize = "10px";
+footer.style.textAlign = "center";
+footer.style.marginTop = "12px";
+footer.style.borderTop = "1px solid #ddd";
+footer.style.paddingTop = "6px";
 
-    footer.innerText =
-      "Assessment is competency-based and evidence-driven, guided by KICD CBE curriculum designs.";
+footer.innerText =
+  "Assessment is competency-based and evidence-driven, guided by KICD CBE curriculum designs.";
 
-    card.appendChild(footer);
-  });
 
+/* =========================
+   TABLE BLOCK (NEW PAGE)
+========================= */
+const tableWrapper = document.createElement("div");
+tableWrapper.style.pageBreakBefore = "always";
+
+tableWrapper.appendChild(table);
+tableWrapper.appendChild(generalBlock);
+tableWrapper.appendChild(footer);
+
+card.appendChild(tableWrapper);
+});
+  
   /* =========================
      EXPORT PDF
   ========================== */
