@@ -50,7 +50,7 @@ h5 {
 
 .learner-page {
   page-break-after: always; /* Forces each student to start a NEW page */
-  page-break-inside: avoid; /* Tries to keep the student card together */
+ 
 }
 
 .subject-block {
@@ -1475,8 +1475,7 @@ function getTrend(currentAvg, previousAvg) {
     card.style.padding = "0";
     card.style.boxSizing = "border-box";
     card.style.pageBreakAfter = "always"; 
-    card.style.pageBreakInside = "avoid";
-
+   
     const footer = document.createElement("div");
     footer.style.fontSize = "10px";
     footer.style.color = "#555";
@@ -1625,8 +1624,7 @@ function getTrend(currentAvg, previousAvg) {
 
     const secondPageContainer = document.createElement("div");
     // FIX: avoid-all mode handles the break better than a forced "always" on a sub-element
-    secondPageContainer.style.pageBreakBefore = "auto"; 
-    secondPageContainer.style.pageBreakInside = "avoid";
+   
 
     table.style.fontSize = "16px";
     table.querySelectorAll("td, th").forEach(cell => { cell.style.padding = "10px 6px"; });
@@ -1642,6 +1640,13 @@ function getTrend(currentAvg, previousAvg) {
     card.appendChild(footer);
   });
 
+
+clone.querySelectorAll(".a4-page").forEach(p => {
+  p.style.height = "auto";
+});
+
+
+    
   // ===== EXPORT PDF =====
   html2pdf().set({
     margin: [10, 10, 10, 10],
@@ -1650,7 +1655,8 @@ function getTrend(currentAvg, previousAvg) {
     html2canvas: { scale: 2, scrollY: 0, useCORS: true, letterRendering: true },
     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
     // THE FIX: mode 'avoid-all' prevents cutting text and tables across pages
-    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+   pagebreak: { mode: ['css'] }
+
   }).from(clone).save();
 };
 
