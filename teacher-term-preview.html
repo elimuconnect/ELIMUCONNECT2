@@ -1267,77 +1267,119 @@ if (viewMode.value === "term") {
   }
 }
 
-/* ===== STUDENT VIEW ===== */
-if (viewMode.value === "student") {
-  filterBox.innerHTML = `
-    <label>Admission Number</label><br />
-    <input id="admInput" />
-  `;
+  /* ===== TERM VIEW ===== */
+  if (viewMode.value === "term") {
+  const grouped = {};
+  records.forEach(r => {
+    grouped[r.student] ??= { __admission: r.admission };
+    grouped[r.student][r.subject] ??= [];
+    grouped[r.student][r.subject].push(r);
+  });
 
-  document.getElementById("admInput").addEventListener("input", e => {
-    const adm = e.target.value.trim();
-    const filtered = records.filter(r => r.admission === adm);
 
-    if (!filtered.length) {
-      reportDiv.innerHTML = "<p>No student found</p>";
-      return;
-    }
+const intelligence = calculateTermIntelligence(
+  records,
+  previousRecords,
+  previousTerm
+);
 
-    const grouped = {};
-    filtered.forEach(r => {
-      grouped[r.student] ??= { __admission: r.admission };
-      grouped[r.student][r.subject] ??= [];
-      grouped[r.student][r.subject].push(r);
-    });
 
-    reportDiv.innerHTML = renderGrouped(grouped);
+document.getElementById("schoolAnalytics").innerHTML =
+  renderSchoolAnalytics(
+    records,
+    termName,
+    SYSTEM_YEAR,
+    intelligence,
+    schoolName,
+    className
+  );
 
-    requestAnimationFrame(() => {
-      splitLearnerIntoPages();
-    });
+reportDiv.innerHTML = renderGrouped(grouped);
+
+
+    if (!window.__EXPORTING_PDF__) {
+  requestAnimationFrame(() => {
+    splitLearnerIntoPages();
   });
 }
 
-/* ===== SUBJECT VIEW ===== */
-if (viewMode.value === "subject") {
-  const subjects = [...new Set(records.map(r => r.subject))];
+  }
 
-  filterBox.innerHTML = `
-    <label>Subject</label><br />
-    <select id="subjectSelect">
-      <option value="">Select subject</option>
-      ${subjects.map(s => `<option>${s}</option>`).join("")}
-    </select>
-  `;
-
-  document.getElementById("subjectSelect").addEventListener("change", e => {
-    const subject = e.target.value;
-    if (!subject) return;
-
-    const filtered = records.filter(r => r.subject === subject);
-
-    const grouped = {};
-    filtered.forEach(r => {
-      grouped[r.student] ??= { __admission: r.admission };
-      grouped[r.student][r.subject] ??= [];
-      grouped[r.student][r.subject].push(r);
-    });
-
-    reportDiv.innerHTML = `
-      <h3>${subject} – All Students</h3>
-      ${renderGrouped(grouped)}
+  /* ===== STUDENT VIEW ===== */
+  if (viewMode.value === "student") {
+    filterBox.innerHTML = `
+      <label>Admission Number</label><br />
+      <input id="admInput" />
     `;
 
-    requestAnimationFrame(() => {
-      splitLearnerIntoPages();
+    document.getElementById("admInput").addEventListener("input", e => {
+      const adm = e.target.value.trim();
+      const filtered = records.filter(r => r.admission === adm);
+
+      if (!filtered.length) {
+        reportDiv.innerHTML = "<p>No student found</p>";
+        return;
+      }
+
+      const grouped = {};
+filtered.forEach(r => {
+  grouped[r.student] ??= { __admission: r.admission };
+  grouped[r.student][r.subject] ??= [];
+  grouped[r.student][r.subject].push(r);
+});
+
+
+      reportDiv.innerHTML = renderGrouped(grouped);
+    
+requestAnimationFrame(() => {
+  splitLearnerIntoPages();
+});
+   
+      });
+  }
+
+  /* ===== SUBJECT VIEW ===== */
+  if (viewMode.value === "subject") {
+    const subjects = [...new Set(records.map(r => r.subject))];
+
+    filterBox.innerHTML = `
+      <label>Subject</label><br />
+      <select id="subjectSelect">
+        <option value="">Select subject</option>
+        ${subjects.map(s => `<option>${s}</option>`).join("")}
+      </select>
+    `;
+
+    document.getElementById("subjectSelect").addEventListener("change", e => {
+      const subject = e.target.value;
+      if (!subject) return;
+
+      const filtered = records.filter(r => r.subject === subject);
+
+const grouped = {};
+
+filtered.forEach(r => {
+  grouped[r.student] ??= { __admission: r.admission };
+  grouped[r.student][r.subject] ??= [];
+  grouped[r.student][r.subject].push(r);
+});
+
+
+      
+      reportDiv.innerHTML = `
+        <h3>${subject} – All Students</h3>
+        ${renderGrouped(grouped)}
+      `;
+
+requestAnimationFrame(() => {
+  splitLearnerIntoPages();
+});   
     });
-  });
+  }
 }
 
 termSelect.addEventListener("change", loadReport);
 viewMode.addEventListener("change", loadReport);
-}
-
 
 
 function getTrend(currentAvg, previousAvg) {
