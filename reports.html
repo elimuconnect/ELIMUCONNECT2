@@ -328,10 +328,9 @@ async function loadReport() {
   const termName = terms.find(t => t.id === term_id)?.name;
 
 
-/* ===== LEARNER TERM AVERAGES FOR GRAPHS ===== */
 const { data: termAverages } = await supabase
-  .from("learner_term_averages") // ✅ the view you already created
-  .select("admission_number, term, average_score")
+  .from("learner_term_averages")
+  .select("admission_number, term, subject_name, average_score")
   .eq("academic_year", SYSTEM_YEAR);
 
 
@@ -346,16 +345,24 @@ const { data: termAverages } = await supabase
     .eq("term", termName)
   
 
+
 trendMap = {};
 
+// Collect all term scores per subject
 termAverages?.forEach(r => {
-  if (!trendMap[r.admission_number]) {
-    trendMap[r.admission_number] = {};
-  }
-  trendMap[r.admission_number][r.term] = Number(r.average_score);
+  const adm = r.admission_number;
+  const term = r.term;
+  const subject = r.subject_name; // ensure your view has 'subject_name'
+  const score = Number(r.average_score);
+
+  if (!trendMap[adm]) trendMap[adm] = {};
+  if (!trendMap[adm][subject]) trendMap[adm][subject] = {};
+  trendMap[adm][subject][term] = score;
 });
 
 
+
+  
 const previousTerm = terms
   .map(t => t.name)
   .sort()
@@ -1242,36 +1249,47 @@ function renderTrendChart(admission) {
   const canvas = document.getElementById(`trend-${admission}`);
   if (!canvas) return;
 
-  const learnerData = trendMap[admission] || {};
-  const terms = Object.keys(learnerData).sort();
-  const scores = terms.map(t => learnerData[t]);
+  if (canvas.chart) canvas.chart.destroy();
 
-  /* ✅ DESTROY OLD CHART IF IT EXISTS */
-  if (canvas.chart) {
-    canvas.chart.destroy();
-  }
+  const studentData = trendMap[admission] || {};
+  const allTerms = new Set();
 
-  /* ✅ CREATE & STORE NEW CHART */
- canvas.chart = new Chart(canvas, {
-  type: "line",
-  data: {
-    labels: terms,
-    datasets: [{
-      label: "Learner Progress",
-      data: scores,
+  // Collect all terms across subjects
+  Object.values(studentData).forEach(sub => {
+    Object.keys(sub).forEach(t => allTerms.add(t));
+  });
+  const terms = Array.from(allTerms).sort();
+
+  const datasets = Object.entries(studentData).map(([subject, termScores]) => {
+    const data = terms.map(t => termScores[t] ?? null); // null if no score
+    const color = `hsl(${Math.random() * 360}, 70%, 50%)`;
+
+    return {
+      label: subject,
+      data,
       tension: 0,
-      stepped: true,              // 🔑 honest CBC progression
+      stepped: true,
       borderWidth: 2,
       pointRadius: 4,
-      borderColor: "#2c3e50",
-      backgroundColor: "#2c3e50"
-    }]
-  },
-  plugins: [achievementBandsPlugin], // 🔑 ADD THIS
-options: chartOptions
+      borderColor: color,
+      backgroundColor: color
+    };
+  });
 
-});
+  canvas.chart = new Chart(canvas, {
+    type: "line",
+    data: { labels: terms, datasets },
+    plugins: [achievementBandsPlugin],
+    options: {
+      ...chartOptions,
+      plugins: { legend: { display: true, position: 'bottom' } }
+    }
+  });
 }
+
+
+
+  
   
   /* ===== TERM VIEW ===== */
   if (viewMode.value === "term") {
