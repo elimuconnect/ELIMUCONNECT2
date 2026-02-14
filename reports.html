@@ -1464,14 +1464,21 @@ window.downloadPDF = async function () {
  
   const cards = clone.querySelectorAll(".learner-card");
 
-  cards.forEach((card, index) => {
 
-    /* =========================
-       FORCE EACH LEARNER NEW PAGE
-    ========================== */
-    if (index !== 0) {
-      card.style.pageBreakBefore = "always";
-    }
+// 🔥 CLEAN ANY EXISTING PAGE BREAKS (CRITICAL)
+clone.querySelectorAll(".learner-card").forEach(card => {
+  card.style.pageBreakBefore = "";
+});
+
+
+  
+
+  cards.forEach((card, index) => {
+  if (index !== 0) {
+    card.style.pageBreakBefore = "always";
+  }
+});
+
 
     card.style.margin = "0";
     card.style.padding = "0";
