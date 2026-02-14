@@ -1480,7 +1480,7 @@ clone.querySelectorAll(".a4-page").forEach(page => {
     card.style.margin = "0";
     card.style.padding = "0";
     card.style.boxSizing = "border-box";
-    card.style.pageBreakAfter = "always"; 
+   
    
     const footer = document.createElement("div");
     footer.style.fontSize = "10px";
@@ -1670,7 +1670,17 @@ window.downloadDetailedPDF = async function () {
   const term = termSelect.options[termSelect.selectedIndex]?.text || "Term";
   const filename = `Detailed_Report_${term}_${SYSTEM_YEAR}.pdf`;
 
-  const clone = reportDiv.cloneNode(true);
+const original = reportDiv;
+const clone = original.cloneNode(true);
+
+clone.querySelectorAll(".a4-page").forEach(page => {
+  const parent = page.parentNode;
+  while (page.firstChild) {
+    parent.insertBefore(page.firstChild, page);
+  }
+  parent.removeChild(page);
+});
+
 
   // Force A4 layout
   clone.style.width = "190mm";
