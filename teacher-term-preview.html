@@ -1423,7 +1423,18 @@ function getTrend(currentAvg, previousAvg) {
   const term = termSelect.options[termSelect.selectedIndex]?.text || "Term";
   const filename = `Summary_Report_${term}_${SYSTEM_YEAR}.pdf`;
 
-  const clone = reportDiv.cloneNode(true);
+const original = reportDiv;  // your main container
+const clone = original.cloneNode(true);
+
+// Remove screen pagination wrappers (.a4-page)
+clone.querySelectorAll(".a4-page").forEach(page => {
+  const parent = page.parentNode;
+  while (page.firstChild) {
+    parent.insertBefore(page.firstChild, page);
+  }
+  parent.removeChild(page);
+});
+
 
   // ===== A4 Layout =====
   clone.style.width = "190mm";
@@ -1634,11 +1645,6 @@ function getTrend(currentAvg, previousAvg) {
     card.appendChild(secondPageContainer);
     card.appendChild(footer);
   });
-
-
-clone.querySelectorAll(".a4-page").forEach(p => {
-  p.style.height = "auto";
-});
 
 
     
