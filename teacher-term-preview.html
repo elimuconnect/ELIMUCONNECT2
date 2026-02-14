@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Term Report Preview</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 
 
 
@@ -266,139 +266,7 @@ const supabase = createClient(
 const SYSTEM_YEAR = "2026";
 let results = [];
 
-let trendMap = {};
-let avgMap = {}; // make it global so downloadPDF can access it
- 
-let previousRecords = [];
-let previousAverages = {};
-
-function levelToScore(level) {
-  switch (level) {
-    case "Below Expectations": return 1;
-    case "Approaching Expectations": return 2;
-    case "Meeting Expectations": return 3;
-    case "Exceeding Expectations": return 4;
-    default: return 0;
-  }
-}
-
-  
-
-const levelColor = {
-  "Below Expectations": "#f8d7da",
-  "Approaching Expectations": "#fff3cd",
-  "Meeting Expectations": "#d4edda",
-  "Exceeding Expectations": "#cce5ff"
-};
-
-
-  
-const termSelect = document.getElementById("termSelect");
-const viewMode = document.getElementById("viewMode");
-const filterBox = document.getElementById("filterBox");
-const reportDiv = document.getElementById("report");
-const status = document.getElementById("status");
-
-/* ========== AUTH ========== */
-const { data: { user } } = await supabase.auth.getUser();
-if (!user) location.href = "index.html";
-
-/* ========== LOAD TERMS ========== */
-const { data: terms } = await supabase
-  .from("terms")
-  .select("id, name")
-  .order("name");
-
-termSelect.innerHTML =
-  `<option value="">Select term</option>` +
-  terms.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
-
-
-
- 
-/* ========== MAIN LOAD ========== */
-async function loadReport() {
-  reportDiv.innerHTML = "";
-  filterBox.innerHTML = "";
-  status.innerText = "";
-
-  const term_id = termSelect.value;
-  if (!term_id) return;
-
-  const termName = terms.find(t => t.id === term_id)?.name;
-
-
-/* ===== LEARNER TERM AVERAGES FOR GRAPHS ===== */
-const { data: termAverages } = await supabase
-  .from("learner_term_averages") // ✅ the view you already created
-  .select("admission_number, term, average_score")
-  .eq("academic_year", SYSTEM_YEAR);
-
-
-
-
-
-  
-  /* ===== AVERAGES ===== */
-  const { data: averages } = await supabase
-    .from("term_subject_report_view")
-    .select("first_name,last_name,subject_name,average_score,achievement_level")
-    .eq("term", termName)
-  
-
-trendMap = {};
-
-termAverages?.forEach(r => {
-  if (!trendMap[r.admission_number]) {
-    trendMap[r.admission_number] = {};
-  }
-  trendMap[r.admission_number][r.term] = Number(r.average_score);
-});
-
-
-const previousTerm = terms
-  .map(t => t.name)
-  .sort()
-  .filter(t => t < termName)
-  .slice(-1)[0];
-
-
- 
-
-if (previousTerm) {
-
-  const { data } = await supabase
-    .from("assessment_results_view")
-    .select("*")
-    .eq("term", previousTerm)
-    .eq("academic_year", SYSTEM_YEAR);
-
-  previousRecords = data || [];
-
-  previousRecords.forEach(r => {
-    const adm = r.admission_number;
-    const score = levelToScore(r.achievement_level);
-
-    if (!previousAverages[adm]) {
-      previousAverages[adm] = { total: 0, count: 0 };
-    }
-
-    previousAverages[adm].total += score;
-    previousAverages[adm].count++;
-  });
-}
-
-
-
-avgMap = {}; // populate it as before
-averages.forEach(a => {
-  const student = `${a.first_name} ${a.last_name}`;
-  const subj = a.subject_name.trim();
-  avgMap[student] ??= {};
-  avgMap[student][subj] = a;
-});
-
-  
+bv 
 
   /* ===== RAW RESULTS ===== */
 
@@ -929,11 +797,6 @@ function renderGrouped(grouped, avgMap){
       </div>`;
     }).join("")}
 
-    <!-- CHART -->
-    <div class="split-block trend-box">
-      <canvas id="trend-${admission}"></canvas>
-    </div>
-
   </div>
 </div>`;
   }).join("");
@@ -1238,41 +1101,6 @@ const chartOptions = {
 
 
 
-function renderTrendChart(admission) {
-  const canvas = document.getElementById(`trend-${admission}`);
-  if (!canvas) return;
-
-  const learnerData = trendMap[admission] || {};
-  const terms = Object.keys(learnerData).sort();
-  const scores = terms.map(t => learnerData[t]);
-
-  /* ✅ DESTROY OLD CHART IF IT EXISTS */
-  if (canvas.chart) {
-    canvas.chart.destroy();
-  }
-
-  /* ✅ CREATE & STORE NEW CHART */
- canvas.chart = new Chart(canvas, {
-  type: "line",
-  data: {
-    labels: terms,
-    datasets: [{
-      label: "Learner Progress",
-      data: scores,
-      tension: 0,
-      stepped: true,              // 🔑 honest CBC progression
-      borderWidth: 2,
-      pointRadius: 4,
-      borderColor: "#2c3e50",
-      backgroundColor: "#2c3e50"
-    }]
-  },
-  plugins: [achievementBandsPlugin], // 🔑 ADD THIS
-options: chartOptions
-
-});
-}
-  
   /* ===== TERM VIEW ===== */
   if (viewMode.value === "term") {
   const grouped = {};
@@ -1308,19 +1136,7 @@ reportDiv.innerHTML = renderGrouped(grouped);
     splitLearnerIntoPages();
   });
 }
-
-
-
-setTimeout(() => {
-  Object.values(grouped).forEach(s => {
-    if (s.__admission) {
-      renderTrendChart(s.__admission);
-    }
-  });
-}, 0);
-
-
-  }
+ 
 
   /* ===== STUDENT VIEW ===== */
   if (viewMode.value === "student") {
@@ -1352,17 +1168,7 @@ requestAnimationFrame(() => {
   splitLearnerIntoPages();
 });
 
-setTimeout(() => {
-  Object.values(grouped).forEach(s => {
-    if (s.__admission) {
-      renderTrendChart(s.__admission);
-    }
-  });
-}, 0);
 
-
-      
-      });
   }
 
   /* ===== SUBJECT VIEW ===== */
@@ -1402,17 +1208,6 @@ requestAnimationFrame(() => {
   splitLearnerIntoPages();
 });
 
-setTimeout(() => {
-  Object.values(grouped).forEach(s => {
-    if (s.__admission) {
-      renderTrendChart(s.__admission);
-    }
-  });
-}, 0);
-
-      
-      
-    });
   }
 }
 
