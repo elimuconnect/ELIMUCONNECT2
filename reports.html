@@ -7,7 +7,6 @@
 
 
 
-
 <style>
 /* ================== BASE ================== */
 body {
@@ -15,21 +14,22 @@ body {
   background: #f7f9fb;
   color: #222;
   line-height: 1.5;
+  margin: 0;
+  padding: 0;
 }
 
-
 * {
+  box-sizing: border-box;
   max-width: 100%;
 }
 
-
-  
 h2, h3 {
   margin-bottom: 6px;
 }
 
 h4 {
   margin: 0;
+  font-size: 1.2em;
 }
 
 h5 {
@@ -38,24 +38,22 @@ h5 {
 }
 
 /* ================== LAYOUT ================== */
-/* Update these specific sections in your <style> tag */
-
 .a4-page {
-  width: 100%;
-  max-width: 600px; /* phone-friendly width */
-  margin: 0 auto;
-  background: white;
+  width: 95%;
+  max-width: 800px; /* desktop-friendly width */
+  margin: 10px auto;
+  background: #fff;
+  padding: 12px;
   box-sizing: border-box;
-  padding: 12px; /* some breathing space */
+  border-radius: 6px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.08);
 }
-
-
 
 .subject-block {
   margin-top: 14px;
   padding-top: 10px;
   border-top: 1px dashed #ccc;
-  page-break-inside: avoid; /* CRITICAL: Prevents a subject table from splitting in half */
+  page-break-inside: avoid;
 }
 
 /* Ensure images/charts don't get cut */
@@ -65,6 +63,7 @@ canvas, .trend-box {
 
 .learner-header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid #eee;
@@ -77,21 +76,18 @@ canvas, .trend-box {
   color: #555;
 }
 
-
 /* ===== HEADER TYPOGRAPHY ===== */
 .learner-header h4 {
-  font-size: 22px;
+  font-size: 1.25em;
   font-weight: 800;
   margin: 0;
 }
 
 .learner-header small {
-  font-size: 14px;
+  font-size: 0.85em;
   font-weight: 600;
 }
 
-
-  
 .summary-box {
   background: #f3f6fa;
   border-left: 5px solid #3498db;
@@ -117,23 +113,21 @@ canvas, .trend-box {
 }
 
 /* ================== TABLES ================== */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-  table-layout: auto;
-  word-break: break-word;
-}
-
 .table-wrapper {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   margin-bottom: 12px;
 }
 
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  table-layout: auto;
+  word-break: break-word;
+  page-break-inside: avoid;
+}
 
-
-  
 th, td {
   padding: 5px 6px;
   border-bottom: 1px solid #ddd;
@@ -141,26 +135,19 @@ th, td {
 
 th {
   background: #f0f0f0;
+  font-size: 14px;
+  font-weight: 700;
   text-align: left;
 }
 
-th {
-  font-size: 14px;
-  font-weight: 700;
-}
-
-  
 tr:last-child td {
   border-bottom: none;
 }
-
 
 .evidence-note {
   font-size: 0.85em;
   margin-bottom: 6px;
 }
-
-
 
 /* ================== CHART ================== */
 .trend-box {
@@ -173,50 +160,76 @@ tr:last-child td {
   height: 100% !important;
 }
 
-
-
-
-
-.report-overview h3 {
-  font-size: 1.1em;
-  line-height: 1.2em;
+.report-overview {
+  text-align: center;
 }
 
-
-
 .report-overview h3 {
-  font-size: 24px;
+  font-size: 1.25em;
   font-weight: 800;
   letter-spacing: 0.3px;
 }
 
- @media print {
+/* Prevent cut-off containers */
+.learner-card {
+  overflow: visible !important;
+  height: auto !important;
+}
+
+/* ===== PRINT MEDIA ===== */
+@media print {
   table { page-break-inside:auto }
   tr    { page-break-inside:avoid; page-break-after:auto }
   thead { display:table-header-group }
   tfoot { display:table-footer-group }
 }
 
-/* Prevents the 'cut-off' look on containers */
-.learner-card {
-  overflow: visible !important;
-  height: auto !important;
+/* ===== RESPONSIVE ADJUSTMENTS ===== */
+@media (max-width: 768px) {
+  .a4-page {
+    padding: 8px;
+    margin: 8px auto;
+  }
+
+  .learner-header h4 {
+    font-size: 1em;
+  }
+
+  table, th, td {
+    font-size: 13px;
+  }
+
+  .trend-box {
+    height: 150px;
+  }
 }
 
+@media (max-width: 480px) {
+  .a4-page {
+    width: 98%;
+    padding: 6px;
+    margin: 6px auto;
+  }
 
+  .learner-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 
-.report-overview {
-  text-align: center;
+  .learner-header h4 {
+    font-size: 0.95em;
+  }
+
+  table, th, td {
+    font-size: 12px;
+  }
+
+  .trend-box {
+    height: 120px;
+  }
 }
-
-table {
-  page-break-inside: avoid;
-}
-
-  
 </style>
 
-  
 
 </head>
 <body>
@@ -245,12 +258,12 @@ table {
   <button onclick="downloadPDF()">
     ⬇️ Download Summary Report<br>
     <small>Recommended for parents & learners</small>
-  </button><br>
+  </button><br><br>
 
   <button onclick="downloadDetailedPDF()">
     ⬇️ Download Detailed Assessment Report<br>
     <small>For teachers & internal review</small>
-  </button><br>
+  </button><br><br>
 
 
   <button onclick="downloadSchoolAnalyticsPDF()">
