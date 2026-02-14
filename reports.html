@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Term Report Preview</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 
 
 
@@ -328,9 +328,10 @@ async function loadReport() {
   const termName = terms.find(t => t.id === term_id)?.name;
 
 
+/* ===== LEARNER TERM AVERAGES FOR GRAPHS ===== */
 const { data: termAverages } = await supabase
-  .from("learner_term_averages")
-  .select("admission_number, term, subject_name, average_score")
+  .from("learner_term_averages") // ✅ the view you already created
+  .select("admission_number, term, average_score")
   .eq("academic_year", SYSTEM_YEAR);
 
 
@@ -345,24 +346,16 @@ const { data: termAverages } = await supabase
     .eq("term", termName)
   
 
-
 trendMap = {};
 
-// Collect all term scores per subject
 termAverages?.forEach(r => {
-  const adm = r.admission_number;
-  const term = r.term;
-  const subject = r.subject_name; // ensure your view has 'subject_name'
-  const score = Number(r.average_score);
-
-  if (!trendMap[adm]) trendMap[adm] = {};
-  if (!trendMap[adm][subject]) trendMap[adm][subject] = {};
-  trendMap[adm][subject][term] = score;
+  if (!trendMap[r.admission_number]) {
+    trendMap[r.admission_number] = {};
+  }
+  trendMap[r.admission_number][r.term] = Number(r.average_score);
 });
 
 
-
-  
 const previousTerm = terms
   .map(t => t.name)
   .sort()
@@ -936,11 +929,7 @@ function renderGrouped(grouped, avgMap){
       </div>`;
     }).join("")}
 
-    <!-- CHART -->
-    <div class="split-block trend-box">
-      <canvas id="trend-${admission}"></canvas>
-    </div>
-
+  
   </div>
 </div>`;
   }).join("");
@@ -1201,46 +1190,9 @@ function getEvidenceStatus(rows) {
 }
 
 
-
-
-
-function createChartDatasets(admission) {
-  const studentData = trendMap[admission];
-  if (!studentData) return { labels: [], datasets: [] };
-
-  // Collect all terms across all subjects
-  const allTermsSet = new Set();
-  Object.values(studentData).forEach(subject => {
-    Object.keys(subject).forEach(term => allTermsSet.add(term));
-  });
-  const terms = Array.from(allTermsSet).sort(); // sort alphabetically or by custom order
-
-  // Create datasets for each subject
-  const datasets = Object.entries(studentData).map(([subject, termScores]) => {
-    const data = terms.map(term => termScores[term] ?? null); // null if no score
-    const color = `hsl(${Math.random() * 360}, 70%, 50%)`; // random color
-
-    return {
-      label: subject,
-      data,
-      tension: 0.2,
-      borderWidth: 2,
-      pointRadius: 4,
-      borderColor: color,
-      backgroundColor: color,
-      stepped: true
-    };
-  });
-
-  return { labels: terms, datasets };
-}
-
-
-
-  
 const achievementBandsPlugin = {
   id: "achievementBands",
-  beforeDatasetsDraw(chart) { // <-- draw **before datasets** for background
+  beforeDraw(chart) {
     const { ctx, chartArea, scales } = chart;
     if (!chartArea) return;
 
@@ -1249,7 +1201,7 @@ const achievementBandsPlugin = {
       { from: 1, to: 2, color: "rgba(248,215,218,0.35)" }, // Below
       { from: 2, to: 3, color: "rgba(255,243,205,0.35)" }, // Approaching
       { from: 3, to: 4, color: "rgba(212,237,218,0.35)" }, // Meeting
-      { from: 4, to: 4.999, color: "rgba(204,229,255,0.35)" }  // Exceeding
+      { from: 4, to: 4.999, color: "rgba(204,229,255,0.35)" }  // Exceeding (slightly below max)
     ];
 
     ctx.save();
@@ -1266,16 +1218,14 @@ const achievementBandsPlugin = {
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
-  plugins: {
-    legend: { display: true, position: "bottom" }
-  },
+  plugins: { legend: { display: false } },
   scales: {
     y: {
       min: 1,
-      max: 4,
+      max: 4, // match the Exceeding band
       ticks: {
         stepSize: 1,
-        callback: v => ["", "Below", "Approaching", "Meeting", "Exceeding"][Math.round(v)]
+        callback: v => ["", "Below", "Approaching", "Meeting", "Exceeding"][v]
       }
     }
   }
@@ -1283,72 +1233,78 @@ const chartOptions = {
 
 
 
-function renderTrendChart(admission) {
-  const canvas = document.getElementById(`trend-${admission}`);
-  if (!canvas) return;
-
-  // Destroy previous chart if it exists
-  if (canvas.chart) canvas.chart.destroy();
-
-  // --- Create datasets dynamically (matches createChartDatasets approach) ---
-  const studentData = trendMap[admission] || {};
-  const allTermsSet = new Set();
-
-  Object.values(studentData).forEach(sub => {
-    Object.keys(sub).forEach(term => allTermsSet.add(term));
+/* ===== TERM VIEW ===== */
+if (viewMode.value === "term") {
+  const grouped = {};
+  records.forEach(r => {
+    grouped[r.student] ??= { __admission: r.admission };
+    grouped[r.student][r.subject] ??= [];
+    grouped[r.student][r.subject].push(r);
   });
 
-  const terms = Array.from(allTermsSet).sort();
+  const intelligence = calculateTermIntelligence(
+    records,
+    previousRecords,
+    previousTerm
+  );
 
-  const datasets = Object.entries(studentData)
-    .filter(([subject, scores]) => Object.values(scores).some(v => v !== null))
-    .map(([subject, termScores]) => {
-      const data = terms.map(term => termScores[term] ?? null);
-      const color = `hsl(${Math.random() * 360}, 70%, 50%)`;
-      return {
-        label: subject,
-        data,
-        fill: false,
-        tension: 0.3,
-        borderWidth: 2,
-        pointRadius: 4,
-        borderColor: color,
-        backgroundColor: color
-      };
+  document.getElementById("schoolAnalytics").innerHTML =
+    renderSchoolAnalytics(
+      records,
+      termName,
+      SYSTEM_YEAR,
+      intelligence,
+      schoolName,
+      className
+    );
+
+  reportDiv.innerHTML = renderGrouped(grouped);
+
+  if (!window.__EXPORTING_PDF__) {
+    requestAnimationFrame(() => {
+      splitLearnerIntoPages();
     });
+  }
+}
 
-  // --- Render the chart ---
-  canvas.chart = new Chart(canvas, {
-    type: "line",
-    data: {
-      labels: terms,
-      datasets
-    },
-    plugins: [achievementBandsPlugin],
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: true, position: "bottom" }
-      },
-      scales: {
-        y: {
-          min: 1,
-          max: 4,
-          ticks: {
-            stepSize: 1,
-            callback: v => ["", "Below", "Approaching", "Meeting", "Exceeding"][Math.round(v)]
-          }
-        }
-      }
-    }
+  /* ===== TERM VIEW ===== */
+  if (viewMode.value === "term") {
+  const grouped = {};
+  records.forEach(r => {
+    grouped[r.student] ??= { __admission: r.admission };
+    grouped[r.student][r.subject] ??= [];
+    grouped[r.student][r.subject].push(r);
+  });
+
+
+const intelligence = calculateTermIntelligence(
+  records,
+  previousRecords,
+  previousTerm
+);
+
+
+document.getElementById("schoolAnalytics").innerHTML =
+  renderSchoolAnalytics(
+    records,
+    termName,
+    SYSTEM_YEAR,
+    intelligence,
+    schoolName,
+    className
+  );
+
+reportDiv.innerHTML = renderGrouped(grouped);
+
+
+    if (!window.__EXPORTING_PDF__) {
+  requestAnimationFrame(() => {
+    splitLearnerIntoPages();
   });
 }
 
+  }
 
-
-
-  
   /* ===== STUDENT VIEW ===== */
   if (viewMode.value === "student") {
     filterBox.innerHTML = `
@@ -1378,17 +1334,7 @@ filtered.forEach(r => {
 requestAnimationFrame(() => {
   splitLearnerIntoPages();
 });
-
-setTimeout(() => {
-  Object.values(grouped).forEach(s => {
-    if (s.__admission) {
-      renderTrendChart(s.__admission);
-    }
-  });
-}, 0);
-
-
-      
+   
       });
   }
 
@@ -1427,26 +1373,13 @@ filtered.forEach(r => {
 
 requestAnimationFrame(() => {
   splitLearnerIntoPages();
-});
-
-setTimeout(() => {
-  Object.values(grouped).forEach(s => {
-    if (s.__admission) {
-      renderTrendChart(s.__admission);
-    }
-  });
-}, 0);
-
-      
-      
+});   
     });
   }
 }
 
 termSelect.addEventListener("change", loadReport);
 viewMode.addEventListener("change", loadReport);
-
-
 
 
 function getTrend(currentAvg, previousAvg) {
