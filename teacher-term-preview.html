@@ -197,25 +197,6 @@ tr:last-child td {
   height: auto !important;
 }
 
-
-
-/* Prevents cut-off look */
-.learner-card {
-  overflow: visible !important;
-  height: auto !important;
-  page-break-before: always;   /* each learner starts on new page */
-}
-
-.learner-card:first-child {
-  page-break-before: auto;     /* first learner should not create blank page */
-}
-
-/* force tables to page 2 */
-.learner-summary-page {
-  page-break-before: always;
-}
-
-  
 </style>
 
   
@@ -1647,29 +1628,24 @@ clone.querySelectorAll(".a4-page").forEach(page => {
       </div>
     `;
 
-    // --- SECOND PAGE (TABLES ONLY) ---
-const secondPageContainer = document.createElement("div");
-secondPageContainer.className = "learner-summary-page";
+    const secondPageContainer = document.createElement("div");
+    // FIX: avoid-all mode handles the break better than a forced "always" on a sub-element
+   
 
-// table styling
-table.style.fontSize = "16px";
-table.querySelectorAll("td, th").forEach(cell => {
-  cell.style.padding = "10px 6px";
-});
+    table.style.fontSize = "16px";
+    table.querySelectorAll("td, th").forEach(cell => { cell.style.padding = "10px 6px"; });
 
-// general block styling
-generalBlock.style.fontSize = "16px";
-generalBlock.style.lineHeight = "2";
+    generalBlock.style.fontSize = "16px";
+    generalBlock.style.lineHeight = "2";
 
-// put BOTH tables on page 2
-secondPageContainer.appendChild(table);
-secondPageContainer.appendChild(generalBlock);
+    secondPageContainer.appendChild(table);
+    secondPageContainer.appendChild(generalBlock);
 
-// --- BUILD LEARNER CARD ---
-card.appendChild(summaryBlock);        // PAGE 1 content
-card.appendChild(secondPageContainer); // PAGE 2 content (forced)
-card.appendChild(footer);
-});
+    card.appendChild(summaryBlock);
+    card.appendChild(secondPageContainer);
+    card.appendChild(footer);
+  });
+
 
     
   // ===== EXPORT PDF =====
