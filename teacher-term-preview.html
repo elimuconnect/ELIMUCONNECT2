@@ -169,43 +169,34 @@ tr:last-child td {
 
 
 
+
+
 .report-overview h3 {
-  font-size: 24px;
-  font-weight: 800;
-  letter-spacing: 0.3px;
+  font-size: 1.1em;
   line-height: 1.2em;
 }
 
 
 
-
-@media print {
-  table { page-break-inside:auto; }
-  tr    { page-break-inside:avoid; page-break-after:auto; }
-  thead { display:table-header-group; }
-  tfoot { display:table-footer-group; }
-
-  .school-page {
-    page-break-before: always;
-    page-break-after: always;
-  }
-
-  .learner-page {
-    page-break-before: always;
-    page-break-after: always;
-  }
-
-  .a4-page {
-    width: 190mm;
-    margin: 0 auto;
-    padding: 10mm;
-    box-sizing: border-box;
-  }
+.report-overview h3 {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
 }
 
+ @media print {
+  table { page-break-inside:auto }
+  tr    { page-break-inside:avoid; page-break-after:auto }
+  thead { display:table-header-group }
+  tfoot { display:table-footer-group }
+}
 
+/* Prevents the 'cut-off' look on containers */
+.learner-card {
+  overflow: visible !important;
+  height: auto !important;
+}
 
-  
 </style>
 
   
@@ -575,36 +566,54 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
 
 
 
-  function renderSchoolAnalytics(records, termName, year, intelligence, schoolName, className) {
+  
+function renderSchoolAnalytics(records, termName, year, intelligence, schoolName, className) {
+
   let classMap = {};
   let subjectMap = {};
   let bandCount = { below: 0, approaching: 0, meeting: 0, exceeding: 0 };
 
-  // Process data
+  // ===== PROCESS DATA =====
   records.forEach(r => {
+
     const score = levelToScore(r.level);
 
+    // CLASS MEAN
     classMap[r.className] ??= [];
     if (score > 0) classMap[r.className].push(score);
 
+    // SUBJECT MEAN
     subjectMap[r.subject] ??= [];
     if (score > 0) subjectMap[r.subject].push(score);
 
+    // BAND DISTRIBUTION
     if (score === 1) bandCount.below++;
     if (score === 2) bandCount.approaching++;
     if (score === 3) bandCount.meeting++;
     if (score === 4) bandCount.exceeding++;
   });
 
+
+  // ===== AT-RISK COUNT =====
+  const atRiskLearners = records.filter(
+    r => r.level === "Below Expectations"
+  ).length;
+
+  // ===== AVERAGE FUNCTION =====
   function avg(arr) {
-    return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+    return arr.length
+      ? arr.reduce((a, b) => a + b, 0) / arr.length
+      : 0;
   }
 
+  // ===== CLASS SUMMARY =====
   const classSummary = Object.entries(classMap).map(([cls, scores]) => {
+
     const mean = avg(scores);
     const risk = mean < 2.5
       ? `<span style="color:#c0392b;font-weight:bold;">🔴 Needs Intervention</span>`
       : `<span style="color:#1e8449;font-weight:bold;">🟢 Stable</span>`;
+
     return `
       <tr>
         <td>${cls}</td>
@@ -614,11 +623,15 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
     `;
   }).join("");
 
+  // ===== SUBJECT ALERTS =====
   const subjectAlerts = Object.entries(subjectMap).map(([sub, scores]) => {
+
     const mean = avg(scores);
+
     const alert = mean < 2.3
       ? `<span style="color:#c0392b;font-weight:bold;">⚠ Immediate Review Required</span>`
       : "";
+
     return `
       <tr>
         <td>${sub}</td>
@@ -628,39 +641,60 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
     `;
   }).join("");
 
-  const atRiskLearners = records.filter(r => r.level === "Below Expectations").length;
-
+  // ===== RETURN FULL ANALYTICS PAGE =====
   return `
-  <!-- SCHOOL PAGE -->
-  <div class="a4-page school-page">
+  <div class="a4-page">
 
-    <!-- 1️⃣ Overview Header (Page 1) -->
-    <div class="split-block no-split">
-      <div class="report-overview" style="border-bottom: 2px solid #333; padding-bottom:6px; margin-bottom:10px;">
-        <h3 style="margin:0;">${schoolName}</h3>
-        <div style="font-size:0.9em;color:#555;">
-          <strong>Class:</strong> ${className} &nbsp; | &nbsp;
-          <strong>Term:</strong> ${termName} – ${year}
-        </div>
-      </div>
+<div class="learner-card">
 
-      <h3>📊 School Performance Analytics</h3>
-
-      <h4 style="margin-top:10px;">🧠 Term Intelligence Summary</h4>
-      ${intelligence.schoolImprovement !== null ? `
-        <p>📊 School Performance Change: 
-          <strong style="color:${intelligence.schoolImprovement >= 0 ? '#1e8449' : '#c0392b'};">
-            ${intelligence.schoolImprovement.toFixed(2)}%
-          </strong>
-        </p>
-        <p>📈 Improving Learners: <strong>${intelligence.improvingLearners}</strong></p>
-        <p>🏫 Improved Classes: ${intelligence.improvedClasses.length ? intelligence.improvedClasses.join(", ") : "None"}</p>
-        <p>📉 Subjects Requiring Attention: ${intelligence.decliningSubjects.length ? intelligence.decliningSubjects.join(", ") : "None"}</p>
-      ` : `<p>🆕 No previous term data available for comparison.</p>`}
+  <!-- SCHOOL & CLASS HEADER -->
+  <div class="report-overview no-split" style="
+    border-bottom: 2px solid #333;
+    padding-bottom: 6px;
+    margin-bottom: 12px;
+  ">
+    <h3 style="margin:0;">${schoolName}</h3>
+    <div style="font-size:0.9em;color:#555;">
+      <strong>Class:</strong> ${className} &nbsp; | &nbsp;
+      <strong>Term:</strong> ${termName} – ${year}
     </div>
+  </div>
 
-    <!-- 2️⃣ Tables (Page 2) -->
-    <div class="split-block" style="page-break-before: always;">
+  <h3>📊 School Performance Analytics</h3>
+
+    
+<!-- 🧠 TERM INTELLIGENCE -->
+<h4 style="margin-top:20px;">🧠 Term Intelligence Summary</h4>
+${intelligence.schoolImprovement !== null ? `
+<p>
+  📊 School Performance Change: 
+  <strong style="color:${intelligence.schoolImprovement >= 0 ? '#1e8449' : '#c0392b'};">
+    ${intelligence.schoolImprovement.toFixed(2)}%
+  </strong>
+</p>
+
+<p>📈 Improving Learners: <strong>${intelligence.improvingLearners}</strong></p>
+
+<p>🏫 Improved Classes: 
+  ${intelligence.improvedClasses.length
+    ? intelligence.improvedClasses.join(", ")
+    : "None"}
+</p>
+
+<p>📉 Subjects Requiring Attention: 
+  ${intelligence.decliningSubjects.length
+    ? intelligence.decliningSubjects.join(", ")
+    : "None"}
+</p>
+` : `
+<p>🆕 No previous term data available for comparison.</p>
+`}
+
+
+
+
+
+      <!-- 1️⃣ CLASS MEAN -->
       <h4>1️⃣ Class Mean Overview</h4>
       <table>
         <thead>
@@ -675,6 +709,7 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
         </tbody>
       </table>
 
+      <!-- 2️⃣ SUBJECT ANALYSIS -->
       <h4 style="margin-top:20px;">2️⃣ Subject/Learning Area Mean Analysis</h4>
       <table>
         <thead>
@@ -688,10 +723,8 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
           ${subjectAlerts}
         </tbody>
       </table>
-    </div>
 
-    <!-- 3️⃣ Band Distribution -->
-    <div class="split-block">
+      <!-- 3️⃣ BAND DISTRIBUTION -->
       <h4 style="margin-top:20px;">3️⃣ Performance Band Distribution</h4>
       <p>
         🔴 Below: ${bandCount.below} |
@@ -699,16 +732,16 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
         🔵 Meeting: ${bandCount.meeting} |
         🟢 Exceeding: ${bandCount.exceeding}
       </p>
-    </div>
 
-    <!-- 4️⃣ Learner Risk Overview -->
-    <div class="split-block">
+      <!-- 4️⃣ RISK SUMMARY -->
       <h4 style="margin-top:20px;">4️⃣ Learner Risk Overview</h4>
-      <p>${atRiskLearners} learners currently below expectations require structured intervention.</p>
-    </div>
+      <p>
+        ${atRiskLearners} learners currently below expectations require structured intervention.
+      </p>
 
-    <!-- 5️⃣ Strategic Recommendations -->
-    <div class="split-block">
+     
+
+      <!-- 5️⃣ STRATEGIC ACTION -->
       <h4 style="margin-top:20px;">5️⃣ Strategic Recommendations</h4>
       <ul>
         <li>Conduct targeted remediation for subjects below 2.3 mean.</li>
@@ -716,8 +749,8 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
         <li>Introduce peer tutoring for learners below expectations.</li>
         <li>Recognize and reward high-performing classes.</li>
       </ul>
-    </div>
 
+    </div>
   </div>
   `;
 }
@@ -1238,19 +1271,16 @@ const intelligence = calculateTermIntelligence(
 );
 
 reportDiv.innerHTML = `
-  <div class="a4-page school-page">
-    ${renderSchoolAnalytics(
-      records,
-      termName,
-      SYSTEM_YEAR,
-      intelligence,
-      schoolName,
-      className
-    )}
-  </div>
+  ${renderSchoolAnalytics(
+    records,
+    termName,
+    SYSTEM_YEAR,
+    intelligence,
+    schoolName,
+    className
+  )}
   ${renderGrouped(grouped)}
 `;
-
 
 
     
@@ -1383,7 +1413,8 @@ function getTrend(currentAvg, previousAvg) {
 
 
 
-window.downloadPDF = async function () {
+  window.downloadPDF = async function () {
+
   if (!reportDiv.innerHTML.trim()) {
     alert("No report to download");
     return;
@@ -1392,37 +1423,40 @@ window.downloadPDF = async function () {
   const term = termSelect.options[termSelect.selectedIndex]?.text || "Term";
   const filename = `Summary_Report_${term}_${SYSTEM_YEAR}.pdf`;
 
-  const original = reportDiv; // your main container
-  const clone = original.cloneNode(true);
+const original = reportDiv;  // your main container
+const clone = original.cloneNode(true);
 
-  // ===== REMOVE SCREEN PAGINATION WRAPPERS (.a4-page) =====
-  clone.querySelectorAll(".a4-page").forEach(page => {
-    const parent = page.parentNode;
-    while (page.firstChild) {
-      parent.insertBefore(page.firstChild, page);
-    }
-    parent.removeChild(page);
-  });
+// Remove screen pagination wrappers (.a4-page)
+clone.querySelectorAll(".a4-page").forEach(page => {
+  const parent = page.parentNode;
+  while (page.firstChild) {
+    parent.insertBefore(page.firstChild, page);
+  }
+  parent.removeChild(page);
+});
 
-  // ===== A4 LAYOUT =====
+
+  // ===== A4 Layout =====
   clone.style.width = "190mm";
   clone.style.margin = "0 auto";
   clone.style.padding = "0";
   clone.style.boxSizing = "border-box";
 
-  // ===== REMOVE DETAILED SECTIONS =====
+  // ===== Remove Detailed Sections =====
   clone.querySelectorAll(".subject-block, .trend-box").forEach(el => el.remove());
 
   const cards = clone.querySelectorAll(".learner-card");
 
-  // ===== SCHOOL HEADER =====
+  // ===== GET SCHOOL INFO =====
   const first = results?.[0];
+
   if (first) {
     const header = document.createElement("div");
     header.style.textAlign = "center";
     header.style.marginBottom = "10px";
     header.style.paddingBottom = "8px";
     header.style.borderBottom = "1px solid #000";
+
     header.innerHTML = `
       <div style="font-size:18px;font-weight:bold;">
         ${first.school_name?.toUpperCase() || ""}
@@ -1440,12 +1474,14 @@ window.downloadPDF = async function () {
     clone.prepend(header);
   }
 
-  // ===== STUDENT CARDS =====
+  // ===== STYLE CARDS + ADD FOOTER =====
   cards.forEach(card => {
+    // FIX: Ensure the entire student report doesn't get split awkwardly
     card.style.margin = "0";
     card.style.padding = "0";
     card.style.boxSizing = "border-box";
-
+   
+   
     const footer = document.createElement("div");
     footer.style.fontSize = "10px";
     footer.style.color = "#555";
@@ -1474,40 +1510,90 @@ window.downloadPDF = async function () {
 
     let overallAvg = 0;
     if (subjectScores.length) {
-      overallAvg = subjectScores.reduce((sum, score) => sum + score, 0) / subjectScores.length;
+      const total = subjectScores.reduce((sum, score) => sum + score, 0);
+      overallAvg = total / subjectScores.length;
     }
     overallAvg = Number(overallAvg.toFixed(2));
+
+    // ===== EXTRACT TREND, STRENGTHS & NEEDS =====
+    let trendText = "";
+    let strengthsText = "";
+    let needsText = "";
+
+    const trendElement = Array.from(card.querySelectorAll("p"))
+      .find(p => p.innerText.includes("📊 Progress Trend"));
+
+    if (trendElement) {
+      trendText = trendElement.innerText.replace("📊 Progress Trend:", "").trim();
+    }
+
+    const strongElems = card.querySelectorAll(".split-block p strong");
+    strongElems.forEach(el => {
+      const text = el.innerText;
+      const parentText = el.parentNode?.innerText || "";
+      if (!strengthsText && text.includes("💪 Strengths")) {
+        strengthsText = parentText.replace("💪 Strengths:", "").trim();
+      } else if (!needsText && text.includes("🎯 Areas for Improvement")) {
+        needsText = parentText.replace("🎯 Areas for Improvement:", "").trim();
+      }
+    });
+
+    strengthsText = strengthsText.replace(/Life Skills, English, Kiswahili/g, "").trim();
+
+    const summaryBlock = document.createElement("div");
+    summaryBlock.style.marginBottom = "6px";
+    summaryBlock.style.fontSize = "11px";
+    summaryBlock.innerHTML = ``;
+
+    // ===== HELPER FUNCTIONS =====
+    function overallLevel(score) {
+      if (!score || score < 1) return "No Data";
+      if (score >= 3.5) return "Exceeding Expectations";
+      if (score >= 2.5) return "Meeting Expectations";
+      if (score >= 1.5) return "Approaching Expectations";
+      return "Below Expectations";
+    }
+
+    function generalComment(score) {
+      if (score >= 3.5) return "Excellent performance. Keep it up.";
+      if (score >= 2.5) return "Good progress. Continue working hard.";
+      if (score >= 1.5) return "Fair work. Aim higher next term.";
+      return "Needs more effort and support.";
+    }
+
+    function commentFromScore(score) {
+      if (score >= 3.5) return "Excellent work";
+      if (score >= 2.5) return "Good progress";
+      if (score >= 1.5) return "Fair work";
+      return "Put more effort";
+    }
 
     // ===== SUBJECT TABLE =====
     const table = document.createElement("table");
     table.style.width = "100%";
     table.style.borderCollapse = "collapse";
     table.style.marginTop = "6px";
-    table.style.fontSize = "16px";
+    table.style.fontSize = "12px";
     table.style.tableLayout = "fixed";
+
     table.innerHTML = `
       <thead>
         <tr>
-          <th style="border:1px solid #000;padding:10px 6px;width:30%;">Learning Area/Subject</th>
-          <th style="border:1px solid #000;padding:10px 6px;width:15%;">Score</th>
-          <th style="border:1px solid #000;padding:10px 6px;width:25%;">Performance Level</th>
-          <th style="border:1px solid #000;padding:10px 6px;width:30%;">Teacher Comment</th>
+          <th style="border:1px solid #000;padding:6px;width:30%;">Learning Area/Subject</th>
+          <th style="border:1px solid #000;padding:6px;width:15%;">Score</th>
+          <th style="border:1px solid #000;padding:6px;width:25%;">Performance Level</th>
+          <th style="border:1px solid #000;padding:6px;width:30%;">Teacher Comment</th>
         </tr>
       </thead>
       <tbody>
         ${Object.entries(subjectData).map(([subject, d]) => {
           const avg = Number(d.average_score);
-          let comment = "Put more effort";
-          if (avg >= 3.5) comment = "Excellent work";
-          else if (avg >= 2.5) comment = "Good progress";
-          else if (avg >= 1.5) comment = "Fair work";
-
           return `
             <tr>
-              <td style="border:1px solid #000;padding:10px 6px;">${subject}</td>
-              <td style="border:1px solid #000;padding:10px 6px;text-align:center;">${avg.toFixed(2)}</td>
-              <td style="border:1px solid #000;padding:10px 6px;">${d.achievement_level}</td>
-              <td style="border:1px solid #000;padding:10px 6px;">${comment}</td>
+              <td style="border:1px solid #000;padding:6px;">${subject}</td>
+              <td style="border:1px solid #000;padding:6px;text-align:center;">${avg.toFixed(2)}</td>
+              <td style="border:1px solid #000;padding:6px;">${d.achievement_level}</td>
+              <td style="border:1px solid #000;padding:6px;">${commentFromScore(avg)}</td>
             </tr>
           `;
         }).join("")}
@@ -1517,21 +1603,7 @@ window.downloadPDF = async function () {
     // ===== GENERAL PERFORMANCE BLOCK =====
     const generalBlock = document.createElement("div");
     generalBlock.style.marginTop = "10px";
-    generalBlock.style.fontSize = "16px";
-    generalBlock.style.lineHeight = "2";
-    function overallLevel(score) {
-      if (!score || score < 1) return "No Data";
-      if (score >= 3.5) return "Exceeding Expectations";
-      if (score >= 2.5) return "Meeting Expectations";
-      if (score >= 1.5) return "Approaching Expectations";
-      return "Below Expectations";
-    }
-    function generalComment(score) {
-      if (score >= 3.5) return "Excellent performance. Keep it up.";
-      if (score >= 2.5) return "Good progress. Continue working hard.";
-      if (score >= 1.5) return "Fair work. Aim higher next term.";
-      return "Needs more effort and support.";
-    }
+    generalBlock.style.fontSize = "12px";
 
     generalBlock.innerHTML = `
       <table style="width:100%;border-collapse:collapse;margin-top:6px;">
@@ -1556,19 +1628,26 @@ window.downloadPDF = async function () {
       </div>
     `;
 
-    // ===== WRAP TABLE + GENERAL BLOCK INTO PAGE-BREAK CONTAINER =====
-    const secondPageWrapper = document.createElement("div");
-    secondPageWrapper.className = "split-block";
-    secondPageWrapper.style.pageBreakBefore = "always";
-    secondPageWrapper.style.pageBreakInside = "avoid";
+    const secondPageContainer = document.createElement("div");
+    // FIX: avoid-all mode handles the break better than a forced "always" on a sub-element
+   
 
-    secondPageWrapper.appendChild(table);
-    secondPageWrapper.appendChild(generalBlock);
+    table.style.fontSize = "16px";
+    table.querySelectorAll("td, th").forEach(cell => { cell.style.padding = "10px 6px"; });
 
-    card.appendChild(secondPageWrapper);
+    generalBlock.style.fontSize = "16px";
+    generalBlock.style.lineHeight = "2";
+
+    secondPageContainer.appendChild(table);
+    secondPageContainer.appendChild(generalBlock);
+
+    card.appendChild(summaryBlock);
+    card.appendChild(secondPageContainer);
     card.appendChild(footer);
   });
 
+
+    
   // ===== EXPORT PDF =====
   html2pdf().set({
     margin: [10, 10, 10, 10],
@@ -1576,13 +1655,12 @@ window.downloadPDF = async function () {
     image: { type: "jpeg", quality: 0.98 },
     html2canvas: { scale: 2, scrollY: 0, useCORS: true, letterRendering: true },
     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-    pagebreak: { mode: ['css'] }
+    // THE FIX: mode 'avoid-all' prevents cutting text and tables across pages
+   pagebreak: { mode: ['css'] }
+
   }).from(clone).save();
 };
 
-
-
-  
 window.downloadDetailedPDF = async function () {
   if (!reportDiv.innerHTML.trim()) {
     alert("No report to download");
