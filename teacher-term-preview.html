@@ -1459,34 +1459,7 @@ window.downloadPDF = async function () {
 
   const first = results?.[0];
 
-  /* =========================
-     SCHOOL HEADER (PAGE 1)
-  ========================== */
-  if (first) {
-    const header = document.createElement("div");
-    header.style.textAlign = "center";
-    header.style.marginBottom = "10px";
-    header.style.paddingBottom = "8px";
-    header.style.borderBottom = "1px solid #000";
-
-    header.innerHTML = `
-      <div style="font-size:18px;font-weight:bold;">
-        ${first.school_name?.toUpperCase() || ""}
-      </div>
-      <div style="font-size:11px;">
-        ${first.po_box ? `P.O. Box ${first.po_box}` : ""}
-        ${first.postal_code ? ` - ${first.postal_code}` : ""}
-        ${first.town ? `, ${first.town}` : ""}
-      </div>
-      <div style="font-size:11px;">
-        ${first.phone ? `Tel: ${first.phone}` : ""}
-        ${first.email ? ` | Email: ${first.email}` : ""}
-      </div>
-    `;
-
-clone.prepend(header);
-}
-
+  
 /* ===========================
    PAGE 2 — FORCED BLANK PAGE
 =========================== */
