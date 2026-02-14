@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Term Report Preview</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 
 
@@ -263,11 +263,10 @@ const supabase = createClient(
   "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
 );
 
-
 const SYSTEM_YEAR = "2026";
 let results = [];
 
-
+let trendMap = {};
 let avgMap = {}; // make it global so downloadPDF can access it
  
 let previousRecords = [];
@@ -347,6 +346,14 @@ const { data: termAverages } = await supabase
     .eq("term", termName)
   
 
+trendMap = {};
+
+termAverages?.forEach(r => {
+  if (!trendMap[r.admission_number]) {
+    trendMap[r.admission_number] = {};
+  }
+  trendMap[r.admission_number][r.term] = Number(r.average_score);
+});
 
 
 const previousTerm = terms
@@ -390,9 +397,6 @@ averages.forEach(a => {
   avgMap[student] ??= {};
   avgMap[student][subj] = a;
 });
-
-  
-
 
   
 
@@ -925,6 +929,7 @@ function renderGrouped(grouped, avgMap){
       </div>`;
     }).join("")}
 
+  
   </div>
 </div>`;
   }).join("");
@@ -1210,8 +1215,27 @@ const achievementBandsPlugin = {
   }
 };
 
-/* ===== TERM VIEW ===== */
-if (viewMode.value === "term") {
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { display: false } },
+  scales: {
+    y: {
+      min: 1,
+      max: 4, // match the Exceeding band
+      ticks: {
+        stepSize: 1,
+        callback: v => ["", "Below", "Approaching", "Meeting", "Exceeding"][v]
+      }
+    }
+  }
+};
+
+
+
+
+  /* ===== TERM VIEW ===== */
+  if (viewMode.value === "term") {
   const grouped = {};
   records.forEach(r => {
     grouped[r.student] ??= { __admission: r.admission };
@@ -1219,96 +1243,138 @@ if (viewMode.value === "term") {
     grouped[r.student][r.subject].push(r);
   });
 
-  const intelligence = calculateTermIntelligence(
+
+const intelligence = calculateTermIntelligence(
+  records,
+  previousRecords,
+  previousTerm
+);
+
+
+document.getElementById("schoolAnalytics").innerHTML =
+  renderSchoolAnalytics(
     records,
-    previousRecords,
-    previousTerm
+    termName,
+    SYSTEM_YEAR,
+    intelligence,
+    schoolName,
+    className
   );
 
-  document.getElementById("schoolAnalytics").innerHTML =
-    renderSchoolAnalytics(
-      records,
-      termName,
-      SYSTEM_YEAR,
-      intelligence,
-      schoolName,
-      className
-    );
+reportDiv.innerHTML = renderGrouped(grouped);
 
-  reportDiv.innerHTML = renderGrouped(grouped);
 
-  if (!window.__EXPORTING_PDF__) {
-    requestAnimationFrame(() => {
-      splitLearnerIntoPages();
-    });
-  }
-}
-
-/* ===== STUDENT VIEW ===== */
-if (viewMode.value === "student") {
-  filterBox.innerHTML = `
-    <label>Admission Number</label><br />
-    <input id="admInput" />
-  `;
-
-  document.getElementById("admInput").addEventListener("input", e => {
-    const adm = e.target.value.trim();
-    const filtered = records.filter(r => r.admission === adm);
-
-    if (!filtered.length) {
-      reportDiv.innerHTML = "<p>No student found</p>";
-      return;
-    }
-
-    const grouped = {};
-    filtered.forEach(r => {
-      grouped[r.student] ??= { __admission: r.admission };
-      grouped[r.student][r.subject] ??= [];
-      grouped[r.student][r.subject].push(r);
-    });
-
-    reportDiv.innerHTML = renderGrouped(grouped);
-
-    requestAnimationFrame(() => {
-      splitLearnerIntoPages();
-    });
+    if (!window.__EXPORTING_PDF__) {
+  requestAnimationFrame(() => {
+    splitLearnerIntoPages();
   });
 }
 
-/* ===== SUBJECT VIEW ===== */
-if (viewMode.value === "subject") {
-  const subjects = [...new Set(records.map(r => r.subject))];
 
-  filterBox.innerHTML = `
-    <label>Subject</label><br />
-    <select id="subjectSelect">
-      <option value="">Select subject</option>
-      ${subjects.map(s => `<option>${s}</option>`).join("")}
-    </select>
-  `;
 
-  document.getElementById("subjectSelect").addEventListener("change", e => {
-    const subject = e.target.value;
-    if (!subject) return;
+setTimeout(() => {
+  Object.values(grouped).forEach(s => {
+    if (s.__admission) {
+      renderTrendChart(s.__admission);
+    }
+  });
+}, 0);
 
-    const filtered = records.filter(r => r.subject === subject);
 
-    const grouped = {};
-    filtered.forEach(r => {
-      grouped[r.student] ??= { __admission: r.admission };
-      grouped[r.student][r.subject] ??= [];
-      grouped[r.student][r.subject].push(r);
-    });
+  }
 
-    reportDiv.innerHTML = `
-      <h3>${subject} – All Students</h3>
-      ${renderGrouped(grouped)}
+  /* ===== STUDENT VIEW ===== */
+  if (viewMode.value === "student") {
+    filterBox.innerHTML = `
+      <label>Admission Number</label><br />
+      <input id="admInput" />
     `;
 
-    requestAnimationFrame(() => {
-      splitLearnerIntoPages();
-    });
+    document.getElementById("admInput").addEventListener("input", e => {
+      const adm = e.target.value.trim();
+      const filtered = records.filter(r => r.admission === adm);
+
+      if (!filtered.length) {
+        reportDiv.innerHTML = "<p>No student found</p>";
+        return;
+      }
+
+      const grouped = {};
+filtered.forEach(r => {
+  grouped[r.student] ??= { __admission: r.admission };
+  grouped[r.student][r.subject] ??= [];
+  grouped[r.student][r.subject].push(r);
+});
+
+
+      reportDiv.innerHTML = renderGrouped(grouped);
+    
+requestAnimationFrame(() => {
+  splitLearnerIntoPages();
+});
+
+setTimeout(() => {
+  Object.values(grouped).forEach(s => {
+    if (s.__admission) {
+      renderTrendChart(s.__admission);
+    }
   });
+}, 0);
+
+
+      
+      });
+  }
+
+  /* ===== SUBJECT VIEW ===== */
+  if (viewMode.value === "subject") {
+    const subjects = [...new Set(records.map(r => r.subject))];
+
+    filterBox.innerHTML = `
+      <label>Subject</label><br />
+      <select id="subjectSelect">
+        <option value="">Select subject</option>
+        ${subjects.map(s => `<option>${s}</option>`).join("")}
+      </select>
+    `;
+
+    document.getElementById("subjectSelect").addEventListener("change", e => {
+      const subject = e.target.value;
+      if (!subject) return;
+
+      const filtered = records.filter(r => r.subject === subject);
+
+const grouped = {};
+
+filtered.forEach(r => {
+  grouped[r.student] ??= { __admission: r.admission };
+  grouped[r.student][r.subject] ??= [];
+  grouped[r.student][r.subject].push(r);
+});
+
+
+      
+      reportDiv.innerHTML = `
+        <h3>${subject} – All Students</h3>
+        ${renderGrouped(grouped)}
+      `;
+
+requestAnimationFrame(() => {
+  splitLearnerIntoPages();
+});
+
+setTimeout(() => {
+  Object.values(grouped).forEach(s => {
+    if (s.__admission) {
+      renderTrendChart(s.__admission);
+    }
+  });
+}, 0);
+
+      
+      
+    });
+  }
 }
 
 termSelect.addEventListener("change", loadReport);
