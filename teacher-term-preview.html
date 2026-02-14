@@ -169,34 +169,43 @@ tr:last-child td {
 
 
 
-
-
 .report-overview h3 {
-  font-size: 1.1em;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
   line-height: 1.2em;
 }
 
 
 
-.report-overview h3 {
-  font-size: 24px;
-  font-weight: 800;
-  letter-spacing: 0.3px;
+
+@media print {
+  table { page-break-inside:auto; }
+  tr    { page-break-inside:avoid; page-break-after:auto; }
+  thead { display:table-header-group; }
+  tfoot { display:table-footer-group; }
+
+  .school-page {
+    page-break-before: always;
+    page-break-after: always;
+  }
+
+  .learner-page {
+    page-break-before: always;
+    page-break-after: always;
+  }
+
+  .a4-page {
+    width: 190mm;
+    margin: 0 auto;
+    padding: 10mm;
+    box-sizing: border-box;
+  }
 }
 
- @media print {
-  table { page-break-inside:auto }
-  tr    { page-break-inside:avoid; page-break-after:auto }
-  thead { display:table-header-group }
-  tfoot { display:table-footer-group }
-}
 
-/* Prevents the 'cut-off' look on containers */
-.learner-card {
-  overflow: visible !important;
-  height: auto !important;
-}
 
+  
 </style>
 
   
@@ -1271,16 +1280,19 @@ const intelligence = calculateTermIntelligence(
 );
 
 reportDiv.innerHTML = `
-  ${renderSchoolAnalytics(
-    records,
-    termName,
-    SYSTEM_YEAR,
-    intelligence,
-    schoolName,
-    className
-  )}
+  <div class="a4-page school-page">
+    ${renderSchoolAnalytics(
+      records,
+      termName,
+      SYSTEM_YEAR,
+      intelligence,
+      schoolName,
+      className
+    )}
+  </div>
   ${renderGrouped(grouped)}
 `;
+
 
 
     
