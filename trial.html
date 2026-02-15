@@ -232,7 +232,50 @@ table {
   page-break-inside: avoid;
 }
 
-  
+  /* ================= ANALYTICS PDF FIT FIX ================= */
+.school-analytics {
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+}
+
+@media print {
+
+  .school-analytics {
+    width: 190mm !important;
+    max-height: 270mm !important;   /* fits inside A4 printable area */
+    overflow: hidden !important;
+    padding: 12mm !important;
+    box-sizing: border-box;
+  }
+
+  .school-analytics h3 {
+    font-size: 18px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .school-analytics h4 {
+    font-size: 14px !important;
+    margin-top: 10px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .school-analytics p,
+  .school-analytics li,
+  .school-analytics td,
+  .school-analytics th {
+    font-size: 12px !important;
+  }
+
+  .school-analytics table {
+    margin-bottom: 8px !important;
+  }
+
+  .school-analytics ul {
+    margin: 4px 0 8px 18px !important;
+  }
+
+}
+
 </style>
 
 
