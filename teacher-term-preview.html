@@ -198,6 +198,55 @@ th, td {
   }
 }
 
+
+
+/* ================= PDF STABILITY FIX ================= */
+@media print {
+
+  html, body {
+    width: 210mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+
+  .dashboard,
+  #report,
+  #schoolAnalytics {
+    width: 100% !important;
+    margin: 0 auto !important;
+  }
+
+  .a4-page {
+    width: 190mm !important;
+    max-width: 190mm !important;
+    padding: 10mm !important;
+    margin: 0 auto !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .learner-card {
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  table {
+    width: 100% !important;
+    table-layout: fixed !important;
+    word-break: break-word !important;
+  }
+
+  th, td {
+    white-space: normal !important;
+    word-wrap: break-word !important;
+  }
+
+}
+
+
+
+  
   </style>
 </head>
 <body>
