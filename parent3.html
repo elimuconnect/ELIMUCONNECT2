@@ -197,21 +197,13 @@ tr:hover{
     display:none !important;
   }
 
-  #report{
-    margin:0 !important;
-    padding:0 !important;
-  }
-
   .a4-page{
     box-shadow:none !important;
     border-radius:0 !important;
     margin:0 !important;
-    padding:15mm !important;
-    width:210mm;
-    min-height:297mm;
+    padding:20px !important;
   }
 }
-
   
 </style>
  
@@ -534,23 +526,29 @@ const recommendations = generateRecommendations(strengthsMap, needsMap);
   reportDiv.innerHTML = html;
 }
 
-
 window.downloadPDF = () => {
-  if(!reportDiv.innerHTML.trim()) return alert("No report");
+  const element = document.querySelector(".a4-page");
 
-  const element = reportDiv;
+  if(!element) return alert("No report");
 
   const opt = {
-    margin:       0,
-    filename:     "Summary_Report.pdf",
-    image:        { type: 'jpeg', quality: 0.98 },
-    html2canvas:  { scale: 2 },
-    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    margin: 10, // Proper A4 margin
+    filename: "Summary_Report.pdf",
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: {
+      scale: 2,
+      useCORS: true,
+      scrollY: 0
+    },
+    jsPDF: {
+      unit: 'mm',
+      format: 'a4',
+      orientation: 'portrait'
+    }
   };
 
   html2pdf().set(opt).from(element).save();
 };
-
 </script>
 </body>
 </html>
