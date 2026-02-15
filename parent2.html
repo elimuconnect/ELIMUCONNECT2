@@ -190,15 +190,20 @@ tr:hover{
 
 <h2>Student Report Lookup</h2>
 
-<input id="yearInput" value="2026" placeholder="Year">
-<select id="termSelect"></select>
-<input id="firstInput" placeholder="First name">
-<input id="lastInput" placeholder="Last name">
-<input id="admInput" placeholder="Admission number">
 
- <p id="status"></p> <!-- start empty -->
+<div class="form-card">
+  <input id="yearInput" value="2026" placeholder="Year">
+  <select id="termSelect"></select>
+  <input id="firstInput" placeholder="First name">
+  <input id="lastInput" placeholder="Last name">
+  <input id="admInput" placeholder="Admission number">
 
-<button onclick="downloadPDF()">Download Summary PDF</button>
+  <p id="status"></p>
+
+  <button onclick="downloadPDF()">Download Summary PDF</button>
+</div>
+
+  
 <hr>
 
 <div id="report"></div>
