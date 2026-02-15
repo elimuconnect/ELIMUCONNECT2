@@ -197,70 +197,110 @@ supportFlag = generateSupportFlag(strengthsMap, needsMap);
 
   
 /* RENDER */
-function renderReport(){
+
+function renderReport() {
+  if (!results.length) return;
+
   const student = `${results[0].first_name} ${results[0].last_name}`;
-  let html = `<div class="a4-page">
-    <h3>👤 ${student} (Adm ${results[0].admission_number})</h3>
-    <p><strong>Status:</strong> ${supportFlag}</p>
-    <p><em>${overallInsight || "No overall insight available."}</em></p>
+  const adm = results[0].admission_number;
+  const className = results[0].class_name || "—";
+  const schoolName = results[0].school_name || "—";
+  const term = termSelect.value || "—";
+  const year = yearInput.value || "—";
 
-    ${strengthsMap.length ? `<p><strong>💪 Strengths:</strong> ${strengthsMap.join(", ")}</p>` : ""}
-    ${needsMap.length ? `<p><strong>🎯 Areas for Improvement:</strong> ${needsMap.join(", ")}</p>` : ""}
-
-    <div style="background:#f3f6fa;padding:10px;border-left:4px solid #3498db;margin:10px 0;">
-      <strong>Teacher Recommendations</strong>
-      <ul>
-        ${needsMap.length 
-          ? needsMap.map(s=>`<li>Provide remediation in ${s}</li>`).join("") 
-          : "<li>No recommendations available.</li>"
-        }
-      </ul>
-    </div>
-
-    <div style="background:#fffaf3;padding:10px;border-left:4px solid #f39c12;margin:10px 0;">
-      <strong>Parent Support</strong>
-      <ul>
-        ${needsMap.length 
-          ? needsMap.map(s=>`<li>Practice ${s} at home</li>`).join("") 
-          : "<li>No suggestions available.</li>"
-        }
-      </ul>
-    </div>
-
-    <div style="background:#f6fffa;padding:10px;border-left:4px solid #2ecc71;margin:10px 0;">
-      <strong>Learner Focus</strong>
-      <ul>
-        ${needsMap.length 
-          ? needsMap.map(s=>`<li>Revise ${s}</li>`).join("") 
-          : "<li>No focus areas at this time.</li>"
-        }
-      </ul>
-    </div>
-  `;
-
-  // Render subjects tables
-  Object.entries(avgMap[student]).forEach(([subject,d])=>{
-    const rows = results.filter(r=>r.subject===subject);
-    html += `
-      <div class="subject-block">
-        <h4>${subject}</h4>
-        <table>
-          <tr><th>Competency</th><th>Level</th></tr>
-          ${rows.map(r=>`
-            <tr><td>${r.competency || "—"}</td><td>${r.achievement_level || "—"}</td></tr>
-          `).join("")}
-          <tr style="font-weight:bold">
-            <td>AVERAGE</td>
-            <td>${d.average_score ? d.average_score.toFixed(2) : "N/A"} — ${d.level || "N/A"}</td>
-          </tr>
-        </table>
-      </div>
-    `;
+  // Prepare subjects object
+  const subjects = {};
+  results.forEach(r => {
+    subjects[r.subject] ??= [];
+    subjects[r.subject].push(r);
   });
 
-  html += `</div>`;
+  // Insights and recommendations
+  overallInsight = generateInsight(subjects);
+  const sn = generateStrengthsAndNeeds(subjects);
+  strengthsMap = sn.strengths;
+  needsMap = sn.needs;
+  supportFlag = generateSupportFlag(strengthsMap, needsMap);
+
+  // Teacher / Parent / Learner recommendations
+  const recommendations = {
+    teacher: needsMap.length ? needsMap.map(s => `Provide remediation in ${s}`) : [],
+    parent: needsMap.length ? needsMap.map(s => `Practice ${s} at home`) : [],
+    learner: needsMap.length ? needsMap.map(s => `Revise ${s}`) : []
+  };
+
+  let html = `<div class="a4-page learner-page">
+    <div class="learner-card">
+
+      <!-- SCHOOL & TERM HEADER -->
+      <div class="report-overview no-split">
+        <h3>${schoolName}</h3>
+        <div class="learner-meta">
+          <strong>Class:</strong> ${className} &nbsp; | &nbsp;
+          <strong>Term:</strong> ${term} – ${year}
+        </div>
+      </div>
+
+      <!-- STUDENT HEADER -->
+      <div class="learner-header">
+        <h4>👤 ${student} <small>(Adm: ${adm})</small></h4>
+        <div style="font-weight:bold;">${supportFlag}</div>
+      </div>
+
+      <!-- OVERALL INSIGHT -->
+      <div class="split-block" style="margin-bottom:10px;">
+        ${overallInsight ? `<p><strong>📋 Insight:</strong> ${overallInsight}</p>` : ""}
+        ${strengthsMap.length ? `<p><strong>💪 Strengths:</strong> ${strengthsMap.join(", ")}</p>` : ""}
+        ${needsMap.length ? `<p><strong>🎯 Areas for Improvement:</strong> ${needsMap.join(", ")}</p>` : ""}
+      </div>
+
+      <!-- RECOMMENDATIONS -->
+      ${recommendations.teacher.length ? `
+        <div class="summary-box" style="border-left:4px solid #3498db;background:#f3f6fa;">
+          <strong>👩🏽‍🏫 Teacher Actions</strong>
+          <ul>${recommendations.teacher.map(r => `<li>${r}</li>`).join("")}</ul>
+        </div>` : ""}
+      ${recommendations.parent.length ? `
+        <div class="summary-box" style="border-left:4px solid #f39c12;background:#fffaf3;">
+          <strong>🏠 Parent Support</strong>
+          <ul>${recommendations.parent.map(r => `<li>${r}</li>`).join("")}</ul>
+        </div>` : ""}
+      ${recommendations.learner.length ? `
+        <div class="summary-box" style="border-left:4px solid #2ecc71;background:#f6fffa;">
+          <strong>🎯 Learner Focus</strong>
+          <ul>${recommendations.learner.map(r => `<li>${r}</li>`).join("")}</ul>
+        </div>` : ""}
+
+      <!-- SUBJECT TABLES -->
+      ${Object.entries(avgMap[student] || {}).map(([subject, d]) => {
+        const rows = results.filter(r => r.subject === subject);
+        return `
+        <div class="subject-block">
+          <h4>${subject}</h4>
+          <table>
+            <thead>
+              <tr><th>Competency</th><th>Level</th></tr>
+            </thead>
+            <tbody>
+              ${rows.map(r => `<tr><td>${r.competency || "—"}</td><td>${r.achievement_level || "—"}</td></tr>`).join("")}
+              <tr style="font-weight:bold">
+                <td>AVERAGE</td>
+                <td>${d.average_score ? d.average_score.toFixed(2) : "N/A"} — ${d.level || "N/A"}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>`;
+      }).join("")}
+
+    </div>
+  </div>`;
+
   reportDiv.innerHTML = html;
 }
+
+
+
+ 
 /* PDF */
 window.downloadPDF = ()=>{
  if(!reportDiv.innerHTML.trim()) return alert("No report");
