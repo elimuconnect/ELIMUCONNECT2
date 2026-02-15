@@ -307,6 +307,35 @@ table {
   break-inside: avoid !important;
 }
 
+
+
+
+/* ================= FORCE NEW PAGE PER LEARNER (DETAILED PDF) ================= */
+@media print {
+
+  /* Every learner starts on a fresh A4 page */
+  .learner-card {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+
+  /* But NOT the very first learner */
+  .learner-card:first-of-type {
+    page-break-before: auto !important;
+    break-before: auto !important;
+  }
+
+  /* Prevent learner from being split awkwardly */
+  .learner-card {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+}
+
+
+
+  
 </style>
 
 
