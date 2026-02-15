@@ -6,23 +6,23 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 
-
 <style>
+
 /* ================== BASE ================== */
 body {
-  font-family: "Segoe UI", Arial, sans-serif;
-  background: #f7f9fb;
-  color: #222;
-  line-height: 1.5;
+  font-family: "Inter", "Segoe UI", Arial, sans-serif;
+  background: #f4f6f9;
+  color: #1f2937;
+  line-height: 1.6;
+  margin: 0;
+  padding: 30px 15px;
 }
-
 
 * {
   max-width: 100%;
+  box-sizing: border-box;
 }
 
-
-  
 h2, h3 {
   margin-bottom: 6px;
 }
@@ -33,86 +33,128 @@ h4 {
 
 h5 {
   margin-top: 18px;
+  margin-bottom: 6px;
+}
+
+/* ================== FORM CONTROLS ================== */
+label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  display: block;
   margin-bottom: 4px;
 }
 
-/* ================== LAYOUT ================== */
-/* Update these specific sections in your <style> tag */
+input, select {
+  width: 100%;
+  max-width: 400px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  background: #ffffff;
+  transition: all 0.2s ease;
+}
 
+input:focus, select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+/* ================== ACTION PANEL ================== */
+.actions-box {
+  margin-top: 20px;
+  padding: 20px;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+  max-width: 600px;
+}
+
+/* ================== BUTTONS ================== */
+button {
+  width: 100%;
+  max-width: 100%;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  background: #2563eb;
+  color: white;
+  transition: all 0.25s ease;
+}
+
+button:hover {
+  background: #1e40af;
+  transform: translateY(-1px);
+}
+
+button small {
+  display: block;
+  font-weight: 400;
+  font-size: 12px;
+  opacity: 0.9;
+  margin-top: 2px;
+}
+
+/* ================== REPORT CARD LAYOUT ================== */
 .a4-page {
   width: 100%;
-  max-width: 600px; /* phone-friendly width */
-  margin: 0 auto;
+  max-width: 600px; /* KEEP THIS EXACT (PDF SAFE) */
+  margin: 25px auto;
   background: white;
   box-sizing: border-box;
-  padding: 12px; /* some breathing space */
+  padding: 18px;
+  border-radius: 14px;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.06);
+  transition: all 0.3s ease;
+}
+
+.a4-page:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 36px rgba(0,0,0,0.08);
 }
 
 
-
-.subject-block {
-  margin-top: 14px;
-  padding-top: 10px;
-  border-top: 1px dashed #ccc;
-  page-break-inside: avoid; /* CRITICAL: Prevents a subject table from splitting in half */
-}
-
-/* Ensure images/charts don't get cut */
-canvas, .trend-box {
+/* learner-page no longer forces breaks */
+.learner-page {
+  break-inside: avoid;
   page-break-inside: avoid;
-}
-
-.learner-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 8px;
-  margin-bottom: 10px;
-}
-
-.learner-meta {
-  font-size: 0.95em;
-  color: #555;
-}
-
-
-/* ===== HEADER TYPOGRAPHY ===== */
-.learner-header h4 {
-  font-size: 22px;
-  font-weight: 800;
-  margin: 0;
-}
-
-.learner-header small {
-  font-size: 14px;
-  font-weight: 600;
 }
 
 
   
-.summary-box {
-  background: #f3f6fa;
-  border-left: 5px solid #3498db;
-  padding: 10px 14px;
-  margin: 12px 0;
-  border-radius: 4px;
+/* ================== LEARNER HEADER ================== */
+.learner-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
 }
 
-.pill {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 14px;
-  font-size: 0.85em;
-  background: #eee;
-  margin-right: 6px;
+.learner-header h4 {
+  font-size: 20px;
+  font-weight: 800;
 }
 
-.actions-box {
-  margin-top: 10px;
-  padding: 10px;
-  border-radius: 4px;
-  background: #fafafa;
+.learner-header small {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+/* ================== SUBJECT BLOCK ================== */
+.subject-block {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+  page-break-inside: avoid;
 }
 
 /* ================== TABLES ================== */
@@ -127,44 +169,41 @@ table {
 .table-wrapper {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
-
-
-  
 th, td {
-  padding: 5px 6px;
-  border-bottom: 1px solid #ddd;
+  padding: 8px 10px;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 th {
-  background: #f0f0f0;
+  background: #f9fafb;
   text-align: left;
-}
-
-th {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #374151;
 }
 
-  
 tr:last-child td {
   border-bottom: none;
 }
 
-
-.evidence-note {
-  font-size: 0.85em;
-  margin-bottom: 6px;
+/* ================== SUMMARY BOX ================== */
+.summary-box {
+  background: #f0f9ff;
+  border-left: 4px solid #2563eb;
+  padding: 12px 14px;
+  margin: 14px 0;
+  border-radius: 8px;
 }
-
-
 
 /* ================== CHART ================== */
 .trend-box {
   height: 180px;
-  margin-top: 12px;
+  margin-top: 14px;
 }
 
 .trend-box canvas {
@@ -172,47 +211,76 @@ tr:last-child td {
   height: 100% !important;
 }
 
-
-
-
-
-.report-overview h3 {
-  font-size: 1.1em;
-  line-height: 1.2em;
+/* ================== REPORT HEADER ================== */
+.report-overview {
+  text-align: center;
+  margin-bottom: 16px;
 }
 
-
-
 .report-overview h3 {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 800;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.4px;
 }
 
- @media print {
+
+
+
+/* ================== PRINT SAFETY (UNCHANGED) ================== */
+@media print {
   table { page-break-inside:auto }
-  tr    { page-break-inside:avoid; page-break-after:auto }
+  tr { page-break-inside:avoid; page-break-after:auto }
   thead { display:table-header-group }
   tfoot { display:table-footer-group }
 }
 
-/* Prevents the 'cut-off' look on containers */
+/* Prevents cut-off look */
 .learner-card {
   overflow: visible !important;
   height: auto !important;
-}
-
-
-
-.report-overview {
-  text-align: center;
 }
 
 table {
   page-break-inside: avoid;
 }
 
+ 
+
+
   
+
+/* Allow the main container to split naturally */
+.school-analytics {
+  page-break-inside: auto !important;
+  break-inside: auto !important;
+}
+
+/* Prevent individual sections from being cut mid-block */
+.school-analytics > * {
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+}
+
+/* Prevent header from splitting */
+.school-analytics .report-overview {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+/* Prevent lists & paragraphs from splitting */
+.school-analytics p,
+.school-analytics li,
+.school-analytics h3,
+.school-analytics h4,
+.school-analytics h5,
+.school-analytics ul {
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+  margin: 0 0 6px 0; /* slightly reduce spacing for print safety */
+}
+
+
+
 </style>
 
 
@@ -239,29 +307,21 @@ table {
 <p id="status"></p>
 <hr />
 
-<div class="actions-box">
-  <button onclick="downloadPDF()">
+<div class="actions-box" style="display: flex; gap: 12px; flex-wrap: wrap;">
+  <button onclick="downloadPDF()" style="flex: 1;">
     ⬇️ Download Summary Report<br>
     <small>Recommended for parents & learners</small>
-  </button><br><br>
+  </button>
 
-  <button onclick="downloadDetailedPDF()">
-    ⬇️ Download Detailed Assessment Report<br>
-    <small>For teachers & internal review</small>
-  </button><br><br>
-
-
-  <button onclick="downloadSchoolAnalyticsPDF()">
-  ⬇️ Download School Analysis Report<br>
-  <small>For school leadership & QA</small>
-</button>
-
+  <button onclick="downloadSchoolAnalyticsPDF()" style="flex: 1;">
+    ⬇️ Download School Analysis Report<br>
+    <small>For school leadership & QA</small>
+  </button>
 </div>
 
   
 <div id="schoolAnalytics" style="display:none;"></div>
 <div id="report"></div>
-
 
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
@@ -773,8 +833,10 @@ ${intelligence.schoolImprovement !== null ? `
       <ul>
         <li>Conduct targeted remediation for subjects below 2.3 mean.</li>
         <li>Organize teacher review meetings for declining performance trends.</li>
-        <li>Introduce peer tutoring for learners below expectations.</li>
-        <li>Recognize and reward high-performing classes.</li>
+        <li>Introduce peer tutoring and reward high-performing classes</li>
+ 
+         
+        
       </ul>
 
     </div>
@@ -1616,75 +1678,10 @@ card.appendChild(tableWrapper);
 
 
   
-window.downloadDetailedPDF = async function () {
-  if (!reportDiv.innerHTML.trim()) {
-    alert("No report to download");
-    return;
-  }
-
-  const term = termSelect.options[termSelect.selectedIndex]?.text || "Term";
-  const filename = `Detailed_Report_${term}_${SYSTEM_YEAR}.pdf`;
-
-const original = reportDiv;
-const clone = original.cloneNode(true);
-
-clone.querySelectorAll(".a4-page").forEach(page => {
-  const parent = page.parentNode;
-  while (page.firstChild) {
-    parent.insertBefore(page.firstChild, page);
-  }
-  parent.removeChild(page);
-});
-
-
-  // Force A4 layout
-  clone.style.width = "190mm";
-  clone.style.margin = "0 auto";
-  clone.style.padding = "0";
-  clone.style.boxSizing = "border-box";
-
-  // Improve charts clarity
-  clone.querySelectorAll("canvas").forEach(c => {
-    c.style.width = "100%";
-    c.style.height = "200px";
-  });
-
-  // Improve table readability
-  clone.querySelectorAll("table").forEach(table => {
-    table.style.fontSize = "14px";
-    table.querySelectorAll("td, th").forEach(cell => {
-      cell.style.padding = "8px";
-    });
-  });
-
-  // ✅ CBC COMPLIANCE FOOTER (per learner)
-  clone.querySelectorAll(".learner-card").forEach(card => {
-    const footer = document.createElement("div");
-    footer.style.fontSize = "10px";
-    footer.style.color = "#555";
-    footer.style.textAlign = "center";
-    footer.style.marginTop = "12px";
-    footer.style.borderTop = "1px solid #ddd";
-    footer.style.paddingTop = "6px";
-    footer.style.pageBreakInside = "avoid";
-
-    footer.innerText =
-      "Assessment is competency-based and evidence-driven, guided by KICD CBC curriculum designs.";
-
-    card.appendChild(footer);
-  });
-
-  html2pdf().set({
-    margin: [10, 10, 10, 10],
-    filename,
-    image: { type: "jpeg", quality: 0.98 },
-    html2canvas: { scale: 2, scrollY: 0, useCORS: true },
-    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
-  }).from(clone).save();
-};
 
 
 
+  
 
   window.downloadSchoolAnalyticsPDF = async function () {
 
