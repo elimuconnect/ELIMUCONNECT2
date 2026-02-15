@@ -232,50 +232,66 @@ table {
   page-break-inside: avoid;
 }
 
-  /* ================= ANALYTICS PDF FIT FIX ================= */
-.school-analytics {
-  page-break-inside: avoid !important;
-  break-inside: avoid !important;
-}
+ 
 
+
+/* ================= DETAILED REPORT PDF FIX ================= */
 @media print {
 
-  .school-analytics {
+  html, body {
+    width: 210mm !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+
+  /* Ensure A4 container fits printable area */
+  .a4-page {
     width: 190mm !important;
-    max-height: 270mm !important;   /* fits inside A4 printable area */
+    max-width: 190mm !important;
+    min-height: auto !important;
+    max-height: 277mm !important;   /* A4 safe printable height */
+    margin: 0 auto !important;
+    padding: 10mm !important;
+    box-sizing: border-box !important;
+    page-break-after: always;
     overflow: hidden !important;
-    padding: 12mm !important;
-    box-sizing: border-box;
   }
 
-  .school-analytics h3 {
-    font-size: 18px !important;
-    margin-bottom: 8px !important;
+  /* Prevent content pushing outside page */
+  .learner-card {
+    overflow: visible !important;
+    height: auto !important;
   }
 
-  .school-analytics h4 {
-    font-size: 14px !important;
-    margin-top: 10px !important;
-    margin-bottom: 4px !important;
+  /* Keep tables inside page width */
+  table {
+    width: 100% !important;
+    table-layout: fixed !important;
+    word-break: break-word !important;
   }
 
-  .school-analytics p,
-  .school-analytics li,
-  .school-analytics td,
-  .school-analytics th {
+  th, td {
+    white-space: normal !important;
+    word-wrap: break-word !important;
     font-size: 12px !important;
   }
 
-  .school-analytics table {
-    margin-bottom: 8px !important;
+  /* Reduce spacing slightly for print */
+  h3, h4, h5 {
+    margin-top: 6px !important;
+    margin-bottom: 4px !important;
   }
 
-  .school-analytics ul {
-    margin: 4px 0 8px 18px !important;
+  .subject-block {
+    margin-top: 8px !important;
+    padding-top: 6px !important;
   }
 
 }
 
+  
 </style>
 
 
@@ -835,8 +851,8 @@ ${intelligence.schoolImprovement !== null ? `
       <ul>
         <li>Conduct targeted remediation for subjects below 2.3 mean.</li>
         <li>Organize teacher review meetings for declining performance trends.</li>
-        <li>Introduce peer tutoring for learners below expectations.</li>
-        <li>Recognize and reward high-performing classes.</li>
+        <li>Introduce peer tutoring for learners below expectations and Recognize and reward high-performing classes</li>
+        
       </ul>
 
     </div>
