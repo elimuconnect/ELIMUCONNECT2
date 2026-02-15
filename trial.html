@@ -1800,11 +1800,10 @@ const clone = original.cloneNode(true);
   html2canvas: { scale: 2, scrollY: 0, useCORS: true },
   jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
 
-  // 🔑 THIS IS THE MISSING PIECE
   pagebreak: {
-    mode: ['css'],
-    before: '.learner-page'
-  }
+  mode: ['css']
+}
+
 
 }).from(clone).save();
 
