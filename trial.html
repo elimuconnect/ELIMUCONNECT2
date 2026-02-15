@@ -294,17 +294,34 @@ table {
 
 
 
-
-/* Remove all hard "avoid" rules from school analytics */
+/* Allow the main container to split naturally */
 .school-analytics {
   page-break-inside: auto !important;
   break-inside: auto !important;
 }
 
-/* Optional: prevent only the header from splitting */
+/* Prevent individual sections from being cut mid-block */
+.school-analytics > * {
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+}
+
+/* Prevent header from splitting */
 .school-analytics .report-overview {
   page-break-inside: avoid;
   break-inside: avoid;
+}
+
+/* Prevent lists & paragraphs from splitting */
+.school-analytics p,
+.school-analytics li,
+.school-analytics h3,
+.school-analytics h4,
+.school-analytics h5,
+.school-analytics ul {
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+  margin: 0 0 6px 0; /* slightly reduce spacing for print safety */
 }
 
 
