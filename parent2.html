@@ -1,3 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Parent Summary Report</title>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <style>
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      max-width: 900px;
+      margin: 20px auto;
+      background:#f5f7fa;
+    }
+
+    input, button {
+      padding:10px;
+      margin:6px 0;
+      width:100%;
+      font-size:1em;
+    }
+
+    button {
+      background:#1f6feb;
+      color:white;
+      border:none;
+      border-radius:4px;
+      cursor:pointer;
+    }
+
+    button:hover { background:#174ea6; }
+
+    .muted { color:#666; font-size:0.9em; }
+
+    .a4-page {
+      background:white;
+      padding:14px;
+      margin:10px 0;
+      border-radius:6px;
+    }
+
+    .header {
+      border-bottom:2px solid #333;
+      margin-bottom:10px;
+    }
+
+    .pill {
+      display:inline-block;
+      padding:4px 10px;
+      border-radius:14px;
+      font-size:0.85em;
+      background:#eee;
+      margin-right:6px;
+    }
+
+    table {
+      width:100%;
+      border-collapse:collapse;
+      margin-top:6px;
+    }
+
+    th,td {
+      border-bottom:1px solid #ddd;
+      padding:6px;
+      font-size:14px;
+    }
+
+    th { background:#f0f0f0; }
+
+    .below { background:#f8d7da; }
+    .approaching { background:#fff3cd; }
+    .meeting { background:#d4edda; }
+    .exceeding { background:#cce5ff; }
+
+    .actions { margin:10px 0; }
+
+  </style>
+</head>
+<body>
+
+<h2>View Student Summary Report</h2>
+<p class="muted">Enter details exactly as registered.</p>
+
+<label>Admission Number</label>
+<input id="admission">
+
+<label>First Name</label>
+<input id="firstName">
+
+<label>Last Name</label>
+<input id="lastName">
+
+<button id="checkBtn">View Summary</button>
+
+<div class="actions" style="display:none" id="actionBox">
+  <button onclick="downloadPDF()">⬇️ Download PDF Summary</button>
+</div>
+
+<p id="status" class="muted"></p>
+<hr>
+
+<div id="report"></div>
+
+
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -112,3 +217,5 @@ window.downloadPDF = function(){
   html2pdf().set(opt).from(reportDiv).save();
 };
 </script>
+</body>
+</html>
