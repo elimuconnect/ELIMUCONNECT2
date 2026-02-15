@@ -267,10 +267,27 @@ table {
     margin: 0 auto !important;
     padding: 10mm !important;
     box-sizing: border-box !important;
-    page-break-after: always;
+  page-break-after: auto;
     overflow: hidden !important;
   }
 
+
+
+/* Force every learner report to start on a new page */
+  .learner-page {
+    page-break-before: always;
+    break-before: page;
+  }
+
+  /* But NOT the very first learner */
+  .learner-page:first-of-type {
+    page-break-before: auto;
+    break-before: auto;
+  }
+
+
+
+  
   /* Prevent content pushing outside page */
   .learner-card {
     overflow: visible !important;
