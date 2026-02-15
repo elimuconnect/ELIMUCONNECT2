@@ -182,6 +182,54 @@ function buildAverages(){
  });
 }
 
+
+
+function generateRecommendations(strengths, needs) {
+
+  let teacher = [];
+  let parent = [];
+  let learner = [];
+
+  // 👩🏽‍🏫 TEACHER ACTIONS
+  if (strengths.length) {
+    teacher.push(
+      `Encourage learner through strengths in ${strengths.join(", ")}`
+    );
+  }
+
+  if (needs.length) {
+    teacher.push(
+      `Provide targeted support in ${needs.join(", ")}`
+    );
+  }
+
+  // 🏠 PARENT SUPPORT
+  if (needs.length) {
+    parent.push(
+      `Support practice in ${needs.join(", ")} at home`
+    );
+  }
+
+  parent.push("Maintain communication with class teacher");
+
+  // 🎯 LEARNER FOCUS
+  if (strengths.length) {
+    learner.push(
+      `Build confidence by applying strengths in ${strengths.join(", ")}`
+    );
+  }
+
+  if (needs.length) {
+    learner.push(
+      `Focus revision on ${needs.join(", ")}`
+    );
+  }
+
+  learner.push("Ask for help when concepts are unclear");
+
+  return { teacher, parent, learner };
+}
+ 
  
 /* RENDER */
 
@@ -209,13 +257,11 @@ function renderReport() {
   needsMap = sn.needs;
   supportFlag = generateSupportFlag(strengthsMap, needsMap);
 
-  // Teacher / Parent / Learner recommendations
-  const recommendations = {
-    teacher: needsMap.length ? needsMap.map(s => `Provide remediation in ${s}`) : [],
-    parent: needsMap.length ? needsMap.map(s => `Practice ${s} at home`) : [],
-    learner: needsMap.length ? needsMap.map(s => `Revise ${s}`) : []
-  };
 
+const recommendations = generateRecommendations(strengthsMap, needsMap);
+
+
+ 
   let html = `<div class="a4-page learner-page">
     <div class="learner-card">
 
