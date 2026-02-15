@@ -6,23 +6,23 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 
-
 <style>
+
 /* ================== BASE ================== */
 body {
-  font-family: "Segoe UI", Arial, sans-serif;
-  background: #f7f9fb;
-  color: #222;
-  line-height: 1.5;
+  font-family: "Inter", "Segoe UI", Arial, sans-serif;
+  background: #f4f6f9;
+  color: #1f2937;
+  line-height: 1.6;
+  margin: 0;
+  padding: 30px 15px;
 }
-
 
 * {
   max-width: 100%;
+  box-sizing: border-box;
 }
 
-
-  
 h2, h3 {
   margin-bottom: 6px;
 }
@@ -33,86 +33,119 @@ h4 {
 
 h5 {
   margin-top: 18px;
+  margin-bottom: 6px;
+}
+
+/* ================== FORM CONTROLS ================== */
+label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  display: block;
   margin-bottom: 4px;
 }
 
-/* ================== LAYOUT ================== */
-/* Update these specific sections in your <style> tag */
+input, select {
+  width: 100%;
+  max-width: 400px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  background: #ffffff;
+  transition: all 0.2s ease;
+}
 
+input:focus, select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+/* ================== ACTION PANEL ================== */
+.actions-box {
+  margin-top: 20px;
+  padding: 20px;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+  max-width: 600px;
+}
+
+/* ================== BUTTONS ================== */
+button {
+  width: 100%;
+  max-width: 100%;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  background: #2563eb;
+  color: white;
+  transition: all 0.25s ease;
+}
+
+button:hover {
+  background: #1e40af;
+  transform: translateY(-1px);
+}
+
+button small {
+  display: block;
+  font-weight: 400;
+  font-size: 12px;
+  opacity: 0.9;
+  margin-top: 2px;
+}
+
+/* ================== REPORT CARD LAYOUT ================== */
 .a4-page {
   width: 100%;
-  max-width: 600px; /* phone-friendly width */
-  margin: 0 auto;
+  max-width: 600px; /* KEEP THIS EXACT (PDF SAFE) */
+  margin: 25px auto;
   background: white;
   box-sizing: border-box;
-  padding: 12px; /* some breathing space */
+  padding: 18px;
+  border-radius: 14px;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.06);
+  transition: all 0.3s ease;
 }
 
-
-
-.subject-block {
-  margin-top: 14px;
-  padding-top: 10px;
-  border-top: 1px dashed #ccc;
-  page-break-inside: avoid; /* CRITICAL: Prevents a subject table from splitting in half */
+.a4-page:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 36px rgba(0,0,0,0.08);
 }
 
-/* Ensure images/charts don't get cut */
-canvas, .trend-box {
-  page-break-inside: avoid;
-}
-
+/* ================== LEARNER HEADER ================== */
 .learner-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 8px;
-  margin-bottom: 10px;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
 }
 
-.learner-meta {
-  font-size: 0.95em;
-  color: #555;
-}
-
-
-/* ===== HEADER TYPOGRAPHY ===== */
 .learner-header h4 {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 800;
-  margin: 0;
 }
 
 .learner-header small {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
+  color: #6b7280;
 }
 
-
-  
-.summary-box {
-  background: #f3f6fa;
-  border-left: 5px solid #3498db;
-  padding: 10px 14px;
-  margin: 12px 0;
-  border-radius: 4px;
-}
-
-.pill {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 14px;
-  font-size: 0.85em;
-  background: #eee;
-  margin-right: 6px;
-}
-
-.actions-box {
-  margin-top: 10px;
-  padding: 10px;
-  border-radius: 4px;
-  background: #fafafa;
+/* ================== SUBJECT BLOCK ================== */
+.subject-block {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+  page-break-inside: avoid;
 }
 
 /* ================== TABLES ================== */
@@ -127,44 +160,41 @@ table {
 .table-wrapper {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
-
-
-  
 th, td {
-  padding: 5px 6px;
-  border-bottom: 1px solid #ddd;
+  padding: 8px 10px;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 th {
-  background: #f0f0f0;
+  background: #f9fafb;
   text-align: left;
-}
-
-th {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #374151;
 }
 
-  
 tr:last-child td {
   border-bottom: none;
 }
 
-
-.evidence-note {
-  font-size: 0.85em;
-  margin-bottom: 6px;
+/* ================== SUMMARY BOX ================== */
+.summary-box {
+  background: #f0f9ff;
+  border-left: 4px solid #2563eb;
+  padding: 12px 14px;
+  margin: 14px 0;
+  border-radius: 8px;
 }
-
-
 
 /* ================== CHART ================== */
 .trend-box {
   height: 180px;
-  margin-top: 12px;
+  margin-top: 14px;
 }
 
 .trend-box canvas {
@@ -172,40 +202,30 @@ tr:last-child td {
   height: 100% !important;
 }
 
-
-
-
-
-.report-overview h3 {
-  font-size: 1.1em;
-  line-height: 1.2em;
+/* ================== REPORT HEADER ================== */
+.report-overview {
+  text-align: center;
+  margin-bottom: 16px;
 }
 
-
-
 .report-overview h3 {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 800;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.4px;
 }
 
- @media print {
+/* ================== PRINT SAFETY (UNCHANGED) ================== */
+@media print {
   table { page-break-inside:auto }
-  tr    { page-break-inside:avoid; page-break-after:auto }
+  tr { page-break-inside:avoid; page-break-after:auto }
   thead { display:table-header-group }
   tfoot { display:table-footer-group }
 }
 
-/* Prevents the 'cut-off' look on containers */
+/* Prevents cut-off look */
 .learner-card {
   overflow: visible !important;
   height: auto !important;
-}
-
-
-
-.report-overview {
-  text-align: center;
 }
 
 table {
@@ -261,7 +281,6 @@ table {
   
 <div id="schoolAnalytics" style="display:none;"></div>
 <div id="report"></div>
-
 
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
