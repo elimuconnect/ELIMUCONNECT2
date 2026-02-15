@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Parent Summary Report</title>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <style>
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      max-width: 900px;
+      margin: 20px auto;
+      background:#f5f7fa;
+    }
+
+    input, button {
+      padding:10px;
+      margin:6px 0;
+      width:100%;
+      font-size:1em;
+    }
+
+    button {
+      background:#1f6feb;
+      color:white;
+      border:none;
+      border-radius:4px;
+      cursor:pointer;
+    }
+
+    button:hover { background:#174ea6; }
+
+    .muted { color:#666; font-size:0.9em; }
+
+    .a4-page {
+      background:white;
+      padding:14px;
+      margin:10px 0;
+      border-radius:6px;
+    }
+
+    .header {
+      border-bottom:2px solid #333;
+      margin-bottom:10px;
+    }
+
+    .pill {
+      display:inline-block;
+      padding:4px 10px;
+      border-radius:14px;
+      font-size:0.85em;
+      background:#eee;
+      margin-right:6px;
+    }
+
+    table {
+      width:100%;
+      border-collapse:collapse;
+      margin-top:6px;
+    }
+
+    th,td {
+      border-bottom:1px solid #ddd;
+      padding:6px;
+      font-size:14px;
+    }
+
+    th { background:#f0f0f0; }
+
+    .below { background:#f8d7da; }
+    .approaching { background:#fff3cd; }
+    .meeting { background:#d4edda; }
+    .exceeding { background:#cce5ff; }
+
+    .actions { margin:10px 0; }
+
+  </style>
+</head>
+<body>
+
+<h2>View Student Summary Report</h2>
+<p class="muted">Enter details exactly as registered.</p>
+
+<label>Admission Number</label>
+<input id="admission">
+
+<label>First Name</label>
+<input id="firstName">
+
+<label>Last Name</label>
+<input id="lastName">
+
+<button id="checkBtn">View Summary</button>
+
+<div class="actions" style="display:none" id="actionBox">
+  <button onclick="downloadPDF()">⬇️ Download PDF Summary</button>
+</div>
+
+<p id="status" class="muted"></p>
+<hr>
+
+<div id="report"></div>
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabase = createClient(
+  "https://zcmzuetusvpmvubbjlmx.supabase.co",
+  "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
+);
+
+const reportDiv = document.getElementById("report");
+const statusEl = document.getElementById("status");
+const actionBox = document.getElementById("actionBox");
+
+function levelClass(level){
+  if(level==="Below Expectations") return "below";
+  if(level==="Approaching Expectations") return "approaching";
+  if(level==="Meeting Expectations") return "meeting";
+  return "exceeding";
+}
+
+document.getElementById("checkBtn").onclick = async () => {
+  statusEl.innerText = "Checking results…";
+  reportDiv.innerHTML = "";
+  actionBox.style.display="none";
+
+  const admission = admission.value.trim();
+  const first = firstName.value.trim();
+  const last = lastName.value.trim();
+
+  if(!admission || !first || !last){
+    statusEl.innerText="Fill all fields.";
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from("public_parent_results")
+    .select("*")
+    .eq("admission_number", admission)
+    .ilike("first_name", first)
+    .ilike("last_name", last)
+    .order("learning_area");
+
+  if(error){ statusEl.innerText=error.message; return; }
+  if(!data.length){ statusEl.innerText="No records found."; return; }
+
+  statusEl.innerText="";
+  actionBox.style.display="block";
+
+  const student = `${data[0].first_name} ${data[0].last_name}`;
+  const term = data[0].term;
+  const year = data[0].academic_year;
+
+  const grouped = {};
+  data.forEach(r=>{
+    grouped[r.learning_area] ??= [];
+    grouped[r.learning_area].push(r);
+  });
+
+  reportDiv.innerHTML = `
+  <div class="a4-page">
+    <div class="header">
+      <h3>${student}</h3>
+      <div class="muted">
+        Adm: ${admission} |
+        Term: ${term} |
+        Year: ${year}
+      </div>
+    </div>
+
+    ${Object.entries(grouped).map(([subject, rows])=>`
+      <h4>📘 ${subject}</h4>
+      <table>
+        <thead>
+          <tr>
+            <th>Competency</th>
+            <th>Achievement</th>
+            <th>Remarks</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(r=>`
+            <tr class="${levelClass(r.achievement_level)}">
+              <td>${r.competency}</td>
+              <td>${r.achievement_level}</td>
+              <td>${r.remarks||""}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `).join("")}
+  </div>`;
+};
+
+window.downloadPDF = function(){
+  const opt = {
+    margin: 5,
+    filename: "Parent_Summary_Report.pdf",
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+  html2pdf().set(opt).from(reportDiv).save();
+};
+</script>
+</body>
+</html>
