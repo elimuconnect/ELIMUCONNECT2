@@ -118,6 +118,15 @@ button small {
   box-shadow: 0 18px 36px rgba(0,0,0,0.08);
 }
 
+
+/* learner-page no longer forces breaks */
+.learner-page {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+
+  
 /* ================== LEARNER HEADER ================== */
 .learner-header {
   display: flex;
@@ -214,6 +223,9 @@ tr:last-child td {
   letter-spacing: 0.4px;
 }
 
+
+
+
 /* ================== PRINT SAFETY (UNCHANGED) ================== */
 @media print {
   table { page-break-inside:auto }
@@ -232,7 +244,43 @@ table {
   page-break-inside: avoid;
 }
 
+ 
+
+
   
+
+/* Allow the main container to split naturally */
+.school-analytics {
+  page-break-inside: auto !important;
+  break-inside: auto !important;
+}
+
+/* Prevent individual sections from being cut mid-block */
+.school-analytics > * {
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+}
+
+/* Prevent header from splitting */
+.school-analytics .report-overview {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+/* Prevent lists & paragraphs from splitting */
+.school-analytics p,
+.school-analytics li,
+.school-analytics h3,
+.school-analytics h4,
+.school-analytics h5,
+.school-analytics ul {
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+  margin: 0 0 6px 0; /* slightly reduce spacing for print safety */
+}
+
+
+
 </style>
 
 
@@ -259,23 +307,16 @@ table {
 <p id="status"></p>
 <hr />
 
-<div class="actions-box">
-  <button onclick="downloadPDF()">
+<div class="actions-box" style="display: flex; gap: 12px; flex-wrap: wrap;">
+  <button onclick="downloadPDF()" style="flex: 1;">
     ⬇️ Download Summary Report<br>
     <small>Recommended for parents & learners</small>
-  </button><br><br>
+  </button>
 
-  <button onclick="downloadDetailedPDF()">
-    ⬇️ Download Detailed Assessment Report<br>
-    <small>For teachers & internal review</small>
-  </button><br><br>
-
-
-  <button onclick="downloadSchoolAnalyticsPDF()">
-  ⬇️ Download School Analysis Report<br>
-  <small>For school leadership & QA</small>
-</button>
-
+  <button onclick="downloadSchoolAnalyticsPDF()" style="flex: 1;">
+    ⬇️ Download School Analysis Report<br>
+    <small>For school leadership & QA</small>
+  </button>
 </div>
 
   
@@ -792,8 +833,10 @@ ${intelligence.schoolImprovement !== null ? `
       <ul>
         <li>Conduct targeted remediation for subjects below 2.3 mean.</li>
         <li>Organize teacher review meetings for declining performance trends.</li>
-        <li>Introduce peer tutoring for learners below expectations.</li>
-        <li>Recognize and reward high-performing classes.</li>
+        <li>Introduce peer tutoring and reward high-performing classes</li>
+ 
+         
+        
       </ul>
 
     </div>
@@ -1635,75 +1678,10 @@ card.appendChild(tableWrapper);
 
 
   
-window.downloadDetailedPDF = async function () {
-  if (!reportDiv.innerHTML.trim()) {
-    alert("No report to download");
-    return;
-  }
-
-  const term = termSelect.options[termSelect.selectedIndex]?.text || "Term";
-  const filename = `Detailed_Report_${term}_${SYSTEM_YEAR}.pdf`;
-
-const original = reportDiv;
-const clone = original.cloneNode(true);
-
-clone.querySelectorAll(".a4-page").forEach(page => {
-  const parent = page.parentNode;
-  while (page.firstChild) {
-    parent.insertBefore(page.firstChild, page);
-  }
-  parent.removeChild(page);
-});
-
-
-  // Force A4 layout
-  clone.style.width = "190mm";
-  clone.style.margin = "0 auto";
-  clone.style.padding = "0";
-  clone.style.boxSizing = "border-box";
-
-  // Improve charts clarity
-  clone.querySelectorAll("canvas").forEach(c => {
-    c.style.width = "100%";
-    c.style.height = "200px";
-  });
-
-  // Improve table readability
-  clone.querySelectorAll("table").forEach(table => {
-    table.style.fontSize = "14px";
-    table.querySelectorAll("td, th").forEach(cell => {
-      cell.style.padding = "8px";
-    });
-  });
-
-  // ✅ CBC COMPLIANCE FOOTER (per learner)
-  clone.querySelectorAll(".learner-card").forEach(card => {
-    const footer = document.createElement("div");
-    footer.style.fontSize = "10px";
-    footer.style.color = "#555";
-    footer.style.textAlign = "center";
-    footer.style.marginTop = "12px";
-    footer.style.borderTop = "1px solid #ddd";
-    footer.style.paddingTop = "6px";
-    footer.style.pageBreakInside = "avoid";
-
-    footer.innerText =
-      "Assessment is competency-based and evidence-driven, guided by KICD CBC curriculum designs.";
-
-    card.appendChild(footer);
-  });
-
-  html2pdf().set({
-    margin: [10, 10, 10, 10],
-    filename,
-    image: { type: "jpeg", quality: 0.98 },
-    html2canvas: { scale: 2, scrollY: 0, useCORS: true },
-    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
-  }).from(clone).save();
-};
 
 
 
+  
 
   window.downloadSchoolAnalyticsPDF = async function () {
 
