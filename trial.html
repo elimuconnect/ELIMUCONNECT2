@@ -214,79 +214,64 @@ tr:last-child td {
   letter-spacing: 0.4px;
 }
 
-/* ================== PRINT SAFETY (UNCHANGED) ================== */
-@media print {
-  table { page-break-inside:auto }
-  tr { page-break-inside:avoid; page-break-after:auto }
-  thead { display:table-header-group }
-  tfoot { display:table-footer-group }
-}
-
-/* Prevents cut-off look */
-.learner-card {
-  overflow: visible !important;
-  height: auto !important;
-}
-
-table {
-  page-break-inside: avoid;
-}
-
- 
 
 
-/* ================= DETAILED REPORT PDF FIX ================= */
-@media print {
+  @media print {
 
   html, body {
     width: 210mm !important;
-    height: auto !important;
     margin: 0 !important;
     padding: 0 !important;
     background: white !important;
   }
 
-  /* Ensure A4 container fits printable area */
+  /* Each learner starts a new page */
   .a4-page {
     width: 190mm !important;
     max-width: 190mm !important;
-    min-height: auto !important;
-    max-height: 277mm !important;   /* A4 safe printable height */
     margin: 0 auto !important;
     padding: 10mm !important;
     box-sizing: border-box !important;
-    page-break-after: always;
-    overflow: hidden !important;
+    page-break-after: always; 
+    /* remove overflow & max-height to prevent cutting content */
   }
 
-  /* Prevent content pushing outside page */
+  /* Prevent cut-offs inside the learner card */
   .learner-card {
     overflow: visible !important;
     height: auto !important;
+    page-break-inside: avoid !important;
   }
 
-  /* Keep tables inside page width */
+  /* Tables should stay intact */
   table {
     width: 100% !important;
     table-layout: fixed !important;
     word-break: break-word !important;
+    page-break-inside: avoid !important;
   }
 
-  th, td {
-    white-space: normal !important;
-    word-wrap: break-word !important;
-    font-size: 12px !important;
+  tr {
+    page-break-inside: avoid !important;
   }
 
-  /* Reduce spacing slightly for print */
-  h3, h4, h5 {
-    margin-top: 6px !important;
+  thead { display: table-header-group !important; }
+  tfoot { display: table-footer-group !important; }
+
+  h3, h4, h5, p, ul, li {
+    page-break-inside: avoid !important;
+    margin-top: 4px !important;
     margin-bottom: 4px !important;
   }
 
   .subject-block {
     margin-top: 8px !important;
     padding-top: 6px !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 15mm 10mm 15mm 10mm;
   }
 
 }
