@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Student Term Report</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{font-family:Segoe UI,Arial;background:#f5f7fb;padding:20px}
+input,select{width:100%;padding:8px;margin-bottom:10px}
+.a4-page{background:#fff;padding:12px;margin-bottom:20px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{border:1px solid #ccc;padding:6px}
+th{background:#eee}
+.subject-block{margin-top:15px}
+button{padding:10px 20px;background:#1f6feb;color:white;border:none;cursor:pointer}
+</style>
+</head>
+
+<body>
+
+<h2>Student Report Lookup</h2>
+
+<input id="yearInput" value="2026" placeholder="Year">
+<select id="termSelect"></select>
+<input id="firstInput" placeholder="First name">
+<input id="lastInput" placeholder="Last name">
+<input id="admInput" placeholder="Admission number">
+
+<p id="status"></p>
+
+<button onclick="downloadPDF()">Download Summary PDF</button>
+<hr>
+
+<div id="report"></div>
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabase = createClient(
+ "https://zcmzuetusvpmvubbjlmx.supabase.co",
+ "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
+);
+
+const termSelect = document.getElementById("termSelect");
+const firstInput = document.getElementById("firstInput");
+const lastInput  = document.getElementById("lastInput");
+const admInput   = document.getElementById("admInput");
+const yearInput  = document.getElementById("yearInput");
+const reportDiv  = document.getElementById("report");
+const status     = document.getElementById("status");
+
+let results = [];
+let avgMap = {};
+
+function levelToScore(level){
+ if(level==="Below Expectations") return 1;
+ if(level==="Approaching Expectations") return 2;
+ if(level==="Meeting Expectations") return 3;
+ if(level==="Exceeding Expectations") return 4;
+ return 0;
+}
+
+/* LOAD TERMS */
+const { data: terms } = await supabase.from("terms").select("id,name").order("name");
+termSelect.innerHTML = `<option value="">Select term</option>` +
+ terms.map(t=>`<option value="${t.name}">${t.name}</option>`).join("");
+
+/* AUTO LOAD */
+["firstInput","lastInput","admInput","termSelect"].forEach(id=>{
+ document.getElementById(id).addEventListener("input", loadReport);
+});
+
+/* MAIN */
+async function loadReport(){
+ reportDiv.innerHTML="";
+ status.innerText="";
+
+ const term = termSelect.value;
+ const first = firstInput.value.trim();
+ const last = lastInput.value.trim();
+ const adm = admInput.value.trim();
+ const year = yearInput.value.trim();
+
+ if(!term || !first || !last || !adm) return;
+
+ const { data, error } = await supabase
+  .from("assessment_results_view")
+  .select("*")
+  .eq("term", term)
+  .eq("academic_year", year)
+  .ilike("first_name", first)
+  .ilike("last_name", last)
+  .eq("admission_number", adm);
+
+ if(error || !data.length){
+  status.innerText="No results found";
+  return;
+ }
+
+ results = data;
+ buildAverages();
+ renderReport();
+}
+
+/* BUILD AVERAGES */
+function buildAverages(){
+ avgMap = {};
+ results.forEach(r=>{
+  const student = `${r.first_name} ${r.last_name}`;
+  avgMap[student] ??= {};
+  avgMap[student][r.subject] ??= {total:0,count:0};
+  const score = levelToScore(r.achievement_level);
+  avgMap[student][r.subject].total+=score;
+  avgMap[student][r.subject].count++;
+ });
+
+ Object.keys(avgMap).forEach(s=>{
+  Object.keys(avgMap[s]).forEach(sub=>{
+   const d = avgMap[s][sub];
+   const avg = d.total/d.count;
+   avgMap[s][sub]={
+    average_score:avg,
+    level:
+     avg>=3.5?"Exceeding Expectations":
+     avg>=2.5?"Meeting Expectations":
+     avg>=1.5?"Approaching Expectations":
+     "Below Expectations"
+   };
+  });
+ });
+}
+
+/* RENDER */
+function renderReport(){
+ const student = `${results[0].first_name} ${results[0].last_name}`;
+ let html = `<div class="a4-page"><h3>${student} (Adm ${results[0].admission_number})</h3>`;
+
+ Object.entries(avgMap[student]).forEach(([subject,d])=>{
+  const rows = results.filter(r=>r.subject===subject);
+  html+=`
+  <div class="subject-block">
+   <h4>${subject}</h4>
+   <table>
+    <tr><th>Competency</th><th>Level</th></tr>
+    ${rows.map(r=>`
+     <tr><td>${r.competency}</td><td>${r.achievement_level}</td></tr>
+    `).join("")}
+    <tr style="font-weight:bold">
+     <td>AVERAGE</td>
+     <td>${d.average_score.toFixed(2)} — ${d.level}</td>
+    </tr>
+   </table>
+  </div>`;
+ });
+
+ html+="</div>";
+ reportDiv.innerHTML=html;
+}
+
+/* PDF */
+window.downloadPDF = ()=>{
+ if(!reportDiv.innerHTML.trim()) return alert("No report");
+ html2pdf().from(reportDiv).set({
+  filename:"Summary_Report.pdf",
+  jsPDF:{unit:"mm",format:"a4"}
+ }).save();
+}
+</script>
+</body>
+</html>
