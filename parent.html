@@ -1,143 +1,314 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Student Results Lookup</title>
+<meta charset="UTF-8">
+<title>Student Term Report</title>
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 800px;
-      margin: 40px auto;
-      line-height: 1.5;
-    }
-    input, button {
-      padding: 10px;
-      margin: 6px 0;
-      width: 100%;
-      font-size: 1em;
-    }
-    button {
-      cursor: pointer;
-      background: #1f6feb;
-      color: #fff;
-      border: none;
-      border-radius: 4px;
-    }
-    button:hover {
-      background: #174ea6;
-    }
-    .card {
-      border: 1px solid #ddd;
-      padding: 12px;
-      margin-bottom: 12px;
-      border-radius: 6px;
-      background: #fafafa;
-    }
-    .muted {
-      color: #666;
-      font-size: 0.9em;
-    }
-    hr {
-      margin: 20px 0;
-    }
-  </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{font-family:Segoe UI,Arial;background:#f5f7fb;padding:20px}
+input,select{width:100%;padding:8px;margin-bottom:10px}
+.a4-page{background:#fff;padding:12px;margin-bottom:20px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{border:1px solid #ccc;padding:6px}
+th{background:#eee}
+.subject-block{margin-top:15px}
+button{padding:10px 20px;background:#1f6feb;color:white;border:none;cursor:pointer}
+</style>
 </head>
+
 <body>
 
-<h2>View Student Results</h2>
+<h2>Student Report Lookup</h2>
 
-<p class="muted">
-  Enter the <b>Admission Number</b>, <b>First Name</b>, and <b>Last Name</b>
-  exactly as registered.
-</p>
+<input id="yearInput" value="2026" placeholder="Year">
+<select id="termSelect"></select>
+<input id="firstInput" placeholder="First name">
+<input id="lastInput" placeholder="Last name">
+<input id="admInput" placeholder="Admission number">
 
-<label>Admission Number</label>
-<input id="admission" placeholder="e.g. 1111">
+<p id="status"></p>
 
-<label>First Name</label>
-<input id="firstName" placeholder="e.g. JOHN">
-
-<label>Last Name</label>
-<input id="lastName" placeholder="e.g. OTIENO">
-
-<button id="checkBtn">View Results</button>
-
-<p id="status" class="muted"></p>
+<button onclick="downloadPDF()">Download Summary PDF</button>
 <hr>
 
-<div id="results"></div>
+<div id="report"></div>
 
 <script type="module">
-  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-  const supabase = createClient(
-    "https://zcmzuetusvpmvubbjlmx.supabase.co",
-    "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
-  );
+const supabase = createClient(
+ "https://zcmzuetusvpmvubbjlmx.supabase.co",
+ "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
+);
 
-  const statusEl = document.getElementById("status");
-  const resultsEl = document.getElementById("results");
+const termSelect = document.getElementById("termSelect");
+const firstInput = document.getElementById("firstInput");
+const lastInput  = document.getElementById("lastInput");
+const admInput   = document.getElementById("admInput");
+const yearInput  = document.getElementById("yearInput");
+const reportDiv  = document.getElementById("report");
+const status     = document.getElementById("status");
 
-  document.getElementById("checkBtn").onclick = async () => {
-    statusEl.innerText = "Checking results…";
-    resultsEl.innerHTML = "";
+let results = [];
+let avgMap = {};
+  let overallInsight = "";
+let strengthsMap = {};
+let needsMap = {};
+let supportFlag = "";
 
-    const admission = document.getElementById("admission").value.trim();
-    const firstName = document.getElementById("firstName").value.trim();
-    const lastName = document.getElementById("lastName").value.trim();
 
-    if (!admission || !firstName || !lastName) {
-      statusEl.innerText = "Please fill in all fields.";
-      return;
-    }
+function levelToScore(level){
+ if(level==="Below Expectations") return 1;
+ if(level==="Approaching Expectations") return 2;
+ if(level==="Meeting Expectations") return 3;
+ if(level==="Exceeding Expectations") return 4;
+ return 0;
+}
 
-    const { data, error } = await supabase
-      .from("public_parent_results")
-      .select(`
-        student_id,
-        admission_number,
-        first_name,
-        last_name,
-        learning_area,
-        competency,
-        achievement_level,
-        remarks,
-        term,
-        academic_year
-      `)
-      .eq("admission_number", admission)
-      .ilike("first_name", firstName)
-      .ilike("last_name", lastName)
-      .order("academic_year", { ascending: false });
 
-    if (error) {
-      statusEl.innerText = error.message;
-      return;
-    }
 
-    if (!data || data.length === 0) {
-      statusEl.innerText =
-        "No results found. Please confirm the details and try again.";
-      return;
-    }
+function generateInsight(subjects){
+  let total = 0, count = 0;
+  Object.values(subjects).forEach(rows=>{
+    rows.forEach(r=>{
+      const s = levelToScore(r.achievement_level);
+      if(s>0){ total+=s; count++; }
+    });
+  });
 
-    statusEl.innerText = "";
+  if(!count) return "";
+  const avg = total/count;
 
-    resultsEl.innerHTML = data.map(r => `
-      <div class="card">
-        <strong>${r.first_name} ${r.last_name}</strong><br>
-        <span class="muted">${r.learning_area}</span><br>
-        ${r.competency}<br>
-        <b>${r.achievement_level}</b><br>
-        <i>${r.remarks || ""}</i><br>
-        <span class="muted">
-          ${r.term || "Term"} · ${r.academic_year}
-        </span>
-      </div>
-    `).join("");
+  if(avg>=3.5) return "Overall learner is exceeding expectations.";
+  if(avg>=2.5) return "Overall learner is meeting expectations.";
+  if(avg>=1.5) return "Overall learner is approaching expectations.";
+  return "Overall learner is below expectations and needs support.";
+}
+
+function generateStrengthsAndNeeds(subjects){
+  let strengths=[], needs=[];
+  Object.entries(subjects).forEach(([subject,rows])=>{
+    const scores = rows.map(r=>levelToScore(r.achievement_level)).filter(s=>s>0);
+    if(!scores.length) return;
+    const avg = scores.reduce((a,b)=>a+b,0)/scores.length;
+
+    if(avg>=3.5) strengths.push(subject);
+    if(avg<2.5) needs.push(subject);
+  });
+  return {strengths, needs};
+}
+
+function generateSupportFlag(strengths, needs){
+  if(needs.length>=2) return "🔴 Needs Learning Support";
+  if(strengths.length>=2) return "🟢 High Potential";
+  return "🟡 On Track";
+}
+
+  
+/* LOAD TERMS */
+const { data: terms } = await supabase.from("terms").select("id,name").order("name");
+termSelect.innerHTML = `<option value="">Select term</option>` +
+ terms.map(t=>`<option value="${t.name}">${t.name}</option>`).join("");
+
+/* AUTO LOAD */
+["firstInput","lastInput","admInput","termSelect"].forEach(id=>{
+ document.getElementById(id).addEventListener("input", loadReport);
+});
+
+/* MAIN */
+async function loadReport(){
+ reportDiv.innerHTML="";
+ status.innerText="";
+
+ const term = termSelect.value;
+ const first = firstInput.value.trim();
+ const last = lastInput.value.trim();
+ const adm = admInput.value.trim();
+ const year = yearInput.value.trim();
+
+ if(!term || !first || !last || !adm) return;
+
+ const { data, error } = await supabase
+  .from("assessment_results_view")
+  .select("*")
+  .eq("term", term)
+  .eq("academic_year", year)
+  .ilike("first_name", first)
+  .ilike("last_name", last)
+  .eq("admission_number", adm);
+
+ if(error || !data.length){
+  status.innerText="No results found";
+  return;
+ }
+
+ results = data;
+ buildAverages();
+ renderReport();
+}
+
+/* BUILD AVERAGES */
+function buildAverages(){
+ avgMap = {};
+ results.forEach(r=>{
+  const student = `${r.first_name} ${r.last_name}`;
+  avgMap[student] ??= {};
+  avgMap[student][r.subject] ??= {total:0,count:0};
+  const score = levelToScore(r.achievement_level);
+  avgMap[student][r.subject].total+=score;
+  avgMap[student][r.subject].count++;
+ });
+
+ Object.keys(avgMap).forEach(s=>{
+  Object.keys(avgMap[s]).forEach(sub=>{
+   const d = avgMap[s][sub];
+   const avg = d.total/d.count;
+   avgMap[s][sub]={
+    average_score:avg,
+    level:
+     avg>=3.5?"Exceeding Expectations":
+     avg>=2.5?"Meeting Expectations":
+     avg>=1.5?"Approaching Expectations":
+     "Below Expectations"
+   };
+  });
+ });
+}
+
+const student = Object.keys(avgMap)[0];
+const subjects = {};
+
+results.forEach(r=>{
+  subjects[r.subject] ??= [];
+  subjects[r.subject].push(r);
+});
+
+overallInsight = generateInsight(subjects);
+const sn = generateStrengthsAndNeeds(subjects);
+strengthsMap = sn.strengths;
+needsMap = sn.needs;
+supportFlag = generateSupportFlag(strengthsMap, needsMap);
+
+
+
+
+  
+/* RENDER */
+
+function renderReport() {
+  if (!results.length) return;
+
+  const student = `${results[0].first_name} ${results[0].last_name}`;
+  const adm = results[0].admission_number;
+  const className = results[0].class_name || "—";
+  const schoolName = results[0].school_name || "—";
+  const term = termSelect.value || "—";
+  const year = yearInput.value || "—";
+
+  // Prepare subjects object
+  const subjects = {};
+  results.forEach(r => {
+    subjects[r.subject] ??= [];
+    subjects[r.subject].push(r);
+  });
+
+  // Insights and recommendations
+  overallInsight = generateInsight(subjects);
+  const sn = generateStrengthsAndNeeds(subjects);
+  strengthsMap = sn.strengths;
+  needsMap = sn.needs;
+  supportFlag = generateSupportFlag(strengthsMap, needsMap);
+
+  // Teacher / Parent / Learner recommendations
+  const recommendations = {
+    teacher: needsMap.length ? needsMap.map(s => `Provide remediation in ${s}`) : [],
+    parent: needsMap.length ? needsMap.map(s => `Practice ${s} at home`) : [],
+    learner: needsMap.length ? needsMap.map(s => `Revise ${s}`) : []
   };
-</script>
 
+  let html = `<div class="a4-page learner-page">
+    <div class="learner-card">
+
+      <!-- SCHOOL & TERM HEADER -->
+      <div class="report-overview no-split">
+        <h3>${schoolName}</h3>
+        <div class="learner-meta">
+          <strong>Class:</strong> ${className} &nbsp; | &nbsp;
+          <strong>Term:</strong> ${term} – ${year}
+        </div>
+      </div>
+
+      <!-- STUDENT HEADER -->
+      <div class="learner-header">
+        <h4>👤 ${student} <small>(Adm: ${adm})</small></h4>
+        <div style="font-weight:bold;">${supportFlag}</div>
+      </div>
+
+      <!-- OVERALL INSIGHT -->
+      <div class="split-block" style="margin-bottom:10px;">
+        ${overallInsight ? `<p><strong>📋 Insight:</strong> ${overallInsight}</p>` : ""}
+        ${strengthsMap.length ? `<p><strong>💪 Strengths:</strong> ${strengthsMap.join(", ")}</p>` : ""}
+        ${needsMap.length ? `<p><strong>🎯 Areas for Improvement:</strong> ${needsMap.join(", ")}</p>` : ""}
+      </div>
+
+      <!-- RECOMMENDATIONS -->
+      ${recommendations.teacher.length ? `
+        <div class="summary-box" style="border-left:4px solid #3498db;background:#f3f6fa;">
+          <strong>👩🏽‍🏫 Teacher Actions</strong>
+          <ul>${recommendations.teacher.map(r => `<li>${r}</li>`).join("")}</ul>
+        </div>` : ""}
+      ${recommendations.parent.length ? `
+        <div class="summary-box" style="border-left:4px solid #f39c12;background:#fffaf3;">
+          <strong>🏠 Parent Support</strong>
+          <ul>${recommendations.parent.map(r => `<li>${r}</li>`).join("")}</ul>
+        </div>` : ""}
+      ${recommendations.learner.length ? `
+        <div class="summary-box" style="border-left:4px solid #2ecc71;background:#f6fffa;">
+          <strong>🎯 Learner Focus</strong>
+          <ul>${recommendations.learner.map(r => `<li>${r}</li>`).join("")}</ul>
+        </div>` : ""}
+
+      <!-- SUBJECT TABLES -->
+      ${Object.entries(avgMap[student] || {}).map(([subject, d]) => {
+        const rows = results.filter(r => r.subject === subject);
+        return `
+        <div class="subject-block">
+          <h4>${subject}</h4>
+          <table>
+            <thead>
+              <tr><th>Competency</th><th>Level</th></tr>
+            </thead>
+            <tbody>
+              ${rows.map(r => `<tr><td>${r.competency || "—"}</td><td>${r.achievement_level || "—"}</td></tr>`).join("")}
+              <tr style="font-weight:bold">
+                <td>AVERAGE</td>
+                <td>${d.average_score ? d.average_score.toFixed(2) : "N/A"} — ${d.level || "N/A"}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>`;
+      }).join("")}
+
+    </div>
+  </div>`;
+
+  reportDiv.innerHTML = html;
+}
+
+
+
+ 
+/* PDF */
+window.downloadPDF = ()=>{
+ if(!reportDiv.innerHTML.trim()) return alert("No report");
+ html2pdf().from(reportDiv).set({
+  filename:"Summary_Report.pdf",
+  jsPDF:{unit:"mm",format:"a4"}
+ }).save();
+}
+</script>
 </body>
 </html>
