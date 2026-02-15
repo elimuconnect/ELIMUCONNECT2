@@ -294,6 +294,19 @@ table {
 
 
 
+/* ================= SCHOOL ANALYTICS PAGE BREAK FIX (CLEAN) ================= */
+
+/* Only prevent breaking the main analytics container */
+.school-analytics {
+  page-break-inside: avoid !important; /* keep entire analytics block together if possible */
+  break-inside: avoid !important;
+}
+
+/* Let child elements break normally — avoids blank pages */
+.school-analytics * {
+  page-break-inside: auto !important;
+  break-inside: auto !important;
+}
 
 
 
