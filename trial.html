@@ -1765,7 +1765,7 @@ window.downloadDetailedPDF = async function () {
     return;
   }
 
- window.__EXPORTING_PDF__ = true;
+
 
 
   const term = termSelect.options[termSelect.selectedIndex]?.text || "Term";
@@ -1824,7 +1824,7 @@ const clone = original.cloneNode(true);
     before: '.a4-page'
   }
 }).from(clone).save();
-window.__EXPORTING_PDF__ = false;
+
 
 
 };
