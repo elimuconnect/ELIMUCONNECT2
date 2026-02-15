@@ -198,61 +198,69 @@ supportFlag = generateSupportFlag(strengthsMap, needsMap);
   
 /* RENDER */
 function renderReport(){
- const student = `${results[0].first_name} ${results[0].last_name}`;
-let html = `
-<div class="a4-page">
-  <h3>👤 ${student} (Adm ${results[0].admission_number})</h3>
-  <p><strong>Status:</strong> ${supportFlag}</p>
-  <p><em>${overallInsight}</em></p>
+  const student = `${results[0].first_name} ${results[0].last_name}`;
+  let html = `<div class="a4-page">
+    <h3>👤 ${student} (Adm ${results[0].admission_number})</h3>
+    <p><strong>Status:</strong> ${supportFlag}</p>
+    <p><em>${overallInsight || "No overall insight available."}</em></p>
 
-  ${strengthsMap.length ? `<p><strong>💪 Strengths:</strong> ${strengthsMap.join(", ")}</p>`:""}
-  ${needsMap.length ? `<p><strong>🎯 Areas for Improvement:</strong> ${needsMap.join(", ")}</p>`:""}
+    ${strengthsMap.length ? `<p><strong>💪 Strengths:</strong> ${strengthsMap.join(", ")}</p>` : ""}
+    ${needsMap.length ? `<p><strong>🎯 Areas for Improvement:</strong> ${needsMap.join(", ")}</p>` : ""}
 
-  <div style="background:#f3f6fa;padding:10px;border-left:4px solid #3498db;margin:10px 0;">
-    <strong>Teacher Recommendations</strong>
-    <ul>
-      ${needsMap.map(s=>`<li>Provide remediation in ${s}</li>`).join("")}
-    </ul>
-  </div>
+    <div style="background:#f3f6fa;padding:10px;border-left:4px solid #3498db;margin:10px 0;">
+      <strong>Teacher Recommendations</strong>
+      <ul>
+        ${needsMap.length 
+          ? needsMap.map(s=>`<li>Provide remediation in ${s}</li>`).join("") 
+          : "<li>No recommendations available.</li>"
+        }
+      </ul>
+    </div>
 
-  <div style="background:#fffaf3;padding:10px;border-left:4px solid #f39c12;margin:10px 0;">
-    <strong>Parent Support</strong>
-    <ul>
-      ${needsMap.map(s=>`<li>Practice ${s} at home</li>`).join("")}
-    </ul>
-  </div>
+    <div style="background:#fffaf3;padding:10px;border-left:4px solid #f39c12;margin:10px 0;">
+      <strong>Parent Support</strong>
+      <ul>
+        ${needsMap.length 
+          ? needsMap.map(s=>`<li>Practice ${s} at home</li>`).join("") 
+          : "<li>No suggestions available.</li>"
+        }
+      </ul>
+    </div>
 
-  <div style="background:#f6fffa;padding:10px;border-left:4px solid #2ecc71;margin:10px 0;">
-    <strong>Learner Focus</strong>
-    <ul>
-      ${needsMap.map(s=>`<li>Revise ${s}</li>`).join("")}
-    </ul>
-  </div>
-`;
+    <div style="background:#f6fffa;padding:10px;border-left:4px solid #2ecc71;margin:10px 0;">
+      <strong>Learner Focus</strong>
+      <ul>
+        ${needsMap.length 
+          ? needsMap.map(s=>`<li>Revise ${s}</li>`).join("") 
+          : "<li>No focus areas at this time.</li>"
+        }
+      </ul>
+    </div>
+  `;
 
+  // Render subjects tables
+  Object.entries(avgMap[student]).forEach(([subject,d])=>{
+    const rows = results.filter(r=>r.subject===subject);
+    html += `
+      <div class="subject-block">
+        <h4>${subject}</h4>
+        <table>
+          <tr><th>Competency</th><th>Level</th></tr>
+          ${rows.map(r=>`
+            <tr><td>${r.competency || "—"}</td><td>${r.achievement_level || "—"}</td></tr>
+          `).join("")}
+          <tr style="font-weight:bold">
+            <td>AVERAGE</td>
+            <td>${d.average_score ? d.average_score.toFixed(2) : "N/A"} — ${d.level || "N/A"}</td>
+          </tr>
+        </table>
+      </div>
+    `;
+  });
 
- Object.entries(avgMap[student]).forEach(([subject,d])=>{
-  const rows = results.filter(r=>r.subject===subject);
-  html+=`
-  <div class="subject-block">
-   <h4>${subject}</h4>
-   <table>
-    <tr><th>Competency</th><th>Level</th></tr>
-    ${rows.map(r=>`
-     <tr><td>${r.competency}</td><td>${r.achievement_level}</td></tr>
-    `).join("")}
-    <tr style="font-weight:bold">
-     <td>AVERAGE</td>
-     <td>${d.average_score.toFixed(2)} — ${d.level}</td>
-    </tr>
-   </table>
-  </div>`;
- });
-
- html+="</div>";
- reportDiv.innerHTML=html;
+  html += `</div>`;
+  reportDiv.innerHTML = html;
 }
-
 /* PDF */
 window.downloadPDF = ()=>{
  if(!reportDiv.innerHTML.trim()) return alert("No report");
