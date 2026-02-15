@@ -1765,6 +1765,8 @@ window.downloadDetailedPDF = async function () {
     return;
   }
 
+  window.__EXPORTING_PDF__ = true;
+
   const term = termSelect.options[termSelect.selectedIndex]?.text || "Term";
   const filename = `Detailed_Report_${term}_${SYSTEM_YEAR}.pdf`;
 
@@ -1810,19 +1812,21 @@ const clone = original.cloneNode(true);
     card.appendChild(footer);
   });
 
-  html2pdf().set({
+ html2pdf().set({
   margin: [10, 10, 10, 10],
   filename,
   image: { type: "jpeg", quality: 0.98 },
   html2canvas: { scale: 2, scrollY: 0, useCORS: true },
   jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-
   pagebreak: {
-  mode: ['css']
-}
+    mode: ['css'],
+    before: '.a4-page'
+  }
+}).from(clone).save();
 
 
 }).from(clone).save();
+window.__EXPORTING_PDF__ = false;
 
 };
 
