@@ -119,18 +119,11 @@ button small {
 }
 
 
-/* ================== FORCE NEW PAGE PER LEARNER ================== */
+/* learner-page no longer forces breaks */
 .learner-page {
-  break-before: page;          /* modern browsers */
-  page-break-before: always;   /* legacy */
+  break-inside: avoid;
+  page-break-inside: avoid;
 }
-
-/* Do NOT add blank page before the first learner */
-.learner-page:first-child {
-  break-before: auto;
-  page-break-before: auto;
-}
-
 
 
   
