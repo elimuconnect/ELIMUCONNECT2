@@ -1765,7 +1765,7 @@ window.downloadDetailedPDF = async function () {
     return;
   }
 
-  window.__EXPORTING_PDF__ = true;
+ 
 
   const term = termSelect.options[termSelect.selectedIndex]?.text || "Term";
   const filename = `Detailed_Report_${term}_${SYSTEM_YEAR}.pdf`;
@@ -1829,8 +1829,6 @@ const clone = original.cloneNode(true);
 
 
 };
-window.__EXPORTING_PDF__ = false;
-
 
 
   window.downloadSchoolAnalyticsPDF = async function () {
