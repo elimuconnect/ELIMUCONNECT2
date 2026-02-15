@@ -1761,13 +1761,6 @@ window.downloadDetailedPDF = async function () {
 const original = reportDiv;
 const clone = original.cloneNode(true);
 
-clone.querySelectorAll(".a4-page").forEach(page => {
-  const parent = page.parentNode;
-  while (page.firstChild) {
-    parent.insertBefore(page.firstChild, page);
-  }
-  parent.removeChild(page);
-});
 
 
   // Force A4 layout
@@ -1808,12 +1801,20 @@ clone.querySelectorAll(".a4-page").forEach(page => {
   });
 
   html2pdf().set({
-    margin: [10, 10, 10, 10],
-    filename,
-    image: { type: "jpeg", quality: 0.98 },
-    html2canvas: { scale: 2, scrollY: 0, useCORS: true },
-    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
-  }).from(clone).save();
+  margin: [10, 10, 10, 10],
+  filename,
+  image: { type: "jpeg", quality: 0.98 },
+  html2canvas: { scale: 2, scrollY: 0, useCORS: true },
+  jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+
+  // 🔑 THIS IS THE MISSING PIECE
+  pagebreak: {
+    mode: ['css'],
+    before: '.learner-page'
+  }
+
+}).from(clone).save();
+
 };
 
 
