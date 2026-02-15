@@ -86,10 +86,9 @@ button:hover{
 /* ================= REPORT CARD ================= */
 .a4-page{
   background:#ffffff;
-  padding:25px;
-  border-radius:12px;
-  box-shadow:0 15px 35px rgba(0,0,0,0.05);
-  margin-bottom:30px;
+  padding:20px;
+  margin:0 auto 30px auto;
+  max-width:900px; /* screen width */
 }
 
 /* ================= HEADER BLOCK ================= */
@@ -182,6 +181,38 @@ tr:hover{
   }
 }
 
+
+
+
+/* ================= PDF / PRINT FIX ================= */
+@media print {
+
+  body{
+    background:#ffffff !important;
+    padding:0 !important;
+    margin:0 !important;
+  }
+
+  h2, .form-card, hr {
+    display:none !important;
+  }
+
+  #report{
+    margin:0 !important;
+    padding:0 !important;
+  }
+
+  .a4-page{
+    box-shadow:none !important;
+    border-radius:0 !important;
+    margin:0 !important;
+    padding:15mm !important;
+    width:210mm;
+    min-height:297mm;
+  }
+}
+
+  
 </style>
  
 </head>
@@ -504,16 +535,22 @@ const recommendations = generateRecommendations(strengthsMap, needsMap);
 }
 
 
+window.downloadPDF = () => {
+  if(!reportDiv.innerHTML.trim()) return alert("No report");
 
- 
-/* PDF */
-window.downloadPDF = ()=>{
- if(!reportDiv.innerHTML.trim()) return alert("No report");
- html2pdf().from(reportDiv).set({
-  filename:"Summary_Report.pdf",
-  jsPDF:{unit:"mm",format:"a4"}
- }).save();
-}
+  const element = reportDiv;
+
+  const opt = {
+    margin:       0,
+    filename:     "Summary_Report.pdf",
+    image:        { type: 'jpeg', quality: 0.98 },
+    html2canvas:  { scale: 2 },
+    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+
+  html2pdf().set(opt).from(element).save();
+};
+
 </script>
 </body>
 </html>
