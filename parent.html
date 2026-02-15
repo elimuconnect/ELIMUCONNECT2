@@ -7,31 +7,234 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+
 <style>
-body{font-family:Segoe UI,Arial;background:#f5f7fb;padding:20px}
-input,select{width:100%;padding:8px;margin-bottom:10px}
-.a4-page{background:#fff;padding:12px;margin-bottom:20px}
-table{width:100%;border-collapse:collapse;font-size:14px}
-th,td{border:1px solid #ccc;padding:6px}
-th{background:#eee}
-.subject-block{margin-top:15px}
-button{padding:10px 20px;background:#1f6feb;color:white;border:none;cursor:pointer}
+
+/* ================= BASE ================= */
+*{
+  box-sizing: border-box;
+}
+
+body{
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
+  background: linear-gradient(135deg,#eef2f8,#f8fafc);
+  margin:0;
+  padding:30px;
+  color:#2c3e50;
+}
+
+/* ================= PAGE TITLE ================= */
+h2{
+  font-weight:600;
+  margin-bottom:20px;
+  color:#1f2d3d;
+}
+
+/* ================= FORM CARD ================= */
+.form-card{
+  background:#ffffff;
+  padding:25px;
+  border-radius:12px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.06);
+  margin-bottom:25px;
+  max-width:600px;
+}
+
+/* ================= INPUTS ================= */
+input,select{
+  width:100%;
+  padding:10px 12px;
+  margin-bottom:15px;
+  border:1px solid #dcdfe6;
+  border-radius:8px;
+  font-size:14px;
+  transition:all 0.2s ease;
+}
+
+input:focus,select:focus{
+  outline:none;
+  border-color:#1f6feb;
+  box-shadow:0 0 0 3px rgba(31,111,235,0.1);
+}
+
+/* ================= BUTTON ================= */
+button{
+  padding:12px 20px;
+  background:#1f6feb;
+  color:white;
+  border:none;
+  border-radius:8px;
+  font-weight:500;
+  font-size:14px;
+  cursor:pointer;
+  transition:all 0.2s ease;
+}
+
+button:hover{
+  background:#1558c0;
+  transform:translateY(-1px);
+  box-shadow:0 6px 15px rgba(31,111,235,0.2);
+}
+
+/* ================= STATUS ================= */
+#status{
+  font-weight:500;
+  color:#e74c3c;
+  margin-bottom:15px;
+}
+
+/* ================= REPORT CARD ================= */
+.a4-page{
+  background:#ffffff;
+  padding:20px;
+  margin:0 auto 30px auto;
+  max-width:900px; /* screen width */
+}
+
+/* ================= HEADER BLOCK ================= */
+.learner-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:15px;
+  padding-bottom:10px;
+  border-bottom:1px solid #e5e9f2;
+}
+
+.learner-header h4{
+  margin:0;
+  font-weight:600;
+  color:#1f2d3d;
+}
+
+/* ================= INSIGHT / SUMMARY ================= */
+.split-block{
+  background:#f4f7fb;
+  padding:15px;
+  border-radius:8px;
+  margin-bottom:15px;
+  font-size:14px;
+}
+
+/* ================= SUMMARY BOX ================= */
+.summary-box{
+  padding:15px;
+  border-radius:8px;
+  margin-bottom:15px;
+  font-size:14px;
+}
+
+.summary-box ul{
+  margin:8px 0 0 18px;
+}
+
+/* ================= SUBJECT BLOCK ================= */
+.subject-block{
+  margin-top:20px;
+}
+
+.subject-block h4{
+  margin-bottom:8px;
+  color:#1f2d3d;
+}
+
+/* ================= TABLE ================= */
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:14px;
+  background:#fff;
+  border-radius:8px;
+  overflow:hidden;
+}
+
+th{
+  background:#f1f4f9;
+  text-align:left;
+  padding:10px;
+  font-weight:600;
+  border-bottom:2px solid #e5e9f2;
+}
+
+td{
+  padding:9px;
+  border-bottom:1px solid #eef2f8;
+}
+
+tr:last-child td{
+  border-bottom:none;
+}
+
+tr:hover{
+  background:#f9fbff;
+}
+
+/* ================= RESPONSIVE ================= */
+@media(max-width:768px){
+  body{
+    padding:15px;
+  }
+  .learner-header{
+    flex-direction:column;
+    align-items:flex-start;
+    gap:6px;
+  }
+}
+
+
+
+
+/* ================= PDF / PRINT FIX ================= */
+@media print {
+
+  body{
+    background:#ffffff !important;
+    padding:0 !important;
+    margin:0 !important;
+  }
+
+  h2, .form-card, hr {
+    display:none !important;
+  }
+
+  #report{
+    margin:0 !important;
+    padding:0 !important;
+  }
+
+  .a4-page{
+    box-shadow:none !important;
+    border-radius:0 !important;
+    margin:0 !important;
+    padding:15mm !important;
+    width:210mm;
+    min-height:297mm;
+  }
+}
+
+  
 </style>
+ 
 </head>
 
 <body>
 
 <h2>Student Report Lookup</h2>
 
-<input id="yearInput" value="2026" placeholder="Year">
-<select id="termSelect"></select>
-<input id="firstInput" placeholder="First name">
-<input id="lastInput" placeholder="Last name">
-<input id="admInput" placeholder="Admission number">
 
- <p id="status"></p> <!-- start empty -->
+<div class="form-card">
+  <input id="yearInput" value="2026" placeholder="Year">
+  <select id="termSelect"></select>
+  <input id="firstInput" placeholder="First name">
+  <input id="lastInput" placeholder="Last name">
+  <input id="admInput" placeholder="Admission number">
 
-<button onclick="downloadPDF()">Download Summary PDF</button>
+  <p id="status"></p>
+
+  <button onclick="downloadPDF()">Download Summary PDF</button>
+</div>
+
+  
 <hr>
 
 <div id="report"></div>
@@ -182,6 +385,54 @@ function buildAverages(){
  });
 }
 
+
+
+function generateRecommendations(strengths, needs) {
+
+  let teacher = [];
+  let parent = [];
+  let learner = [];
+
+  // 👩🏽‍🏫 TEACHER ACTIONS
+  if (strengths.length) {
+    teacher.push(
+      `Encourage learner through strengths in ${strengths.join(", ")}`
+    );
+  }
+
+  if (needs.length) {
+    teacher.push(
+      `Provide targeted support in ${needs.join(", ")}`
+    );
+  }
+
+  // 🏠 PARENT SUPPORT
+  if (needs.length) {
+    parent.push(
+      `Support practice in ${needs.join(", ")} at home`
+    );
+  }
+
+  parent.push("Maintain communication with class teacher");
+
+  // 🎯 LEARNER FOCUS
+  if (strengths.length) {
+    learner.push(
+      `Build confidence by applying strengths in ${strengths.join(", ")}`
+    );
+  }
+
+  if (needs.length) {
+    learner.push(
+      `Focus revision on ${needs.join(", ")}`
+    );
+  }
+
+  learner.push("Ask for help when concepts are unclear");
+
+  return { teacher, parent, learner };
+}
+ 
  
 /* RENDER */
 
@@ -209,13 +460,11 @@ function renderReport() {
   needsMap = sn.needs;
   supportFlag = generateSupportFlag(strengthsMap, needsMap);
 
-  // Teacher / Parent / Learner recommendations
-  const recommendations = {
-    teacher: needsMap.length ? needsMap.map(s => `Provide remediation in ${s}`) : [],
-    parent: needsMap.length ? needsMap.map(s => `Practice ${s} at home`) : [],
-    learner: needsMap.length ? needsMap.map(s => `Revise ${s}`) : []
-  };
 
+const recommendations = generateRecommendations(strengthsMap, needsMap);
+
+
+ 
   let html = `<div class="a4-page learner-page">
     <div class="learner-card">
 
@@ -286,16 +535,22 @@ function renderReport() {
 }
 
 
+window.downloadPDF = () => {
+  if(!reportDiv.innerHTML.trim()) return alert("No report");
 
- 
-/* PDF */
-window.downloadPDF = ()=>{
- if(!reportDiv.innerHTML.trim()) return alert("No report");
- html2pdf().from(reportDiv).set({
-  filename:"Summary_Report.pdf",
-  jsPDF:{unit:"mm",format:"a4"}
- }).save();
-}
+  const element = reportDiv;
+
+  const opt = {
+    margin:       0,
+    filename:     "Summary_Report.pdf",
+    image:        { type: 'jpeg', quality: 0.98 },
+    html2canvas:  { scale: 2 },
+    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+
+  html2pdf().set(opt).from(element).save();
+};
+
 </script>
 </body>
 </html>
