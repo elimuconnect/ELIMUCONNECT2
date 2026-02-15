@@ -118,6 +118,22 @@ button small {
   box-shadow: 0 18px 36px rgba(0,0,0,0.08);
 }
 
+
+/* ================== FORCE NEW PAGE PER LEARNER ================== */
+.learner-page {
+  break-before: page;          /* modern browsers */
+  page-break-before: always;   /* legacy */
+}
+
+/* Do NOT add blank page before the first learner */
+.learner-page:first-child {
+  break-before: auto;
+  page-break-before: auto;
+}
+
+
+
+  
 /* ================== LEARNER HEADER ================== */
 .learner-header {
   display: flex;
