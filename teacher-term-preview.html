@@ -5,263 +5,236 @@
   <title>Term Report Preview</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-
-
 <style>
-/* ================== BASE ================== */
-body {
-  font-family: "Segoe UI", Arial, sans-serif;
-  background: #f7f9fb;
-  color: #222;
-  line-height: 1.5;
-}
 
-
+/* ================== GLOBAL RESET ================== */
 * {
+  box-sizing: border-box;
   max-width: 100%;
 }
 
+body {
+  font-family: "Inter", "Segoe UI", Arial, sans-serif;
+  background: linear-gradient(135deg,#eef2f7,#f8fbff);
+  margin: 0;
+  padding: 30px;
+  color: #1f2937;
+}
 
-  
-h2, h3 {
+/* ================== DASHBOARD WRAPPER ================== */
+.dashboard {
+  max-width: 1200px;
+  margin: auto;
+}
+
+/* ================== CONTROL PANEL ================== */
+.control-panel {
+  background: #ffffff;
+  padding: 25px;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+  margin-bottom: 30px;
+}
+
+.control-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
+  gap: 20px;
+}
+
+label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  display: block;
   margin-bottom: 6px;
 }
 
-h4 {
-  margin: 0;
+input, select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  background: #f9fafb;
 }
 
-h5 {
-  margin-top: 18px;
-  margin-bottom: 4px;
+input:focus, select:focus {
+  outline: none;
+  border-color: #2563eb;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
 }
 
-/* ================== LAYOUT ================== */
-/* Update these specific sections in your <style> tag */
+/* ================== BUTTONS ================== */
+.button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-top: 25px;
+}
 
+button {
+  padding: 12px 18px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+button.primary {
+  background: #2563eb;
+  color: white;
+}
+
+button.primary:hover {
+  background: #1e40af;
+  transform: translateY(-1px);
+}
+
+button.secondary {
+  background: #111827;
+  color: white;
+}
+
+button.secondary:hover {
+  background: #000000;
+}
+
+button.analytics {
+  background: #059669;
+  color: white;
+}
+
+button.analytics:hover {
+  background: #047857;
+}
+
+/* ================== REPORT CARD ================== */
 .a4-page {
   width: 100%;
-  max-width: 600px; /* phone-friendly width */
-  margin: 0 auto;
+  max-width: 900px;
+  margin: 0 auto 40px auto;
   background: white;
-  box-sizing: border-box;
-  padding: 12px; /* some breathing space */
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
 }
 
-
-
-.subject-block {
-  margin-top: 14px;
-  padding-top: 10px;
-  border-top: 1px dashed #ccc;
-  page-break-inside: avoid; /* CRITICAL: Prevents a subject table from splitting in half */
-}
-
-/* Ensure images/charts don't get cut */
-canvas, .trend-box {
-  page-break-inside: avoid;
-}
-
-.learner-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 8px;
-  margin-bottom: 10px;
-}
-
-.learner-meta {
-  font-size: 0.95em;
-  color: #555;
-}
-
-
-/* ===== HEADER TYPOGRAPHY ===== */
-.learner-header h4 {
-  font-size: 22px;
-  font-weight: 800;
-  margin: 0;
-}
-
-.learner-header small {
-  font-size: 14px;
-  font-weight: 600;
-}
-
-
-  
-.summary-box {
-  background: #f3f6fa;
-  border-left: 5px solid #3498db;
-  padding: 10px 14px;
-  margin: 12px 0;
-  border-radius: 4px;
-}
-
-.pill {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 14px;
-  font-size: 0.85em;
-  background: #eee;
-  margin-right: 6px;
-}
-
-.actions-box {
-  margin-top: 10px;
-  padding: 10px;
-  border-radius: 4px;
-  background: #fafafa;
-}
-
-/* ================== TABLES ================== */
+/* ================== TABLE POLISH ================== */
 table {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
-  table-layout: auto;
-  word-break: break-word;
 }
 
-.table-wrapper {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  margin-bottom: 12px;
+th {
+  background: #f3f4f6;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  color: #374151;
 }
 
-
-
-  
 th, td {
-  padding: 5px 6px;
-  border-bottom: 1px solid #ddd;
+  padding: 8px 10px;
+  border-bottom: 1px solid #e5e7eb;
 }
 
-th {
-  background: #f0f0f0;
-  text-align: left;
-}
-
-th {
-  font-size: 14px;
+/* ================== ANALYTICS SECTION ================== */
+.school-analytics h3 {
+  font-size: 22px;
   font-weight: 700;
+  margin-bottom: 10px;
 }
 
-  
-tr:last-child td {
-  border-bottom: none;
+/* ================== STATUS TEXT ================== */
+#status {
+  margin-top: 10px;
+  font-weight: 600;
+  color: #6b7280;
 }
 
+/* ================== PRINT SAFETY ================== */
+@media print {
 
-.evidence-note {
-  font-size: 0.85em;
-  margin-bottom: 6px;
-}
+  body {
+    background: white !important;
+    padding: 0 !important;
+  }
 
+  .control-panel {
+    display: none !important;
+  }
 
-
-/* ================== CHART ================== */
-.trend-box {
-  height: 180px;
-  margin-top: 12px;
-}
-
-.trend-box canvas {
-  width: 100% !important;
-  height: 100% !important;
-}
-
-
-
-
-
-.report-overview h3 {
-  font-size: 1.1em;
-  line-height: 1.2em;
+  .a4-page {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
 }
 
 
-
-.report-overview h3 {
-  font-size: 24px;
-  font-weight: 800;
-  letter-spacing: 0.3px;
-}
-
- @media print {
-  table { page-break-inside:auto }
-  tr    { page-break-inside:avoid; page-break-after:auto }
-  thead { display:table-header-group }
-  tfoot { display:table-footer-group }
-}
-
-/* Prevents the 'cut-off' look on containers */
-.learner-card {
-  overflow: visible !important;
-  height: auto !important;
-}
-
-
-
-.report-overview {
-  text-align: center;
-}
-
-table {
-  page-break-inside: avoid;
-}
-
-  
-</style>
-
-
+  </style>
 </head>
 <body>
 
 
+<div class="dashboard">
 
+  <!-- CONTROL PANEL -->
+  <div class="control-panel">
 
-<label>Academic Year</label><br />
-<input value="2026" disabled /><br /><br />
+    <div class="control-grid">
+      <div>
+        <label>Academic Year</label>
+        <input value="2026" disabled />
+      </div>
 
-<label>Term</label><br />
-<select id="termSelect"></select><br /><br />
+      <div>
+        <label>Term</label>
+        <select id="termSelect"></select>
+      </div>
 
-<label>View As</label><br />
-<select id="viewMode">
-  <option value="term">Term Results</option>
-  <option value="student">Student (Admission No)</option>
-  <option value="subject">Subject</option>
-</select><br /><br />
+      <div>
+        <label>View As</label>
+        <select id="viewMode">
+          <option value="term">Term Results</option>
+          <option value="student">Student (Admission No)</option>
+          <option value="subject">Subject</option>
+        </select>
+      </div>
+    </div>
 
-<div id="filterBox"></div>
-<p id="status"></p>
-<hr />
+    <div id="filterBox" style="margin-top:20px;"></div>
 
-<div class="actions-box">
-  <button onclick="downloadPDF()">
-    ⬇️ Download Summary Report<br>
-    <small>Recommended for parents & learners</small>
-  </button><br><br>
+    <p id="status"></p>
 
-  <button onclick="downloadDetailedPDF()">
-    ⬇️ Download Detailed Assessment Report<br>
-    <small>For teachers & internal review</small>
-  </button><br><br>
+    <div class="button-group">
+      <button class="primary" onclick="downloadPDF()">
+        ⬇️ Download Summary Report
+      </button>
 
+      <button class="secondary" onclick="downloadDetailedPDF()">
+        ⬇️ Download Detailed Report
+      </button>
 
-  <button onclick="downloadSchoolAnalyticsPDF()">
-  ⬇️ Download School Analysis Report<br>
-  <small>For school leadership & QA</small>
-</button>
+      <button class="analytics" onclick="downloadSchoolAnalyticsPDF()">
+        ⬇️ School Analytics
+      </button>
+    </div>
+
+  </div>
+
+  <!-- ANALYTICS SECTION -->
+  <div id="schoolAnalytics" style="display:none;"></div>
+
+  <!-- REPORT SECTION -->
+  <div id="report"></div>
 
 </div>
-
-  
-<div id="schoolAnalytics" style="display:none;"></div>
-<div id="report"></div>
-
 
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
