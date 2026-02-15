@@ -1,104 +1,254 @@
-<!DOCTYPE html>
+<!DOCTYPE html>  
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Parent Summary Report</title>
-
+  <title>Term Report Preview</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-  <style>
-    body {
-      font-family: "Segoe UI", Arial, sans-serif;
-      max-width: 900px;
-      margin: 20px auto;
-      background:#f5f7fa;
-    }
 
-    input, button {
-      padding:10px;
-      margin:6px 0;
-      width:100%;
-      font-size:1em;
-    }
 
-    button {
-      background:#1f6feb;
-      color:white;
-      border:none;
-      border-radius:4px;
-      cursor:pointer;
-    }
+<style>
+/* ================== BASE ================== */
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #f7f9fb;
+  color: #222;
+  line-height: 1.5;
+}
 
-    button:hover { background:#174ea6; }
 
-    .muted { color:#666; font-size:0.9em; }
+* {
+  max-width: 100%;
+}
 
-    .a4-page {
-      background:white;
-      padding:14px;
-      margin:10px 0;
-      border-radius:6px;
-    }
 
-    .header {
-      border-bottom:2px solid #333;
-      margin-bottom:10px;
-    }
+  
+h2, h3 {
+  margin-bottom: 6px;
+}
 
-    .pill {
-      display:inline-block;
-      padding:4px 10px;
-      border-radius:14px;
-      font-size:0.85em;
-      background:#eee;
-      margin-right:6px;
-    }
+h4 {
+  margin: 0;
+}
 
-    table {
-      width:100%;
-      border-collapse:collapse;
-      margin-top:6px;
-    }
+h5 {
+  margin-top: 18px;
+  margin-bottom: 4px;
+}
 
-    th,td {
-      border-bottom:1px solid #ddd;
-      padding:6px;
-      font-size:14px;
-    }
+/* ================== LAYOUT ================== */
+/* Update these specific sections in your <style> tag */
 
-    th { background:#f0f0f0; }
+.a4-page {
+  width: 100%;
+  max-width: 600px; /* phone-friendly width */
+  margin: 0 auto;
+  background: white;
+  box-sizing: border-box;
+  padding: 12px; /* some breathing space */
+}
 
-    .below { background:#f8d7da; }
-    .approaching { background:#fff3cd; }
-    .meeting { background:#d4edda; }
-    .exceeding { background:#cce5ff; }
 
-    .actions { margin:10px 0; }
 
-  </style>
+.subject-block {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px dashed #ccc;
+  page-break-inside: avoid; /* CRITICAL: Prevents a subject table from splitting in half */
+}
+
+/* Ensure images/charts don't get cut */
+canvas, .trend-box {
+  page-break-inside: avoid;
+}
+
+.learner-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+}
+
+.learner-meta {
+  font-size: 0.95em;
+  color: #555;
+}
+
+
+/* ===== HEADER TYPOGRAPHY ===== */
+.learner-header h4 {
+  font-size: 22px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.learner-header small {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+
+  
+.summary-box {
+  background: #f3f6fa;
+  border-left: 5px solid #3498db;
+  padding: 10px 14px;
+  margin: 12px 0;
+  border-radius: 4px;
+}
+
+.pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 0.85em;
+  background: #eee;
+  margin-right: 6px;
+}
+
+.actions-box {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 4px;
+  background: #fafafa;
+}
+
+/* ================== TABLES ================== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  table-layout: auto;
+  word-break: break-word;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 12px;
+}
+
+
+
+  
+th, td {
+  padding: 5px 6px;
+  border-bottom: 1px solid #ddd;
+}
+
+th {
+  background: #f0f0f0;
+  text-align: left;
+}
+
+th {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+  
+tr:last-child td {
+  border-bottom: none;
+}
+
+
+.evidence-note {
+  font-size: 0.85em;
+  margin-bottom: 6px;
+}
+
+
+
+/* ================== CHART ================== */
+.trend-box {
+  height: 180px;
+  margin-top: 12px;
+}
+
+.trend-box canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+
+
+
+
+.report-overview h3 {
+  font-size: 1.1em;
+  line-height: 1.2em;
+}
+
+
+
+.report-overview h3 {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+
+ @media print {
+  table { page-break-inside:auto }
+  tr    { page-break-inside:avoid; page-break-after:auto }
+  thead { display:table-header-group }
+  tfoot { display:table-footer-group }
+}
+
+/* Prevents the 'cut-off' look on containers */
+.learner-card {
+  overflow: visible !important;
+  height: auto !important;
+}
+
+
+
+.report-overview {
+  text-align: center;
+}
+
+table {
+  page-break-inside: avoid;
+}
+
+  
+</style>
+
+
 </head>
 <body>
 
-<h2>View Student Summary Report</h2>
-<p class="muted">Enter details exactly as registered.</p>
 
-<label>Admission Number</label>
-<input id="admission">
+<label>Academic Year</label><br />
+<input id="yearInput" value="2026" /><br /><br />
 
-<label>First Name</label>
-<input id="firstName">
+<label>Term</label><br />
+<select id="termSelect"></select><br /><br />
 
-<label>Last Name</label>
-<input id="lastName">
+<label>First Name</label><br />
+<input id="firstInput" /><br /><br />
 
-<button id="checkBtn">View Summary</button>
+<label>Last Name</label><br />
+<input id="lastInput" /><br /><br />
 
-<div class="actions" style="display:none" id="actionBox">
-  <button onclick="downloadPDF()">⬇️ Download PDF Summary</button>
+<label>Admission Number</label><br />
+<input id="admInput" /><br /><br />
+
+<p id="status"></p>
+<hr />
+
+
+<div id="filterBox"></div>
+
+
+<div class="actions-box">
+  <button onclick="downloadPDF()">
+    ⬇️ Download Summary Report<br>
+    <small>Recommended for parents & learners</small>
+  </button><br><br>
+
 </div>
-
-<p id="status" class="muted"></p>
-<hr>
 
 <div id="report"></div>
 
@@ -111,111 +261,974 @@ const supabase = createClient(
   "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
 );
 
-const reportDiv = document.getElementById("report");
-const statusEl = document.getElementById("status");
-const actionBox = document.getElementById("actionBox");
+const SYSTEM_YEAR = "2026";
+let results = [];
 
-const admissionInput = document.getElementById("admission");
-const firstNameInput = document.getElementById("firstName");
-const lastNameInput = document.getElementById("lastName");
+let trendMap = {};
+let avgMap = {}; // make it global so downloadPDF can access it
+ 
+let previousRecords = [];
+let previousAverages = {};
 
-function levelClass(level){
-  if(level==="Below Expectations") return "below";
-  if(level==="Approaching Expectations") return "approaching";
-  if(level==="Meeting Expectations") return "meeting";
-  return "exceeding";
+function levelToScore(level) {
+  switch (level) {
+    case "Below Expectations": return 1;
+    case "Approaching Expectations": return 2;
+    case "Meeting Expectations": return 3;
+    case "Exceeding Expectations": return 4;
+    default: return 0;
+  }
 }
 
-// AUTO LOAD
-admissionInput.addEventListener("input", autoLoad);
-firstNameInput.addEventListener("input", autoLoad);
-lastNameInput.addEventListener("input", autoLoad);
+  
 
-// OPTIONAL button still works
-document.getElementById("checkBtn").onclick = autoLoad;
+const levelColor = {
+  "Below Expectations": "#f8d7da",
+  "Approaching Expectations": "#fff3cd",
+  "Meeting Expectations": "#d4edda",
+  "Exceeding Expectations": "#cce5ff"
+};
 
-async function autoLoad(){
-  const admission = admissionInput.value.trim();
-  const first = firstNameInput.value.trim();
-  const last = lastNameInput.value.trim();
 
-  if(admission.length < 2 || first.length < 2 || last.length < 2){
-    return; // wait until real data
-  }
+  
+const termSelect = document.getElementById("termSelect");
+const viewMode = document.getElementById("viewMode");
+const filterBox = document.getElementById("filterBox");
+const reportDiv = document.getElementById("report");
+const status = document.getElementById("status");
 
-  statusEl.innerText = "Checking results…";
+
+/* ========== LOAD TERMS ========== */
+const { data: terms } = await supabase
+  .from("terms")
+  .select("id, name")
+  .order("name");
+
+termSelect.innerHTML =
+  `<option value="">Select term</option>` +
+  terms.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
+
+
+
+ 
+/* ========== MAIN LOAD ========== */
+async function loadReport() {
   reportDiv.innerHTML = "";
-  actionBox.style.display="none";
+  status.innerText = "";
+
+  const term_id = termSelect.value;
+  const first = firstInput.value.trim();
+  const last  = lastInput.value.trim();
+  const adm   = admInput.value.trim();
+  const year  = yearInput.value.trim();
+
+  if (!term_id || !first || !last || !adm) return;
+
+  const termName = terms.find(t => t.id === term_id)?.name;
 
   const { data, error } = await supabase
-    .from("public_parent_results")
+    .from("assessment_results_view")
     .select("*")
-    .eq("admission_number", admission)
+    .eq("term", termName)
+    .eq("academic_year", year)
     .ilike("first_name", first)
     .ilike("last_name", last)
-    .order("learning_area");
+    .eq("admission_number", adm);
 
-  if(error){ statusEl.innerText=error.message; return; }
-  if(!data.length){ statusEl.innerText="No records found."; return; }
+  if (error || !data.length) {
+    status.innerText = "No report found for that student.";
+    return;
+  }
 
-  statusEl.innerText="";
-  actionBox.style.display="block";
+  results = data;
 
-  const student = `${data[0].first_name} ${data[0].last_name}`;
-  const term = data[0].term;
-  const year = data[0].academic_year;
+  const records = data.map(r => ({
+    student: `${r.first_name} ${r.last_name}`,
+    admission: r.admission_number,
+    className: r.class_name,
+    schoolName: r.school_name,
+    subject: r.subject,
+    competency: r.competency,
+    level: r.achievement_level,
+    remarks: r.remarks
+  }));
 
   const grouped = {};
-  data.forEach(r=>{
-    grouped[r.learning_area] ??= [];
-    grouped[r.learning_area].push(r);
+  records.forEach(r => {
+    grouped[r.student] ??= { __admission: r.admission };
+    grouped[r.student][r.subject] ??= [];
+    grouped[r.student][r.subject].push(r);
   });
 
-  reportDiv.innerHTML = `
-  <div class="a4-page">
-    <div class="header">
-      <h3>${student}</h3>
-      <div class="muted">
-        Adm: ${admission} |
-        Term: ${term} |
-        Year: ${year}
-      </div>
-    </div>
+  reportDiv.innerHTML = renderGrouped(grouped);
 
-    ${Object.entries(grouped).map(([subject, rows])=>`
-      <h4>📘 ${subject}</h4>
-      <table>
-        <thead>
-          <tr>
-            <th>Competency</th>
-            <th>Achievement</th>
-            <th>Remarks</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rows.map(r=>`
-            <tr class="${levelClass(r.achievement_level)}">
-              <td>${r.competency}</td>
-              <td>${r.achievement_level}</td>
-              <td>${r.remarks||""}</td>
-            </tr>
-          `).join("")}
-        </tbody>
-      </table>
-    `).join("")}
-  </div>`;
+  requestAnimationFrame(() => {
+    splitLearnerIntoPages();
+  });
 }
 
-window.downloadPDF = function(){
-  const opt = {
-    margin: 5,
-    filename: "Parent_Summary_Report.pdf",
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2 },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+
+function renderOverviewHeader({ school, poBox, postal, town, phone, email, className, term, year }) {
+  return `
+    <div class="report-overview no-split" style="
+      border-bottom: 2px solid #333;
+      padding-bottom: 6px;
+      margin-bottom: 10px;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    ">
+      <h3 style="margin:0; word-wrap: break-word; overflow-wrap: break-word;">${school}</h3>
+      <div style="font-size:0.9em;color:#555;">
+        <strong>P.O. Box:</strong> ${poBox} - ${postal} &nbsp; | &nbsp;
+        <strong>Town:</strong> ${town} <br />
+        <strong>Tel:</strong> ${phone} &nbsp; | &nbsp; <strong>Email:</strong> ${email}
+      </div>
+      <div style="font-size:0.9em;color:#555;margin-top:4px;">
+        <strong>Class:</strong> ${className} &nbsp; | &nbsp;
+        <strong>Term:</strong> ${term} – ${year}
+      </div>
+    </div>
+  `;
+}
+
+
+
+ 
+function renderGrouped(grouped, avgMap){
+  return Object.entries(grouped).map(([student, subjects]) => {
+
+    const admission = subjects.__admission || "N/A";
+
+    // Collect raw scores for trends & support flags (not for averages)
+    const currentScores = [];
+    Object.entries(subjects).forEach(([subject, rows]) => {
+      if (subject === "__admission") return;
+      rows.forEach(r => {
+        const score = levelToScore(r.level);
+        if (score > 0) currentScores.push(score);
+      });
+    });
+
+    const currentAvgScore =
+      currentScores.length
+        ? currentScores.reduce((a, b) => a + b, 0) / currentScores.length
+        : null;
+
+    const prevData = previousAverages[admission];
+    const previousAvg = prevData ? prevData.total / prevData.count : null;
+
+    const trend = getTrend(currentAvgScore, previousAvg);
+    const supportFlag = generateSupportFlag(subjects);
+    const insight = generateInsight(subjects);
+    const { strengths, needs } = generateStrengthsAndNeeds(subjects);
+    const recommendations = generateRecommendations(subjects, trend, supportFlag);
+
+
+  return `
+<div class="a4-page learner-page">
+  <div class="learner-card">
+    ${renderOverviewHeader({
+      school: subjects.__school || results[0]?.school_name || "Demo CBC School",
+      poBox: results[0]?.po_box || "12345",
+      postal: results[0]?.postal_code || "00100",
+      town: results[0]?.town || "Nairobi",
+      phone: results[0]?.phone || "0700123456",
+      email: results[0]?.email || "info@democbc.ac.ke",
+      className: subjects.__class || className,
+      term: termName,
+      year: SYSTEM_YEAR
+    })}
+
+
+    <!-- HEADER -->
+    <div class="split-block learner-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+      <h4>👤 ${student} <small>(<strong>Adm: ${admission}</strong>)</small></h4>
+      <div style="font-weight:bold;">${supportFlag}</div>
+    </div>
+
+    <!-- TREND SUMMARY -->
+    <div class="split-block">
+      <p style="margin:6px 0 10px 0;font-weight:bold;">
+        📊 Progress Trend: ${trend}
+      </p>
+      ${insight}
+    </div>
+
+    <!-- STRENGTHS / NEEDS -->
+    <div class="split-block" style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:10px;">
+      ${strengths.length ? `<p><strong>💪 Strengths:</strong> ${strengths.join(", ")}</p>` : ""}
+      ${needs.length ? `<p><strong>🎯 Areas for Improvement:</strong> ${needs.join(", ")}</p>` : ""}
+    </div>
+
+    <!-- RECOMMENDATIONS -->
+    ${recommendations.teacher.length ? `
+      <div class="split-block" style="margin:10px 0;padding:10px;border-left:4px solid #3498db;background:#f8fbff;">
+        <strong>👩🏽‍🏫 Teacher Actions</strong>
+        <ul>${recommendations.teacher.map(r => `<li>${r}</li>`).join("")}</ul>
+      </div>` : ""}
+    ${recommendations.parent.length ? `
+      <div class="split-block" style="margin:10px 0;padding:10px;border-left:4px solid #f39c12;background:#fffaf3;">
+        <strong>🏠 Parent Support</strong>
+        <ul>${recommendations.parent.map(r => `<li>${r}</li>`).join("")}</ul>
+      </div>` : ""}
+    ${recommendations.learner.length ? `
+      <div class="split-block" style="margin:10px 0;padding:10px;border-left:4px solid #2ecc71;background:#f6fffa;">
+        <strong>🎯 Learner Focus</strong>
+        <ul>${recommendations.learner.map(r => `<li>${r}</li>`).join("")}</ul>
+      </div>` : ""}
+
+    <!-- SUBJECTS -->
+    ${Object.entries(subjects).map(([subject, rows]) => {
+      if (subject === "__admission") return "";
+
+      const evidence = getEvidenceStatus(rows);
+
+      // compute subject average
+      let subjectAvg = avgMap?.[student]?.[subject.trim()]?.average_score ?? null;
+      if (subjectAvg === null) {
+        const scores = rows.map(r => levelToScore(r.level)).filter(s => s > 0);
+        subjectAvg = scores.length ? scores.reduce((a,b)=>a+b,0)/scores.length : null;
+      }
+
+      function getAchievementLabel(score) {
+        if (score >= 3.5) return "Exceeding Expectations";
+        if (score >= 2.5) return "Meeting Expectations";
+        if (score >= 1.5) return "Approaching Expectations";
+        return "Below Expectations";
+      }
+
+      function getAvgColor(score) {
+        if (score >= 3.5) return "#2ecc71";
+        if (score >= 2.5) return "#3498db";
+        if (score >= 1.5) return "#f1c40f";
+        return "#e74c3c";
+      }
+
+      return `
+      <div class="split-block subject-block">
+        <h5>📘 ${subject} — Assessments: <strong>${rows.length}</strong></h5>
+        <p style="font-weight:bold;color:${evidence.color};">
+          ${evidence.label} — <span style="font-weight:normal">${evidence.note}</span>
+        </p>
+     <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Competency</th>
+              <th>Achievement</th>
+              <th>Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(r => `
+              <tr style="background:${levelColor[r.level]}">
+                <td>${r.competency}</td>
+                <td>${r.level}</td>
+                <td>${r.remarks || "—"}</td>
+              </tr>`).join("")}
+          </tbody>
+          ${subjectAvg !== null ? `
+          <tfoot>
+            <tr style="font-weight:bold; background:#f0f0f0;">
+              <td>SUBJECT/LEARNING AREA AVERAGE</td>
+              <td colspan="2">
+                <span style="
+                  padding: 3px 8px;
+                  border-radius: 12px;
+                  font-weight:bold;
+                  color:white;
+                  background:${getAvgColor(subjectAvg)};
+                ">
+                  ${subjectAvg.toFixed(2)} — ${getAchievementLabel(subjectAvg)}
+                </span>
+              </td>
+            </tr>
+          </tfoot>` : ""}
+        </table>
+       </div>
+      </div>`;
+    }).join("")}
+
+  
+  </div>
+</div>`;
+  }).join("");
+}
+
+
+
+
+
+
+function splitLearnerIntoPages() {
+  const pages = document.querySelectorAll(".a4-page");
+
+  pages.forEach(page => {
+    const card = page.querySelector(".learner-card");
+    if (!card) return;
+
+    const maxHeight = page.clientHeight;
+    let currentPage = page;
+
+    Array.from(card.children).forEach(block => {
+    if (
+  !block.classList.contains("split-block") ||
+  block.classList.contains("no-split")
+) return;
+
+
+      const blockBottom =
+        block.getBoundingClientRect().bottom -
+        currentPage.getBoundingClientRect().top;
+
+      if (blockBottom > maxHeight + 20)  {
+        // create new page
+        const newPage = document.createElement("div");
+        newPage.className = "a4-page learner-page";
+
+        const newCard = document.createElement("div");
+        newCard.className = "learner-card";
+
+        newPage.appendChild(newCard);
+        currentPage.after(newPage);
+
+        newCard.appendChild(block);
+        currentPage = newPage;
+      }
+    });
+  });
+}
+
+
+
+
+  
+
+function generateInsight(subjects) {
+  const subjectScores = {};
+  let total = 0;
+  let count = 0;
+
+  Object.entries(subjects).forEach(([subject, rows]) => {
+    if (subject === "__admission") return;
+
+    subjectScores[subject] = [];
+
+    rows.forEach(r => {
+      const score = levelToScore(r.level);
+      if (score > 0) {
+        subjectScores[subject].push(score);
+        total += score;
+        count++;
+      }
+    });
+  });
+
+  if (!count) return "";
+
+  const overallAvg = total / count;
+
+  const overall =
+    overallAvg >= 3.5 ? "exceeding expectations" :
+    overallAvg >= 2.5 ? "meeting expectations" :
+    overallAvg >= 1.5 ? "approaching expectations" :
+    "below expectations";
+
+  const subjectsArray = Object.entries(subjectScores)
+    .map(([s, scores]) => ({
+      subject: s,
+      avg: scores.reduce((a,b)=>a+b,0) / scores.length
+    }))
+    .sort((a,b)=>b.avg - a.avg);
+
+  let strengthSentence = "";
+
+  if (
+    subjectsArray.length > 1 &&
+    subjectsArray[0].avg >= 3 &&
+    subjectsArray[0].avg - subjectsArray[1].avg >= 0.5
+  ) {
+    strengthSentence = `, with stronger performance in <strong>${subjectsArray[0].subject}</strong>`;
+  }
+
+  return `
+    <p style="margin:6px 0 12px 0;font-style:italic;color:#444;">
+      Overall, based on current evidence, the learner is <strong>${overall}</strong>${strengthSentence}.
+    </p>
+  `;
+}
+
+
+
+function generateSupportFlag(subjects) {
+  let scores = [];
+  let belowCount = 0;
+  let subjectAverages = [];
+
+  Object.entries(subjects).forEach(([subject, rows]) => {
+    if (subject === "__admission") return;
+
+    let subjectScores = [];
+
+    rows.forEach(r => {
+      const score = levelToScore(r.level);
+      if (score > 0) {
+        scores.push(score);
+        subjectScores.push(score);
+        if (score === 1) belowCount++;
+      }
+    });
+
+    if (subjectScores.length) {
+      subjectAverages.push(
+        subjectScores.reduce((a, b) => a + b, 0) / subjectScores.length
+      );
+    }
+  });
+
+  if (!scores.length) return "";
+
+  const overall = scores.reduce((a, b) => a + b, 0) / scores.length;
+
+  /* 🔴 NEEDS SUPPORT */
+  if (
+    overall < 2.3 ||                 // overall struggling
+    belowCount >= 3 ||                // repeated difficulty
+    subjectAverages.filter(a => a <= 2).length >= 2 // weak in 2+ subjects
+  ) {
+    return `<span style="color:#c0392b;font-weight:bold;">🔴 Needs Learning Support</span>`;
+  }
+
+  /* 🟢 HIGH POTENTIAL */
+  if (
+    overall >= 3.5 &&
+    subjectAverages.every(a => a >= 3) &&
+    subjectAverages.some(a => a >= 4)
+  ) {
+    return `<span style="color:#1e8449;font-weight:bold;">🟢 High Potential</span>`;
+  }
+
+  /* 🟡 DEFAULT */
+  return `<span style="color:#b9770e;font-weight:bold;">🟡 On Track</span>`;
+}
+
+
+
+
+function generateStrengthsAndNeeds(subjects) {
+  const strengths = [];
+  const needs = [];
+
+  Object.entries(subjects).forEach(([subject, rows]) => {
+    if (subject === "__admission") return;
+
+    let scores = rows.map(r => levelToScore(r.level)).filter(s => s > 0);
+    if (!scores.length) return;
+
+    const avg = scores.reduce((a,b)=>a+b,0) / scores.length;
+    const weakCount = scores.filter(s => s <= 2).length;
+
+  if (avg >= 3.5 && weakCount === 0) {
+  strengths.push(subject);
+}
+
+if (avg < 2.5 || weakCount >= 2) {
+  needs.push(subject);
+
+
+    }
+  });
+
+  return { strengths, needs };
+}
+
+
+
+function generateRecommendations(subjects, trend, supportFlag) {
+  const teacher = [];
+  const parent = [];
+  const learner = [];
+
+  const { strengths, needs } = generateStrengthsAndNeeds(subjects);
+
+  /* ===== TEACHER ===== */
+  if (supportFlag.includes("Needs Learning Support")) {
+    teacher.push("Provide targeted remediation on identified weak competencies");
+    teacher.push("Use differentiated instruction and more formative checks");
+  }
+
+  if (trend === "📉 Declining") {
+    teacher.push("Review recent assessments to identify emerging gaps");
+  }
+
+  if (strengths.length) {
+    teacher.push(`Encourage learner through strengths in ${strengths.join(", ")}`);
+  }
+
+  /* ===== PARENT ===== */
+  if (needs.length) {
+    parent.push(`Support practice in ${needs.join(", ")} at home`);
+  }
+
+  if (trend === "📉 Declining") {
+    parent.push("Monitor homework completion and provide routine study time");
+  }
+
+  parent.push("Maintain communication with class teacher");
+
+  /* ===== LEARNER ===== */
+  if (strengths.length) {
+    learner.push(`Build confidence by applying strengths in ${strengths.join(", ")}`);
+  }
+
+  if (needs.length) {
+    learner.push(`Focus revision on ${needs.join(", ")}`);
+  }
+
+  learner.push("Ask for help when concepts are unclear");
+
+  return { teacher, parent, learner };
+}
+
+
+function getEvidenceStatus(rows) {
+  const count = rows.length;
+
+  if (count >= 3) {
+    return {
+      label: "🧾 Adequate Evidence",
+      color: "#1e8449",
+      note: "Sufficient assessment records to support judgement"
+    };
+  }
+
+  return {
+    label: "⚠️ Limited Evidence",
+    color: "#b9770e",
+    note: "Consider additional assessment opportunities"
   };
-  html2pdf().set(opt).from(reportDiv).save();
+}
+
+
+const achievementBandsPlugin = {
+  id: "achievementBands",
+  beforeDraw(chart) {
+    const { ctx, chartArea, scales } = chart;
+    if (!chartArea) return;
+
+    const y = scales.y;
+    const bands = [
+      { from: 1, to: 2, color: "rgba(248,215,218,0.35)" }, // Below
+      { from: 2, to: 3, color: "rgba(255,243,205,0.35)" }, // Approaching
+      { from: 3, to: 4, color: "rgba(212,237,218,0.35)" }, // Meeting
+      { from: 4, to: 4.999, color: "rgba(204,229,255,0.35)" }  // Exceeding (slightly below max)
+    ];
+
+    ctx.save();
+    bands.forEach(b => {
+      const yTop = y.getPixelForValue(b.to);
+      const yBottom = y.getPixelForValue(b.from);
+      ctx.fillStyle = b.color;
+      ctx.fillRect(chartArea.left, yTop, chartArea.right - chartArea.left, yBottom - yTop);
+    });
+    ctx.restore();
+  }
 };
+
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { display: false } },
+  scales: {
+    y: {
+      min: 1,
+      max: 4, // match the Exceeding band
+      ticks: {
+        stepSize: 1,
+        callback: v => ["", "Below", "Approaching", "Meeting", "Exceeding"][v]
+      }
+    }
+  }
+};
+
+
+
+/* ===== TERM VIEW ===== */
+if (viewMode.value === "term") {
+  const grouped = {};
+  records.forEach(r => {
+    grouped[r.student] ??= { __admission: r.admission };
+    grouped[r.student][r.subject] ??= [];
+    grouped[r.student][r.subject].push(r);
+  });
+
+  const intelligence = calculateTermIntelligence(
+    records,
+    previousRecords,
+    previousTerm
+  );
+
+  document.getElementById("schoolAnalytics").innerHTML =
+    renderSchoolAnalytics(
+      records,
+      termName,
+      SYSTEM_YEAR,
+      intelligence,
+      schoolName,
+      className
+    );
+
+  reportDiv.innerHTML = renderGrouped(grouped);
+
+  if (!window.__EXPORTING_PDF__) {
+    requestAnimationFrame(() => {
+      splitLearnerIntoPages();
+    });
+  }
+}
+
+  /* ===== TERM VIEW ===== */
+  if (viewMode.value === "term") {
+  const grouped = {};
+  records.forEach(r => {
+    grouped[r.student] ??= { __admission: r.admission };
+    grouped[r.student][r.subject] ??= [];
+    grouped[r.student][r.subject].push(r);
+  });
+
+
+const intelligence = calculateTermIntelligence(
+  records,
+  previousRecords,
+  previousTerm
+);
+
+
+document.getElementById("schoolAnalytics").innerHTML =
+  renderSchoolAnalytics(
+    records,
+    termName,
+    SYSTEM_YEAR,
+    intelligence,
+    schoolName,
+    className
+  );
+
+reportDiv.innerHTML = renderGrouped(grouped);
+
+
+    if (!window.__EXPORTING_PDF__) {
+  requestAnimationFrame(() => {
+    splitLearnerIntoPages();
+  });
+}
+  }
+
+
+termSelect.addEventListener("change", loadReport);
+viewMode.addEventListener("change", loadReport);
+
+
+function getTrend(currentAvg, previousAvg) {
+  if (previousAvg === null) return "🆕 New Entry";
+
+  const diff = currentAvg - previousAvg;
+
+  if (diff >= 0.3) return "📈 Improving";
+  if (diff <= -0.3) return "📉 Declining";
+  return "➖ Stable";
+}
+
+
+
+window.downloadPDF = async function () {
+
+  if (!reportDiv.innerHTML.trim()) {
+    alert("No report to download");
+    return;
+  }
+
+  const term = termSelect.options[termSelect.selectedIndex]?.text || "Term";
+  const filename = `Summary_Report_${term}_${SYSTEM_YEAR}.pdf`;
+
+  const original = reportDiv;
+  const clone = original.cloneNode(true);
+
+  /* =========================
+     REMOVE SCREEN PAGINATION
+  ========================== */
+  clone.querySelectorAll(".a4-page").forEach(page => {
+    const parent = page.parentNode;
+    while (page.firstChild) {
+      parent.insertBefore(page.firstChild, page);
+    }
+    parent.removeChild(page);
+  });
+
+  clone.style.width = "190mm";
+  clone.style.margin = "0 auto";
+  clone.style.padding = "0";
+  clone.style.boxSizing = "border-box";
+
+  const first = results?.[0];
+ 
+  const cards = clone.querySelectorAll(".learner-card");
+
+
+  
+
+  cards.forEach((card, index) => {
+  if (index !== 0) {
+    card.style.pageBreakBefore = "always";
+  }
+
+
+
+    card.style.margin = "0";
+    card.style.padding = "0";
+    card.style.boxSizing = "border-box";
+
+    /* =========================
+       REMOVE OLD TABLE BLOCKS
+    ========================== */
+    card.querySelectorAll(".subject-block, .trend-box").forEach(el => el.remove());
+
+    /* =========================
+       STUDENT NAME
+    ========================== */
+    const studentName = card.querySelector("h4")?.innerText
+      .replace("👤", "")
+      .replace(/\(.*?\)/, "")
+      .trim();
+
+    const subjectData = avgMap?.[studentName];
+    if (!subjectData) return;
+
+    /* =========================
+       CALCULATE OVERALL AVERAGE
+    ========================== */
+    const subjectScores = Object.values(subjectData)
+      .map(d => parseFloat(d.average_score))
+      .filter(score => !isNaN(score) && score > 0);
+
+    let overallAvg = 0;
+    if (subjectScores.length) {
+      const total = subjectScores.reduce((sum, score) => sum + score, 0);
+      overallAvg = total / subjectScores.length;
+    }
+    overallAvg = Number(overallAvg.toFixed(2));
+
+    function overallLevel(score) {
+      if (!score || score < 1) return "No Data";
+      if (score >= 3.5) return "Exceeding Expectations";
+      if (score >= 2.5) return "Meeting Expectations";
+      if (score >= 1.5) return "Approaching Expectations";
+      return "Below Expectations";
+    }
+
+    function generalComment(score) {
+      if (score >= 3.5) return "Excellent performance. Keep it up.";
+      if (score >= 2.5) return "Good progress. Continue working hard.";
+      if (score >= 1.5) return "Fair work. Aim higher next term.";
+      return "Needs more effort and support.";
+    }
+
+    function commentFromScore(score) {
+      if (score >= 3.5) return "Excellent work";
+      if (score >= 2.5) return "Good progress";
+      if (score >= 1.5) return "Fair work";
+      return "Put more effort";
+    }
+
+   
+    /* =========================
+       SUBJECT TABLE (PAGE 2)
+    ========================== */
+    const table = document.createElement("table");
+    table.style.width = "100%";
+    table.style.borderCollapse = "collapse";
+    table.style.marginTop = "6px";
+    table.style.fontSize = "14px";
+    table.style.tableLayout = "fixed";
+
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th style="border:1px solid #000;padding:8px;width:30%;">Learning Area/Subject</th>
+          <th style="border:1px solid #000;padding:8px;width:15%;">Score</th>
+          <th style="border:1px solid #000;padding:8px;width:25%;">Performance Level</th>
+          <th style="border:1px solid #000;padding:8px;width:30%;">Teacher Comment</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${Object.entries(subjectData).map(([subject, d]) => {
+          const avg = Number(d.average_score);
+          return `
+            <tr>
+              <td style="border:1px solid #000;padding:8px;">${subject}</td>
+              <td style="border:1px solid #000;padding:8px;text-align:center;">${avg.toFixed(2)}</td>
+              <td style="border:1px solid #000;padding:8px;">${d.achievement_level}</td>
+              <td style="border:1px solid #000;padding:8px;">${commentFromScore(avg)}</td>
+            </tr>
+          `;
+        }).join("")}
+      </tbody>
+    `;
+
+    /* =========================
+       GENERAL PERFORMANCE BLOCK
+    ========================== */
+    const generalBlock = document.createElement("div");
+    generalBlock.style.marginTop = "10px";
+    generalBlock.style.fontSize = "14px";
+    generalBlock.style.lineHeight = "1.8";
+
+    generalBlock.innerHTML = `
+      <table style="width:100%;border-collapse:collapse;margin-top:6px;">
+        <tr>
+          <td style="border:1px solid #000;padding:8px;width:40%;"><strong>Learner's General Performance Level</strong></td>
+          <td style="border:1px solid #000;padding:8px;">${overallAvg.toFixed(2)} — ${overallLevel(overallAvg)}</td>
+        </tr>
+        <tr>
+          <td style="border:1px solid #000;padding:8px;"><strong>Teacher's General Comment</strong></td>
+          <td style="border:1px solid #000;padding:12px;">${generalComment(overallAvg)}</td>
+        </tr>
+      </table>
+      <div style="margin-top:20px;">
+        <div style="display:flex;justify-content:space-between;margin-top:14px;">
+          <div>Closing Date: ____________________</div>
+          <div>Opening Date: ____________________</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:18px;">
+          <div>Class Teacher Signature: ____________________</div>
+          <div>Head of Institution Signature: ____________________</div>
+        </div>
+      </div>
+    `;
+
+
+
+    /* =========================
+   FOOTER (CREATE FIRST)
+========================= */
+const footer = document.createElement("div");
+footer.style.fontSize = "10px";
+footer.style.textAlign = "center";
+footer.style.marginTop = "12px";
+footer.style.borderTop = "1px solid #ddd";
+footer.style.paddingTop = "6px";
+
+footer.innerText =
+  "Assessment is competency-based and evidence-driven, guided by KICD CBE curriculum designs.";
+
+
+/* =========================
+   TABLE BLOCK (NEW PAGE)
+========================= */
+const tableWrapper = document.createElement("div");
+
+
+tableWrapper.appendChild(table);
+tableWrapper.appendChild(generalBlock);
+tableWrapper.appendChild(footer);
+
+card.appendChild(tableWrapper);
+});
+
+ 
+  /* =========================
+     EXPORT PDF
+  ========================== */
+  html2pdf().set({
+    margin: [10, 10, 10, 10],
+    filename,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: { scale: 2, scrollY: 0, useCORS: true, letterRendering: true },
+    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+    pagebreak: { mode: ['css'] }
+  }).from(clone).save();
+};
+
+
+
+
+
+  
+window.downloadDetailedPDF = async function () {
+  if (!reportDiv.innerHTML.trim()) {
+    alert("No report to download");
+    return;
+  }
+
+  const term = termSelect.options[termSelect.selectedIndex]?.text || "Term";
+  const filename = `Detailed_Report_${term}_${SYSTEM_YEAR}.pdf`;
+
+const original = reportDiv;
+const clone = original.cloneNode(true);
+
+clone.querySelectorAll(".a4-page").forEach(page => {
+  const parent = page.parentNode;
+  while (page.firstChild) {
+    parent.insertBefore(page.firstChild, page);
+  }
+  parent.removeChild(page);
+});
+
+
+  // Force A4 layout
+  clone.style.width = "190mm";
+  clone.style.margin = "0 auto";
+  clone.style.padding = "0";
+  clone.style.boxSizing = "border-box";
+
+  // Improve charts clarity
+  clone.querySelectorAll("canvas").forEach(c => {
+    c.style.width = "100%";
+    c.style.height = "200px";
+  });
+
+  // Improve table readability
+  clone.querySelectorAll("table").forEach(table => {
+    table.style.fontSize = "14px";
+    table.querySelectorAll("td, th").forEach(cell => {
+      cell.style.padding = "8px";
+    });
+  });
+
+  // ✅ CBC COMPLIANCE FOOTER (per learner)
+  clone.querySelectorAll(".learner-card").forEach(card => {
+    const footer = document.createElement("div");
+    footer.style.fontSize = "10px";
+    footer.style.color = "#555";
+    footer.style.textAlign = "center";
+    footer.style.marginTop = "12px";
+    footer.style.borderTop = "1px solid #ddd";
+    footer.style.paddingTop = "6px";
+    footer.style.pageBreakInside = "avoid";
+
+    footer.innerText =
+      "Assessment is competency-based and evidence-driven, guided by KICD CBC curriculum designs.";
+
+    card.appendChild(footer);
+  });
+
+  html2pdf().set({
+    margin: [10, 10, 10, 10],
+    filename,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: { scale: 2, scrollY: 0, useCORS: true },
+    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+  }).from(clone).save();
+};
+
+
+
+
+
+  ["firstInput","lastInput","admInput","termSelect"].forEach(id => {
+  document.getElementById(id).addEventListener("input", loadReport);
+});
+
 </script>
 </body>
 </html>
