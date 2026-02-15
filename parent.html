@@ -29,7 +29,7 @@ button{padding:10px 20px;background:#1f6feb;color:white;border:none;cursor:point
 <input id="lastInput" placeholder="Last name">
 <input id="admInput" placeholder="Admission number">
 
-<p id="status"></p>
+ <p id="status"></p> <!-- start empty -->
 
 <button onclick="downloadPDF()">Download Summary PDF</button>
 <hr>
@@ -119,37 +119,41 @@ termSelect.innerHTML = `<option value="">Select term</option>` +
 });
 
 /* MAIN */
+
+
 async function loadReport(){
- reportDiv.innerHTML="";
- status.innerText="";
+  reportDiv.innerHTML = "";
+  status.innerText = "";
 
- const term = termSelect.value;
- const first = firstInput.value.trim();
- const last = lastInput.value.trim();
- const adm = admInput.value.trim();
- const year = yearInput.value.trim();
+  const term = termSelect.value;
+  const first = firstInput.value.trim();
+  const last = lastInput.value.trim();
+  const adm = admInput.value.trim();
+  const year = yearInput.value.trim();
 
- if(!term || !first || !last || !adm) return;
+  if(!term || !first || !last || !adm) return;
 
- const { data, error } = await supabase
-  .from("assessment_results_view")
-  .select("*")
-  .eq("term", term)
-  .eq("academic_year", year)
-  .ilike("first_name", first)
-  .ilike("last_name", last)
-  .eq("admission_number", adm);
+  const { data, error } = await supabase
+    .from("assessment_results_view")
+    .select("*")
+    .eq("term", term)
+    .eq("academic_year", year)
+    .ilike("first_name", `%${first}%`)
+    .ilike("last_name", `%${last}%`)
+    .eq("admission_number", adm);
 
- if(error || !data.length){
-  status.innerText="No results found";
-  return;
- }
+  if(error || !data.length){
+    status.innerText = "No results found";
+    return;
+  }
 
- results = data;
- buildAverages();
- renderReport();
+  results = data;
+  status.innerText = ""; // ✅ clear message when report exists
+  buildAverages();
+  renderReport();
 }
 
+ 
 /* BUILD AVERAGES */
 function buildAverages(){
  avgMap = {};
@@ -178,24 +182,7 @@ function buildAverages(){
  });
 }
 
-const student = Object.keys(avgMap)[0];
-const subjects = {};
-
-results.forEach(r=>{
-  subjects[r.subject] ??= [];
-  subjects[r.subject].push(r);
-});
-
-overallInsight = generateInsight(subjects);
-const sn = generateStrengthsAndNeeds(subjects);
-strengthsMap = sn.strengths;
-needsMap = sn.needs;
-supportFlag = generateSupportFlag(strengthsMap, needsMap);
-
-
-
-
-  
+ 
 /* RENDER */
 
 function renderReport() {
