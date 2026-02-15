@@ -294,20 +294,18 @@ table {
 
 
 
-/* ================= SCHOOL ANALYTICS PAGE BREAK FIX (CLEAN) ================= */
 
-/* Only prevent breaking the main analytics container */
+/* Remove all hard "avoid" rules from school analytics */
 .school-analytics {
-  page-break-inside: avoid !important; /* keep entire analytics block together if possible */
-  break-inside: avoid !important;
-}
-
-/* Let child elements break normally — avoids blank pages */
-.school-analytics * {
   page-break-inside: auto !important;
   break-inside: auto !important;
 }
 
+/* Optional: prevent only the header from splitting */
+.school-analytics .report-overview {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
 
 
 
