@@ -247,81 +247,6 @@ table {
  
 
 
-/* ================= DETAILED REPORT PDF FIX ================= */
-@media print {
-
-  html, body {
-    width: 210mm !important;
-    height: auto !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    background: white !important;
-  }
-
-  /* Ensure A4 container fits printable area */
-   .a4-page {
-    width: 190mm !important;
-    max-width: 190mm !important;
-    min-height: auto !important;
-    max-height: 277mm !important;   /* A4 safe printable height */
-    margin: 0 auto !important;
-    padding: 10mm !important;
-    box-sizing: border-box !important;
-  page-break-after: auto;
-    overflow: hidden !important;
-  }
-
-
-
-/* Force every learner report to start on a new page */
-  .learner-page {
-    page-break-before: always;
-    break-before: page;
-  }
-
-  /* But NOT the very first learner */
-  .learner-page:first-of-type {
-    page-break-before: auto;
-    break-before: auto;
-  }
-
-
-
-  
-  /* Prevent content pushing outside page */
-  .learner-card {
-    overflow: visible !important;
-    height: auto !important;
-  }
-
-  /* Keep tables inside page width */
-  table {
-    width: 100% !important;
-    table-layout: fixed !important;
-    word-break: break-word !important;
-  }
-
-  th, td {
-    white-space: normal !important;
-    word-wrap: break-word !important;
-    font-size: 12px !important;
-  }
-
-  /* Reduce spacing slightly for print */
-  h3, h4, h5 {
-    margin-top: 6px !important;
-    margin-bottom: 4px !important;
-  }
-
-  .subject-block {
-    margin-top: 8px !important;
-    padding-top: 6px !important;
-  }
-
-}
-
-
-
   
 
 /* Allow the main container to split naturally */
@@ -388,11 +313,7 @@ table {
     <small>Recommended for parents & learners</small>
   </button><br><br>
 
-  <button onclick="downloadDetailedPDF()">
-    ⬇️ Download Detailed Assessment Report<br>
-    <small>For teachers & internal review</small>
-  </button><br><br>
-
+ 
 
   <button onclick="downloadSchoolAnalyticsPDF()">
   ⬇️ Download School Analysis Report<br>
@@ -1759,75 +1680,6 @@ card.appendChild(tableWrapper);
 
 
   
-window.downloadDetailedPDF = async function () {
-  if (!reportDiv.innerHTML.trim()) {
-    alert("No report to download");
-    return;
-  }
-
-
-
-
-  const term = termSelect.options[termSelect.selectedIndex]?.text || "Term";
-  const filename = `Detailed_Report_${term}_${SYSTEM_YEAR}.pdf`;
-
-const original = reportDiv;
-const clone = original.cloneNode(true);
-
-
-
-  // Force A4 layout
-  clone.style.width = "190mm";
-  clone.style.margin = "0 auto";
-  clone.style.padding = "0";
-  clone.style.boxSizing = "border-box";
-
-  // Improve charts clarity
-  clone.querySelectorAll("canvas").forEach(c => {
-    c.style.width = "100%";
-    c.style.height = "200px";
-  });
-
-  // Improve table readability
-  clone.querySelectorAll("table").forEach(table => {
-    table.style.fontSize = "14px";
-    table.querySelectorAll("td, th").forEach(cell => {
-      cell.style.padding = "8px";
-    });
-  });
-
-  // ✅ CBC COMPLIANCE FOOTER (per learner)
-  clone.querySelectorAll(".learner-card").forEach(card => {
-    const footer = document.createElement("div");
-    footer.style.fontSize = "10px";
-    footer.style.color = "#555";
-    footer.style.textAlign = "center";
-    footer.style.marginTop = "12px";
-    footer.style.borderTop = "1px solid #ddd";
-    footer.style.paddingTop = "6px";
-    footer.style.pageBreakInside = "avoid";
-
-    footer.innerText =
-      "Assessment is competency-based and evidence-driven, guided by KICD CBC curriculum designs.";
-
-    card.appendChild(footer);
-  });
-
- html2pdf().set({
-  margin: [10, 10, 10, 10],
-  filename,
-  image: { type: "jpeg", quality: 0.98 },
-  html2canvas: { scale: 2, scrollY: 0, useCORS: true },
-  jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-  pagebreak: {
-    mode: ['css'],
-    before: '.a4-page'
-  }
-}).from(clone).save();
-
-
-
-};
 
 
 
