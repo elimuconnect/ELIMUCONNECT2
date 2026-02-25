@@ -5,7 +5,7 @@
 <title>Admin Dashboard</title>
 <style>
   body { font-family: Arial, sans-serif; margin: 20px; }
-  h2 { margin-top: 30px; }
+  h2 { margin-top: 20px; }
   select, button { margin: 5px; padding: 5px; }
   div.status { margin-top: 5px; color: green; }
 </style>
@@ -33,7 +33,7 @@ const supabase = createClient(
 );
 
 // --------------------
-// 0️⃣ Auth & admin check
+// 0️⃣ Auth & Admin Check
 // --------------------
 const { data: { user } } = await supabase.auth.getUser();
 if (!user) throw new Error("Not logged in");
@@ -50,20 +50,19 @@ if (!adminProfile || adminProfile.role !== "admin") {
 }
 
 // --------------------
-// 1️⃣ Load existing teachers
+// 1️⃣ Load Teachers
 // --------------------
 const teacherSelect = document.getElementById("teacherSelect");
-
 async function loadTeachers() {
   const { data: teachers, error } = await supabase
     .from("profiles")
     .select("id, full_name")
-    .eq("school_id", adminProfile.school_id)
-    .eq("role", "teacher");
+    .eq("role", "teacher")
+    .eq("school_id", adminProfile.school_id);
 
   if (error) {
+    console.error("Error fetching teachers:", error);
     teacherSelect.innerHTML = `<option>Error loading teachers</option>`;
-    console.error(error);
     return;
   }
 
@@ -73,14 +72,12 @@ async function loadTeachers() {
   }
 
   teacherSelect.innerHTML = teachers
-    .map(t => `<option value="${t.id}">${t.full_name}</option>`)
+    .map(t => `<option value="${t.id}">${t.full_name || "No Name"}</option>`)
     .join("");
 }
 
-await loadTeachers();
-
 // --------------------
-// 2️⃣ Load classes and subjects
+// 2️⃣ Load Classes & Subjects
 // --------------------
 const classSelect = document.getElementById("classSelect");
 const subjectSelect = document.getElementById("subjectSelect");
@@ -106,11 +103,8 @@ async function loadSubjects() {
     .join("");
 }
 
-await loadClasses();
-await loadSubjects();
-
 // --------------------
-// 3️⃣ Assign subjects to teacher
+// 3️⃣ Assign Subjects to Teacher
 // --------------------
 const assignStatus = document.getElementById("assignStatus");
 
@@ -137,6 +131,14 @@ document.getElementById("assignBtn").onclick = async () => {
   if (error) assignStatus.innerText = "Error: " + error.message;
   else assignStatus.innerText = "Assigned successfully";
 };
+
+// --------------------
+// Initial Load
+// --------------------
+await loadTeachers();
+await loadClasses();
+await loadSubjects();
+
 </script>
 </body>
 </html>
