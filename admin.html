@@ -18,7 +18,7 @@
 <h1>Admin Dashboard</h1>
 <div id="status"></div>
 
-<!-- 1️⃣ Assign Teachers to Classes & Subjects -->
+<!-- Assign Teachers to Classes & Subjects -->
 <h2>Assign Teacher</h2>
 <select id="teacherSelect"></select>
 <select id="classSelect"></select>
@@ -26,7 +26,11 @@
 <button id="assignBtn">Assign</button>
 <div id="assignStatus" class="status"></div>
 
-<!-- 2️⃣ School Analysis -->
+<!-- Optional: Show existing teachers -->
+<h3>Existing Teachers</h3>
+<ul id="teacherList"></ul>
+
+<!-- School Analysis -->
 <h2>School Analysis</h2>
 <table id="analysisTable">
   <thead>
@@ -72,37 +76,56 @@ if (!adminProfile || adminProfile.role !== "admin") {
 }
 
 // --------------------
-// 1️⃣ Assign Teachers to Classes & Subjects
+// 1️⃣ Load Teachers, Classes, Subjects
 // --------------------
 const teacherSelect = document.getElementById("teacherSelect");
 const classSelect = document.getElementById("classSelect");
 const subjectSelect = document.getElementById("subjectSelect");
 const assignStatus = document.getElementById("assignStatus");
+const teacherList = document.getElementById("teacherList");
 
-// Load teachers from existing profiles
 async function loadTeachers() {
-  const { data: teachers } = await supabase
+  const { data: teachers, error } = await supabase
     .from("profiles")
     .select("id, full_name")
     .eq("school_id", adminProfile.school_id)
     .eq("role", "teacher");
-  teacherSelect.innerHTML = teachers.map(t => `<option value="${t.id}">${t.full_name}</option>`).join("");
+
+  if (error) {
+    console.error("Failed to load teachers:", error);
+    teacherSelect.innerHTML = `<option value="">Error loading teachers</option>`;
+    return;
+  }
+
+  if (!teachers || teachers.length === 0) {
+    teacherSelect.innerHTML = `<option value="">No teachers found</option>`;
+    teacherList.innerHTML = `<li>No teachers found</li>`;
+    return;
+  }
+
+  // Populate dropdown
+  teacherSelect.innerHTML = teachers
+    .map(t => `<option value="${t.id}">${t.full_name}</option>`)
+    .join("");
+
+  // Show list
+  teacherList.innerHTML = teachers.map(t => `<li>${t.full_name}</li>`).join("");
 }
 
-// Load classes
 async function loadClasses() {
   const { data: classes } = await supabase
     .from("classes")
     .select("id, name")
     .eq("school_id", adminProfile.school_id);
+
   classSelect.innerHTML = classes.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
 }
 
-// Load subjects
 async function loadSubjects() {
   const { data: subjects } = await supabase
     .from("subjects")
     .select("id, name");
+
   subjectSelect.innerHTML = subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
 }
 
@@ -111,12 +134,15 @@ await loadTeachers();
 await loadClasses();
 await loadSubjects();
 
+// --------------------
+// 2️⃣ Assign Teachers to Classes & Subjects
+// --------------------
 document.getElementById("assignBtn").onclick = async () => {
   const teacherId = teacherSelect.value;
   const classId = classSelect.value;
   const selectedSubjects = Array.from(subjectSelect.selectedOptions).map(o => o.value);
 
-  if (!teacherId || !classId || !selectedSubjects.length) {
+  if (!teacherId || !classId || selectedSubjects.length === 0) {
     assignStatus.innerText = "Select teacher, class, and subjects";
     return;
   }
@@ -134,30 +160,18 @@ document.getElementById("assignBtn").onclick = async () => {
   if (error) assignStatus.innerText = "Error: " + error.message;
   else assignStatus.innerText = "Assigned successfully";
 
-  // Refresh analysis table
-  await loadAnalysis();
+  await loadAnalysis(); // refresh table
 };
 
 // --------------------
-// 2️⃣ School Analysis
+// 3️⃣ School Analysis
 // --------------------
 const tbody = document.querySelector("#analysisTable tbody");
 
 async function loadAnalysis() {
   const { data: assessments, error } = await supabase
     .from("assessments")
-    .select(`
-      id,
-      title,
-      term,
-      academic_year,
-      teacher_id,
-      class_id,
-      subject,
-      teacher:profiles(full_name),
-      class:classes(name),
-      subject_name:subjects(name)
-    `)
+    .select("*")
     .eq("school_id", adminProfile.school_id);
 
   if (error) {
@@ -165,11 +179,20 @@ async function loadAnalysis() {
     return;
   }
 
+  // Load teacher/class/subject names
+  const { data: teachers } = await supabase.from("profiles").select("id, full_name").eq("school_id", adminProfile.school_id).eq("role","teacher");
+  const { data: classes } = await supabase.from("classes").select("id, name").eq("school_id", adminProfile.school_id);
+  const { data: subjects } = await supabase.from("subjects").select("id, name");
+
+  const teacherMap = Object.fromEntries(teachers.map(t => [t.id, t.full_name]));
+  const classMap = Object.fromEntries(classes.map(c => [c.id, c.name]));
+  const subjectMap = Object.fromEntries(subjects.map(s => [s.id, s.name]));
+
   tbody.innerHTML = assessments.map(a => `
     <tr>
-      <td>${a.teacher?.full_name || a.teacher_id}</td>
-      <td>${a.class?.name || a.class_id}</td>
-      <td>${a.subject_name || a.subject}</td>
+      <td>${teacherMap[a.teacher_id] || a.teacher_id}</td>
+      <td>${classMap[a.class_id] || a.class_id}</td>
+      <td>${subjectMap[a.subject_id] || a.subject}</td>
       <td>${a.title}</td>
       <td>${a.term}</td>
       <td>${a.academic_year}</td>
