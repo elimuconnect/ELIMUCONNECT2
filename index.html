@@ -34,7 +34,7 @@
       }
 
 
-console.log("Logged in auth ID:", user.id);
+
 
       
       const { data: { user } } = await supabase.auth.getUser();
@@ -62,6 +62,9 @@ if (profile.role === "teacher") {
 
       
     };
+
+
+    console.log("Logged in auth ID:", user.id);
   </script>
 
 </body>
