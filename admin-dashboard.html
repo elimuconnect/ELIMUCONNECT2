@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Dashboard</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; }
+  h2 { margin-top: 30px; }
+  input, select, button { margin: 5px; padding: 5px; }
+  table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+  th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+  th { background: #eee; }
+  div.status { margin-top: 5px; color: green; }
+</style>
+</head>
+<body>
+
+<h1>Admin Dashboard</h1>
+<div id="status"></div>
+
+<!-- 1️⃣ Add Teacher -->
+<h2>Add Teacher</h2>
+<input id="teacherName" placeholder="Full Name">
+<input id="teacherAuthId" placeholder="Supabase Auth ID">
+<button id="addTeacherBtn">Add Teacher</button>
+<div id="addTeacherStatus" class="status"></div>
+
+<!-- 2️⃣ Assign Teachers to Classes & Subjects -->
+<h2>Assign Teacher</h2>
+<select id="teacherSelect"></select>
+<select id="classSelect"></select>
+<select id="subjectSelect" multiple></select>
+<button id="assignBtn">Assign</button>
+<div id="assignStatus" class="status"></div>
+
+<!-- 3️⃣ School Analysis -->
+<h2>School Analysis</h2>
+<table id="analysisTable">
+  <thead>
+    <tr>
+      <th>Teacher</th>
+      <th>Class</th>
+      <th>Subject</th>
+      <th>Assessment</th>
+      <th>Term</th>
+      <th>Year</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabase = createClient(
+  "https://zcmzuetusvpmvubbjlmx.supabase.co",
+  "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
+);
+
+// --------------------
+// 0️⃣ Auth & role check
+// --------------------
+const { data: { user } } = await supabase.auth.getUser();
+if (!user) {
+  window.location.href = "index.html";
+  throw new Error("Not logged in");
+}
+
+const { data: adminProfile, error: profileError } = await supabase
+  .from("profiles")
+  .select("*")
+  .eq("auth_id", user.id)
+  .single();
+
+if (!adminProfile || adminProfile.role !== "admin") {
+  alert("Access denied: Admins only");
+  window.location.href = "index.html";
+  throw new Error("Not an admin");
+}
+
+// --------------------
+// 1️⃣ Add Teacher
+// --------------------
+document.getElementById("addTeacherBtn").onclick = async () => {
+  const name = document.getElementById("teacherName").value;
+  const authId = document.getElementById("teacherAuthId").value;
+  const status = document.getElementById("addTeacherStatus");
+
+  if (!name || !authId) {
+    status.innerText = "Enter all fields";
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .insert({
+      auth_id: authId,
+      full_name: name,
+      role: "teacher",
+      school_id: adminProfile.school_id
+    });
+
+  if (error) status.innerText = "Error: " + error.message;
+  else status.innerText = `Teacher "${name}" added successfully`;
+
+  // Refresh teacher dropdown
+  await loadTeachers();
+};
+
+// --------------------
+// 2️⃣ Assign Teachers to Classes & Subjects
+// --------------------
+const teacherSelect = document.getElementById("teacherSelect");
+const classSelect = document.getElementById("classSelect");
+const subjectSelect = document.getElementById("subjectSelect");
+const assignStatus = document.getElementById("assignStatus");
+
+async function loadTeachers() {
+  const { data: teachers } = await supabase
+    .from("profiles")
+    .select("id, full_name")
+    .eq("school_id", adminProfile.school_id)
+    .eq("role", "teacher");
+  teacherSelect.innerHTML = teachers.map(t => `<option value="${t.id}">${t.full_name}</option>`).join("");
+}
+
+async function loadClasses() {
+  const { data: classes } = await supabase
+    .from("classes")
+    .select("id, name")
+    .eq("school_id", adminProfile.school_id);
+  classSelect.innerHTML = classes.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
+}
+
+async function loadSubjects() {
+  const { data: subjects } = await supabase
+    .from("subjects")
+    .select("id, name");
+  subjectSelect.innerHTML = subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
+}
+
+// Initial load
+await loadTeachers();
+await loadClasses();
+await loadSubjects();
+
+document.getElementById("assignBtn").onclick = async () => {
+  const teacherId = teacherSelect.value;
+  const classId = classSelect.value;
+  const selectedSubjects = Array.from(subjectSelect.selectedOptions).map(o => o.value);
+
+  if (!teacherId || !classId || !selectedSubjects.length) {
+    assignStatus.innerText = "Select teacher, class, and subjects";
+    return;
+  }
+
+  const rows = selectedSubjects.map(subjId => ({
+    teacher_id: teacherId,
+    class_id: classId,
+    subject_id: subjId
+  }));
+
+  const { data, error } = await supabase
+    .from("teacher_subjects")
+    .insert(rows);
+
+  if (error) assignStatus.innerText = "Error: " + error.message;
+  else assignStatus.innerText = "Assigned successfully";
+
+  // Optional: refresh analysis table
+  await loadAnalysis();
+};
+
+// --------------------
+// 3️⃣ School Analysis
+// --------------------
+const tbody = document.querySelector("#analysisTable tbody");
+
+async function loadAnalysis() {
+  const { data: assessments } = await supabase
+    .from("assessments")
+    .select(`
+      id,
+      title,
+      teacher_id,
+      class_id,
+      subject,
+      term,
+      academic_year
+    `)
+    .eq("school_id", adminProfile.school_id);
+
+  tbody.innerHTML = assessments.map(a => `
+    <tr>
+      <td>${a.teacher_id}</td>
+      <td>${a.class_id}</td>
+      <td>${a.subject}</td>
+      <td>${a.title}</td>
+      <td>${a.term}</td>
+      <td>${a.academic_year}</td>
+    </tr>
+  `).join("");
+}
+
+// Initial load
+await loadAnalysis();
+
+</script>
+</body>
+</html>
