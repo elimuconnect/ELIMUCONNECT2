@@ -38,45 +38,41 @@
     window.location.href = "index.html";
   }
 
-  // 3️⃣ Fetch only classes assigned to this teacher for the current year
-  const { data: assignedClasses, error: assignedError } = await supabase
-    .from("teacher_subjects")
-    .select(`
-      class_id,
-      classes (
-        id,
-        name,
-        academic_year,
-        grades ( grade_number )
-      )
-    `)
-    .eq("teacher_id", profile.id)
-    .eq("classes.academic_year", CURRENT_YEAR);
+ // Fetch teacher's assigned classes
+const { data: assignedClasses, error: assignedError } = await supabase
+  .from("teacher_subjects")
+  .select(`
+    class_id,
+    classes (
+      id,
+      name,
+      academic_year,
+      grades ( grade_number )
+    )
+  `)
+  .eq("teacher_id", profile.id);
 
-  if (assignedError) {
-    classListEl.innerText = "Failed to load assigned classes";
-    throw assignedError;
-  }
+if (assignedError) throw assignedError;
 
-  // ✅ Filter out any null/missing classes
-  const validClasses = (assignedClasses || []).filter(row => row.classes);
+// Filter only current year and valid classes
+const validClasses = (assignedClasses || [])
+  .filter(row => row.classes && Number(row.classes.academic_year) === CURRENT_YEAR);
 
-  // 4️⃣ Render results
-  if (validClasses.length === 0) {
-    classListEl.innerText = `No classes assigned for ${CURRENT_YEAR}`;
-  } else {
-    classListEl.innerHTML = validClasses.map(row => {
-      const c = row.classes;
-      return `
-        <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;" data-year="${c.academic_year || 'N/A'}">
-          <strong>${c.name || 'Unnamed Class'}</strong><br>
-          Grade: ${c.grades ? c.grades.grade_number : 'N/A'}<br>
-          Academic Year: ${c.academic_year || 'N/A'}<br>
-          <button data-class="${c.id}">Start Assessment</button>
-        </div>
-      `;
-    }).join("");
-  }
+if (!validClasses.length) {
+  classListEl.innerText = `No classes assigned for ${CURRENT_YEAR}`;
+} else {
+  classListEl.innerHTML = validClasses.map(row => {
+    const c = row.classes;
+    return `
+      <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;" data-year="${c.academic_year}">
+        <strong>${c.name}</strong><br>
+        Grade: ${c.grades ? c.grades.grade_number : 'N/A'}<br>
+        Academic Year: ${c.academic_year}<br>
+        <button data-class="${c.id}">Start Assessment</button>
+      </div>
+    `;
+  }).join("");
+}
 
   // 5️⃣ Button handler (safe binding)
   classListEl.addEventListener("click", (e) => {
