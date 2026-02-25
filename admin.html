@@ -96,7 +96,8 @@ async function loadClasses() {
 async function loadSubjects() {
   const { data: subjects } = await supabase
     .from("subjects")
-    .select("id, name");
+    .select("id, name")
+    .eq("school_id", adminProfile.school_id); // ✅ now school-specific
 
   subjectSelect.innerHTML = subjects
     .map(s => `<option value="${s.id}">${s.name}</option>`)
@@ -104,7 +105,7 @@ async function loadSubjects() {
 }
 
 // --------------------
-// 3️⃣ Assign Subjects to Teacher
+// 3️⃣ Assign Subjects to Teacher (avoid duplicates)
 // --------------------
 const assignStatus = document.getElementById("assignStatus");
 
@@ -118,15 +119,28 @@ document.getElementById("assignBtn").onclick = async () => {
     return;
   }
 
-  const rows = selectedSubjects.map(subjId => ({
-    teacher_id: teacherId,
-    class_id: classId,
-    subject_id: subjId
-  }));
-
-  const { error } = await supabase
+  // ✅ check existing assignments to prevent 409 conflict
+  const { data: existing } = await supabase
     .from("teacher_subjects")
-    .insert(rows);
+    .select("subject_id")
+    .eq("teacher_id", teacherId)
+    .eq("class_id", classId);
+
+  const existingIds = existing?.map(e => e.subject_id) || [];
+  const newRows = selectedSubjects
+    .filter(subjId => !existingIds.includes(subjId))
+    .map(subjId => ({
+      teacher_id: teacherId,
+      class_id: classId,
+      subject_id: subjId
+    }));
+
+  if (newRows.length === 0) {
+    assignStatus.innerText = "All selected subjects are already assigned";
+    return;
+  }
+
+  const { error } = await supabase.from("teacher_subjects").insert(newRows);
 
   if (error) assignStatus.innerText = "Error: " + error.message;
   else assignStatus.innerText = "Assigned successfully";
