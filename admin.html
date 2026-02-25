@@ -6,7 +6,7 @@
 <style>
   body { font-family: Arial, sans-serif; margin: 20px; }
   h2 { margin-top: 30px; }
-  input, select, button { margin: 5px; padding: 5px; }
+  select, button { margin: 5px; padding: 5px; }
   table { border-collapse: collapse; width: 100%; margin-top: 10px; }
   th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
   th { background: #eee; }
@@ -18,14 +18,7 @@
 <h1>Admin Dashboard</h1>
 <div id="status"></div>
 
-<!-- 1️⃣ Add Teacher -->
-<h2>Add Teacher</h2>
-<input id="teacherName" placeholder="Full Name">
-<input id="teacherAuthId" placeholder="Supabase Auth ID">
-<button id="addTeacherBtn">Add Teacher</button>
-<div id="addTeacherStatus" class="status"></div>
-
-<!-- 2️⃣ Assign Teachers to Classes & Subjects -->
+<!-- 1️⃣ Assign Teachers to Classes & Subjects -->
 <h2>Assign Teacher</h2>
 <select id="teacherSelect"></select>
 <select id="classSelect"></select>
@@ -33,7 +26,7 @@
 <button id="assignBtn">Assign</button>
 <div id="assignStatus" class="status"></div>
 
-<!-- 3️⃣ School Analysis -->
+<!-- 2️⃣ School Analysis -->
 <h2>School Analysis</h2>
 <table id="analysisTable">
   <thead>
@@ -66,7 +59,7 @@ if (!user) {
   throw new Error("Not logged in");
 }
 
-const { data: adminProfile, error: profileError } = await supabase
+const { data: adminProfile } = await supabase
   .from("profiles")
   .select("*")
   .eq("auth_id", user.id)
@@ -79,42 +72,14 @@ if (!adminProfile || adminProfile.role !== "admin") {
 }
 
 // --------------------
-// 1️⃣ Add Teacher
-// --------------------
-document.getElementById("addTeacherBtn").onclick = async () => {
-  const name = document.getElementById("teacherName").value;
-  const authId = document.getElementById("teacherAuthId").value;
-  const status = document.getElementById("addTeacherStatus");
-
-  if (!name || !authId) {
-    status.innerText = "Enter all fields";
-    return;
-  }
-
-  const { data, error } = await supabase
-    .from("profiles")
-    .insert({
-      auth_id: authId,
-      full_name: name,
-      role: "teacher",
-      school_id: adminProfile.school_id
-    });
-
-  if (error) status.innerText = "Error: " + error.message;
-  else status.innerText = `Teacher "${name}" added successfully`;
-
-  // Refresh teacher dropdown
-  await loadTeachers();
-};
-
-// --------------------
-// 2️⃣ Assign Teachers to Classes & Subjects
+// 1️⃣ Assign Teachers to Classes & Subjects
 // --------------------
 const teacherSelect = document.getElementById("teacherSelect");
 const classSelect = document.getElementById("classSelect");
 const subjectSelect = document.getElementById("subjectSelect");
 const assignStatus = document.getElementById("assignStatus");
 
+// Load teachers from existing profiles
 async function loadTeachers() {
   const { data: teachers } = await supabase
     .from("profiles")
@@ -124,6 +89,7 @@ async function loadTeachers() {
   teacherSelect.innerHTML = teachers.map(t => `<option value="${t.id}">${t.full_name}</option>`).join("");
 }
 
+// Load classes
 async function loadClasses() {
   const { data: classes } = await supabase
     .from("classes")
@@ -132,6 +98,7 @@ async function loadClasses() {
   classSelect.innerHTML = classes.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
 }
 
+// Load subjects
 async function loadSubjects() {
   const { data: subjects } = await supabase
     .from("subjects")
@@ -167,19 +134,16 @@ document.getElementById("assignBtn").onclick = async () => {
   if (error) assignStatus.innerText = "Error: " + error.message;
   else assignStatus.innerText = "Assigned successfully";
 
-  // Optional: refresh analysis table
+  // Refresh analysis table
   await loadAnalysis();
 };
 
 // --------------------
-// 3️⃣ School Analysis
+// 2️⃣ School Analysis
 // --------------------
 const tbody = document.querySelector("#analysisTable tbody");
 
-
-
 async function loadAnalysis() {
-  // Fetch assessments with related teacher, class, and subject names
   const { data: assessments, error } = await supabase
     .from("assessments")
     .select(`
@@ -212,7 +176,6 @@ async function loadAnalysis() {
     </tr>
   `).join("");
 }
-  
 
 // Initial load
 await loadAnalysis();
