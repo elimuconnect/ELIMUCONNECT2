@@ -33,6 +33,10 @@
         return;
       }
 
+
+console.log("Logged in auth ID:", user.id);
+
+      
       const { data: { user } } = await supabase.auth.getUser();
 
      const { data: profile, error: profileError } = await supabase
