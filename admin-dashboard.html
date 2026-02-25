@@ -176,31 +176,43 @@ document.getElementById("assignBtn").onclick = async () => {
 // --------------------
 const tbody = document.querySelector("#analysisTable tbody");
 
+
+
 async function loadAnalysis() {
-  const { data: assessments } = await supabase
+  // Fetch assessments with related teacher, class, and subject names
+  const { data: assessments, error } = await supabase
     .from("assessments")
     .select(`
       id,
       title,
+      term,
+      academic_year,
       teacher_id,
       class_id,
       subject,
-      term,
-      academic_year
+      teacher:profiles(full_name),
+      class:classes(name),
+      subject_name:subjects(name)
     `)
     .eq("school_id", adminProfile.school_id);
 
+  if (error) {
+    tbody.innerHTML = `<tr><td colspan="6">Error loading assessments: ${error.message}</td></tr>`;
+    return;
+  }
+
   tbody.innerHTML = assessments.map(a => `
     <tr>
-      <td>${a.teacher_id}</td>
-      <td>${a.class_id}</td>
-      <td>${a.subject}</td>
+      <td>${a.teacher?.full_name || a.teacher_id}</td>
+      <td>${a.class?.name || a.class_id}</td>
+      <td>${a.subject_name || a.subject}</td>
       <td>${a.title}</td>
       <td>${a.term}</td>
       <td>${a.academic_year}</td>
     </tr>
   `).join("");
 }
+  
 
 // Initial load
 await loadAnalysis();
