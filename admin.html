@@ -7,9 +7,6 @@
   body { font-family: Arial, sans-serif; margin: 20px; }
   h2 { margin-top: 30px; }
   select, button { margin: 5px; padding: 5px; }
-  table { border-collapse: collapse; width: 100%; margin-top: 10px; }
-  th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-  th { background: #eee; }
   div.status { margin-top: 5px; color: green; }
 </style>
 </head>
@@ -29,22 +26,6 @@
 <!-- Optional: Show existing teachers -->
 <h3>Existing Teachers</h3>
 <ul id="teacherList"></ul>
-
-<!-- School Analysis -->
-<h2>School Analysis</h2>
-<table id="analysisTable">
-  <thead>
-    <tr>
-      <th>Teacher</th>
-      <th>Class</th>
-      <th>Subject</th>
-      <th>Assessment</th>
-      <th>Term</th>
-      <th>Year</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
 
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
@@ -159,49 +140,7 @@ document.getElementById("assignBtn").onclick = async () => {
 
   if (error) assignStatus.innerText = "Error: " + error.message;
   else assignStatus.innerText = "Assigned successfully";
-
-  await loadAnalysis(); // refresh table
 };
-
-// --------------------
-// 3️⃣ School Analysis
-// --------------------
-const tbody = document.querySelector("#analysisTable tbody");
-
-async function loadAnalysis() {
-  const { data: assessments, error } = await supabase
-    .from("assessments")
-    .select("*")
-    .eq("school_id", adminProfile.school_id);
-
-  if (error) {
-    tbody.innerHTML = `<tr><td colspan="6">Error loading assessments: ${error.message}</td></tr>`;
-    return;
-  }
-
-  // Load teacher/class/subject names
-  const { data: teachers } = await supabase.from("profiles").select("id, full_name").eq("school_id", adminProfile.school_id).eq("role","teacher");
-  const { data: classes } = await supabase.from("classes").select("id, name").eq("school_id", adminProfile.school_id);
-  const { data: subjects } = await supabase.from("subjects").select("id, name");
-
-  const teacherMap = Object.fromEntries(teachers.map(t => [t.id, t.full_name]));
-  const classMap = Object.fromEntries(classes.map(c => [c.id, c.name]));
-  const subjectMap = Object.fromEntries(subjects.map(s => [s.id, s.name]));
-
-  tbody.innerHTML = assessments.map(a => `
-    <tr>
-      <td>${teacherMap[a.teacher_id] || a.teacher_id}</td>
-      <td>${classMap[a.class_id] || a.class_id}</td>
-      <td>${subjectMap[a.subject_id] || a.subject}</td>
-      <td>${a.title}</td>
-      <td>${a.term}</td>
-      <td>${a.academic_year}</td>
-    </tr>
-  `).join("");
-}
-
-// Initial load
-await loadAnalysis();
 
 </script>
 </body>
