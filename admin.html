@@ -2,30 +2,16 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Admin Dashboard</title>
+<title>Admin - View Teachers</title>
 <style>
   body { font-family: Arial, sans-serif; margin: 20px; }
-  h2 { margin-top: 30px; }
-  select, button { margin: 5px; padding: 5px; }
-  div.status { margin-top: 5px; color: green; }
+  ul { margin-top: 10px; }
 </style>
 </head>
 <body>
 
-<h1>Admin Dashboard</h1>
-<div id="status"></div>
-
-<!-- Assign Teachers to Classes & Subjects -->
-<h2>Assign Teacher</h2>
-<select id="teacherSelect"></select>
-<select id="classSelect"></select>
-<select id="subjectSelect" multiple></select>
-<button id="assignBtn">Assign</button>
-<div id="assignStatus" class="status"></div>
-
-<!-- Optional: Show existing teachers -->
-<h3>Existing Teachers</h3>
-<ul id="teacherList"></ul>
+<h1>Admin Dashboard – View Teachers</h1>
+<ul id="teacherList">Loading...</ul>
 
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
@@ -35,16 +21,15 @@ const supabase = createClient(
   "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
 );
 
-// --------------------
-// 0️⃣ Auth & role check
-// --------------------
+// 1️⃣ Get admin profile
 const { data: { user } } = await supabase.auth.getUser();
+
 if (!user) {
   window.location.href = "index.html";
   throw new Error("Not logged in");
 }
 
-const { data: adminProfile } = await supabase
+const { data: adminProfile, error: profileError } = await supabase
   .from("profiles")
   .select("*")
   .eq("auth_id", user.id)
@@ -56,92 +41,24 @@ if (!adminProfile || adminProfile.role !== "admin") {
   throw new Error("Not an admin");
 }
 
-// --------------------
-// 1️⃣ Load Teachers, Classes, Subjects
-// --------------------
-const teacherSelect = document.getElementById("teacherSelect");
-const classSelect = document.getElementById("classSelect");
-const subjectSelect = document.getElementById("subjectSelect");
-const assignStatus = document.getElementById("assignStatus");
+// 2️⃣ Fetch teachers in the same school
+const { data: teachers, error } = await supabase
+  .from("profiles")
+  .select("id, full_name")
+  .eq("school_id", adminProfile.school_id)
+  .eq("role", "teacher");
+
 const teacherList = document.getElementById("teacherList");
 
-async function loadTeachers() {
-  const { data: teachers, error } = await supabase
-    .from("profiles")
-    .select("id, full_name")
-    .eq("school_id", adminProfile.school_id)
-    .eq("role", "teacher");
-
-  if (error) {
-    console.error("Failed to load teachers:", error);
-    teacherSelect.innerHTML = `<option value="">Error loading teachers</option>`;
-    return;
-  }
-
-  if (!teachers || teachers.length === 0) {
-    teacherSelect.innerHTML = `<option value="">No teachers found</option>`;
-    teacherList.innerHTML = `<li>No teachers found</li>`;
-    return;
-  }
-
-  // Populate dropdown
-  teacherSelect.innerHTML = teachers
-    .map(t => `<option value="${t.id}">${t.full_name}</option>`)
-    .join("");
-
-  // Show list
-  teacherList.innerHTML = teachers.map(t => `<li>${t.full_name}</li>`).join("");
+if (error) {
+  teacherList.innerHTML = `<li>Error loading teachers: ${error.message}</li>`;
+} else if (!teachers || teachers.length === 0) {
+  teacherList.innerHTML = "<li>No teachers found in this school</li>";
+} else {
+  teacherList.innerHTML = teachers.map(t => `<li>${t.full_name} (ID: ${t.id})</li>`).join("");
 }
 
-async function loadClasses() {
-  const { data: classes } = await supabase
-    .from("classes")
-    .select("id, name")
-    .eq("school_id", adminProfile.school_id);
-
-  classSelect.innerHTML = classes.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
-}
-
-async function loadSubjects() {
-  const { data: subjects } = await supabase
-    .from("subjects")
-    .select("id, name");
-
-  subjectSelect.innerHTML = subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
-}
-
-// Initial load
-await loadTeachers();
-await loadClasses();
-await loadSubjects();
-
-// --------------------
-// 2️⃣ Assign Teachers to Classes & Subjects
-// --------------------
-document.getElementById("assignBtn").onclick = async () => {
-  const teacherId = teacherSelect.value;
-  const classId = classSelect.value;
-  const selectedSubjects = Array.from(subjectSelect.selectedOptions).map(o => o.value);
-
-  if (!teacherId || !classId || selectedSubjects.length === 0) {
-    assignStatus.innerText = "Select teacher, class, and subjects";
-    return;
-  }
-
-  const rows = selectedSubjects.map(subjId => ({
-    teacher_id: teacherId,
-    class_id: classId,
-    subject_id: subjId
-  }));
-
-  const { data, error } = await supabase
-    .from("teacher_subjects")
-    .insert(rows);
-
-  if (error) assignStatus.innerText = "Error: " + error.message;
-  else assignStatus.innerText = "Assigned successfully";
-};
-
+console.log("Teachers fetched:", teachers);
 </script>
 </body>
 </html>
