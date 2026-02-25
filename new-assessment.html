@@ -26,144 +26,200 @@
 <p id="status"></p>
 
 <script type="module">
-  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-  const supabase = createClient(
-    "https://zcmzuetusvpmvubbjlmx.supabase.co",
-    "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
-  );
+// --------------------
+// 0️⃣ Supabase Client
+// --------------------
+const supabase = createClient(
+  "https://zcmzuetusvpmvubbjlmx.supabase.co",
+  "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
+);
 
-  /* 🔒 SYSTEM ACADEMIC YEAR */
-  const SYSTEM_YEAR = 2026;
-
- 
-/* 0️⃣ Auth check */
+// --------------------
+// 0️⃣ Auth check
+// --------------------
 const { data: { user } } = await supabase.auth.getUser();
 if (!user) {
   window.location.href = "index.html";
   throw new Error("Not logged in");
 }
 
-/* ✅ STATUS ELEMENT (FIX) */
+// --------------------
+// ✅ Status element
+// --------------------
 const status = document.getElementById("status");
 
-/* 1️⃣ Load class + academic year */
+// --------------------
+// 1️⃣ Load class + academic year
+// --------------------
 const classId = localStorage.getItem("class_id");
 const storedYear = localStorage.getItem("academic_year");
+if (!classId) {
+  window.location.href = "teacher.html";
+  throw new Error("No class selected");
+}
+const SYSTEM_YEAR = 2026;
+const academicYear = storedYear || SYSTEM_YEAR;
+document.getElementById("academicYear").value = academicYear;
 
-  if (!classId) {
-    window.location.href = "teacher.html";
-    throw new Error("No class selected");
-  }
+// --------------------
+// 2️⃣ Load teacher's assigned subjects for this class
+// --------------------
+const { data: teacherSubjects, error: tsError } = await supabase
+  .from("teacher_subjects")
+  .select(`
+    subject_id,
+    subjects(name)
+  `)
+  .eq("teacher_id", user.id)
+  .eq("class_id", classId);
 
-  const academicYear = storedYear || SYSTEM_YEAR;
-  document.getElementById("academicYear").value = academicYear;
+if (tsError || !teacherSubjects?.length) {
+  status.innerText = "No subjects assigned for this class";
+  throw tsError;
+}
 
-  /* 2️⃣ Load learning areas */
-  const { data: learningAreas, error: laError } = await supabase
-    .from("learning_areas")
-    .select("id, name");
+// --------------------
+// 3️⃣ Load learning areas for this class
+// --------------------
+const { data: learningAreas, error: laError } = await supabase
+  .from("learning_areas")
+  .select("id, name")
+  .eq("class_id", classId);
 
-  if (laError || !learningAreas?.length) {
-    status.innerText = "Failed to load learning areas";
-    throw laError;
-  }
+if (laError) {
+  status.innerText = "Failed to load learning areas";
+  throw laError;
+}
 
-  const learningAreaSelect = document.getElementById("learningArea");
-  learningAreaSelect.innerHTML = learningAreas
+// --------------------
+// 4️⃣ Combine subjects with learning areas
+// --------------------
+const subjectsWithAreas = teacherSubjects.map(ts => ({
+  subject_id: ts.subject_id,
+  subject_name: ts.subject.name,
+  learningAreas: [...learningAreas]  // attach all learning areas for this class
+}));
+
+// --------------------
+// 5️⃣ Populate Subject Dropdown
+// --------------------
+const subjectSelect = document.getElementById("subject");
+subjectSelect.innerHTML = subjectsWithAreas
+  .map(s => `<option value="${s.subject_id}">${s.subject_name}</option>`)
+  .join("");
+
+// --------------------
+// 6️⃣ Populate Learning Area Dropdown (initially first subject)
+// --------------------
+const learningAreaSelect = document.getElementById("learningArea");
+const updateLearningAreas = (selectedSubjectId) => {
+  const areas = subjectsWithAreas.find(s => s.subject_id === selectedSubjectId)?.learningAreas || [];
+  learningAreaSelect.innerHTML = areas
     .map(la => `<option value="${la.id}">${la.name}</option>`)
     .join("");
+};
+updateLearningAreas(subjectSelect.value);
 
-  /* 3️⃣ Load assessment types */
-  const { data: assessmentTypes, error: atError } = await supabase
-    .from("assessment_types")
-    .select("id, name");
+// Update learning areas when subject changes
+subjectSelect.onchange = () => updateLearningAreas(subjectSelect.value);
 
-  if (atError || !assessmentTypes?.length) {
-    status.innerText = "Failed to load assessment types";
-    throw atError;
+// --------------------
+// 7️⃣ Load assessment types
+// --------------------
+const { data: assessmentTypes, error: atError } = await supabase
+  .from("assessment_types")
+  .select("id, name");
+
+if (atError || !assessmentTypes?.length) {
+  status.innerText = "Failed to load assessment types";
+  throw atError;
+}
+
+const assessmentTypeSelect = document.getElementById("assessmentType");
+assessmentTypeSelect.innerHTML = assessmentTypes
+  .map(at => `<option value="${at.id}">${at.name}</option>`)
+  .join("");
+
+// --------------------
+// 8️⃣ Load terms
+// --------------------
+const { data: terms, error: termError } = await supabase
+  .from("terms")
+  .select("id, name");
+
+if (termError || !terms?.length) {
+  status.innerText = "Failed to load terms";
+  throw termError;
+}
+
+const termSelect = document.getElementById("term");
+termSelect.innerHTML = terms
+  .map(t => `<option value="${t.id}">${t.name}</option>`)
+  .join("");
+
+// --------------------
+// 9️⃣ Create assessment
+// --------------------
+document.getElementById("createAssessment").onclick = async () => {
+  status.innerText = "";
+
+  const selectedSubjectId = subjectSelect.value;
+  const learning_area_id = learningAreaSelect.value;
+  const assessment_type_id = assessmentTypeSelect.value;
+  const term_id = termSelect.value;
+
+  // Fetch teacher profile
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("id, school_id")
+    .eq("auth_id", user.id)
+    .single();
+
+  if (profileError || !profile) {
+    status.innerText = "Teacher profile not found";
+    return;
   }
 
-  const assessmentTypeSelect = document.getElementById("assessmentType");
-  assessmentTypeSelect.innerHTML = assessmentTypes
-    .map(at => `<option value="${at.id}">${at.name}</option>`)
-    .join("");
+  const learningAreaName = learningAreas.find(l => l.id === learning_area_id)?.name || "Assessment";
+  const termName = terms.find(t => t.id === term_id)?.name;
 
-  /* 4️⃣ Load terms */
-  const { data: terms, error: termError } = await supabase
-    .from("terms")
-    .select("id, name");
-
-  if (termError || !terms?.length) {
-    status.innerText = "Failed to load terms";
-    throw termError;
+  if (!termName) {
+    status.innerText = "Invalid term selected";
+    return;
   }
 
-  const termSelect = document.getElementById("term");
-  termSelect.innerHTML = terms
-    .map(t => `<option value="${t.id}">${t.name}</option>`)
-    .join("");
+  const title = `${learningAreaName} – ${termName} ${academicYear}`;
+  const assessment_date = new Date().toISOString().split("T")[0];
 
-  /* 5️⃣ Create assessment */
-  document.getElementById("createAssessment").onclick = async () => {
-    status.innerText = "";
+  const { data, error } = await supabase
+    .from("assessments")
+    .insert({
+      title,
+      assessment_date,
+      created_by: user.id,
+      teacher_id: profile.id,
+      class_id: classId,
+      school_id: profile.school_id,
+      learning_area_id,
+      subject: selectedSubjectId,         // ✅ Include subject for RLS
+      assessment_type_id,
+      term_id,
+      term: termName,
+      academic_year: academicYear
+    })
+    .select()
+    .single();
 
-    const learning_area_id = learningAreaSelect.value;
-    const assessment_type_id = assessmentTypeSelect.value;
-    const term_id = termSelect.value;
+  if (error) {
+    status.innerText = error.message;
+    return;
+  }
 
-    /* Fetch teacher profile */
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("id, school_id")
-      .eq("auth_id", user.id)
-      .single();
-
-    if (profileError || !profile) {
-      status.innerText = "Teacher profile not found";
-      return;
-    }
-
-    const learningAreaName =
-      learningAreas.find(l => l.id === learning_area_id)?.name || "Assessment";
-
-    const termName =
-      terms.find(t => t.id === term_id)?.name;
-
-    if (!termName) {
-      status.innerText = "Invalid term selected";
-      return;
-    }
-
-    const title = `${learningAreaName} – ${termName} ${academicYear}`;
-    const assessment_date = new Date().toISOString().split("T")[0];
-
-    const { data, error } = await supabase
-      .from("assessments")
-      .insert({
-        title,
-        assessment_date,
-        created_by: user.id,
-        teacher_id: profile.id,
-        class_id: classId,
-        school_id: profile.school_id,
-        learning_area_id,
-        assessment_type_id,
-        term_id,
-        term: termName,
-        academic_year: academicYear
-      })
-      .select()
-      .single();
-
-    if (error) {
-      status.innerText = error.message;
-      return;
-    }
-
-    localStorage.setItem("assessment_id", data.id);
-    window.location.href = "assessment-competencies.html";
-  };
+  localStorage.setItem("assessment_id", data.id);
+  window.location.href = "assessment-competencies.html";
+};
 </script>
 
 </body>
