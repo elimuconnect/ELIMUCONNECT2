@@ -1,45 +1,63 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Teacher Dashboard</title>
+<meta charset="UTF-8">
+<title>Teacher Dashboard</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; }
+  h2 { margin-top: 20px; }
+  div.class-card { border:1px solid #ccc; padding:10px; margin-bottom:10px; }
+  button { margin-top:5px; padding:5px; }
+</style>
 </head>
 <body>
 
-  <h2>Teacher Dashboard</h2>
-  <div id="classList">Loading classes...</div>
+<h2>Teacher Dashboard</h2>
+<div id="classList">Loading classes...</div>
 
 <script type="module">
-  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-  const supabase = createClient(
-    "https://zcmzuetusvpmvubbjlmx.supabase.co",
-    "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
-  );
+// --------------------
+// 1️⃣ Supabase client
+// --------------------
+const supabase = createClient(
+  "https://zcmzuetusvpmvubbjlmx.supabase.co",
+  "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
+);
 
-  const classListEl = document.getElementById("classList");
+// --------------------
+// 2️⃣ Constants
+// --------------------
+const CURRENT_YEAR = 2026;
+const classListEl = document.getElementById("classList");
 
-  // 🔒 LOCK CURRENT ACADEMIC YEAR
-  const CURRENT_YEAR = 2026;
+// --------------------
+// 3️⃣ Get logged-in user
+// --------------------
+const { data: { user } } = await supabase.auth.getUser();
+if (!user) {
+  window.location.href = "index.html";
+}
 
-  // 1️⃣ Get logged-in user
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    window.location.href = "index.html";
-  }
+// --------------------
+// 4️⃣ Get teacher profile
+// --------------------
+const { data: profile, error: profileError } = await supabase
+  .from("profiles")
+  .select("id, auth_id, role, school_id")
+  .eq("auth_id", user.id)
+  .single();
 
-  // 2️⃣ Get profile (role + school)
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("id, role, school_id")
-    .eq("auth_id", user.id)
-    .single();
+if (profileError || !profile || profile.role !== "teacher") {
+  window.location.href = "index.html";
+}
 
-  if (profileError || !profile || profile.role !== "teacher") {
-    window.location.href = "index.html";
-  }
-
- // Fetch teacher's assigned classes
-const { data: assignedClasses, error: assignedError } = await supabase
+// --------------------
+// 5️⃣ Fetch assigned classes
+// --------------------
+// Make sure teacher_id in teacher_subjects matches profile.id or profile.auth_id
+const { data: assignedClasses, error } = await supabase
   .from("teacher_subjects")
   .select(`
     class_id,
@@ -50,22 +68,30 @@ const { data: assignedClasses, error: assignedError } = await supabase
       grades ( grade_number )
     )
   `)
-  .eq("teacher_id", profile.id);
+  .eq("teacher_id", profile.id);  // <-- adjust if teacher_id stores auth_id instead
 
-if (assignedError) throw assignedError;
+if (error) {
+  classListEl.innerText = "Failed to load assigned classes";
+  console.error(error);
+}
 
-// Filter only current year and valid classes
+// --------------------
+// 6️⃣ Filter for current year and non-null classes
+// --------------------
 const validClasses = (assignedClasses || [])
   .filter(row => row.classes && Number(row.classes.academic_year) === CURRENT_YEAR);
 
-if (!validClasses.length) {
+// --------------------
+// 7️⃣ Render class cards
+// --------------------
+if (validClasses.length === 0) {
   classListEl.innerText = `No classes assigned for ${CURRENT_YEAR}`;
 } else {
   classListEl.innerHTML = validClasses.map(row => {
     const c = row.classes;
     return `
-      <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;" data-year="${c.academic_year}">
-        <strong>${c.name}</strong><br>
+      <div class="class-card" data-year="${c.academic_year}">
+        <strong>${c.name || 'Unnamed Class'}</strong><br>
         Grade: ${c.grades ? c.grades.grade_number : 'N/A'}<br>
         Academic Year: ${c.academic_year}<br>
         <button data-class="${c.id}">Start Assessment</button>
@@ -74,24 +100,22 @@ if (!validClasses.length) {
   }).join("");
 }
 
-  // 5️⃣ Button handler (safe binding)
-  classListEl.addEventListener("click", (e) => {
-    if (e.target.tagName !== "BUTTON") return;
+// --------------------
+// 8️⃣ Button click handler
+// --------------------
+classListEl.addEventListener("click", (e) => {
+  if (e.target.tagName !== "BUTTON") return;
 
-    const card = e.target.closest("div");
-    const classId = e.target.getAttribute("data-class");
-    const academicYear = card.getAttribute("data-year");
+  const card = e.target.closest("div.class-card");
+  const classId = e.target.getAttribute("data-class");
+  const academicYear = card.getAttribute("data-year");
 
-    if (!academicYear) {
-      alert("Academic year missing for this class. Contact admin.");
-      return;
-    }
+  localStorage.setItem("class_id", classId);
+  localStorage.setItem("academic_year", academicYear);
 
-    localStorage.setItem("class_id", classId);
-    localStorage.setItem("academic_year", academicYear);
+  window.location.href = "assessment-students.html";
+});
 
-    window.location.href = "assessment-students.html";
-  });
 </script>
 
 </body>
