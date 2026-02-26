@@ -18,23 +18,34 @@
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
+// --------------------
 // 1️⃣ Supabase client
+// --------------------
 const supabase = createClient(
   "https://zcmzuetusvpmvubbjlmx.supabase.co",
   "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
 );
 
+// --------------------
+// 2️⃣ Constants
+// --------------------
 const CURRENT_YEAR = 2026;
 const classListEl = document.getElementById("classList");
 
-// 2️⃣ Get logged-in user
+// --------------------
+// 3️⃣ Get logged-in user
+// --------------------
 const { data: { user } } = await supabase.auth.getUser();
-if (!user) window.location.href = "index.html";
+if (!user) {
+  window.location.href = "index.html";
+}
 
-// 3️⃣ Get teacher profile
+// --------------------
+// 4️⃣ Get teacher profile
+// --------------------
 const { data: profile, error: profileError } = await supabase
   .from("profiles")
-  .select("id, role")
+  .select("id, auth_id, role, school_id")
   .eq("auth_id", user.id)
   .single();
 
@@ -42,20 +53,25 @@ if (profileError || !profile || profile.role !== "teacher") {
   window.location.href = "index.html";
 }
 
-// 4️⃣ Fetch assigned classes WITH subjects
+// --------------------
+// 5️⃣ Fetch assigned classes
+// --------------------
+
+// --------------------
+// 5️⃣ Fetch assigned classes WITH SUBJECTS
+// --------------------
 const { data: assignedClasses, error } = await supabase
   .from("teacher_subjects")
   .select(`
+    class_id,
     subject_id,
-    classes!inner (
+    classes (
       id,
       name,
       academic_year,
-      grades (
-        grade_number
-      )
+      grades ( grade_number )
     ),
-    subjects!inner (
+    subjects (
       id,
       name
     )
@@ -63,18 +79,22 @@ const { data: assignedClasses, error } = await supabase
   .eq("teacher_id", profile.id);
 
 if (error) {
-  console.error(error);
   classListEl.innerText = "Failed to load assigned classes";
-  throw error;
+  console.error(error);
 }
 
-// 5️⃣ Filter only current year
-const validClasses = (assignedClasses || []).filter(row =>
-  row.classes &&
-  Number(row.classes.academic_year) === CURRENT_YEAR
-);
+// --------------------
+// 6️⃣ Filter current year
+// --------------------
+const validClasses = (assignedClasses || [])
+  .filter(row => 
+    row.classes &&
+    Number(row.classes.academic_year) === CURRENT_YEAR
+  );
 
-// 6️⃣ Render
+// --------------------
+// 7️⃣ Render class + subject cards
+// --------------------
 if (validClasses.length === 0) {
   classListEl.innerText = `No classes assigned for ${CURRENT_YEAR}`;
 } else {
@@ -85,7 +105,7 @@ if (validClasses.length === 0) {
     return `
       <div class="class-card" data-year="${c.academic_year}">
         <strong>${c.name} - ${subjectName}</strong><br>
-        Grade: ${c.grades?.grade_number ?? 'N/A'}<br>
+        Grade: ${c.grades ? c.grades.grade_number : 'N/A'}<br>
         Academic Year: ${c.academic_year}<br><br>
 
         <button 
@@ -98,14 +118,17 @@ if (validClasses.length === 0) {
   }).join("");
 }
 
-// 7️⃣ Button click handler
+  
+// --------------------
+// 8️⃣ Button click handler
+// --------------------
 classListEl.addEventListener("click", (e) => {
   if (e.target.tagName !== "BUTTON") return;
 
   const card = e.target.closest(".class-card");
-  const classId = e.target.dataset.class;
-  const subjectId = e.target.dataset.subject;
-  const academicYear = card.dataset.year;
+  const classId = e.target.getAttribute("data-class");
+  const subjectId = e.target.getAttribute("data-subject");
+  const academicYear = card.getAttribute("data-year");
 
   localStorage.setItem("class_id", classId);
   localStorage.setItem("subject_id", subjectId);
@@ -114,5 +137,6 @@ classListEl.addEventListener("click", (e) => {
   window.location.href = "assessment-students.html";
 });
 </script>
+
 </body>
 </html>
