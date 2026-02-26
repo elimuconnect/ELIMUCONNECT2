@@ -71,46 +71,47 @@ const supabase = createClient(
 const SYSTEM_YEAR = 2026;
 document.getElementById("yearLabel").innerText = SYSTEM_YEAR;
 
-/* 0️⃣ Auth check */
+// 🔒 Auth check
 const { data: { user } } = await supabase.auth.getUser();
 if (!user) { window.location.href = "index.html"; throw new Error("Not logged in"); }
 
-/* 1️⃣ Load classes assigned to teacher */
+// Load classes assigned to teacher
 const { data: classes } = await supabase
   .from("teacher_subjects")
-  .select(`class_id, classes(name)`)
+  .select(`class_id, class_name`) // adjust to your table's field
   .eq("teacher_id", user.id);
 
 const classSelect = document.getElementById("classSelect");
 if (!classes?.length) {
   classSelect.innerHTML = "<option>No classes assigned</option>";
 } else {
-  classSelect.innerHTML = classes.map(c => `<option value="${c.class_id}">${c.classes.name}</option>`).join("");
+  classSelect.innerHTML = classes.map(c => `<option value="${c.class_id}">${c.class_name}</option>`).join("");
 }
 
-// 2️⃣ Load terms
+// Load terms
 const { data: terms } = await supabase.from("terms").select("id, name");
 const termSelect = document.getElementById("termSelect");
 termSelect.innerHTML = terms.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
 
-// 3️⃣ Load assessment types & levels
+// Load assessment types & levels
 const { data: assessmentTypes } = await supabase.from("assessment_types").select("id, name");
 const { data: levels } = await supabase.from("achievement_levels").select("id, label").order("order_rank");
 
-// 4️⃣ Get selected class & subject from localStorage (from dashboard)
-let selectedClassId = Number(localStorage.getItem("class_id"));
-let selectedSubjectId = Number(localStorage.getItem("subject_id"));
+// Get carried selections from dashboard
+let selectedClassId = localStorage.getItem("class_id");
+let selectedSubjectId = localStorage.getItem("subject_id");
 
-// Preselect class if carried over
+// Preselect class if carried
 if (selectedClassId) classSelect.value = selectedClassId;
 
-// Function to load subjects and students
-async function loadSubjectsAndStudents(classId, preselectSubjectId=null) {
+// Function to load subjects & students for a class
+async function loadSubjectsAndStudents(classId, preselectSubjectId = null) {
   if (!classId) return;
 
+  // Load subjects for this class
   const { data: subjects } = await supabase
     .from("teacher_subjects")
-    .select(`subject_id, subject_name`) // <- make sure it matches your DB
+    .select(`subject_id, subject_name`) // adjust to your table
     .eq("teacher_id", user.id)
     .eq("class_id", classId);
 
@@ -123,6 +124,7 @@ async function loadSubjectsAndStudents(classId, preselectSubjectId=null) {
 
   subjectSelect.innerHTML = subjects.map(s => `<option value="${s.subject_id}">${s.subject_name}</option>`).join("");
 
+  // Preselect carried subject
   if (preselectSubjectId) subjectSelect.value = preselectSubjectId;
 
   // Load students for this class
@@ -157,23 +159,21 @@ async function loadSubjectsAndStudents(classId, preselectSubjectId=null) {
 `).join("");
 }
 
-// Initial load if dashboard carried data
-if (selectedClassId) {
-  await loadSubjectsAndStudents(selectedClassId, selectedSubjectId);
-}
+// Initial load if coming from dashboard
+if (selectedClassId) await loadSubjectsAndStudents(selectedClassId, selectedSubjectId);
 
-// When class changes manually
+// Handle manual class change
 classSelect.onchange = async () => {
-  selectedClassId = Number(classSelect.value);
+  selectedClassId = classSelect.value;
   selectedSubjectId = null;
   await loadSubjectsAndStudents(selectedClassId);
 };
 
-// 5️⃣ Save assessment
+// Save assessment
 document.getElementById("saveAssessment").onclick = async () => {
-  const classId = Number(classSelect.value);
-  const subjectId = Number(document.getElementById("subjectSelect").value);
-  const termId = Number(termSelect.value);
+  const classId = classSelect.value;
+  const subjectId = document.getElementById("subjectSelect").value;
+  const termId = termSelect.value;
   const strand = document.getElementById("strandInput").value;
   const substrand = document.getElementById("substrandInput").value;
 
