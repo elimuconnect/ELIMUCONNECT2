@@ -87,18 +87,24 @@ const validClasses = (assignedClasses || [])
 if (validClasses.length === 0) {
   classListEl.innerText = `No classes assigned for ${CURRENT_YEAR}`;
 } else {
-  classListEl.innerHTML = validClasses.map(row => {
-    const c = row.classes;
-    return `
-      <div class="class-card" data-year="${c.academic_year}">
-        <strong>${c.name || 'Unnamed Class'}</strong><br>
-        Grade: ${c.grades ? c.grades.grade_number : 'N/A'}<br>
-        Academic Year: ${c.academic_year}<br>
-        <button data-class="${c.id}">Start Assessment</button>
-      </div>
-    `;
-  }).join("");
-}
+ classListEl.innerHTML = filtered.map(row => {
+  const c = row.classes;
+  const subjectName = row.subjects?.name || "Unknown Subject";
+
+  return `
+    <div class="class-card">
+      <strong>${c.name} - ${subjectName}</strong><br>
+      Grade: ${c.grades ? c.grades.grade_number : 'N/A'}<br>
+      Academic Year: ${c.academic_year}<br><br>
+
+      <button 
+        data-class="${c.id}" 
+        data-subject="${row.subject_id}">
+        Start Assessment
+      </button>
+    </div>
+  `;
+}).join("");
 
 // --------------------
 // 8️⃣ Button click handler
