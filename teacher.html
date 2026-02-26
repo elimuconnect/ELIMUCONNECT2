@@ -33,9 +33,11 @@ const CURRENT_YEAR = 2026;
 const classListEl = document.getElementById("classList");
 
 async function loadDashboard() {
+  // 1️⃣ Get logged-in user
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) { window.location.href = "index.html"; return; }
 
+  // 2️⃣ Get teacher profile
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("id, role")
@@ -45,6 +47,7 @@ async function loadDashboard() {
     window.location.href = "index.html"; return;
   }
 
+  // 3️⃣ Fetch teacher assignments
   const { data: assignments, error } = await supabase
     .from("teacher_subjects")
     .select(`class_id, subject_id, classes(id,name,academic_year,grades(grade_number)), subjects(id,name)`)
@@ -52,10 +55,11 @@ async function loadDashboard() {
 
   if (error) { console.error(error); classListEl.innerText = "Error loading classes"; return; }
 
+  // 4️⃣ Filter current academic year
   const filtered = (assignments || []).filter(row => row.classes && Number(row.classes.academic_year) === CURRENT_YEAR);
-
   if (!filtered.length) { classListEl.innerText = `No classes assigned for ${CURRENT_YEAR}`; return; }
 
+  // 5️⃣ Render dashboard
   classListEl.innerHTML = filtered.map(row => {
     const className = row.classes?.name ?? "Unnamed Class";
     const grade = row.classes?.grades?.grade_number ?? "N/A";
@@ -82,10 +86,7 @@ classListEl.addEventListener("click", (e) => {
   const card = e.target.closest(".card");
   const academicYear = card?.getAttribute("data-year");
 
-  if (!classId || !subjectId) {
-    alert("Invalid class or subject assignment.");
-    return;
-  }
+  if (!classId || !subjectId) { alert("Invalid class or subject assignment."); return; }
 
   localStorage.setItem("class_id", classId);
   localStorage.setItem("subject_id", subjectId);
@@ -96,5 +97,6 @@ classListEl.addEventListener("click", (e) => {
 
 loadDashboard();
 </script>
+
 </body>
 </html>
