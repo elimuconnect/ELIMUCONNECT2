@@ -5,9 +5,21 @@
 <title>Teacher Dashboard</title>
 <style>
   body { font-family: Arial, sans-serif; margin: 20px; }
-  h2 { margin-top: 20px; }
-  div.class-card { border:1px solid #ccc; padding:10px; margin-bottom:10px; }
-  button { margin-top:5px; padding:5px; }
+  h2 { margin-bottom: 20px; }
+  .card {
+    border: 1px solid #ccc;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 6px;
+  }
+  .card strong {
+    font-size: 16px;
+  }
+  button {
+    margin-top: 10px;
+    padding: 6px 12px;
+    cursor: pointer;
+  }
 </style>
 </head>
 <body>
@@ -18,117 +30,110 @@
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-// --------------------
-// 1️⃣ Supabase client
-// --------------------
 const supabase = createClient(
   "https://zcmzuetusvpmvubbjlmx.supabase.co",
   "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
 );
 
-// --------------------
-// 2️⃣ Constants
-// --------------------
 const CURRENT_YEAR = 2026;
 const classListEl = document.getElementById("classList");
 
-// --------------------
-// 3️⃣ Get logged-in user
-// --------------------
-const { data: { user } } = await supabase.auth.getUser();
-if (!user) {
-  window.location.href = "index.html";
-}
+async function loadDashboard() {
 
-// --------------------
-// 4️⃣ Get teacher profile
-// --------------------
-const { data: profile, error: profileError } = await supabase
-  .from("profiles")
-  .select("id, auth_id, role, school_id")
-  .eq("auth_id", user.id)
-  .single();
+  // 1️⃣ Get logged-in user
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    window.location.href = "index.html";
+    return;
+  }
 
-if (profileError || !profile || profile.role !== "teacher") {
-  window.location.href = "index.html";
-}
+  // 2️⃣ Get teacher profile
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("id, role")
+    .eq("auth_id", user.id)
+    .single();
 
-// --------------------
-// 5️⃣ Fetch assigned classes
-// --------------------
+  if (profileError || !profile || profile.role !== "teacher") {
+    window.location.href = "index.html";
+    return;
+  }
 
-// --------------------
-// 5️⃣ Fetch assigned classes WITH SUBJECTS
-// --------------------
-const { data: assignedClasses, error } = await supabase
-  .from("teacher_subjects")
-  .select(`
-    class_id,
-    subject_id,
-    classes (
-      id,
-      name,
-      academic_year,
-      grades ( grade_number )
-    ),
-    subjects (
-      id,
-      name
-    )
-  `)
-  .eq("teacher_id", profile.id);
+  // 3️⃣ Fetch teacher assignments (LEFT JOIN – safer)
+  const { data: assignments, error } = await supabase
+    .from("teacher_subjects")
+    .select(`
+      class_id,
+      subject_id,
+      classes (
+        id,
+        name,
+        academic_year,
+        grades ( grade_number )
+      ),
+      subjects (
+        id,
+        name
+      )
+    `)
+    .eq("teacher_id", profile.id);
 
-if (error) {
-  classListEl.innerText = "Failed to load assigned classes";
-  console.error(error);
-}
+  if (error) {
+    console.error(error);
+    classListEl.innerText = "Error loading classes";
+    return;
+  }
 
-// --------------------
-// 6️⃣ Filter current year
-// --------------------
-const validClasses = (assignedClasses || [])
-  .filter(row => 
+  // 4️⃣ Filter current academic year safely
+  const filtered = (assignments || []).filter(row =>
     row.classes &&
     Number(row.classes.academic_year) === CURRENT_YEAR
   );
 
-// --------------------
-// 7️⃣ Render class + subject cards
-// --------------------
-if (validClasses.length === 0) {
-  classListEl.innerText = `No classes assigned for ${CURRENT_YEAR}`;
-} else {
-  classListEl.innerHTML = validClasses.map(row => {
-    const c = row.classes;
-    const subjectName = row.subjects?.name || "Unknown Subject";
+  if (filtered.length === 0) {
+    classListEl.innerText = `No classes assigned for ${CURRENT_YEAR}`;
+    return;
+  }
+
+  // 5️⃣ Render
+  classListEl.innerHTML = filtered.map(row => {
+
+    const className = row.classes?.name ?? "Unnamed Class";
+    const grade = row.classes?.grades?.grade_number ?? "N/A";
+    const subjectName = row.subjects?.name ?? "Unknown Subject";
+    const academicYear = row.classes?.academic_year ?? "";
 
     return `
-      <div class="class-card" data-year="${c.academic_year}">
-        <strong>${c.name} - ${subjectName}</strong><br>
-        Grade: ${c.grades ? c.grades.grade_number : 'N/A'}<br>
-        Academic Year: ${c.academic_year}<br><br>
+      <div class="card" data-year="${academicYear}">
+        <strong>${className} - ${subjectName}</strong><br>
+        Grade: ${grade}<br>
+        Academic Year: ${academicYear}<br>
 
         <button 
-          data-class="${c.id}" 
+          data-class="${row.class_id}" 
           data-subject="${row.subject_id}">
           Start Assessment
         </button>
       </div>
     `;
+
   }).join("");
+
 }
 
-  
-// --------------------
-// 8️⃣ Button click handler
-// --------------------
+// Button handler
 classListEl.addEventListener("click", (e) => {
   if (e.target.tagName !== "BUTTON") return;
 
-  const card = e.target.closest(".class-card");
   const classId = e.target.getAttribute("data-class");
   const subjectId = e.target.getAttribute("data-subject");
-  const academicYear = card.getAttribute("data-year");
+  const card = e.target.closest(".card");
+  const academicYear = card?.getAttribute("data-year");
+
+  if (!classId || !subjectId) {
+    alert("Invalid class or subject assignment.");
+    return;
+  }
 
   localStorage.setItem("class_id", classId);
   localStorage.setItem("subject_id", subjectId);
@@ -136,6 +141,9 @@ classListEl.addEventListener("click", (e) => {
 
   window.location.href = "assessment-students.html";
 });
+
+loadDashboard();
+
 </script>
 
 </body>
