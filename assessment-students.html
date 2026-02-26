@@ -1,13 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>New Assessment Table</title>
+<title>Assessment Students</title>
 <style>
+  body { font-family: Arial, sans-serif; margin: 20px; }
   table { border-collapse: collapse; width: 100%; margin-top: 20px; }
   th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
   th { background: #f0f0f0; }
-  select, input { width: 100%; }
+  select { width: 100%; }
   button { margin-top: 15px; padding: 8px 12px; cursor: pointer; }
 </style>
 </head>
@@ -21,23 +22,21 @@
 
 <p>
   <label>Term:</label>
-  <select id="termSelect"><option>Loading terms...</option></select>
+  <select id="termSelect"></select>
 </p>
-
 <p>
   <label>Strand(s):</label>
   <input type="text" id="strandInput" placeholder="Enter strand(s)">
 </p>
-
 <p>
   <label>Substrand (optional):</label>
   <input type="text" id="substrandInput" placeholder="Enter substrand">
 </p>
 
-<table id="studentsTable">
+<table>
   <thead>
     <tr>
-      <th>Adm/UPI Number</th>
+      <th>Adm/UPI</th>
       <th>Name</th>
       <th>Assessment Type</th>
       <th>Performance Level</th>
@@ -63,11 +62,7 @@ const supabase = createClient(
 const SYSTEM_YEAR = 2026;
 document.getElementById("yearLabel").innerText = SYSTEM_YEAR;
 
-// 0️⃣ Auth check
-const { data: { user } } = await supabase.auth.getUser();
-if (!user) { window.location.href = "index.html"; throw new Error("Not logged in"); }
-
-// 1️⃣ Get class & subject from previous page
+// ✅ Get selections from previous page
 const classId = localStorage.getItem("class_id");
 const subjectId = localStorage.getItem("subject_id");
 const academicYear = localStorage.getItem("academic_year") || SYSTEM_YEAR;
@@ -77,33 +72,29 @@ if (!classId || !subjectId) {
   window.location.href = "teacher-dashboard.html";
 }
 
-// Display class and subject
+// Display class and subject names
 const { data: classData } = await supabase.from("classes").select("name").eq("id", classId).single();
-document.getElementById("classLabel").innerText = classData?.name || "N/A";
-
 const { data: subjectData } = await supabase.from("subjects").select("name").eq("id", subjectId).single();
+document.getElementById("classLabel").innerText = classData?.name || "N/A";
 document.getElementById("subjectLabel").innerText = subjectData?.name || "N/A";
 
-// 2️⃣ Load terms
+// Load terms
 const { data: terms } = await supabase.from("terms").select("id, name");
-const termSelect = document.getElementById("termSelect");
-termSelect.innerHTML = terms.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
+document.getElementById("termSelect").innerHTML = terms.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
 
-// 3️⃣ Load assessment types & achievement levels
+// Load assessment types & achievement levels
 const { data: assessmentTypes } = await supabase.from("assessment_types").select("id, name");
 const { data: levels } = await supabase.from("achievement_levels").select("id, label").order("order_rank");
 
-// 4️⃣ Load students for the selected class
-const { data: students, error: studentError } = await supabase
+// Load students for the selected class
+const { data: students } = await supabase
   .from("students")
   .select("id, admission_number, first_name, last_name")
   .eq("class_id", classId)
   .order("last_name");
 
 const tbody = document.getElementById("studentsBody");
-if (studentError) {
-  tbody.innerHTML = `<tr><td colspan="4">Error loading students: ${studentError.message}</td></tr>`;
-} else if (!students?.length) {
+if (!students?.length) {
   tbody.innerHTML = `<tr><td colspan="4">No students in this class</td></tr>`;
 } else {
   tbody.innerHTML = students.map(s => `
@@ -125,27 +116,31 @@ if (studentError) {
 `).join("");
 }
 
-// 5️⃣ Save assessment
+// Save assessment
 document.getElementById("saveAssessment").onclick = async () => {
-  const termId = termSelect.value;
+  const termId = document.getElementById("termSelect").value;
   const strand = document.getElementById("strandInput").value;
   const substrand = document.getElementById("substrandInput").value;
 
-  // ✅ Use logged-in user variable instead of await inside map
-  const rows = Array.from(document.querySelectorAll("#studentsBody tr")).map(tr => ({
-    assessment_id: null,
-    student_id: tr.dataset.id,
-    subject_id: subjectId,       // ✅ carried from dashboard
-    term_id: termId,
-    assessment_type_id: tr.querySelector(".assessmentType").value,
-    achievement_level_id: tr.querySelector(".performanceLevel").value,
-    strand,
-    substrand,
-    academic_year: academicYear,
-    teacher_id: user.id,
-    created_by: user.id
-  }));
 
+const { data: { user } } = await supabase.auth.getUser();
+if (!user) { window.location.href = "index.html"; throw new Error("Not logged in"); }
+
+// ... later, inside saveAssessment:
+const rows = Array.from(document.querySelectorAll("#studentsBody tr")).map(tr => ({
+  assessment_id: null,
+  student_id: tr.dataset.id,
+  subject_id: subjectId,       
+  term_id: termId,
+  assessment_type_id: tr.querySelector(".assessmentType").value,
+  achievement_level_id: tr.querySelector(".performanceLevel").value,
+  strand,
+  substrand,
+  academic_year: academicYear,
+  teacher_id: user.id,        // ✅ reuse the user object
+  created_by: user.id
+}));
+  
   const { error } = await supabase.from("assessment_results").insert(rows);
   document.getElementById("status").innerText = error ? `Error saving: ${error.message}` : "Assessment saved successfully!";
 };
