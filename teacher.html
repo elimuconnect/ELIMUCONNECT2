@@ -28,63 +28,48 @@ const CURRENT_YEAR = 2026;
 const classListEl = document.getElementById("classList");
 
 async function loadDashboard() {
-  // 1️⃣ Get logged-in user
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) { window.location.href = "index.html"; return; }
 
-  // 2️⃣ Get teacher profile
-  const { data: profile, error: profileError } = await supabase
+  const { data: profile } = await supabase
     .from("profiles")
     .select("id, role")
     .eq("auth_id", user.id)
     .single();
 
-  if (profileError || !profile || profile.role !== "teacher") {
-    window.location.href = "index.html"; return;
-  }
+  if (!profile || profile.role !== "teacher") { window.location.href = "index.html"; return; }
 
-  // 3️⃣ Fetch assignments from the flat view
-  const { data: assignments, error } = await supabase
+  const { data: assignments } = await supabase
     .from("teacher_subjects_view")
     .select("*")
     .eq("teacher_id", profile.id)
     .eq("academic_year", CURRENT_YEAR);
 
-  if (error) { 
-    console.error(error); 
-    classListEl.innerText = "Error loading classes"; 
-    return; 
+  if (!assignments?.length) {
+    classListEl.innerText = `No classes assigned for ${CURRENT_YEAR}`;
+    return;
   }
 
-  if (!assignments.length) { 
-    classListEl.innerText = `No classes assigned for ${CURRENT_YEAR}`; 
-    return; 
-  }
-
-  // 4️⃣ Render dashboard
-  classListEl.innerHTML = assignments.map(row => {
-    return `
-      <div class="card" data-year="${row.academic_year}">
-        <strong>${row.class_name} - ${row.subject_name}</strong><br>
-        Grade: ${row.grade_number ?? "N/A"}<br>
-        Academic Year: ${row.academic_year}<br>
-        <button data-class="${row.class_id}" data-subject="${row.subject_id}">Start Assessment</button>
-      </div>
-    `;
-  }).join("");
+  classListEl.innerHTML = assignments.map(row => `
+    <div class="card" data-year="${row.academic_year}">
+      <strong>${row.class_name} - ${row.subject_name}</strong><br>
+      Grade: ${row.grade_number ?? "N/A"}<br>
+      Academic Year: ${row.academic_year}<br>
+      <button data-class="${row.class_id}" data-subject="${row.subject_id}">Start Assessment</button>
+    </div>
+  `).join("");
 }
 
-// Button click handler
-classListEl.addEventListener("click", (e) => {
+classListEl.addEventListener("click", e => {
   if (e.target.tagName !== "BUTTON") return;
 
   const classId = e.target.getAttribute("data-class");
   const subjectId = e.target.getAttribute("data-subject");
-  const card = e.target.closest(".card");
-  const academicYear = card?.getAttribute("data-year");
+  const academicYear = e.target.closest(".card")?.getAttribute("data-year");
 
-  if (!classId || !subjectId) { alert("Invalid class or subject assignment."); return; }
+  if (!classId || !subjectId) return alert("Invalid class or subject.");
 
+  // ✅ Store selection to carry over
   localStorage.setItem("class_id", classId);
   localStorage.setItem("subject_id", subjectId);
   localStorage.setItem("academic_year", academicYear);
@@ -94,6 +79,5 @@ classListEl.addEventListener("click", (e) => {
 
 loadDashboard();
 </script>
-
 </body>
 </html>
