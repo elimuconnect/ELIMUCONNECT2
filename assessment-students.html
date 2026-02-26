@@ -1,95 +1,174 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Select Students</title>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
+  <title>Create Assessment Entry</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #f0f0f0; }
+    input, select, textarea { padding: 5px; width: 100%; }
+    .locked { background: #e9ecef; }
+  </style>
 </head>
 <body>
 
-<h2>Select Students for Assessment</h2>
+<h2>Create New Assessment</h2>
 
-<p><strong>Academic Year:</strong> <span id="yearLabel"></span></p>
+<p><strong>Academic Year:</strong> <input id="academicYear" class="locked" readonly></p>
+<p><strong>Class:</strong> <input id="className" class="locked" readonly></p>
+<p><strong>Subject:</strong> <input id="subjectName" class="locked" readonly></p>
 
-<div id="studentList">Loading students...</div>
-<br>
-<button id="confirmStudents">Confirm Students</button>
+<label>Term:</label>
+<select id="termSelect"></select><br><br>
 
+<label>Assessment Type:</label>
+<select id="assessmentType"></select><br><br>
+
+<label>Strand(s) being tested:</label>
+<textarea id="strand" rows="2"></textarea><br><br>
+
+<label>Substrand(s) (optional):</label>
+<textarea id="substrand" rows="1"></textarea><br><br>
+
+<h3>Students</h3>
+<table id="studentsTable">
+  <thead>
+    <tr>
+      <th>Adm/UPI Number</th>
+      <th>Name</th>
+      <th>Assessment Type</th>
+      <th>Performance Level</th>
+    </tr>
+  </thead>
+  <tbody>Loading students...</tbody>
+</table>
+
+<button id="saveAssessment">Save Assessment</button>
 <p id="status"></p>
 
 <script type="module">
-  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-  const supabase = createClient(
-    "https://zcmzuetusvpmvubbjlmx.supabase.co",
-    "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
-  );
+const supabase = createClient(
+  "https://zcmzuetusvpmvubbjlmx.supabase.co",
+  "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
+);
 
-  /* 🔒 SYSTEM YEAR */
-  const SYSTEM_YEAR = 2026;
+const status = document.getElementById("status");
 
-  /* 0️⃣ Auth check */
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    window.location.href = "index.html";
-    throw new Error("Not logged in");
-  }
+// 0️⃣ Auth check
+const { data: { user } } = await supabase.auth.getUser();
+if (!user) { window.location.href="index.html"; throw new Error("Not logged in"); }
 
-  /* 1️⃣ Load required context */
-  const assessmentId = localStorage.getItem("assessment_id");
-  const classId = localStorage.getItem("class_id");
-  const storedYear = localStorage.getItem("academic_year");
+// 1️⃣ Load context
+const classId = localStorage.getItem("class_id");
+const storedYear = localStorage.getItem("academic_year");
+const assessmentId = localStorage.getItem("assessment_id");
 
-  if (!assessmentId || !classId) {
-    window.location.href = "teacher.html";
-    throw new Error("Missing assessment or class");
-  }
+if (!classId) { window.location.href="teacher.html"; throw new Error("No class selected"); }
+const SYSTEM_YEAR = 2026;
+const academicYear = storedYear || SYSTEM_YEAR;
+document.getElementById("academicYear").value = academicYear;
 
-  /* 🔒 Lock academic year */
-  const academicYear = storedYear || SYSTEM_YEAR;
-  localStorage.setItem("academic_year", academicYear);
-  document.getElementById("yearLabel").innerText = academicYear;
+// 2️⃣ Load class name
+const { data: classRow } = await supabase.from("classes").select("name").eq("id", classId).single();
+document.getElementById("className").value = classRow?.name || "Unknown Class";
 
-  /* 2️⃣ Load students */
-  const { data: students, error: studentError } = await supabase
-    .from("students")
-    .select("id, first_name, last_name")
-    .eq("class_id", classId)
-    .order("last_name");
+// 3️⃣ Load teacher's subjects
+const { data: teacherSubjects } = await supabase
+  .from("teacher_subjects")
+  .select("subject_id, subjects(name)")
+  .eq("teacher_id", user.id)
+  .eq("class_id", classId);
 
-  if (studentError) {
-    status.innerText = studentError.message;
-    throw studentError;
-  }
+if (!teacherSubjects.length) { status.innerText="No subjects assigned."; throw new Error("No subjects"); }
+const subjectId = teacherSubjects[0].subject_id;
+const subjectName = teacherSubjects[0].subjects.name;
+document.getElementById("subjectName").value = subjectName;
 
-  if (!students.length) {
-    studentList.innerText = "No students found in this class.";
-    throw new Error("No students");
-  }
+// 4️⃣ Load terms
+const { data: terms } = await supabase.from("terms").select("id, name");
+const termSelect = document.getElementById("termSelect");
+termSelect.innerHTML = terms.map(t=>`<option value="${t.id}">${t.name}</option>`).join("");
 
-  /* Render checklist */
-  studentList.innerHTML = students.map(s => `
-    <label>
-      <input type="checkbox" value="${s.id}">
-      ${s.first_name} ${s.last_name}
-    </label><br>
-  `).join("");
+// 5️⃣ Load assessment types
+const { data: assessmentTypes } = await supabase.from("assessment_types").select("id,name");
+const assessmentTypeSelect = document.getElementById("assessmentType");
+assessmentTypeSelect.innerHTML = assessmentTypes.map(a=>`<option value="${a.id}">${a.name}</option>`).join("");
 
-  /* 3️⃣ Confirm students */
-  confirmStudents.onclick = () => {
-    const selected = Array.from(
-      document.querySelectorAll("input[type=checkbox]:checked")
-    ).map(cb => cb.value);
+// 6️⃣ Load students
+const { data: students } = await supabase.from("students")
+  .select("id, admission_number, first_name, last_name")
+  .eq("class_id", classId)
+  .order("last_name");
 
-    if (!selected.length) {
-      status.innerText = "Please select at least one student.";
-      return;
-    }
+const tbody = document.querySelector("#studentsTable tbody");
+tbody.innerHTML = students.map(s=>`
+<tr>
+  <td>${s.admission_number}</td>
+  <td>${s.first_name} ${s.last_name}</td>
+  <td>
+    <select class="studentAssessmentType">
+      ${assessmentTypes.map(a=>`<option value="${a.id}">${a.name}</option>`).join("")}
+    </select>
+  </td>
+  <td>
+    <select class="studentPerformance">
+      <option value="">Select Level</option>
+    </select>
+  </td>
+</tr>
+`).join("");
 
-    localStorage.setItem("selected_students", JSON.stringify(selected));
+// 7️⃣ Load performance levels
+const { data: levels } = await supabase.from("achievement_levels").select("id,label").order("order_rank");
+document.querySelectorAll(".studentPerformance").forEach(sel=>{
+  sel.innerHTML = `<option value="">Select Level</option>` + levels.map(l=>`<option value="${l.id}">${l.label}</option>`).join("");
+});
 
-    /* ✅ Academic year is already locked and carried */
-    window.location.href = "new-assessment.html";
-  };
+// 8️⃣ Save assessment
+document.getElementById("saveAssessment").onclick = async () => {
+  status.innerText = "";
+
+  const termId = termSelect.value;
+  const strand = document.getElementById("strand").value.trim();
+  const substrand = document.getElementById("substrand").value.trim();
+
+  if (!termId || !strand) { status.innerText="Select term and provide strand(s)."; return; }
+
+  const rows = [];
+  tbody.querySelectorAll("tr").forEach((tr, idx)=>{
+    const student = students[idx];
+    const typeId = tr.querySelector(".studentAssessmentType").value;
+    const perfId = tr.querySelector(".studentPerformance").value;
+
+    if (!perfId) return; // skip students without selection
+
+    rows.push({
+      assessment_id: assessmentId,
+      student_id: student.id,
+      subject_id: subjectId,
+      assessment_type_id: typeId,
+      achievement_level_id: perfId,
+      strand,
+      substrand,
+      term_id: termId,
+      academic_year: academicYear,
+      teacher_id: user.id,
+      created_by: user.id
+    });
+  });
+
+  if (!rows.length) { status.innerText="No students selected or no performance levels chosen."; return; }
+
+  const { error } = await supabase.from("assessment_results").upsert(rows, { onConflict: ["assessment_id","student_id","subject_id"] });
+
+  if (error) { status.innerText = error.message; return; }
+  status.innerText = "Assessment saved successfully!";
+};
+
 </script>
 
 </body>
