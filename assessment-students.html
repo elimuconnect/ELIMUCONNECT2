@@ -7,7 +7,8 @@
     table { border-collapse: collapse; width: 100%; margin-top: 20px; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
     th { background: #f0f0f0; }
-    select { width: 100%; }
+    select, input { width: 100%; }
+    button { margin-top: 15px; padding: 8px 12px; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -58,55 +59,46 @@ const supabase = createClient(
   "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
 );
 
-/* 🔒 SYSTEM YEAR */
 const SYSTEM_YEAR = 2026;
 
-/* 0️⃣ Auth check */
+/* 🔹 0️⃣ Auth check */
 const { data: { user } } = await supabase.auth.getUser();
-if (!user) {
-  window.location.href = "index.html";
-  throw new Error("Not logged in");
-}
+if (!user) { window.location.href = "index.html"; throw new Error("Not logged in"); }
 
-/* 1️⃣ Load context */
+/* 🔹 1️⃣ Load context */
 const classId = localStorage.getItem("class_id");
 const academicYear = localStorage.getItem("academic_year") || SYSTEM_YEAR;
-const assessmentId = localStorage.getItem("assessment_id");
-
-if (!classId) {
-  window.location.href = "teacher.html";
-  throw new Error("No class selected");
-}
-
 document.getElementById("yearLabel").innerText = academicYear;
 
-/* 2️⃣ Load subjects assigned to this teacher & class */
-const { data: subjects } = await supabase
+if (!classId) { window.location.href = "teacher.html"; throw new Error("No class selected"); }
+
+/* 🔹 2️⃣ Load subjects assigned to this teacher & class */
+const { data: subjects, error: subjectsError } = await supabase
   .from("teacher_subjects")
   .select(`subject_id, subjects(name)`)
   .eq("teacher_id", user.id)
   .eq("class_id", classId);
 
-if (!subjects || !subjects.length) {
+if (subjectsError || !subjects?.length) {
   document.getElementById("status").innerText = "No subjects assigned for this class.";
-  throw new Error("No subjects");
+  throw subjectsError || new Error("No subjects");
 }
 
 const subjectSelect = document.getElementById("subjectSelect");
 subjectSelect.innerHTML = subjects.map(s => `<option value="${s.subject_id}">${s.subject.name}</option>`).join("");
 
-// 3️⃣ Load terms
+/* 🔹 3️⃣ Load terms */
 const { data: terms } = await supabase.from("terms").select("id, name");
 const termSelect = document.getElementById("termSelect");
 termSelect.innerHTML = terms.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
 
-// 4️⃣ Load assessment types
+/* 🔹 4️⃣ Load assessment types */
 const { data: assessmentTypes } = await supabase.from("assessment_types").select("id, name");
 
-// 5️⃣ Load achievement levels
+/* 🔹 5️⃣ Load achievement levels */
 const { data: levels } = await supabase.from("achievement_levels").select("id, label").order("order_rank");
 
-/* 6️⃣ Load students */
+/* 🔹 6️⃣ Load students */
 const { data: students, error: studentError } = await supabase
   .from("students")
   .select("id, admission_number, first_name, last_name")
@@ -120,11 +112,11 @@ if (studentError) {
   throw studentError;
 }
 
-if (!students.length) {
+if (!students?.length) {
   tbody.innerHTML = `<tr><td colspan="4">No students found in this class.</td></tr>`;
 } else {
   tbody.innerHTML = students.map(s => `
-<tr>
+<tr data-id="${s.id}">
   <td>${s.admission_number || ""}</td>
   <td>${s.first_name} ${s.last_name}</td>
   <td>
@@ -142,7 +134,7 @@ if (!students.length) {
 `).join("");
 }
 
-/* 7️⃣ Save Assessment */
+/* 🔹 7️⃣ Save Assessment */
 document.getElementById("saveAssessment").onclick = async () => {
   const selectedTerm = termSelect.value;
   const selectedSubject = subjectSelect.value;
@@ -150,11 +142,11 @@ document.getElementById("saveAssessment").onclick = async () => {
   const substrand = document.getElementById("substrandInput").value;
 
   const rows = Array.from(tbody.querySelectorAll("tr")).map(tr => {
-    const studentId = students[tbody.querySelectorAll("tr").indexOf(tr)]?.id || tr.dataset.id;
+    const studentId = tr.dataset.id;
     const assessmentTypeId = tr.querySelector(".assessmentType").value;
     const performanceLevelId = tr.querySelector(".performanceLevel").value;
     return {
-      assessment_id: assessmentId,
+      assessment_id: localStorage.getItem("assessment_id") || null,
       student_id: studentId,
       subject_id: selectedSubject,
       term_id: selectedTerm,
@@ -169,11 +161,7 @@ document.getElementById("saveAssessment").onclick = async () => {
   });
 
   const { error } = await supabase.from("assessment_results").insert(rows);
-  if (error) {
-    document.getElementById("status").innerText = `Error saving: ${error.message}`;
-  } else {
-    document.getElementById("status").innerText = "Assessment saved successfully!";
-  }
+  document.getElementById("status").innerText = error ? `Error saving: ${error.message}` : "Assessment saved successfully!";
 };
 </script>
 
