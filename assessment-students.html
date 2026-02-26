@@ -1,64 +1,20 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>New Assessment Table</title>
-  <meta charset="UTF-8" />
-  <style>
-    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    th { background: #f0f0f0; }
-    select, input { width: 100%; }
-    button { margin-top: 15px; padding: 8px 12px; cursor: pointer; }
-  </style>
+<meta charset="UTF-8">
+<title>Teacher Dashboard</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; }
+  h2 { margin-bottom: 20px; }
+  .card { border: 1px solid #ccc; padding: 15px; margin-bottom: 15px; border-radius: 6px; }
+  .card strong { font-size: 16px; }
+  button { margin-top: 10px; padding: 6px 12px; cursor: pointer; }
+</style>
 </head>
 <body>
 
-<h2>New Assessment Table</h2>
-
-<p><strong>Academic Year:</strong> <span id="yearLabel"></span></p>
-
-<p>
-  <label>Class:</label>
-  <select id="classSelect"><option>Loading classes...</option></select>
-</p>
-
-<p>
-  <label>Learning Area / Subject:</label>
-  <select id="subjectSelect"><option>Select a class first</option></select>
-</p>
-
-<p>
-  <label>Term:</label>
-  <select id="termSelect"><option>Loading terms...</option></select>
-</p>
-
-<p>
-  <label>Strand(s):</label>
-  <input type="text" id="strandInput" placeholder="Enter strand(s)">
-</p>
-
-<p>
-  <label>Substrand (optional):</label>
-  <input type="text" id="substrandInput" placeholder="Enter substrand">
-</p>
-
-<table id="studentsTable">
-  <thead>
-    <tr>
-      <th>Adm/UPI Number</th>
-      <th>Name</th>
-      <th>Assessment Type</th>
-      <th>Performance Level</th>
-    </tr>
-  </thead>
-  <tbody id="studentsBody">
-    <tr><td colspan="4">Select a class to load students</td></tr>
-  </tbody>
-</table>
-
-<br>
-<button id="saveAssessment">Save Assessment</button>
-<p id="status"></p>
+<h2>Teacher Dashboard</h2>
+<div id="classList">Loading classes...</div>
 
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
@@ -68,117 +24,60 @@ const supabase = createClient(
   "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
 );
 
-const SYSTEM_YEAR = 2026;
-document.getElementById("yearLabel").innerText = SYSTEM_YEAR;
+const CURRENT_YEAR = 2026;
+const classListEl = document.getElementById("classList");
 
-/* 0️⃣ Auth check */
-const { data: { user } } = await supabase.auth.getUser();
-if (!user) { window.location.href = "index.html"; throw new Error("Not logged in"); }
+async function loadDashboard() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) { window.location.href = "index.html"; return; }
 
-/* 1️⃣ Load classes assigned to teacher */
-const { data: classes } = await supabase
-  .from("teacher_subjects")
-  .select(`class_id, classes(name)`)
-  .eq("teacher_id", user.id);
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("id, role")
+    .eq("auth_id", user.id)
+    .single();
 
-const classSelect = document.getElementById("classSelect");
-if (!classes?.length) {
-  classSelect.innerHTML = "<option>No classes assigned</option>";
-} else {
-  classSelect.innerHTML = classes.map(c => `<option value="${c.class_id}">${c.classes.name}</option>`).join("");
+  if (!profile || profile.role !== "teacher") { window.location.href = "index.html"; return; }
+
+  const { data: assignments } = await supabase
+    .from("teacher_subjects_view")
+    .select("*")
+    .eq("teacher_id", profile.id)
+    .eq("academic_year", CURRENT_YEAR);
+
+  if (!assignments?.length) {
+    classListEl.innerText = `No classes assigned for ${CURRENT_YEAR}`;
+    return;
+  }
+
+  classListEl.innerHTML = assignments.map(row => `
+    <div class="card" data-year="${row.academic_year}">
+      <strong>${row.class_name} - ${row.subject_name}</strong><br>
+      Grade: ${row.grade_number ?? "N/A"}<br>
+      Academic Year: ${row.academic_year}<br>
+      <button data-class="${row.class_id}" data-subject="${row.subject_id}">Start Assessment</button>
+    </div>
+  `).join("");
 }
 
-/* 2️⃣ Load terms */
-const { data: terms } = await supabase.from("terms").select("id, name");
-const termSelect = document.getElementById("termSelect");
-termSelect.innerHTML = terms.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
+classListEl.addEventListener("click", e => {
+  if (e.target.tagName !== "BUTTON") return;
 
-// 3️⃣ Load assessment types & levels
-const { data: assessmentTypes } = await supabase.from("assessment_types").select("id, name");
-const { data: levels } = await supabase.from("achievement_levels").select("id, label").order("order_rank");
+  const classId = e.target.getAttribute("data-class");
+  const subjectId = e.target.getAttribute("data-subject");
+  const academicYear = e.target.closest(".card")?.getAttribute("data-year");
 
-// 4️⃣ Update subjects & students when class changes
-classSelect.onchange = async () => {
-  const classId = classSelect.value;
-  if (!classId) return;
+  if (!classId || !subjectId) return alert("Invalid class or subject.");
 
-  // load subjects for this class
-  const { data: subjects } = await supabase
-    .from("teacher_subjects")
-    .select(`subject_id, subjects(name)`)
-    .eq("teacher_id", user.id)
-    .eq("class_id", classId);
+  // ✅ Store selection to carry over
+  localStorage.setItem("class_id", classId);
+  localStorage.setItem("subject_id", subjectId);
+  localStorage.setItem("academic_year", academicYear);
 
-  const subjectSelect = document.getElementById("subjectSelect");
-  if (!subjects?.length) {
-    subjectSelect.innerHTML = "<option>No subjects assigned</option>";
-    document.getElementById("studentsBody").innerHTML = `<tr><td colspan="4">No students to load</td></tr>`;
-    return;
-  }
-  subjectSelect.innerHTML = subjects.map(s => `<option value="${s.subject_id}">${s.subject.name}</option>`).join("");
+  window.location.href = "assessment-students.html";
+});
 
-  // load students
-  const { data: students } = await supabase
-    .from("students")
-    .select("id, admission_number, first_name, last_name")
-    .eq("class_id", classId)
-    .order("last_name");
-
-  const tbody = document.getElementById("studentsBody");
-  if (!students?.length) {
-    tbody.innerHTML = `<tr><td colspan="4">No students in this class</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = students.map(s => `
-<tr data-id="${s.id}">
-  <td>${s.admission_number || ""}</td>
-  <td>${s.first_name} ${s.last_name}</td>
-  <td>
-    <select class="assessmentType">
-      ${assessmentTypes.map(a=>`<option value="${a.id}">${a.name}</option>`).join("")}
-    </select>
-  </td>
-  <td>
-    <select class="performanceLevel">
-      <option value="">Select Level</option>
-      ${levels.map(l=>`<option value="${l.id}">${l.label}</option>`).join("")}
-    </select>
-  </td>
-</tr>
-`).join("");
-};
-
-/* 5️⃣ Save assessment */
-document.getElementById("saveAssessment").onclick = async () => {
-  const classId = classSelect.value;
-  const subjectId = document.getElementById("subjectSelect").value;
-  const termId = termSelect.value;
-  const strand = document.getElementById("strandInput").value;
-  const substrand = document.getElementById("substrandInput").value;
-
-  const rows = Array.from(document.querySelectorAll("#studentsBody tr")).map(tr => {
-    const studentId = tr.dataset.id;
-    const assessmentTypeId = tr.querySelector(".assessmentType").value;
-    const performanceLevelId = tr.querySelector(".performanceLevel").value;
-    return {
-      assessment_id: null,
-      student_id: studentId,
-      subject_id: subjectId,
-      term_id: termId,
-      assessment_type_id: assessmentTypeId,
-      achievement_level_id: performanceLevelId,
-      strand,
-      substrand,
-      academic_year: SYSTEM_YEAR,
-      teacher_id: user.id,
-      created_by: user.id
-    };
-  });
-
-  const { error } = await supabase.from("assessment_results").insert(rows);
-  document.getElementById("status").innerText = error ? `Error saving: ${error.message}` : "Assessment saved successfully!";
-};
+loadDashboard();
 </script>
 </body>
 </html>
