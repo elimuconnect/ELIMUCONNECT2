@@ -16,8 +16,16 @@
 <h2>New Assessment Table</h2>
 
 <p><strong>Academic Year:</strong> <span id="yearLabel"></span></p>
-<p><strong>Class:</strong> <span id="classLabel"></span></p>
-<p><strong>Subject:</strong> <span id="subjectLabel"></span></p>
+
+<p>
+  <label>Class:</label>
+  <select id="classSelect"><option>Loading classes...</option></select>
+</p>
+
+<p>
+  <label>Learning Area / Subject:</label>
+  <select id="subjectSelect"><option>Select a class first</option></select>
+</p>
 
 <p>
   <label>Term:</label>
@@ -44,7 +52,7 @@
     </tr>
   </thead>
   <tbody id="studentsBody">
-    <tr><td colspan="4">Loading students...</td></tr>
+    <tr><td colspan="4">Select a class to load students</td></tr>
   </tbody>
 </table>
 
@@ -67,24 +75,20 @@ document.getElementById("yearLabel").innerText = SYSTEM_YEAR;
 const { data: { user } } = await supabase.auth.getUser();
 if (!user) { window.location.href = "index.html"; throw new Error("Not logged in"); }
 
-/* 1️⃣ Get selected class & subject from previous page */
-const classId = localStorage.getItem("class_id");
-const subjectId = localStorage.getItem("subject_id");
-const academicYear = localStorage.getItem("academic_year") || SYSTEM_YEAR;
+/* 1️⃣ Load classes assigned to teacher */
+const { data: classes } = await supabase
+  .from("teacher_subjects")
+  .select(`class_id, classes(name)`)
+  .eq("teacher_id", user.id);
 
-if (!classId || !subjectId) {
-  alert("Please select a class and subject first.");
-  window.location.href = "teacher-dashboard.html";
+const classSelect = document.getElementById("classSelect");
+if (!classes?.length) {
+  classSelect.innerHTML = "<option>No classes assigned</option>";
+} else {
+  classSelect.innerHTML = classes.map(c => `<option value="${c.class_id}">${c.classes.name}</option>`).join("");
 }
 
-/* Display class and subject */
-const { data: classData } = await supabase.from("classes").select("name").eq("id", classId).single();
-document.getElementById("classLabel").innerText = classData?.name || "N/A";
-
-const { data: subjectData } = await supabase.from("subjects").select("name").eq("id", subjectId).single();
-document.getElementById("subjectLabel").innerText = subjectData?.name || "N/A";
-
-/* 2️⃣ Load terms */
+// 2️⃣ Load terms
 const { data: terms } = await supabase.from("terms").select("id, name");
 const termSelect = document.getElementById("termSelect");
 termSelect.innerHTML = terms.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
@@ -93,19 +97,49 @@ termSelect.innerHTML = terms.map(t => `<option value="${t.id}">${t.name}</option
 const { data: assessmentTypes } = await supabase.from("assessment_types").select("id, name");
 const { data: levels } = await supabase.from("achievement_levels").select("id, label").order("order_rank");
 
-// 4️⃣ Load students for the selected class
-const { data: students, error: studentError } = await supabase
-  .from("students")
-  .select("id, admission_number, first_name, last_name")
-  .eq("class_id", classId)
-  .order("last_name");
+// 4️⃣ Get selected class & subject from localStorage (from dashboard)
+let selectedClassId = Number(localStorage.getItem("class_id"));
+let selectedSubjectId = Number(localStorage.getItem("subject_id"));
 
-const tbody = document.getElementById("studentsBody");
-if (studentError) {
-  tbody.innerHTML = `<tr><td colspan="4">Error loading students: ${studentError.message}</td></tr>`;
-} else if (!students?.length) {
-  tbody.innerHTML = `<tr><td colspan="4">No students in this class</td></tr>`;
-} else {
+// Preselect class if carried over
+if (selectedClassId) classSelect.value = selectedClassId;
+
+// Function to load subjects and students
+async function loadSubjectsAndStudents(classId, preselectSubjectId=null) {
+  if (!classId) return;
+
+  // Load subjects for this class
+  const { data: subjects } = await supabase
+    .from("teacher_subjects")
+    .select(`subject_id, subjects(name)`)
+    .eq("teacher_id", user.id)
+    .eq("class_id", classId);
+
+  const subjectSelect = document.getElementById("subjectSelect");
+  if (!subjects?.length) {
+    subjectSelect.innerHTML = "<option>No subjects assigned</option>";
+    document.getElementById("studentsBody").innerHTML = `<tr><td colspan="4">No students to load</td></tr>`;
+    return;
+  }
+
+  subjectSelect.innerHTML = subjects.map(s => `<option value="${s.subject_id}">${s.subjects.name}</option>`).join("");
+
+  // Preselect carried subject
+  if (preselectSubjectId) subjectSelect.value = preselectSubjectId;
+
+  // Load students for this class
+  const { data: students } = await supabase
+    .from("students")
+    .select("id, admission_number, first_name, last_name")
+    .eq("class_id", classId)
+    .order("last_name");
+
+  const tbody = document.getElementById("studentsBody");
+  if (!students?.length) {
+    tbody.innerHTML = `<tr><td colspan="4">No students in this class</td></tr>`;
+    return;
+  }
+
   tbody.innerHTML = students.map(s => `
 <tr data-id="${s.id}">
   <td>${s.admission_number || ""}</td>
@@ -125,9 +159,23 @@ if (studentError) {
 `).join("");
 }
 
+// Initial load if dashboard carried data
+if (selectedClassId) {
+  await loadSubjectsAndStudents(selectedClassId, selectedSubjectId);
+}
+
+// When class changes manually
+classSelect.onchange = async () => {
+  selectedClassId = Number(classSelect.value);
+  selectedSubjectId = null;
+  await loadSubjectsAndStudents(selectedClassId);
+};
+
 // 5️⃣ Save assessment
 document.getElementById("saveAssessment").onclick = async () => {
-  const termId = termSelect.value;
+  const classId = Number(classSelect.value);
+  const subjectId = Number(document.getElementById("subjectSelect").value);
+  const termId = Number(termSelect.value);
   const strand = document.getElementById("strandInput").value;
   const substrand = document.getElementById("substrandInput").value;
 
@@ -144,7 +192,7 @@ document.getElementById("saveAssessment").onclick = async () => {
       achievement_level_id: performanceLevelId,
       strand,
       substrand,
-      academic_year: academicYear,
+      academic_year: SYSTEM_YEAR,
       teacher_id: user.id,
       created_by: user.id
     };
@@ -154,5 +202,6 @@ document.getElementById("saveAssessment").onclick = async () => {
   document.getElementById("status").innerText = error ? `Error saving: ${error.message}` : "Assessment saved successfully!";
 };
 </script>
+
 </body>
 </html>
