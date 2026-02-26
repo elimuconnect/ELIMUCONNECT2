@@ -59,74 +59,65 @@ async function loadDashboard() {
   }
 
   // 3️⃣ Fetch teacher assignments
-  const { data: assignments, error } = await supabase
-    .from("teacher_subjects")
-    .select(`
-      class_id,
-      subject_id,
-      classes:class_id (
-        id,
-        name,
-        academic_year,
-        grades ( grade_number )
-      ),
-      subjects:subject_id (
-        id,
-        name
-      )
-    `)
-    .eq("teacher_id", profile.id);
+ // 3️⃣ Fetch teacher assignments with safe joins
+const { data: assignments, error } = await supabase
+  .from("teacher_subjects")
+  .select(`
+    class_id,
+    subject_id,
+    classes (
+      id,
+      name,
+      academic_year,
+      grades ( grade_number )
+    ),
+    subjects (
+      id,
+      name
+    )
+  `)
+  .eq("teacher_id", profile.id);
 
-  if (error) {
-    console.error(error);
-    classListEl.innerText = "Error loading classes";
-    return;
-  }
-
-  // 4️⃣ Filter current academic year & remove duplicates
-  const filtered = (assignments || []).filter(row =>
-    row.classes &&
-    Number(row.classes.academic_year) === CURRENT_YEAR
-  );
-
-  if (filtered.length === 0) {
-    classListEl.innerText = `No classes assigned for ${CURRENT_YEAR}`;
-    return;
-  }
-
-  // 5️⃣ Remove duplicate class-subject pairs (optional safety)
-  const uniqueAssignments = [];
-  const seen = new Set();
-  filtered.forEach(row => {
-    const key = `${row.class_id}-${row.subject_id}`;
-    if (!seen.has(key)) {
-      seen.add(key);
-      uniqueAssignments.push(row);
-    }
-  });
-
-  // 6️⃣ Render
-  classListEl.innerHTML = uniqueAssignments.map(row => {
-    const className = row.classes?.name ?? "Unnamed Class";
-    const grade = row.classes?.grades?.grade_number ?? "N/A";
-    const subjectName = row.subjects?.name ?? "Unknown Subject";
-    const academicYear = row.classes?.academic_year ?? "";
-
-    return `
-      <div class="card" data-year="${academicYear}">
-        <strong>${className} - ${subjectName}</strong><br>
-        Grade: ${grade}<br>
-        Academic Year: ${academicYear}<br>
-
-        <button 
-          data-class="${row.class_id}" 
-          data-subject="${row.subject_id}">
-          Start Assessment
-        </button>
-      </div>
-    `;
-  }).join("");
+if (error) {
+  console.error(error);
+  classListEl.innerText = "Error loading classes";
+  return;
 }
+
+// 4️⃣ Filter current academic year & remove duplicates
+const filtered = (assignments || []).filter(row =>
+  row.classes &&
+  Number(row.classes.academic_year) === CURRENT_YEAR
+);
+
+if (filtered.length === 0) {
+  classListEl.innerText = `No classes assigned for ${CURRENT_YEAR}`;
+  return;
+}
+
+// 5️⃣ Render safely
+classListEl.innerHTML = filtered.map(row => {
+  const className = row.classes?.name ?? "Unnamed Class";
+  const grade = row.classes?.grades?.grade_number ?? "N/A";
+
+  // Safe subject name: fallback to row.subject_name if join fails
+  const subjectName = row.subjects?.name ?? "Unknown Subject";
+
+  const academicYear = row.classes?.academic_year ?? "";
+
+  return `
+    <div class="card" data-year="${academicYear}">
+      <strong>${className} - ${subjectName}</strong><br>
+      Grade: ${grade}<br>
+      Academic Year: ${academicYear}<br>
+      <button 
+        data-class="${row.class_id}" 
+        data-subject="${row.subject_id}">
+        Start Assessment
+      </button>
+    </div>
+  `;
+}).join("");
 
 // Button click handler
 classListEl.addEventListener("click", (e) => {
