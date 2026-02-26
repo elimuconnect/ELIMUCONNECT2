@@ -122,20 +122,25 @@ document.getElementById("saveAssessment").onclick = async () => {
   const strand = document.getElementById("strandInput").value;
   const substrand = document.getElementById("substrandInput").value;
 
-  const rows = Array.from(document.querySelectorAll("#studentsBody tr")).map(tr => ({
-    assessment_id: null,
-    student_id: tr.dataset.id,
-    subject_id: subjectId,       // ✅ carried from dashboard
-    term_id: termId,
-    assessment_type_id: tr.querySelector(".assessmentType").value,
-    achievement_level_id: tr.querySelector(".performanceLevel").value,
-    strand,
-    substrand,
-    academic_year: academicYear,
-    teacher_id: (await supabase.auth.getUser()).data.user.id,
-    created_by: (await supabase.auth.getUser()).data.user.id
-  }));
 
+const { data: { user } } = await supabase.auth.getUser();
+if (!user) { window.location.href = "index.html"; throw new Error("Not logged in"); }
+
+// ... later, inside saveAssessment:
+const rows = Array.from(document.querySelectorAll("#studentsBody tr")).map(tr => ({
+  assessment_id: null,
+  student_id: tr.dataset.id,
+  subject_id: subjectId,       
+  term_id: termId,
+  assessment_type_id: tr.querySelector(".assessmentType").value,
+  achievement_level_id: tr.querySelector(".performanceLevel").value,
+  strand,
+  substrand,
+  academic_year: academicYear,
+  teacher_id: user.id,        // ✅ reuse the user object
+  created_by: user.id
+}));
+  
   const { error } = await supabase.from("assessment_results").insert(rows);
   document.getElementById("status").innerText = error ? `Error saving: ${error.message}` : "Assessment saved successfully!";
 };
