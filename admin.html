@@ -187,9 +187,9 @@ currentAssignmentsDiv.addEventListener("click", async (e) => {
   if (!confirm("Are you sure you want to unassign this subject?")) return;
 
   const { error } = await supabase
-    .from("teacher_subjects")
-    .delete()
-    .eq("id", id);
+  .from("teacher_subjects")
+  .delete()
+  .eq("id", Number(id));
 
   if (error) { alert("Error: " + error.message); return; }
   loadCurrentAssignments();
