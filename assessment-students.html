@@ -16,18 +16,27 @@
 <h2>New Assessment Table</h2>
 
 <p><strong>Academic Year:</strong> <span id="yearLabel"></span></p>
+
 <p>
-  <label>Term:</label>
-  <select id="termSelect"></select>
+  <label>Class:</label>
+  <select id="classSelect"><option>Loading classes...</option></select>
 </p>
+
 <p>
   <label>Learning Area / Subject:</label>
-  <select id="subjectSelect"></select>
+  <select id="subjectSelect"><option>Select a class first</option></select>
 </p>
+
+<p>
+  <label>Term:</label>
+  <select id="termSelect"><option>Loading terms...</option></select>
+</p>
+
 <p>
   <label>Strand(s):</label>
   <input type="text" id="strandInput" placeholder="Enter strand(s)">
 </p>
+
 <p>
   <label>Substrand (optional):</label>
   <input type="text" id="substrandInput" placeholder="Enter substrand">
@@ -43,7 +52,7 @@
     </tr>
   </thead>
   <tbody id="studentsBody">
-    <tr><td colspan="4">Loading students...</td></tr>
+    <tr><td colspan="4">Select a class to load students</td></tr>
   </tbody>
 </table>
 
@@ -60,61 +69,67 @@ const supabase = createClient(
 );
 
 const SYSTEM_YEAR = 2026;
+document.getElementById("yearLabel").innerText = SYSTEM_YEAR;
 
-/* 🔹 0️⃣ Auth check */
+/* 0️⃣ Auth check */
 const { data: { user } } = await supabase.auth.getUser();
 if (!user) { window.location.href = "index.html"; throw new Error("Not logged in"); }
 
-/* 🔹 1️⃣ Load context */
-const classId = localStorage.getItem("class_id");
-const academicYear = localStorage.getItem("academic_year") || SYSTEM_YEAR;
-document.getElementById("yearLabel").innerText = academicYear;
-
-if (!classId) { window.location.href = "teacher.html"; throw new Error("No class selected"); }
-
-/* 🔹 2️⃣ Load subjects assigned to this teacher & class */
-const { data: subjects, error: subjectsError } = await supabase
+/* 1️⃣ Load classes assigned to teacher */
+const { data: classes } = await supabase
   .from("teacher_subjects")
-  .select(`subject_id, subjects(name)`)
-  .eq("teacher_id", user.id)
-  .eq("class_id", classId);
+  .select(`class_id, classes(name)`)
+  .eq("teacher_id", user.id);
 
-if (subjectsError || !subjects?.length) {
-  document.getElementById("status").innerText = "No subjects assigned for this class.";
-  throw subjectsError || new Error("No subjects");
+const classSelect = document.getElementById("classSelect");
+if (!classes?.length) {
+  classSelect.innerHTML = "<option>No classes assigned</option>";
+} else {
+  classSelect.innerHTML = classes.map(c => `<option value="${c.class_id}">${c.classes.name}</option>`).join("");
 }
 
-const subjectSelect = document.getElementById("subjectSelect");
-subjectSelect.innerHTML = subjects.map(s => `<option value="${s.subject_id}">${s.subject.name}</option>`).join("");
-
-/* 🔹 3️⃣ Load terms */
+/* 2️⃣ Load terms */
 const { data: terms } = await supabase.from("terms").select("id, name");
 const termSelect = document.getElementById("termSelect");
 termSelect.innerHTML = terms.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
 
-/* 🔹 4️⃣ Load assessment types */
+// 3️⃣ Load assessment types & levels
 const { data: assessmentTypes } = await supabase.from("assessment_types").select("id, name");
-
-/* 🔹 5️⃣ Load achievement levels */
 const { data: levels } = await supabase.from("achievement_levels").select("id, label").order("order_rank");
 
-/* 🔹 6️⃣ Load students */
-const { data: students, error: studentError } = await supabase
-  .from("students")
-  .select("id, admission_number, first_name, last_name")
-  .eq("class_id", classId)
-  .order("last_name");
+// 4️⃣ Update subjects & students when class changes
+classSelect.onchange = async () => {
+  const classId = classSelect.value;
+  if (!classId) return;
 
-const tbody = document.getElementById("studentsBody");
+  // load subjects for this class
+  const { data: subjects } = await supabase
+    .from("teacher_subjects")
+    .select(`subject_id, subjects(name)`)
+    .eq("teacher_id", user.id)
+    .eq("class_id", classId);
 
-if (studentError) {
-  tbody.innerHTML = `<tr><td colspan="4">Error loading students: ${studentError.message}</td></tr>`;
-  throw studentError;
-}
+  const subjectSelect = document.getElementById("subjectSelect");
+  if (!subjects?.length) {
+    subjectSelect.innerHTML = "<option>No subjects assigned</option>";
+    document.getElementById("studentsBody").innerHTML = `<tr><td colspan="4">No students to load</td></tr>`;
+    return;
+  }
+  subjectSelect.innerHTML = subjects.map(s => `<option value="${s.subject_id}">${s.subject.name}</option>`).join("");
 
-if (!students?.length) {
-  tbody.innerHTML = `<tr><td colspan="4">No students found in this class.</td></tr>`;
-} else {
+  // load students
+  const { data: students } = await supabase
+    .from("students")
+    .select("id, admission_number, first_name, last_name")
+    .eq("class_id", classId)
+    .order("last_name");
+
+  const tbody = document.getElementById("studentsBody");
+  if (!students?.length) {
+    tbody.innerHTML = `<tr><td colspan="4">No students in this class</td></tr>`;
+    return;
+  }
+
   tbody.innerHTML = students.map(s => `
 <tr data-id="${s.id}">
   <td>${s.admission_number || ""}</td>
@@ -132,29 +147,30 @@ if (!students?.length) {
   </td>
 </tr>
 `).join("");
-}
+};
 
-/* 🔹 7️⃣ Save Assessment */
+/* 5️⃣ Save assessment */
 document.getElementById("saveAssessment").onclick = async () => {
-  const selectedTerm = termSelect.value;
-  const selectedSubject = subjectSelect.value;
+  const classId = classSelect.value;
+  const subjectId = document.getElementById("subjectSelect").value;
+  const termId = termSelect.value;
   const strand = document.getElementById("strandInput").value;
   const substrand = document.getElementById("substrandInput").value;
 
-  const rows = Array.from(tbody.querySelectorAll("tr")).map(tr => {
+  const rows = Array.from(document.querySelectorAll("#studentsBody tr")).map(tr => {
     const studentId = tr.dataset.id;
     const assessmentTypeId = tr.querySelector(".assessmentType").value;
     const performanceLevelId = tr.querySelector(".performanceLevel").value;
     return {
-      assessment_id: localStorage.getItem("assessment_id") || null,
+      assessment_id: null,
       student_id: studentId,
-      subject_id: selectedSubject,
-      term_id: selectedTerm,
+      subject_id: subjectId,
+      term_id: termId,
       assessment_type_id: assessmentTypeId,
       achievement_level_id: performanceLevelId,
       strand,
       substrand,
-      academic_year: academicYear,
+      academic_year: SYSTEM_YEAR,
       teacher_id: user.id,
       created_by: user.id
     };
@@ -164,6 +180,5 @@ document.getElementById("saveAssessment").onclick = async () => {
   document.getElementById("status").innerText = error ? `Error saving: ${error.message}` : "Assessment saved successfully!";
 };
 </script>
-
 </body>
 </html>
