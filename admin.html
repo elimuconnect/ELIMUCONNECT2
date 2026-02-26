@@ -8,6 +8,10 @@
   h2 { margin-top: 20px; }
   select, button { margin: 5px; padding: 5px; }
   div.status { margin-top: 5px; color: green; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+  th { background-color: #f4f4f4; }
+  button.unassign { background-color: #e74c3c; color: white; border: none; cursor: pointer; padding: 5px 10px; }
 </style>
 </head>
 <body>
@@ -24,6 +28,9 @@
 <button id="assignBtn">Assign</button>
 <div id="assignStatus" class="status"></div>
 
+<h2>Current Assignments</h2>
+<div id="currentAssignments">Loading...</div>
+
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -31,6 +38,12 @@ const supabase = createClient(
   "https://zcmzuetusvpmvubbjlmx.supabase.co",
   "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
 );
+
+const teacherSelect = document.getElementById("teacherSelect");
+const classSelect = document.getElementById("classSelect");
+const subjectSelect = document.getElementById("subjectSelect");
+const assignStatus = document.getElementById("assignStatus");
+const currentAssignmentsDiv = document.getElementById("currentAssignments");
 
 // --------------------
 // 0️⃣ Auth & Admin Check
@@ -52,7 +65,6 @@ if (!adminProfile || adminProfile.role !== "admin") {
 // --------------------
 // 1️⃣ Load Teachers
 // --------------------
-const teacherSelect = document.getElementById("teacherSelect");
 async function loadTeachers() {
   const { data: teachers, error } = await supabase
     .from("profiles")
@@ -60,55 +72,35 @@ async function loadTeachers() {
     .eq("role", "teacher")
     .eq("school_id", adminProfile.school_id);
 
-  if (error) {
-    console.error("Error fetching teachers:", error);
-    teacherSelect.innerHTML = `<option>Error loading teachers</option>`;
-    return;
-  }
+  if (error) { console.error(error); return; }
+  if (!teachers || teachers.length === 0) { teacherSelect.innerHTML = `<option>No teachers found</option>`; return; }
 
-  if (!teachers || teachers.length === 0) {
-    teacherSelect.innerHTML = `<option>No teachers found</option>`;
-    return;
-  }
-
-  teacherSelect.innerHTML = teachers
-    .map(t => `<option value="${t.id}">${t.full_name || "No Name"}</option>`)
-    .join("");
+  teacherSelect.innerHTML = teachers.map(t => `<option value="${t.id}">${t.full_name || "No Name"}</option>`).join("");
+  loadCurrentAssignments(); // load assignments after teachers are loaded
 }
 
 // --------------------
 // 2️⃣ Load Classes & Subjects
 // --------------------
-const classSelect = document.getElementById("classSelect");
-const subjectSelect = document.getElementById("subjectSelect");
-
 async function loadClasses() {
   const { data: classes } = await supabase
     .from("classes")
     .select("id, name")
     .eq("school_id", adminProfile.school_id);
-
-  classSelect.innerHTML = classes
-    .map(c => `<option value="${c.id}">${c.name}</option>`)
-    .join("");
+  classSelect.innerHTML = classes.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
 }
 
 async function loadSubjects() {
   const { data: subjects } = await supabase
     .from("subjects")
     .select("id, name")
-    .eq("school_id", adminProfile.school_id); // ✅ now school-specific
-
-  subjectSelect.innerHTML = subjects
-    .map(s => `<option value="${s.id}">${s.name}</option>`)
-    .join("");
+    .eq("school_id", adminProfile.school_id);
+  subjectSelect.innerHTML = subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
 }
 
 // --------------------
-// 3️⃣ Assign Subjects to Teacher (avoid duplicates)
+// 3️⃣ Assign Subjects to Teacher
 // --------------------
-const assignStatus = document.getElementById("assignStatus");
-
 document.getElementById("assignBtn").onclick = async () => {
   const teacherId = teacherSelect.value;
   const classId = classSelect.value;
@@ -119,7 +111,7 @@ document.getElementById("assignBtn").onclick = async () => {
     return;
   }
 
-  // ✅ check existing assignments to prevent 409 conflict
+  // Check existing assignments
   const { data: existing } = await supabase
     .from("teacher_subjects")
     .select("subject_id")
@@ -129,11 +121,7 @@ document.getElementById("assignBtn").onclick = async () => {
   const existingIds = existing?.map(e => e.subject_id) || [];
   const newRows = selectedSubjects
     .filter(subjId => !existingIds.includes(subjId))
-    .map(subjId => ({
-      teacher_id: teacherId,
-      class_id: classId,
-      subject_id: subjId
-    }));
+    .map(subjId => ({ teacher_id: teacherId, class_id: classId, subject_id: subjId }));
 
   if (newRows.length === 0) {
     assignStatus.innerText = "All selected subjects are already assigned";
@@ -141,10 +129,76 @@ document.getElementById("assignBtn").onclick = async () => {
   }
 
   const { error } = await supabase.from("teacher_subjects").insert(newRows);
-
   if (error) assignStatus.innerText = "Error: " + error.message;
-  else assignStatus.innerText = "Assigned successfully";
+  else { assignStatus.innerText = "Assigned successfully"; loadCurrentAssignments(); }
 };
+
+// --------------------
+// 4️⃣ Load Current Assignments
+// --------------------
+async function loadCurrentAssignments() {
+  const teacherId = teacherSelect.value;
+  if (!teacherId) { currentAssignmentsDiv.innerHTML = "Select a teacher to view assignments"; return; }
+
+  const { data: assignments, error } = await supabase
+    .from("teacher_subjects")
+    .select(`
+      id,
+      class_id,
+      subject_id,
+      classes ( name ),
+      subjects ( name )
+    `)
+    .eq("teacher_id", teacherId);
+
+  if (error) { console.error(error); currentAssignmentsDiv.innerHTML = "Error loading assignments"; return; }
+
+  if (!assignments || assignments.length === 0) {
+    currentAssignmentsDiv.innerHTML = "No assignments yet";
+    return;
+  }
+
+  currentAssignmentsDiv.innerHTML = `
+    <table>
+      <tr>
+        <th>Class</th>
+        <th>Subject</th>
+        <th>Action</th>
+      </tr>
+      ${assignments.map(a => `
+        <tr>
+          <td>${a.classes?.name || "N/A"}</td>
+          <td>${a.subjects?.name || "N/A"}</td>
+          <td><button class="unassign" data-id="${a.id}">Unassign</button></td>
+        </tr>
+      `).join('')}
+    </table>
+  `;
+}
+
+// --------------------
+// 5️⃣ Handle Unassign
+// --------------------
+currentAssignmentsDiv.addEventListener("click", async (e) => {
+  if (!e.target.classList.contains("unassign")) return;
+  const id = e.target.getAttribute("data-id");
+  if (!id) return;
+
+  if (!confirm("Are you sure you want to unassign this subject?")) return;
+
+  const { error } = await supabase
+    .from("teacher_subjects")
+    .delete()
+    .eq("id", id);
+
+  if (error) { alert("Error: " + error.message); return; }
+  loadCurrentAssignments();
+});
+
+// --------------------
+// Reload assignments on teacher change
+// --------------------
+teacherSelect.addEventListener("change", loadCurrentAssignments);
 
 // --------------------
 // Initial Load
@@ -152,7 +206,7 @@ document.getElementById("assignBtn").onclick = async () => {
 await loadTeachers();
 await loadClasses();
 await loadSubjects();
-
 </script>
+
 </body>
 </html>
