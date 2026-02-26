@@ -39,7 +39,6 @@ const CURRENT_YEAR = 2026;
 const classListEl = document.getElementById("classList");
 
 async function loadDashboard() {
-
   // 1️⃣ Get logged-in user
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
@@ -59,19 +58,19 @@ async function loadDashboard() {
     return;
   }
 
-  // 3️⃣ Fetch teacher assignments (LEFT JOIN – safer)
+  // 3️⃣ Fetch teacher assignments
   const { data: assignments, error } = await supabase
     .from("teacher_subjects")
     .select(`
       class_id,
       subject_id,
-      classes (
+      classes:class_id (
         id,
         name,
         academic_year,
         grades ( grade_number )
       ),
-      subjects (
+      subjects:subject_id (
         id,
         name
       )
@@ -84,7 +83,7 @@ async function loadDashboard() {
     return;
   }
 
-  // 4️⃣ Filter current academic year safely
+  // 4️⃣ Filter current academic year & remove duplicates
   const filtered = (assignments || []).filter(row =>
     row.classes &&
     Number(row.classes.academic_year) === CURRENT_YEAR
@@ -95,9 +94,19 @@ async function loadDashboard() {
     return;
   }
 
-  // 5️⃣ Render
-  classListEl.innerHTML = filtered.map(row => {
+  // 5️⃣ Remove duplicate class-subject pairs (optional safety)
+  const uniqueAssignments = [];
+  const seen = new Set();
+  filtered.forEach(row => {
+    const key = `${row.class_id}-${row.subject_id}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      uniqueAssignments.push(row);
+    }
+  });
 
+  // 6️⃣ Render
+  classListEl.innerHTML = uniqueAssignments.map(row => {
     const className = row.classes?.name ?? "Unnamed Class";
     const grade = row.classes?.grades?.grade_number ?? "N/A";
     const subjectName = row.subjects?.name ?? "Unknown Subject";
@@ -116,12 +125,10 @@ async function loadDashboard() {
         </button>
       </div>
     `;
-
   }).join("");
-
 }
 
-// Button handler
+// Button click handler
 classListEl.addEventListener("click", (e) => {
   if (e.target.tagName !== "BUTTON") return;
 
@@ -143,7 +150,6 @@ classListEl.addEventListener("click", (e) => {
 });
 
 loadDashboard();
-
 </script>
 
 </body>
