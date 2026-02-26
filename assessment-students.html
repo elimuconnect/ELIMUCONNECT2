@@ -2,19 +2,17 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Teacher Dashboard</title>
-<style>
-  body { font-family: Arial, sans-serif; margin: 20px; }
-  h2 { margin-bottom: 20px; }
-  .card { border: 1px solid #ccc; padding: 15px; margin-bottom: 15px; border-radius: 6px; }
-  .card strong { font-size: 16px; }
-  button { margin-top: 10px; padding: 6px 12px; cursor: pointer; }
-</style>
+<title>Assessment Students</title>
 </head>
 <body>
 
-<h2>Teacher Dashboard</h2>
-<div id="classList">Loading classes...</div>
+<h2>Students for Assessment</h2>
+<p><strong>Academic Year:</strong> <span id="yearLabel"></span></p>
+<p><strong>Subject:</strong> <span id="subjectLabel"></span></p>
+<div id="studentList">Loading students...</div>
+<br>
+<button id="confirmStudents">Confirm Students</button>
+<p id="status"></p>
 
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
@@ -24,60 +22,57 @@ const supabase = createClient(
   "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
 );
 
-const CURRENT_YEAR = 2026;
-const classListEl = document.getElementById("classList");
+const { data: { user } } = await supabase.auth.getUser();
+if (!user) { window.location.href = "index.html"; throw new Error("Not logged in"); }
 
-async function loadDashboard() {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) { window.location.href = "index.html"; return; }
+const classId = localStorage.getItem("class_id");
+const subjectId = localStorage.getItem("subject_id");
+const academicYear = localStorage.getItem("academic_year");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, role")
-    .eq("auth_id", user.id)
-    .single();
+if (!classId || !subjectId) {
+  alert("Please select a class and subject first.");
+  window.location.href = "teacher-dashboard.html";
+}
 
-  if (!profile || profile.role !== "teacher") { window.location.href = "index.html"; return; }
+document.getElementById("yearLabel").innerText = academicYear;
 
-  const { data: assignments } = await supabase
-    .from("teacher_subjects_view")
-    .select("*")
-    .eq("teacher_id", profile.id)
-    .eq("academic_year", CURRENT_YEAR);
+// Load subject name
+const { data: subject } = await supabase
+  .from("subjects")
+  .select("name")
+  .eq("id", subjectId)
+  .single();
+document.getElementById("subjectLabel").innerText = subject?.name || "N/A";
 
-  if (!assignments?.length) {
-    classListEl.innerText = `No classes assigned for ${CURRENT_YEAR}`;
-    return;
-  }
+// Load students
+const { data: students } = await supabase
+  .from("students")
+  .select("id, first_name, last_name, admission_number")
+  .eq("class_id", classId)
+  .order("last_name");
 
-  classListEl.innerHTML = assignments.map(row => `
-    <div class="card" data-year="${row.academic_year}">
-      <strong>${row.class_name} - ${row.subject_name}</strong><br>
-      Grade: ${row.grade_number ?? "N/A"}<br>
-      Academic Year: ${row.academic_year}<br>
-      <button data-class="${row.class_id}" data-subject="${row.subject_id}">Start Assessment</button>
-    </div>
+const studentList = document.getElementById("studentList");
+
+if (!students?.length) {
+  studentList.innerText = "No students found for this class.";
+} else {
+  studentList.innerHTML = students.map(s => `
+    <label>
+      <input type="checkbox" value="${s.id}">
+      ${s.admission_number || ""} - ${s.first_name} ${s.last_name}
+    </label><br>
   `).join("");
 }
 
-classListEl.addEventListener("click", e => {
-  if (e.target.tagName !== "BUTTON") return;
-
-  const classId = e.target.getAttribute("data-class");
-  const subjectId = e.target.getAttribute("data-subject");
-  const academicYear = e.target.closest(".card")?.getAttribute("data-year");
-
-  if (!classId || !subjectId) return alert("Invalid class or subject.");
-
-  // ✅ Store selection to carry over
-  localStorage.setItem("class_id", classId);
-  localStorage.setItem("subject_id", subjectId);
-  localStorage.setItem("academic_year", academicYear);
-
-  window.location.href = "assessment-students.html";
-});
-
-loadDashboard();
+document.getElementById("confirmStudents").onclick = () => {
+  const selected = Array.from(document.querySelectorAll("input[type=checkbox]:checked")).map(cb => cb.value);
+  if (!selected.length) {
+    document.getElementById("status").innerText = "Please select at least one student.";
+    return;
+  }
+  localStorage.setItem("selected_students", JSON.stringify(selected));
+  window.location.href = "new-assessment.html"; // Next step page
+};
 </script>
 </body>
 </html>
