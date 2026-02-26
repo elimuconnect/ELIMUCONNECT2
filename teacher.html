@@ -32,6 +32,10 @@ const supabase = createClient(
 const CURRENT_YEAR = 2026;
 const classListEl = document.getElementById("classList");
 
+// ⚠ Replace these with the exact relationship names in your Supabase table
+const REL_CLASSES = 'classes';   // e.g., could be classes_by_class_id
+const REL_SUBJECTS = 'subjects'; // usually subjects
+
 async function loadDashboard() {
   // 1️⃣ Get logged-in user
   const { data: { user } } = await supabase.auth.getUser();
@@ -48,23 +52,29 @@ async function loadDashboard() {
   }
 
   // 3️⃣ Fetch teacher assignments
+  const selectStr = `class_id, subject_id, ${REL_CLASSES}(id,name,academic_year,grades(grade_number)), ${REL_SUBJECTS}(id,name)`;
+
   const { data: assignments, error } = await supabase
     .from("teacher_subjects")
-    .select(`class_id, subject_id, classes(id,name,academic_year,grades(grade_number)), subjects(id,name)`)
+    .select(selectStr)
     .eq("teacher_id", profile.id);
 
-  if (error) { console.error(error); classListEl.innerText = "Error loading classes"; return; }
+  if (error) { 
+    console.error(error); 
+    classListEl.innerText = "Error loading classes"; 
+    return; 
+  }
 
   // 4️⃣ Filter current academic year
-  const filtered = (assignments || []).filter(row => row.classes && Number(row.classes.academic_year) === CURRENT_YEAR);
+  const filtered = (assignments || []).filter(row => row[REL_CLASSES] && Number(row[REL_CLASSES].academic_year) === CURRENT_YEAR);
   if (!filtered.length) { classListEl.innerText = `No classes assigned for ${CURRENT_YEAR}`; return; }
 
   // 5️⃣ Render dashboard
   classListEl.innerHTML = filtered.map(row => {
-    const className = row.classes?.name ?? "Unnamed Class";
-    const grade = row.classes?.grades?.grade_number ?? "N/A";
-    const subjectName = row.subjects?.name ?? "Unknown Subject";
-    const academicYear = row.classes?.academic_year ?? "";
+    const className = row[REL_CLASSES]?.name ?? "Unnamed Class";
+    const grade = row[REL_CLASSES]?.grades?.grade_number ?? "N/A";
+    const subjectName = row[REL_SUBJECTS]?.name ?? "Unknown Subject";
+    const academicYear = row[REL_CLASSES]?.academic_year ?? "";
 
     return `
       <div class="card" data-year="${academicYear}">
