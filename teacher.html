@@ -33,58 +33,29 @@ const CURRENT_YEAR = 2026;
 const classListEl = document.getElementById("classList");
 
 async function loadDashboard() {
-  // 1️⃣ Get logged-in user
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) { window.location.href = "index.html"; return; }
 
-  // 2️⃣ Get teacher profile
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("id, role")
     .eq("auth_id", user.id)
     .single();
-
   if (profileError || !profile || profile.role !== "teacher") {
-    window.location.href = "index.html";
-    return;
+    window.location.href = "index.html"; return;
   }
 
-  // 3️⃣ Fetch teacher assignments (after duplicate FK removed)
   const { data: assignments, error } = await supabase
     .from("teacher_subjects")
-    .select(`
-      class_id,
-      subject_id,
-      classes (       -- the remaining correct relationship
-        id,
-        name,
-        academic_year,
-        grades ( grade_number )
-      ),
-      subjects (
-        id,
-        name
-      )
-    `)
+    .select(`class_id, subject_id, classes(id,name,academic_year,grades(grade_number)), subjects(id,name)`)
     .eq("teacher_id", profile.id);
 
-  if (error) {
-    console.error(error);
-    classListEl.innerText = "Error loading classes";
-    return;
-  }
+  if (error) { console.error(error); classListEl.innerText = "Error loading classes"; return; }
 
-  // 4️⃣ Filter for current academic year
-  const filtered = (assignments || []).filter(row =>
-    row.classes && Number(row.classes.academic_year) === CURRENT_YEAR
-  );
+  const filtered = (assignments || []).filter(row => row.classes && Number(row.classes.academic_year) === CURRENT_YEAR);
 
-  if (filtered.length === 0) {
-    classListEl.innerText = `No classes assigned for ${CURRENT_YEAR}`;
-    return;
-  }
+  if (!filtered.length) { classListEl.innerText = `No classes assigned for ${CURRENT_YEAR}`; return; }
 
-  // 5️⃣ Render dashboard
   classListEl.innerHTML = filtered.map(row => {
     const className = row.classes?.name ?? "Unnamed Class";
     const grade = row.classes?.grades?.grade_number ?? "N/A";
@@ -96,11 +67,7 @@ async function loadDashboard() {
         <strong>${className} - ${subjectName}</strong><br>
         Grade: ${grade}<br>
         Academic Year: ${academicYear}<br>
-        <button 
-          data-class="${row.class_id}" 
-          data-subject="${row.subject_id}">
-          Start Assessment
-        </button>
+        <button data-class="${row.class_id}" data-subject="${row.subject_id}">Start Assessment</button>
       </div>
     `;
   }).join("");
