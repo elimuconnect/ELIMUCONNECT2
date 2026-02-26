@@ -179,26 +179,38 @@ async function loadCurrentAssignments() {
 }
 
 // --------------------
-// 5️⃣ Handle Unassign
+// Handle Unassign properly
 // --------------------
 currentAssignmentsDiv.addEventListener("click", async (e) => {
   if (!e.target.classList.contains("unassign")) return;
 
-  const teacherId = e.target.getAttribute("data-teacher");
-  const classId = e.target.getAttribute("data-class");
-  const subjectId = e.target.getAttribute("data-subject");
+  // Convert IDs to correct type (UUIDs in string form are fine)
+  const teacherId = e.target.dataset.teacher;
+  const classId = e.target.dataset.class;
+  const subjectId = e.target.dataset.subject;
 
-  if (!teacherId || !classId || !subjectId) { alert("Invalid assignment data"); return; }
+  if (!teacherId || !classId || !subjectId) {
+    alert("Invalid assignment data"); 
+    return;
+  }
 
-  const { error } = await supabase
+  // ✅ Delete using exact UUIDs
+  const { data, error } = await supabase
     .from("teacher_subjects")
     .delete()
-    .eq("teacher_id", teacherId)
-    .eq("class_id", classId)
-    .eq("subject_id", subjectId);
+    .match({
+      teacher_id: teacherId,
+      class_id: classId,
+      subject_id: subjectId
+    });
 
-  if (error) { alert("Error unassigning: " + error.message); console.error(error); }
-  else { alert("Unassigned successfully"); loadCurrentAssignments(); }
+  if (error) {
+    alert("Error unassigning: " + error.message);
+    console.error(error);
+  } else {
+    alert("Unassigned successfully");
+    loadCurrentAssignments(); // refresh table
+  }
 });
 
 // --------------------
