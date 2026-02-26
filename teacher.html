@@ -6,12 +6,7 @@
 <style>
   body { font-family: Arial, sans-serif; margin: 20px; }
   h2 { margin-bottom: 20px; }
-  .card {
-    border: 1px solid #ccc;
-    padding: 15px;
-    margin-bottom: 15px;
-    border-radius: 6px;
-  }
+  .card { border: 1px solid #ccc; padding: 15px; margin-bottom: 15px; border-radius: 6px; }
   .card strong { font-size: 16px; }
   button { margin-top: 10px; padding: 6px 12px; cursor: pointer; }
 </style>
@@ -32,10 +27,6 @@ const supabase = createClient(
 const CURRENT_YEAR = 2026;
 const classListEl = document.getElementById("classList");
 
-// ⚠ Replace these with the exact relationship names in your Supabase table
-const REL_CLASSES = 'classes';   // e.g., could be classes_by_class_id
-const REL_SUBJECTS = 'subjects'; // usually subjects
-
 async function loadDashboard() {
   // 1️⃣ Get logged-in user
   const { data: { user } } = await supabase.auth.getUser();
@@ -47,17 +38,17 @@ async function loadDashboard() {
     .select("id, role")
     .eq("auth_id", user.id)
     .single();
+
   if (profileError || !profile || profile.role !== "teacher") {
     window.location.href = "index.html"; return;
   }
 
-  // 3️⃣ Fetch teacher assignments
-  const selectStr = `class_id, subject_id, ${REL_CLASSES}(id,name,academic_year,grades(grade_number)), ${REL_SUBJECTS}(id,name)`;
-
+  // 3️⃣ Fetch assignments from the flat view
   const { data: assignments, error } = await supabase
-    .from("teacher_subjects")
-    .select(selectStr)
-    .eq("teacher_id", profile.id);
+    .from("teacher_subjects_view")
+    .select("*")
+    .eq("teacher_id", profile.id)
+    .eq("academic_year", CURRENT_YEAR);
 
   if (error) { 
     console.error(error); 
@@ -65,22 +56,18 @@ async function loadDashboard() {
     return; 
   }
 
-  // 4️⃣ Filter current academic year
-  const filtered = (assignments || []).filter(row => row[REL_CLASSES] && Number(row[REL_CLASSES].academic_year) === CURRENT_YEAR);
-  if (!filtered.length) { classListEl.innerText = `No classes assigned for ${CURRENT_YEAR}`; return; }
+  if (!assignments.length) { 
+    classListEl.innerText = `No classes assigned for ${CURRENT_YEAR}`; 
+    return; 
+  }
 
-  // 5️⃣ Render dashboard
-  classListEl.innerHTML = filtered.map(row => {
-    const className = row[REL_CLASSES]?.name ?? "Unnamed Class";
-    const grade = row[REL_CLASSES]?.grades?.grade_number ?? "N/A";
-    const subjectName = row[REL_SUBJECTS]?.name ?? "Unknown Subject";
-    const academicYear = row[REL_CLASSES]?.academic_year ?? "";
-
+  // 4️⃣ Render dashboard
+  classListEl.innerHTML = assignments.map(row => {
     return `
-      <div class="card" data-year="${academicYear}">
-        <strong>${className} - ${subjectName}</strong><br>
-        Grade: ${grade}<br>
-        Academic Year: ${academicYear}<br>
+      <div class="card" data-year="${row.academic_year}">
+        <strong>${row.class_name} - ${row.subject_name}</strong><br>
+        Grade: ${row.grade_number ?? "N/A"}<br>
+        Academic Year: ${row.academic_year}<br>
         <button data-class="${row.class_id}" data-subject="${row.subject_id}">Start Assessment</button>
       </div>
     `;
