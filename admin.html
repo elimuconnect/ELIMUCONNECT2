@@ -179,22 +179,23 @@ async function loadCurrentAssignments() {
 // --------------------
 // 5️⃣ Handle Unassign
 // --------------------
-currentAssignmentsDiv.addEventListener("click", async (e) => {
-  if (!e.target.classList.contains("unassign")) return;
-  const id = e.target.getAttribute("data-id");
-  if (!id) return;
-
-  if (!confirm("Are you sure you want to unassign this subject?")) return;
-
+async function unassignSubject(teacherId, classId, subjectId) {
+  // Delete the specific assignment
   const { error } = await supabase
-  .from("teacher_subjects")
-  .delete()
-  .eq("id", Number(id));
+    .from("teacher_subjects")
+    .delete()
+    .eq("teacher_id", teacherId)
+    .eq("class_id", classId)
+    .eq("subject_id", subjectId);
 
-  if (error) { alert("Error: " + error.message); return; }
-  loadCurrentAssignments();
-});
-
+  if (error) {
+    alert("Error unassigning: " + error.message);
+    console.error(error);
+  } else {
+    alert("Unassigned successfully");
+    loadCurrentAssignments(); // refresh list
+  }
+}
 // --------------------
 // Reload assignments on teacher change
 // --------------------
