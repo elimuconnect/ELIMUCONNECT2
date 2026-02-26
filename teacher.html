@@ -12,14 +12,8 @@
     margin-bottom: 15px;
     border-radius: 6px;
   }
-  .card strong {
-    font-size: 16px;
-  }
-  button {
-    margin-top: 10px;
-    padding: 6px 12px;
-    cursor: pointer;
-  }
+  .card strong { font-size: 16px; }
+  button { margin-top: 10px; padding: 6px 12px; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -41,10 +35,7 @@ const classListEl = document.getElementById("classList");
 async function loadDashboard() {
   // 1️⃣ Get logged-in user
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    window.location.href = "index.html";
-    return;
-  }
+  if (!user) { window.location.href = "index.html"; return; }
 
   // 2️⃣ Get teacher profile
   const { data: profile, error: profileError } = await supabase
@@ -58,14 +49,13 @@ async function loadDashboard() {
     return;
   }
 
-  // 3️⃣ Fetch teacher assignments using the **explicit relationship alias**
-  // Replace 'class_id_fkey' with the exact relationship name Supabase shows for teacher_subjects.class_id
+  // 3️⃣ Fetch teacher assignments (after duplicate FK removed)
   const { data: assignments, error } = await supabase
     .from("teacher_subjects")
     .select(`
       class_id,
       subject_id,
-      teacher_class:class_id_fkey (
+      classes (       -- the remaining correct relationship
         id,
         name,
         academic_year,
@@ -84,10 +74,9 @@ async function loadDashboard() {
     return;
   }
 
-  // 4️⃣ Filter current academic year
+  // 4️⃣ Filter for current academic year
   const filtered = (assignments || []).filter(row =>
-    row.teacher_class &&
-    Number(row.teacher_class.academic_year) === CURRENT_YEAR
+    row.classes && Number(row.classes.academic_year) === CURRENT_YEAR
   );
 
   if (filtered.length === 0) {
@@ -95,12 +84,12 @@ async function loadDashboard() {
     return;
   }
 
-  // 5️⃣ Render safely
+  // 5️⃣ Render dashboard
   classListEl.innerHTML = filtered.map(row => {
-    const className = row.teacher_class?.name ?? "Unnamed Class";
-    const grade = row.teacher_class?.grades?.grade_number ?? "N/A";
+    const className = row.classes?.name ?? "Unnamed Class";
+    const grade = row.classes?.grades?.grade_number ?? "N/A";
     const subjectName = row.subjects?.name ?? "Unknown Subject";
-    const academicYear = row.teacher_class?.academic_year ?? "";
+    const academicYear = row.classes?.academic_year ?? "";
 
     return `
       <div class="card" data-year="${academicYear}">
