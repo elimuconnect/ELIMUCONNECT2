@@ -117,20 +117,17 @@ const { data: levels } = await supabase.from("achievement_levels").select("id, l
 // Load competencies and populate top core competencies
 const { data: competencies } = await supabase.from("competencies").select("id, name, subject_id").or("is_active.is.null,is_active.eq.true").order("name");
 const coreContainer = document.getElementById("coreCompetenciesContainer");
-
-competencies
-  .filter(c => !c.subject_id)   // Only global core competencies
-  .forEach(c => {
-    const label = document.createElement("label");
-    label.className = "competency-checkbox";
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
-    checkbox.value = c.id;
-    checkbox.className = "coreCompetency";
-    label.appendChild(checkbox);
-    label.appendChild(document.createTextNode(c.name));
-    coreContainer.appendChild(label);
-  });
+competencies.filter(c => !c.subject_id).forEach(c => {
+  const label = document.createElement("label");
+  label.className = "competency-checkbox";
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+  checkbox.value = c.id;
+  checkbox.className = "coreCompetency";
+  label.appendChild(checkbox);
+  label.appendChild(document.createTextNode(c.name));
+  coreContainer.appendChild(label);
+});
 
 // Load students
 const { data: students } = await supabase.from("students").select("id, admission_number, first_name, last_name").eq("class_id", classId).order("last_name");
@@ -148,31 +145,47 @@ else tbody.innerHTML = students.map(s => `
   </td>
 </tr>`).join("");
 
-// Load strands and sub-strands from DB
+// --------------------
+// Strand & Substrand
+// --------------------
 const strandSelect = document.getElementById("strandSelect");
 const substrandSelect = document.getElementById("substrandSelect");
 
-// Load strands for the selected subject
-const { data: strands } = await supabase.from("strands")
-  .select("id, name")
-  .eq("subject_id", subjectId)
-  .eq("grade", 10)
-  .order("name");
-
-strands.forEach(s => strandSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`);
-
-// Load sub-strands when a strand is selected
-strandSelect.onchange = async () => {
-  const strandId = strandSelect.value;
-  const { data: subStrands } = await supabase.from("sub_strands")
-    .select("id, name")
-    .eq("strand_id", strandId)
-    .order("name");
+async function loadStrands() {
+  strandSelect.innerHTML = `<option value="" disabled selected>-- Select Strand --</option>`;
   substrandSelect.innerHTML = `<option value="" disabled selected>-- Select Substrand --</option>`;
-  subStrands.forEach(ss => substrandSelect.innerHTML += `<option value="${ss.id}">${ss.name}</option>`);
-};
 
+  const { data: strands, error } = await supabase
+    .from("strands")
+    .select("id, name")
+    .or(`subject_id.eq.${subjectId},subject_id.is.null`) // include global strands
+    .eq("grade", 10)
+    .order("name");
+
+  if (error) { console.error("Error loading strands:", error); return; }
+  if (!strands?.length) { strandSelect.innerHTML = `<option value="" disabled selected>No strands found</option>`; return; }
+
+  strands.forEach(s => strandSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+
+  strandSelect.selectedIndex = 1;
+  loadSubstrands(strandSelect.value);
+}
+
+async function loadSubstrands(strandId) {
+  substrandSelect.innerHTML = `<option value="" disabled selected>-- Select Substrand --</option>`;
+  if (!strandId) return;
+  const { data: subStrands, error } = await supabase.from("sub_strands").select("id, name").eq("strand_id", strandId).order("name");
+  if (error) { console.error("Error loading sub-strands:", error); return; }
+  subStrands?.forEach(ss => substrandSelect.innerHTML += `<option value="${ss.id}">${ss.name}</option>`);
+  if (subStrands?.length) substrandSelect.selectedIndex = 1;
+}
+
+strandSelect.addEventListener("change", () => loadSubstrands(strandSelect.value));
+await loadStrands();
+
+// --------------------
 // Save assessment
+// --------------------
 document.getElementById("saveAssessment").onclick = async () => {
   const strand = strandSelect.value;
   const substrand = substrandSelect.value || null;
@@ -184,10 +197,9 @@ document.getElementById("saveAssessment").onclick = async () => {
   if (!selectedCoreCompetencies.length) { alert("Select at least one core competency"); return; }
 
   const subjectCompetency = document.getElementById("subjectCompetency").value;
-
   if (!termId || !assessmentTypeId || !strand) { alert("Please select term, assessment type, and strand"); return; }
 
-  const { data:{user} } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) { window.location.href="index.html"; return; }
 
   const { data: profile } = await supabase.from("profiles").select("school_id").eq("auth_id", user.id).single();
@@ -197,6 +209,7 @@ document.getElementById("saveAssessment").onclick = async () => {
   const today = new Date().toISOString();
   const assessmentTitle = `${subjectData.name} - ${termName} (${academicYear})`;
 
+  // Insert assessment
   const { data: assessment, error: assessmentError } = await supabase.from("assessments").insert([{
     title: assessmentTitle,
     class_id: classId,
@@ -217,6 +230,7 @@ document.getElementById("saveAssessment").onclick = async () => {
 
   if (assessmentError) { document.getElementById("status").innerText = `Error: ${assessmentError.message}`; return; }
 
+  // Insert student results
   const rows = Array.from(document.querySelectorAll("#studentsBody tr")).map(tr => ({
     assessment_id: assessment.id,
     student_id: tr.dataset.id,
