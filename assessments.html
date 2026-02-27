@@ -210,14 +210,16 @@ document.getElementById("saveAssessment").onclick = async () => {
   const today = new Date().toISOString();
   const assessmentTitle = `${subjectData.name} - ${termName} (${academicYear})`;
 
-  // 1️⃣ Insert into assessments
-  const { data: assessment, error: assessmentError } = await supabase.from("assessments").insert([{
+ const termId = document.getElementById("termSelect").value;
+const termName = document.getElementById("termSelect").selectedOptions[0]?.text;  // e.g., "Term 2"
+
+const { data: assessment, error: assessmentError } = await supabase.from("assessments").insert([{
     title: assessmentTitle,
     class_id: classId,
     subject_id: subjectId,
     school_id: schoolId,
     term_id: termId,
-    
+    term: termName,      // ✅ make sure this is populated
     academic_year: academicYear,
     assessment_type_id: assessmentTypeId,
     learning_area_id: subjectId,
@@ -225,8 +227,7 @@ document.getElementById("saveAssessment").onclick = async () => {
     created_by: user.id,
     core_competencies: selectedCoreCompetencies,
     subject_competencies: subjectCompetency
-  }]).select().single();
-
+}]).select().single();
   if (assessmentError) {
     document.getElementById("status").innerText = `Error saving assessment: ${assessmentError.message}`;
     return;
