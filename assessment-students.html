@@ -8,7 +8,7 @@
   table { border-collapse: collapse; width: 100%; margin-top: 20px; }
   th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
   th { background: #f0f0f0; }
-  select { width: 100%; }
+  select, input { width: 100%; padding: 4px; }
   button { margin-top: 15px; padding: 8px 12px; cursor: pointer; }
 </style>
 </head>
@@ -25,6 +25,10 @@
   <select id="termSelect"></select>
 </p>
 <p>
+  <label>Assessment Type:</label>
+  <select id="assessmentTypeSelect"></select>
+</p>
+<p>
   <label>Strand(s):</label>
   <input type="text" id="strandInput" placeholder="Enter strand(s)">
 </p>
@@ -38,7 +42,7 @@
     <tr>
       <th>Adm/Assess NO.</th>
       <th>Name</th>
-      <th>Assessment Type</th>
+      <th>Competency</th>
       <th>Performance Level</th>
     </tr>
   </thead>
@@ -62,11 +66,12 @@ const supabase = createClient(
 const SYSTEM_YEAR = 2026;
 document.getElementById("yearLabel").innerText = SYSTEM_YEAR;
 
-// ✅ Get selections from previous page
+// Get previous selections
 const classId = localStorage.getItem("class_id");
 const subjectId = localStorage.getItem("subject_id");
 const academicYear = localStorage.getItem("academic_year") || SYSTEM_YEAR;
-const learningAreaId = subjectId; // treat subject as learning area
+const learningAreaId = subjectId;
+
 if (!classId || !subjectId) {
   alert("Please select a class and subject first.");
   window.location.href = "teacher-dashboard.html";
@@ -80,17 +85,36 @@ document.getElementById("subjectLabel").innerText = subjectData?.name || "N/A";
 
 // Load terms
 const { data: terms } = await supabase.from("terms").select("id, name");
-const termSelect = document.getElementById("termSelect");
-termSelect.innerHTML = `
+document.getElementById("termSelect").innerHTML = `
   <option value="" disabled selected>-- Select Term --</option>
   ${terms.map(t => `<option value="${t.id}">${t.name}</option>`).join("")}
 `;
 
-// Load assessment types & achievement levels
+// Load assessment types (global)
 const { data: assessmentTypes } = await supabase.from("assessment_types").select("id, name");
+document.getElementById("assessmentTypeSelect").innerHTML = `
+  <option value="" disabled selected>-- Select Assessment Type --</option>
+  ${assessmentTypes.map(a => `<option value="${a.id}">${a.name}</option>`).join("")}
+`;
+
+// Load achievement levels
 const { data: levels } = await supabase.from("achievement_levels").select("id, label").order("order_rank");
 
-// Load students for the selected class
+// Load competencies (CBC core + subject)
+const { data: competencies } = await supabase
+  .from("competencies")
+  .select("id, name, subject_id")
+  .or("is_active.is.null,is_active.eq.true")
+  .order("name");
+
+const groupedCompetencies = {};
+competencies.forEach(c => {
+  const key = c.subject_id || "core";
+  if (!groupedCompetencies[key]) groupedCompetencies[key] = [];
+  groupedCompetencies[key].push(c);
+});
+
+// Load students
 const { data: students } = await supabase
   .from("students")
   .select("id, admission_number, first_name, last_name")
@@ -101,14 +125,29 @@ const tbody = document.getElementById("studentsBody");
 if (!students?.length) {
   tbody.innerHTML = `<tr><td colspan="4">No students in this class</td></tr>`;
 } else {
-  tbody.innerHTML = students.map(s => `
+  tbody.innerHTML = students.map(s => {
+    let competencyOptions = `<option value="">Select competency</option>`;
+    if (groupedCompetencies.core) {
+      competencyOptions += `<optgroup label="Core">`;
+      groupedCompetencies.core.forEach(c => {
+        competencyOptions += `<option value="${c.id}">${c.name}</option>`;
+      });
+      competencyOptions += `</optgroup>`;
+    }
+    if (groupedCompetencies[subjectId]) {
+      competencyOptions += `<optgroup label="Subject">`;
+      groupedCompetencies[subjectId].forEach(c => {
+        competencyOptions += `<option value="${c.id}">${c.name}</option>`;
+      });
+      competencyOptions += `</optgroup>`;
+    }
+
+    return `
 <tr data-id="${s.id}">
   <td>${s.admission_number || ""}</td>
   <td>${s.first_name} ${s.last_name}</td>
   <td>
-    <select class="assessmentType">
-      ${assessmentTypes.map(a=>`<option value="${a.id}">${a.name}</option>`).join("")}
-    </select>
+    <select class="competencySelect">${competencyOptions}</select>
   </td>
   <td>
     <select class="performanceLevel">
@@ -116,37 +155,34 @@ if (!students?.length) {
       ${levels.map(l=>`<option value="${l.id}">${l.label}</option>`).join("")}
     </select>
   </td>
-</tr>
-`).join("");
+</tr>`;
+  }).join("");
 }
 
-// Save assessment
 // Save assessment
 document.getElementById("saveAssessment").onclick = async () => {
   const strand = document.getElementById("strandInput").value;
   const substrand = document.getElementById("substrandInput").value;
+  const termId = document.getElementById("termSelect").value;
+  const termName = document.getElementById("termSelect").selectedOptions[0]?.text;
+  const assessmentTypeId = document.getElementById("assessmentTypeSelect").value;
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) { window.location.href = "index.html"; throw new Error("Not logged in"); }
-
-  // ✅ Get user's school_id from profile
-  const { data: profile } = await supabase.from("profiles").select("school_id").eq("auth_id", user.id).single();
-  if (!profile?.school_id) {
-    alert("Cannot determine school_id. Ensure your profile has a school assigned.");
+  if (!termId || !assessmentTypeId) {
+    alert("Select term and assessment type first.");
     return;
   }
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) { window.location.href="index.html"; return; }
+
+  const { data: profile } = await supabase.from("profiles").select("school_id").eq("auth_id", user.id).single();
+  if (!profile?.school_id) { alert("Cannot determine school_id."); return; }
   const schoolId = profile.school_id;
 
-  // ✅ Get selected term
-  const termSelectEl = document.getElementById("termSelect");
-  const termId = termSelectEl.value;
-  const termName = termSelectEl.options[termSelectEl.selectedIndex].text; // term name
-
-  // ✅ Create assessment first
-  const firstTypeId = document.querySelector(".assessmentType").value;
   const assessmentTitle = `${subjectData.name} - ${termName} (${academicYear})`;
   const today = new Date().toISOString();
 
+  // Create assessment
   const { data: assessment, error: assessmentError } = await supabase
     .from("assessments")
     .insert([{
@@ -155,28 +191,26 @@ document.getElementById("saveAssessment").onclick = async () => {
       subject_id: subjectId,
       school_id: schoolId,
       term_id: termId,
-      term: termName,          // ✅ term name
+      term: termName,
       academic_year: academicYear,
-      assessment_type_id: firstTypeId,
-       learning_area_id: learningAreaId,   // ✅ add this
-      assessment_date: today,  // ISO format
+      assessment_type_id: assessmentTypeId,
+      learning_area_id: learningAreaId,
+      assessment_date: today,
       created_by: user.id
     }])
     .select()
     .single();
 
-  if (assessmentError) {
-    document.getElementById("status").innerText = `Error creating assessment: ${assessmentError.message}`;
-    return;
-  }
+  if (assessmentError) { document.getElementById("status").innerText = `Error: ${assessmentError.message}`; return; }
 
-  // ✅ Save assessment results
+  // Save results
   const rows = Array.from(document.querySelectorAll("#studentsBody tr")).map(tr => ({
     assessment_id: assessment.id,
     student_id: tr.dataset.id,
     subject_id: subjectId,
     term_id: termId,
-    assessment_type_id: tr.querySelector(".assessmentType").value,
+    assessment_type_id: assessmentTypeId,
+    competency_id: tr.querySelector(".competencySelect").value,
     achievement_level_id: tr.querySelector(".performanceLevel").value,
     strand,
     substrand,
@@ -189,5 +223,6 @@ document.getElementById("saveAssessment").onclick = async () => {
   document.getElementById("status").innerText = resultError ? `Error saving results: ${resultError.message}` : "Assessment and results saved successfully!";
 };
 </script>
+
 </body>
 </html>
