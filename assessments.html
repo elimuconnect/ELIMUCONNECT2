@@ -174,29 +174,43 @@ strandSelect.onchange = async () => {
 
 // Save assessment
 document.getElementById("saveAssessment").onclick = async () => {
+  // Get selected values
   const strand = strandSelect.value;
   const substrand = substrandSelect.value || null;
   const termId = document.getElementById("termSelect").value;
   const termName = document.getElementById("termSelect").selectedOptions[0]?.text;
   const assessmentTypeId = document.getElementById("assessmentTypeSelect").value;
 
-  const selectedCoreCompetencies = Array.from(document.querySelectorAll(".coreCompetency:checked")).map(cb => cb.value);
-  if (!selectedCoreCompetencies.length) { alert("Select at least one core competency"); return; }
+  const selectedCoreCompetencies = Array.from(document.querySelectorAll(".coreCompetency:checked"))
+                                        .map(cb => cb.value);
 
   const subjectCompetency = document.getElementById("subjectCompetency").value;
 
-  if (!termId || !assessmentTypeId || !strand) { alert("Please select term, assessment type, and strand"); return; }
+  // Validation
+  if (!termId || !assessmentTypeId || !strand) {
+    alert("Please select Term, Assessment Type, and Strand");
+    return;
+  }
+  if (!selectedCoreCompetencies.length) {
+    alert("Please select at least one core competency");
+    return;
+  }
 
-  const { data:{user} } = await supabase.auth.getUser();
+  // Get logged-in user
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) { window.location.href="index.html"; return; }
 
-  const { data: profile } = await supabase.from("profiles").select("school_id").eq("auth_id", user.id).single();
+  const { data: profile } = await supabase.from("profiles")
+                                         .select("school_id")
+                                         .eq("auth_id", user.id)
+                                         .single();
   if (!profile?.school_id) { alert("Cannot determine school_id"); return; }
   const schoolId = profile.school_id;
 
   const today = new Date().toISOString();
   const assessmentTitle = `${subjectData.name} - ${termName} (${academicYear})`;
 
+  // 1️⃣ Insert into assessments
   const { data: assessment, error: assessmentError } = await supabase.from("assessments").insert([{
     title: assessmentTitle,
     class_id: classId,
@@ -210,13 +224,15 @@ document.getElementById("saveAssessment").onclick = async () => {
     assessment_date: today,
     created_by: user.id,
     core_competencies: selectedCoreCompetencies,
-    subject_competencies: subjectCompetency,
-    strand_id: strand,
-    substrand_id: substrand
+    subject_competencies: subjectCompetency
   }]).select().single();
 
-  if (assessmentError) { document.getElementById("status").innerText = `Error: ${assessmentError.message}`; return; }
+  if (assessmentError) {
+    document.getElementById("status").innerText = `Error saving assessment: ${assessmentError.message}`;
+    return;
+  }
 
+  // 2️⃣ Insert per-student results
   const rows = Array.from(document.querySelectorAll("#studentsBody tr")).map(tr => ({
     assessment_id: assessment.id,
     student_id: tr.dataset.id,
@@ -224,15 +240,32 @@ document.getElementById("saveAssessment").onclick = async () => {
     term_id: termId,
     assessment_type_id: assessmentTypeId,
     achievement_level_id: tr.querySelector(".performanceLevel").value,
-    strand_id: strand,
-    substrand_id: substrand,
     academic_year: academicYear,
     teacher_id: user.id,
     created_by: user.id
   }));
 
   const { error: resultError } = await supabase.from("assessment_results").insert(rows);
-  document.getElementById("status").innerText = resultError ? `Error saving results: ${resultError.message}` : "Assessment and results saved successfully!";
+  if (resultError) {
+    document.getElementById("status").innerText = `Error saving results: ${resultError.message}`;
+    return;
+  }
+
+  // 3️⃣ Insert strand & substrand
+  if (strand) {
+    const { error: strandError } = await supabase.from("assessment_strands").insert([{
+      assessment_id: assessment.id,
+      strand_id: strand,
+      substrand_id: substrand
+    }]);
+    if (strandError) {
+      document.getElementById("status").innerText = `Error saving strand: ${strandError.message}`;
+      return;
+    }
+  }
+
+  // ✅ Success
+  document.getElementById("status").innerText = "Assessment and results saved successfully!";
 };
 </script>
 </body>
