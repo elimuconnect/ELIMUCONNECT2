@@ -145,7 +145,7 @@ document.getElementById("saveAssessment").onclick = async () => {
 
 // Get selected term
 const termSelect = document.getElementById("termSelect");
-const termId = termSelect.value;
+
 const termName = termSelect.options[termSelect.selectedIndex].text; // this is the name
 
 const { data: assessment, error: assessmentError } = await supabase
