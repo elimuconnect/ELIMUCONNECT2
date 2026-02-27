@@ -72,6 +72,26 @@ if (!classId || !subjectId) {
   window.location.href = "teacher-dashboard.html";
 }
 
+// Get logged-in user
+const { data: { user } } = await supabase.auth.getUser();
+if (!user) {
+  window.location.href = "index.html";
+  throw new Error("Not logged in");
+}
+
+// Fetch teacher profile to get school_id
+const { data: profile, error: profileError } = await supabase
+  .from("profiles")
+  .select("school_id")
+  .eq("id", user.id)
+  .single();
+
+if (profileError || !profile?.school_id) {
+  throw new Error("Cannot determine school_id. Ensure your profile has a school assigned.");
+}
+
+const schoolId = profile.school_id;
+
 // Display class and subject names
 const { data: classData } = await supabase.from("classes").select("name").eq("id", classId).single();
 const { data: subjectData } = await supabase.from("subjects").select("name").eq("id", subjectId).single();
@@ -86,7 +106,7 @@ termSelect.innerHTML = `
   ${terms.map(t => `<option value="${t.id}">${t.name}</option>`).join("")}
 `;
 
-// Load assessment types & achievement levels
+// Load global assessment types & achievement levels
 const { data: assessmentTypes } = await supabase.from("assessment_types").select("id, name");
 const { data: levels } = await supabase.from("achievement_levels").select("id, label").order("order_rank");
 
@@ -107,59 +127,56 @@ if (!students?.length) {
   <td>${s.first_name} ${s.last_name}</td>
   <td>
     <select class="assessmentType">
-      ${assessmentTypes.map(a=>`<option value="${a.id}">${a.name}</option>`).join("")}
+      ${assessmentTypes.map(a => `<option value="${a.id}">${a.name}</option>`).join("")}
     </select>
   </td>
   <td>
     <select class="performanceLevel">
       <option value="">Select Level</option>
-      ${levels.map(l=>`<option value="${l.id}">${l.label}</option>`).join("")}
+      ${levels.map(l => `<option value="${l.id}">${l.label}</option>`).join("")}
     </select>
   </td>
 </tr>
 `).join("");
 }
 
-// Save assessment
+// Save assessment & results
 document.getElementById("saveAssessment").onclick = async () => {
   const termId = document.getElementById("termSelect").value;
   const strand = document.getElementById("strandInput").value;
   const substrand = document.getElementById("substrandInput").value;
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) { window.location.href = "index.html"; throw new Error("Not logged in"); }
+  if (!termId) {
+    alert("Select a term first.");
+    return;
+  }
 
-  // 1️⃣ Get teacher's school_id
-  const { data: profile } = await supabase.from("profiles").select("school_id").eq("id", user.id).single();
-  if (!profile?.school_id) { alert("Cannot determine school_id"); return; }
-  const schoolId = profile.school_id;
-
-  // 2️⃣ Create new assessment
+  // 1️⃣ Create a new assessment for this class, subject, and school
   const { data: newAssessment, error: assessError } = await supabase
     .from("assessments")
     .insert([{
       class_id: classId,
+      subject_id: subjectId,
       term_id: termId,
       academic_year: academicYear,
+      school_id: schoolId,
       teacher_id: user.id,
-      created_by: user.id,
-      school_id: schoolId
+      created_by: user.id
     }])
     .select("id")
     .single();
 
-  if (assessError) { 
+  if (assessError) {
     document.getElementById("status").innerText = `Error creating assessment: ${assessError.message}`;
     return;
   }
+
   const assessmentId = newAssessment.id;
 
-  // 3️⃣ Prepare results
+  // 2️⃣ Prepare assessment_results rows
   const rows = Array.from(document.querySelectorAll("#studentsBody tr")).map(tr => ({
     assessment_id: assessmentId,
     student_id: tr.dataset.id,
-    subject_id: subjectId,
-    term_id: termId,
     assessment_type_id: tr.querySelector(".assessmentType").value,
     achievement_level_id: tr.querySelector(".performanceLevel").value,
     strand,
@@ -169,11 +186,13 @@ document.getElementById("saveAssessment").onclick = async () => {
     created_by: user.id
   }));
 
-  // 4️⃣ Insert assessment results
-  const { error } = await supabase.from("assessment_results").insert(rows);
-  document.getElementById("status").innerText = error ? `Error saving: ${error.message}` : "Assessment saved successfully!";
+  // 3️⃣ Insert results
+  const { error: resultsError } = await supabase.from("assessment_results").insert(rows);
+
+  document.getElementById("status").innerText = resultsError
+    ? `Error saving results: ${resultsError.message}`
+    : "Assessment and results saved successfully!";
 };
 </script>
-
 </body>
 </html>
