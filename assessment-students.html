@@ -1,3 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>New Assessment Table</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; }
+  table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+  th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+  th { background: #f0f0f0; }
+  select, input { width: 100%; }
+  button { margin-top: 15px; padding: 8px 12px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<h2>New Assessment Table</h2>
+
+<p><strong>Academic Year:</strong> <span id="yearLabel"></span></p>
+<p><strong>Class:</strong> <span id="classLabel"></span></p>
+<p><strong>Subject:</strong> <span id="subjectLabel"></span></p>
+
+<p>
+  <label>Term:</label>
+  <select id="termSelect"></select>
+</p>
+<p>
+  <label>Strand(s):</label>
+  <input type="text" id="strandInput" placeholder="Enter strand(s)">
+</p>
+<p>
+  <label>Substrand (optional):</label>
+  <input type="text" id="substrandInput" placeholder="Enter substrand">
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Adm/Assess NO.</th>
+      <th>Name</th>
+      <th>Assessment Type</th>
+      <th>Performance Level</th>
+    </tr>
+  </thead>
+  <tbody id="studentsBody">
+    <tr><td colspan="4">Loading students...</td></tr>
+  </tbody>
+</table>
+
+<br>
+<button id="saveAssessment">Save Assessment</button>
+<p id="status"></p>
+
+
+
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -151,3 +206,5 @@ document.getElementById("saveAssessment").onclick = async () => {
     : "Assessment and results saved successfully!";
 };
 </script>
+</body>
+</html>
