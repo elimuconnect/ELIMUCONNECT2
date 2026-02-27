@@ -91,14 +91,19 @@ async function loadClasses() {
 }
 
 async function loadSubjects() {
-  const { data: subjects } = await supabase
+  const { data: subjects, error } = await supabase
     .from("subjects")
     .select("id, name")
-    .eq("school_id", adminProfile.school_id);
+    .or(`school_id.eq.${adminProfile.school_id},school_id.is.null`);
+
+  if (error) { 
+    console.error(error); 
+    subjectSelect.innerHTML = `<option>Error loading subjects</option>`; 
+    return; 
+  }
 
   subjectSelect.innerHTML = subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
 }
-
 // --------------------
 // 3️⃣ Assign Subjects to Teacher
 // --------------------
