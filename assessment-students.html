@@ -158,6 +158,7 @@ document.getElementById("saveAssessment").onclick = async () => {
       term: termName,          // ✅ term name
       academic_year: academicYear,
       assessment_type_id: firstTypeId,
+       learning_area_id: learningAreaId,   // ✅ add this
       assessment_date: today,  // ISO format
       created_by: user.id
     }])
