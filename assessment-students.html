@@ -135,20 +135,20 @@ if (!user) { window.location.href = "index.html"; throw new Error("Not logged in
 
 // ... later, inside saveAssessment:
 const rows = Array.from(document.querySelectorAll("#studentsBody tr")).map(tr => ({
-  assessment_id: null,
+  assessment_id: null,                   // optional, can be generated
   student_id: tr.dataset.id,
-  subject_id: subjectId,       
-  term_id: termId,
+  subject_id: subjectId,
+  term_id: document.getElementById("termSelect").value,
   assessment_type_id: tr.querySelector(".assessmentType").value,
   achievement_level_id: tr.querySelector(".performanceLevel").value,
-  strand,
-  substrand,
+  strand: document.getElementById("strandInput").value,
+  substrand: document.getElementById("substrandInput").value,
   academic_year: academicYear,
-  teacher_id: user.id,        // ✅ reuse the user object
+  teacher_id: user.id,
   created_by: user.id
 }));
-  
-  const { error } = await supabase.from("assessment_results").insert(rows);
+
+const { error } = await supabase.from("assessment_results").insert(rows);
   document.getElementById("status").innerText = error ? `Error saving: ${error.message}` : "Assessment saved successfully!";
 };
 
