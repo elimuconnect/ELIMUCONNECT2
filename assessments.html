@@ -11,18 +11,8 @@
   select, input { width: 100%; padding: 4px; }
   button { margin-top: 15px; padding: 8px 12px; cursor: pointer; }
   .competency-section { margin-top: 20px; }
-
-
-.competency-checkbox {
-  display: block;
-  margin-bottom: 6px;
-  cursor: pointer;
-}
-
-.competency-checkbox input {
-  margin-right: 6px;
-}
-  
+  .competency-checkbox { display: block; margin-bottom: 6px; cursor: pointer; }
+  .competency-checkbox input { margin-right: 6px; }
 </style>
 </head>
 <body>
@@ -55,14 +45,19 @@
          placeholder="Enter subject-specific competencies, comma-separated">
 </div>
 
+<!-- Strand/Substrand -->
 <p>
-  <label>Strand(s):</label>
-  <input type="text" id="strandInput" placeholder="Enter strand(s)">
+  <label>Strand:</label>
+  <select id="strandSelect">
+    <option value="" disabled selected>-- Select Strand --</option>
+  </select>
 </p>
 
 <p>
   <label>Substrand (optional):</label>
-  <input type="text" id="substrandInput" placeholder="Enter substrand">
+  <select id="substrandSelect">
+    <option value="" disabled selected>-- Select Substrand --</option>
+  </select>
 </p>
 
 <table>
@@ -81,6 +76,7 @@
 <br>
 <button id="saveAssessment">Save Assessment</button>
 <p id="status"></p>
+
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -127,15 +123,12 @@ competencies
   .forEach(c => {
     const label = document.createElement("label");
     label.className = "competency-checkbox";
-
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.value = c.id;
     checkbox.className = "coreCompetency";
-
     label.appendChild(checkbox);
     label.appendChild(document.createTextNode(c.name));
-
     coreContainer.appendChild(label);
   });
 
@@ -155,27 +148,44 @@ else tbody.innerHTML = students.map(s => `
   </td>
 </tr>`).join("");
 
+// Load strands and sub-strands from DB
+const strandSelect = document.getElementById("strandSelect");
+const substrandSelect = document.getElementById("substrandSelect");
+
+// Load strands for the selected subject
+const { data: strands } = await supabase.from("strands")
+  .select("id, name")
+  .eq("subject_id", subjectId)
+  .eq("grade", 10)
+  .order("name");
+
+strands.forEach(s => strandSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+
+// Load sub-strands when a strand is selected
+strandSelect.onchange = async () => {
+  const strandId = strandSelect.value;
+  const { data: subStrands } = await supabase.from("sub_strands")
+    .select("id, name")
+    .eq("strand_id", strandId)
+    .order("name");
+  substrandSelect.innerHTML = `<option value="" disabled selected>-- Select Substrand --</option>`;
+  subStrands.forEach(ss => substrandSelect.innerHTML += `<option value="${ss.id}">${ss.name}</option>`);
+};
+
 // Save assessment
 document.getElementById("saveAssessment").onclick = async () => {
-  const strand = document.getElementById("strandInput").value;
-  const substrand = document.getElementById("substrandInput").value;
+  const strand = strandSelect.value;
+  const substrand = substrandSelect.value || null;
   const termId = document.getElementById("termSelect").value;
   const termName = document.getElementById("termSelect").selectedOptions[0]?.text;
   const assessmentTypeId = document.getElementById("assessmentTypeSelect").value;
 
-const selectedCoreCompetencies = Array.from(
-  document.querySelectorAll(".coreCompetency:checked")
-).map(cb => cb.value);
+  const selectedCoreCompetencies = Array.from(document.querySelectorAll(".coreCompetency:checked")).map(cb => cb.value);
+  if (!selectedCoreCompetencies.length) { alert("Select at least one core competency"); return; }
 
-// VALIDATION: at least one core competency must be selected
-if (!selectedCoreCompetencies.length) {
-  alert("Please select at least one core competency before saving the assessment.");
-  return;
-}
-  
   const subjectCompetency = document.getElementById("subjectCompetency").value;
 
-  if (!termId || !assessmentTypeId) { alert("Select term and assessment type"); return; }
+  if (!termId || !assessmentTypeId || !strand) { alert("Please select term, assessment type, and strand"); return; }
 
   const { data:{user} } = await supabase.auth.getUser();
   if (!user) { window.location.href="index.html"; return; }
@@ -187,7 +197,6 @@ if (!selectedCoreCompetencies.length) {
   const today = new Date().toISOString();
   const assessmentTitle = `${subjectData.name} - ${termName} (${academicYear})`;
 
-  // Insert assessment with top competencies
   const { data: assessment, error: assessmentError } = await supabase.from("assessments").insert([{
     title: assessmentTitle,
     class_id: classId,
@@ -200,13 +209,14 @@ if (!selectedCoreCompetencies.length) {
     learning_area_id: subjectId,
     assessment_date: today,
     created_by: user.id,
-    core_competencies: selectedCoreCompetencies,     // save array of core competency IDs
-    subject_competencies: subjectCompetency        // save manual input
+    core_competencies: selectedCoreCompetencies,
+    subject_competencies: subjectCompetency,
+    strand_id: strand,
+    substrand_id: substrand
   }]).select().single();
 
   if (assessmentError) { document.getElementById("status").innerText = `Error: ${assessmentError.message}`; return; }
 
-  // Save results per student
   const rows = Array.from(document.querySelectorAll("#studentsBody tr")).map(tr => ({
     assessment_id: assessment.id,
     student_id: tr.dataset.id,
@@ -214,8 +224,8 @@ if (!selectedCoreCompetencies.length) {
     term_id: termId,
     assessment_type_id: assessmentTypeId,
     achievement_level_id: tr.querySelector(".performanceLevel").value,
-    strand,
-    substrand,
+    strand_id: strand,
+    substrand_id: substrand,
     academic_year: academicYear,
     teacher_id: user.id,
     created_by: user.id
@@ -225,6 +235,5 @@ if (!selectedCoreCompetencies.length) {
   document.getElementById("status").innerText = resultError ? `Error saving results: ${resultError.message}` : "Assessment and results saved successfully!";
 };
 </script>
-
 </body>
 </html>
