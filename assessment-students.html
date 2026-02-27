@@ -141,20 +141,23 @@ document.getElementById("saveAssessment").onclick = async () => {
   const firstTypeId = document.querySelector(".assessmentType").value;
   const assessmentTitle = `${subjectData.name} - ${termSelect.options[termSelect.selectedIndex].text} (${academicYear})`;
 
-  const { data: assessment, error: assessmentError } = await supabase
-    .from("assessments")
-    .insert([{
-      title: assessmentTitle,
-      class_id: classId,
-      subject_id: subjectId,
-      school_id: schoolId,
-      term_id: termId,
-      academic_year: academicYear,
-      assessment_type_id: firstTypeId,
-      created_by: user.id
-    }])
-    .select()
-    .single();
+  const today = new Date().toISOString(); // current date & time in ISO format
+
+const { data: assessment, error: assessmentError } = await supabase
+  .from("assessments")
+  .insert([{
+    title: assessmentTitle,
+    class_id: classId,
+    subject_id: subjectId,
+    school_id: schoolId,
+    term_id: termId,
+    academic_year: academicYear,
+    assessment_type_id: firstTypeId,
+    assessment_date: today,   // ✅ add this
+    created_by: user.id
+  }])
+  .select()
+  .single();
 
   if (assessmentError) {
     document.getElementById("status").innerText = `Error creating assessment: ${assessmentError.message}`;
