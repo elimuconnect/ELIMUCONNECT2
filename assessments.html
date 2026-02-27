@@ -97,8 +97,10 @@ if (!classId || !subjectId) {
   window.location.href="teacher-dashboard.html";
 }
 
-// Display class and subject
-const { data: classData } = await supabase.from("classes").select("name").eq("id", classId).single();
+// Display class and subject, get class grade dynamically
+const { data: classData } = await supabase.from("classes").select("name, grade").eq("id", classId).single();
+const classGrade = classData?.grade;
+
 const { data: subjectData } = await supabase.from("subjects").select("name").eq("id", subjectId).single();
 document.getElementById("classLabel").innerText = classData?.name || "N/A";
 document.getElementById("subjectLabel").innerText = subjectData?.name || "N/A";
@@ -146,7 +148,7 @@ else tbody.innerHTML = students.map(s => `
 </tr>`).join("");
 
 // --------------------
-// Strand & Substrand
+// Strand & Substrand (dynamic grade)
 // --------------------
 const strandSelect = document.getElementById("strandSelect");
 const substrandSelect = document.getElementById("substrandSelect");
@@ -159,7 +161,7 @@ async function loadStrands() {
     .from("strands")
     .select("id, name")
     .or(`subject_id.eq.${subjectId},subject_id.is.null`) // include global strands
-    .eq("grade", 10)
+    .eq("grade", classGrade) // dynamic grade
     .order("name");
 
   if (error) { console.error("Error loading strands:", error); return; }
@@ -174,8 +176,10 @@ async function loadStrands() {
 async function loadSubstrands(strandId) {
   substrandSelect.innerHTML = `<option value="" disabled selected>-- Select Substrand --</option>`;
   if (!strandId) return;
+
   const { data: subStrands, error } = await supabase.from("sub_strands").select("id, name").eq("strand_id", strandId).order("name");
   if (error) { console.error("Error loading sub-strands:", error); return; }
+
   subStrands?.forEach(ss => substrandSelect.innerHTML += `<option value="${ss.id}">${ss.name}</option>`);
   if (subStrands?.length) substrandSelect.selectedIndex = 1;
 }
