@@ -143,6 +143,11 @@ document.getElementById("saveAssessment").onclick = async () => {
 
   const today = new Date().toISOString(); // current date & time in ISO format
 
+// Get selected term
+const termSelect = document.getElementById("termSelect");
+const termId = termSelect.value;
+const termName = termSelect.options[termSelect.selectedIndex].text; // this is the name
+
 const { data: assessment, error: assessmentError } = await supabase
   .from("assessments")
   .insert([{
@@ -151,9 +156,10 @@ const { data: assessment, error: assessmentError } = await supabase
     subject_id: subjectId,
     school_id: schoolId,
     term_id: termId,
+    term: termName,          // ✅ add term name
     academic_year: academicYear,
     assessment_type_id: firstTypeId,
-    assessment_date: today,   // ✅ add this
+    assessment_date: today,  // from previous fix
     created_by: user.id
   }])
   .select()
