@@ -80,8 +80,15 @@ document.getElementById("subjectLabel").innerText = subjectData?.name || "N/A";
 
 // Load terms
 const { data: terms } = await supabase.from("terms").select("id, name");
-document.getElementById("termSelect").innerHTML = terms.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
 
+const termSelect = document.getElementById("termSelect");
+
+termSelect.innerHTML = `
+  <option value="" disabled selected>-- Select Term --</option>
+  ${terms.map(t => `
+    <option value="${t.id}">${t.name}</option>
+  `).join("")}
+`;
 // Load assessment types & achievement levels
 const { data: assessmentTypes } = await supabase.from("assessment_types").select("id, name");
 const { data: levels } = await supabase.from("achievement_levels").select("id, label").order("order_rank");
