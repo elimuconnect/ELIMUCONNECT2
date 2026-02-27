@@ -121,8 +121,8 @@ if (!students?.length) {
 }
 
 // Save assessment
+// Save assessment
 document.getElementById("saveAssessment").onclick = async () => {
-  const termId = document.getElementById("termSelect").value;
   const strand = document.getElementById("strandInput").value;
   const substrand = document.getElementById("substrandInput").value;
 
@@ -137,33 +137,32 @@ document.getElementById("saveAssessment").onclick = async () => {
   }
   const schoolId = profile.school_id;
 
-  // ✅ Create assessment first (mandatory fields)
+  // ✅ Get selected term
+  const termSelectEl = document.getElementById("termSelect");
+  const termId = termSelectEl.value;
+  const termName = termSelectEl.options[termSelectEl.selectedIndex].text; // term name
+
+  // ✅ Create assessment first
   const firstTypeId = document.querySelector(".assessmentType").value;
-  const assessmentTitle = `${subjectData.name} - ${termSelect.options[termSelect.selectedIndex].text} (${academicYear})`;
+  const assessmentTitle = `${subjectData.name} - ${termName} (${academicYear})`;
+  const today = new Date().toISOString();
 
-  const today = new Date().toISOString(); // current date & time in ISO format
-
-// Get selected term
-const termSelect = document.getElementById("termSelect");
-
-const termName = termSelect.options[termSelect.selectedIndex].text; // this is the name
-
-const { data: assessment, error: assessmentError } = await supabase
-  .from("assessments")
-  .insert([{
-    title: assessmentTitle,
-    class_id: classId,
-    subject_id: subjectId,
-    school_id: schoolId,
-    term_id: termId,
-    term: termName,          // ✅ add term name
-    academic_year: academicYear,
-    assessment_type_id: firstTypeId,
-    assessment_date: today,  // from previous fix
-    created_by: user.id
-  }])
-  .select()
-  .single();
+  const { data: assessment, error: assessmentError } = await supabase
+    .from("assessments")
+    .insert([{
+      title: assessmentTitle,
+      class_id: classId,
+      subject_id: subjectId,
+      school_id: schoolId,
+      term_id: termId,
+      term: termName,          // ✅ term name
+      academic_year: academicYear,
+      assessment_type_id: firstTypeId,
+      assessment_date: today,  // ISO format
+      created_by: user.id
+    }])
+    .select()
+    .single();
 
   if (assessmentError) {
     document.getElementById("status").innerText = `Error creating assessment: ${assessmentError.message}`;
@@ -174,7 +173,7 @@ const { data: assessment, error: assessmentError } = await supabase
   const rows = Array.from(document.querySelectorAll("#studentsBody tr")).map(tr => ({
     assessment_id: assessment.id,
     student_id: tr.dataset.id,
-    subject_id: subjectId,       
+    subject_id: subjectId,
     term_id: termId,
     assessment_type_id: tr.querySelector(".assessmentType").value,
     achievement_level_id: tr.querySelector(".performanceLevel").value,
