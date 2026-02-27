@@ -2,13 +2,13 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Assessment Students</title>
+<title>New Assessment Table</title>
 <style>
   body { font-family: Arial, sans-serif; margin: 20px; }
   table { border-collapse: collapse; width: 100%; margin-top: 20px; }
   th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
   th { background: #f0f0f0; }
-  select { width: 100%; }
+  select, input { width: 100%; }
   button { margin-top: 15px; padding: 8px 12px; cursor: pointer; }
 </style>
 </head>
@@ -36,7 +36,7 @@
 <table>
   <thead>
     <tr>
-      <th>Adm/Assess No.</th>
+      <th>Adm/Assess NO.</th>
       <th>Name</th>
       <th>Assessment Type</th>
       <th>Performance Level</th>
@@ -126,36 +126,35 @@ document.getElementById("saveAssessment").onclick = async () => {
   const strand = document.getElementById("strandInput").value;
   const substrand = document.getElementById("substrandInput").value;
 
-  if (!termId) {
-    document.getElementById("status").innerText = "Please select a term.";
-    return;
-  }
-
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) { window.location.href = "index.html"; throw new Error("Not logged in"); }
 
-  // 1️⃣ Create parent assessment
+  // 1️⃣ Get teacher's school_id
+  const { data: profile } = await supabase.from("profiles").select("school_id").eq("id", user.id).single();
+  if (!profile?.school_id) { alert("Cannot determine school_id"); return; }
+  const schoolId = profile.school_id;
+
+  // 2️⃣ Create new assessment
   const { data: newAssessment, error: assessError } = await supabase
     .from("assessments")
     .insert([{
-      subject_id: subjectId,
       class_id: classId,
       term_id: termId,
       academic_year: academicYear,
       teacher_id: user.id,
-      created_by: user.id
+      created_by: user.id,
+      school_id: schoolId
     }])
     .select("id")
     .single();
 
-  if (assessError || !newAssessment) {
-    document.getElementById("status").innerText = "Error creating assessment: " + (assessError?.message || "Unknown");
+  if (assessError) { 
+    document.getElementById("status").innerText = `Error creating assessment: ${assessError.message}`;
     return;
   }
-
   const assessmentId = newAssessment.id;
 
-  // 2️⃣ Prepare student assessment rows
+  // 3️⃣ Prepare results
   const rows = Array.from(document.querySelectorAll("#studentsBody tr")).map(tr => ({
     assessment_id: assessmentId,
     student_id: tr.dataset.id,
@@ -170,7 +169,7 @@ document.getElementById("saveAssessment").onclick = async () => {
     created_by: user.id
   }));
 
-  // 3️⃣ Insert all results
+  // 4️⃣ Insert assessment results
   const { error } = await supabase.from("assessment_results").insert(rows);
   document.getElementById("status").innerText = error ? `Error saving: ${error.message}` : "Assessment saved successfully!";
 };
