@@ -62,6 +62,7 @@ const supabase = createClient(
 const SYSTEM_YEAR = 2026;
 document.getElementById("yearLabel").innerText = SYSTEM_YEAR;
 
+// ✅ Get selections from previous page
 const classId = localStorage.getItem("class_id");
 const subjectId = localStorage.getItem("subject_id");
 const academicYear = localStorage.getItem("academic_year") || SYSTEM_YEAR;
@@ -71,36 +72,25 @@ if (!classId || !subjectId) {
   window.location.href = "teacher-dashboard.html";
 }
 
-// Get logged-in user & profile
-const { data: { user } } = await supabase.auth.getUser();
-if (!user) { window.location.href = "index.html"; throw new Error("Not logged in"); }
-
-const { data: profile } = await supabase
-  .from("profiles")
-  .select("id, school_id")
-  .eq("auth_id", user.id)
-  .single();
-
-if (!profile?.school_id) throw new Error("Cannot determine school_id. Ensure your profile has a school assigned.");
-const schoolId = profile.school_id;
-
-// Load class and subject names
+// Display class and subject names
 const { data: classData } = await supabase.from("classes").select("name").eq("id", classId).single();
 const { data: subjectData } = await supabase.from("subjects").select("name").eq("id", subjectId).single();
-
 document.getElementById("classLabel").innerText = classData?.name || "N/A";
 document.getElementById("subjectLabel").innerText = subjectData?.name || "N/A";
 
 // Load terms
 const { data: terms } = await supabase.from("terms").select("id, name");
 const termSelect = document.getElementById("termSelect");
-termSelect.innerHTML = `<option value="" disabled selected>-- Select Term --</option>` + terms.map(t=>`<option value="${t.id}">${t.name}</option>`).join("");
+termSelect.innerHTML = `
+  <option value="" disabled selected>-- Select Term --</option>
+  ${terms.map(t => `<option value="${t.id}">${t.name}</option>`).join("")}
+`;
 
 // Load assessment types & achievement levels
 const { data: assessmentTypes } = await supabase.from("assessment_types").select("id, name");
 const { data: levels } = await supabase.from("achievement_levels").select("id, label").order("order_rank");
 
-// Load students
+// Load students for the selected class
 const { data: students } = await supabase
   .from("students")
   .select("id, admission_number, first_name, last_name")
@@ -136,14 +126,25 @@ document.getElementById("saveAssessment").onclick = async () => {
   const strand = document.getElementById("strandInput").value;
   const substrand = document.getElementById("substrandInput").value;
 
-  // Get first student's assessment type for main assessment row
-  const firstTypeId = document.querySelector("#studentsBody tr .assessmentType")?.value;
-  if (!firstTypeId) { document.getElementById("status").innerText = "Select an assessment type for at least one student"; return; }
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) { window.location.href = "index.html"; throw new Error("Not logged in"); }
 
-  // Create assessment row
+  // ✅ Get user's school_id from profile
+  const { data: profile } = await supabase.from("profiles").select("school_id").eq("auth_id", user.id).single();
+  if (!profile?.school_id) {
+    alert("Cannot determine school_id. Ensure your profile has a school assigned.");
+    return;
+  }
+  const schoolId = profile.school_id;
+
+  // ✅ Create assessment first (mandatory fields)
+  const firstTypeId = document.querySelector(".assessmentType").value;
+  const assessmentTitle = `${subjectData.name} - ${termSelect.options[termSelect.selectedIndex].text} (${academicYear})`;
+
   const { data: assessment, error: assessmentError } = await supabase
     .from("assessments")
     .insert([{
+      title: assessmentTitle,
       class_id: classId,
       subject_id: subjectId,
       school_id: schoolId,
@@ -155,19 +156,19 @@ document.getElementById("saveAssessment").onclick = async () => {
     .select()
     .single();
 
-  if (assessmentError) { 
-    document.getElementById("status").innerText = `Error creating assessment: ${assessmentError.message}`; 
-    return; 
+  if (assessmentError) {
+    document.getElementById("status").innerText = `Error creating assessment: ${assessmentError.message}`;
+    return;
   }
 
-  // Insert student assessment results
+  // ✅ Save assessment results
   const rows = Array.from(document.querySelectorAll("#studentsBody tr")).map(tr => ({
     assessment_id: assessment.id,
     student_id: tr.dataset.id,
-    subject_id: subjectId,
+    subject_id: subjectId,       
     term_id: termId,
     assessment_type_id: tr.querySelector(".assessmentType").value,
-    achievement_level_id: tr.querySelector(".performanceLevel").value || null,
+    achievement_level_id: tr.querySelector(".performanceLevel").value,
     strand,
     substrand,
     academic_year: academicYear,
@@ -176,10 +177,7 @@ document.getElementById("saveAssessment").onclick = async () => {
   }));
 
   const { error: resultError } = await supabase.from("assessment_results").insert(rows);
-
-  document.getElementById("status").innerText = resultError 
-    ? `Error saving assessment results: ${resultError.message}`
-    : "Assessment and results saved successfully!";
+  document.getElementById("status").innerText = resultError ? `Error saving results: ${resultError.message}` : "Assessment and results saved successfully!";
 };
 </script>
 </body>
