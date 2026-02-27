@@ -1,4 +1,4 @@
-now strands and substarnds are not loading, <!DOCTYPE html>
+ <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
@@ -217,7 +217,7 @@ document.getElementById("saveAssessment").onclick = async () => {
     subject_id: subjectId,
     school_id: schoolId,
     term_id: termId,
-    term: termName,
+    
     academic_year: academicYear,
     assessment_type_id: assessmentTypeId,
     learning_area_id: subjectId,
@@ -237,14 +237,13 @@ document.getElementById("saveAssessment").onclick = async () => {
     assessment_id: assessment.id,
     student_id: tr.dataset.id,
     subject_id: subjectId,
-    term_id: termId,
+    term_id: termId,  // ✅ only term_id
     assessment_type_id: assessmentTypeId,
     achievement_level_id: tr.querySelector(".performanceLevel").value,
     academic_year: academicYear,
     teacher_id: user.id,
     created_by: user.id
-  }));
-
+}));
   const { error: resultError } = await supabase.from("assessment_results").insert(rows);
   if (resultError) {
     document.getElementById("status").innerText = `Error saving results: ${resultError.message}`;
