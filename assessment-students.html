@@ -134,24 +134,45 @@ const { data: { user } } = await supabase.auth.getUser();
 if (!user) { window.location.href = "index.html"; throw new Error("Not logged in"); }
 
 // ... later, inside saveAssessment:
+// Create a new assessment for this class + subject + term
+const { data: newAssessment, error: assessError } = await supabase
+  .from("assessments")
+  .insert([{
+    subject_id: subjectId,
+    class_id: classId,
+    term_id: termId,
+    academic_year: academicYear,
+    teacher_id: user.id,
+    created_by: user.id
+  }])
+  .select("id")
+  .single();
+
+if (assessError || !newAssessment) {
+  document.getElementById("status").innerText = "Error creating assessment: " + assessError.message;
+  return;
+}
+
+const assessmentId = newAssessment.id;
+
+// Now insert assessment_results
 const rows = Array.from(document.querySelectorAll("#studentsBody tr")).map(tr => ({
-  assessment_id: null,                   // optional, can be generated
+  assessment_id: assessmentId,   // ✅ use the real ID
   student_id: tr.dataset.id,
-  subject_id: subjectId,
-  term_id: document.getElementById("termSelect").value,
+  subject_id: subjectId,       
+  term_id: termId,
   assessment_type_id: tr.querySelector(".assessmentType").value,
   achievement_level_id: tr.querySelector(".performanceLevel").value,
-  strand: document.getElementById("strandInput").value,
-  substrand: document.getElementById("substrandInput").value,
+  strand,
+  substrand,
   academic_year: academicYear,
   teacher_id: user.id,
   created_by: user.id
 }));
 
 const { error } = await supabase.from("assessment_results").insert(rows);
-  document.getElementById("status").innerText = error ? `Error saving: ${error.message}` : "Assessment saved successfully!";
-};
-
+document.getElementById("status").innerText = error ? `Error saving: ${error.message}` : "Assessment saved successfully!";
+}
  
 </script>
 
