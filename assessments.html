@@ -162,9 +162,6 @@ document.getElementById("saveAssessment").onclick = async () => {
   const termId = document.getElementById("termSelect").value;
   const termName = document.getElementById("termSelect").selectedOptions[0]?.text;
   const assessmentTypeId = document.getElementById("assessmentTypeSelect").value;
-const selectedCoreCompetencies = Array.from(
-  document.querySelectorAll(".coreCompetency:checked")
-).map(cb => cb.value);
 
 const selectedCoreCompetencies = Array.from(
   document.querySelectorAll(".coreCompetency:checked")
