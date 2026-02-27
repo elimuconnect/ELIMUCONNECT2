@@ -210,8 +210,7 @@ document.getElementById("saveAssessment").onclick = async () => {
   const today = new Date().toISOString();
   const assessmentTitle = `${subjectData.name} - ${termName} (${academicYear})`;
 
- const termId = document.getElementById("termSelect").value;
-const termName = document.getElementById("termSelect").selectedOptions[0]?.text;  // e.g., "Term 2"
+ 
 
 const { data: assessment, error: assessmentError } = await supabase.from("assessments").insert([{
     title: assessmentTitle,
