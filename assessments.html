@@ -11,10 +11,21 @@
   select, input { width: 100%; padding: 4px; }
   button { margin-top: 15px; padding: 8px 12px; cursor: pointer; }
   .competency-section { margin-top: 20px; }
+
+
+.competency-checkbox {
+  display: block;
+  margin-bottom: 6px;
+  cursor: pointer;
+}
+
+.competency-checkbox input {
+  margin-right: 6px;
+}
+  
 </style>
 </head>
 <body>
-
 <h2>New Assessment Table</h2>
 
 <p><strong>Academic Year:</strong> <span id="yearLabel"></span></p>
@@ -25,6 +36,7 @@
   <label>Term:</label>
   <select id="termSelect"></select>
 </p>
+
 <p>
   <label>Assessment Type:</label>
   <select id="assessmentTypeSelect"></select>
@@ -32,20 +44,22 @@
 
 <!-- Core Competencies -->
 <div class="competency-section">
-  <label>Core Competencies:</label>
-  <select id="coreCompetencies" multiple></select>
+  <label><strong>Core Competencies:</strong></label>
+  <div id="coreCompetenciesContainer"></div>
 </div>
 
 <!-- Subject-specific manual input -->
 <div class="competency-section">
   <label>Subject-specific Competencies (manual input):</label>
-  <input type="text" id="subjectCompetency" placeholder="Enter subject-specific competencies, comma-separated">
+  <input type="text" id="subjectCompetency" 
+         placeholder="Enter subject-specific competencies, comma-separated">
 </div>
 
 <p>
   <label>Strand(s):</label>
   <input type="text" id="strandInput" placeholder="Enter strand(s)">
 </p>
+
 <p>
   <label>Substrand (optional):</label>
   <input type="text" id="substrandInput" placeholder="Enter substrand">
@@ -67,7 +81,6 @@
 <br>
 <button id="saveAssessment">Save Assessment</button>
 <p id="status"></p>
-
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -107,13 +120,24 @@ const { data: levels } = await supabase.from("achievement_levels").select("id, l
 
 // Load competencies and populate top core competencies
 const { data: competencies } = await supabase.from("competencies").select("id, name, subject_id").or("is_active.is.null,is_active.eq.true").order("name");
-const coreSelect = document.getElementById("coreCompetencies");
-competencies.filter(c => !c.subject_id).forEach(c => {
-  const opt = document.createElement("option");
-  opt.value = c.id;
-  opt.textContent = c.name;
-  coreSelect.appendChild(opt);
-});
+const coreContainer = document.getElementById("coreCompetenciesContainer");
+
+competencies
+  .filter(c => !c.subject_id)   // Only global core competencies
+  .forEach(c => {
+    const label = document.createElement("label");
+    label.className = "competency-checkbox";
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.value = c.id;
+    checkbox.className = "coreCompetency";
+
+    label.appendChild(checkbox);
+    label.appendChild(document.createTextNode(c.name));
+
+    coreContainer.appendChild(label);
+  });
 
 // Load students
 const { data: students } = await supabase.from("students").select("id, admission_number, first_name, last_name").eq("class_id", classId).order("last_name");
@@ -138,7 +162,9 @@ document.getElementById("saveAssessment").onclick = async () => {
   const termId = document.getElementById("termSelect").value;
   const termName = document.getElementById("termSelect").selectedOptions[0]?.text;
   const assessmentTypeId = document.getElementById("assessmentTypeSelect").value;
-  const selectedCoreCompetencies = Array.from(coreSelect.selectedOptions).map(o => o.value);
+const selectedCoreCompetencies = Array.from(
+  document.querySelectorAll(".coreCompetency:checked")
+).map(cb => cb.value);
   const subjectCompetency = document.getElementById("subjectCompetency").value;
 
   if (!termId || !assessmentTypeId) { alert("Select term and assessment type"); return; }
