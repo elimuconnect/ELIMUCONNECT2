@@ -1,56 +1,3 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>New Assessment Table</title>
-<style>
-  body { font-family: Arial, sans-serif; margin: 20px; }
-  table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-  th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-  th { background: #f0f0f0; }
-  select, input { width: 100%; }
-  button { margin-top: 15px; padding: 8px 12px; cursor: pointer; }
-</style>
-</head>
-<body>
-
-<h2>New Assessment Table</h2>
-
-<p><strong>Academic Year:</strong> <span id="yearLabel"></span></p>
-<p><strong>Class:</strong> <span id="classLabel"></span></p>
-<p><strong>Subject:</strong> <span id="subjectLabel"></span></p>
-
-<p>
-  <label>Term:</label>
-  <select id="termSelect"></select>
-</p>
-<p>
-  <label>Strand(s):</label>
-  <input type="text" id="strandInput" placeholder="Enter strand(s)">
-</p>
-<p>
-  <label>Substrand (optional):</label>
-  <input type="text" id="substrandInput" placeholder="Enter substrand">
-</p>
-
-<table>
-  <thead>
-    <tr>
-      <th>Adm/Assess NO.</th>
-      <th>Name</th>
-      <th>Assessment Type</th>
-      <th>Performance Level</th>
-    </tr>
-  </thead>
-  <tbody id="studentsBody">
-    <tr><td colspan="4">Loading students...</td></tr>
-  </tbody>
-</table>
-
-<br>
-<button id="saveAssessment">Save Assessment</button>
-<p id="status"></p>
-
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -72,45 +19,52 @@ if (!classId || !subjectId) {
   window.location.href = "teacher-dashboard.html";
 }
 
-// Get logged-in user
-const { data: { user } } = await supabase.auth.getUser();
+// ----------------------
+// 0️⃣ Auth & profile
+// ----------------------
+const { data: { user }, error: userError } = await supabase.auth.getUser();
 if (!user) {
   window.location.href = "index.html";
   throw new Error("Not logged in");
 }
 
-// Fetch teacher profile to get school_id
+// Fetch full profile to get school_id
 const { data: profile, error: profileError } = await supabase
   .from("profiles")
-  .select("school_id")
-  .eq("id", user.id)
+  .select("id, full_name, role, school_id")
+  .eq("auth_id", user.id)
   .single();
 
-if (profileError || !profile?.school_id) {
-  throw new Error("Cannot determine school_id. Ensure your profile has a school assigned.");
-}
+if (profileError) throw profileError;
 
 const schoolId = profile.school_id;
+if (!schoolId) throw new Error("Cannot determine school_id. Ensure your profile has a school assigned.");
 
-// Display class and subject names
+// ----------------------
+// 1️⃣ Display class & subject names
+// ----------------------
 const { data: classData } = await supabase.from("classes").select("name").eq("id", classId).single();
 const { data: subjectData } = await supabase.from("subjects").select("name").eq("id", subjectId).single();
 document.getElementById("classLabel").innerText = classData?.name || "N/A";
 document.getElementById("subjectLabel").innerText = subjectData?.name || "N/A";
 
-// Load terms
+// ----------------------
+// 2️⃣ Load terms, assessment types & levels
+// ----------------------
 const { data: terms } = await supabase.from("terms").select("id, name");
 const termSelect = document.getElementById("termSelect");
+
 termSelect.innerHTML = `
   <option value="" disabled selected>-- Select Term --</option>
   ${terms.map(t => `<option value="${t.id}">${t.name}</option>`).join("")}
 `;
 
-// Load global assessment types & achievement levels
 const { data: assessmentTypes } = await supabase.from("assessment_types").select("id, name");
 const { data: levels } = await supabase.from("achievement_levels").select("id, label").order("order_rank");
 
-// Load students for the selected class
+// ----------------------
+// 3️⃣ Load students
+// ----------------------
 const { data: students } = await supabase
   .from("students")
   .select("id, admission_number, first_name, last_name")
@@ -127,56 +81,59 @@ if (!students?.length) {
   <td>${s.first_name} ${s.last_name}</td>
   <td>
     <select class="assessmentType">
-      ${assessmentTypes.map(a => `<option value="${a.id}">${a.name}</option>`).join("")}
+      ${assessmentTypes.map(a=>`<option value="${a.id}">${a.name}</option>`).join("")}
     </select>
   </td>
   <td>
     <select class="performanceLevel">
       <option value="">Select Level</option>
-      ${levels.map(l => `<option value="${l.id}">${l.label}</option>`).join("")}
+      ${levels.map(l=>`<option value="${l.id}">${l.label}</option>`).join("")}
     </select>
   </td>
 </tr>
 `).join("");
 }
 
-// Save assessment & results
+// ----------------------
+// 4️⃣ Save assessment
+// ----------------------
 document.getElementById("saveAssessment").onclick = async () => {
-  const termId = document.getElementById("termSelect").value;
+  const termId = termSelect.value;
   const strand = document.getElementById("strandInput").value;
   const substrand = document.getElementById("substrandInput").value;
 
   if (!termId) {
-    alert("Select a term first.");
+    document.getElementById("status").innerText = "Please select a term.";
     return;
   }
 
-  // 1️⃣ Create a new assessment for this class, subject, and school
-  const { data: newAssessment, error: assessError } = await supabase
+  // ✅ 4a: create the assessment first
+  const { data: assessment, error: assessmentError } = await supabase
     .from("assessments")
     .insert([{
       class_id: classId,
       subject_id: subjectId,
+      school_id: schoolId,
       term_id: termId,
       academic_year: academicYear,
-      school_id: schoolId,
-      teacher_id: user.id,
       created_by: user.id
     }])
-    .select("id")
+    .select()
     .single();
 
-  if (assessError) {
-    document.getElementById("status").innerText = `Error creating assessment: ${assessError.message}`;
+  if (assessmentError) {
+    document.getElementById("status").innerText = `Error creating assessment: ${assessmentError.message}`;
     return;
   }
 
-  const assessmentId = newAssessment.id;
+  const assessmentId = assessment.id;
 
-  // 2️⃣ Prepare assessment_results rows
+  // ✅ 4b: prepare rows for assessment_results
   const rows = Array.from(document.querySelectorAll("#studentsBody tr")).map(tr => ({
     assessment_id: assessmentId,
     student_id: tr.dataset.id,
+    subject_id: subjectId,       
+    term_id: termId,
     assessment_type_id: tr.querySelector(".assessmentType").value,
     achievement_level_id: tr.querySelector(".performanceLevel").value,
     strand,
@@ -186,13 +143,11 @@ document.getElementById("saveAssessment").onclick = async () => {
     created_by: user.id
   }));
 
-  // 3️⃣ Insert results
-  const { error: resultsError } = await supabase.from("assessment_results").insert(rows);
+  // ✅ 4c: insert results
+  const { error: insertError } = await supabase.from("assessment_results").insert(rows);
 
-  document.getElementById("status").innerText = resultsError
-    ? `Error saving results: ${resultsError.message}`
+  document.getElementById("status").innerText = insertError 
+    ? `Error saving: ${insertError.message}` 
     : "Assessment and results saved successfully!";
 };
 </script>
-</body>
-</html>
