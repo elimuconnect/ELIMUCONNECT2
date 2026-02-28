@@ -300,32 +300,44 @@ else tbody.innerHTML = students.map(s => `
 const strandContainer = document.getElementById("strandContainer");
 const sleContainer = document.getElementById("sleContainer");
 
-// Load strands for the selected subject
-const { data: strands } = await supabase.from("strands")
-  .select("id, name")
-  .eq("subject_id", subjectId)
-  .eq("grade", 10)
-  .order("name");
+async function loadStrandsAndAttachListeners() {
+  // Load strands for the selected subject
+  const { data } = await supabase.from("strands")
+    .select("id, name")
+    .eq("subject_id", subjectId)
+    .eq("grade", 10)
+    .order("name");
 
-// Populate strands as checkboxes
-strands.forEach(s => {
-  const label = document.createElement("label");
-  label.className = "competency-checkbox";
-  const checkbox = document.createElement("input");
-  checkbox.type = "checkbox";
-  checkbox.value = s.id;
-  checkbox.className = "strandCheckbox";
-  label.appendChild(checkbox);
-  label.appendChild(document.createTextNode(s.name));
-  strandContainer.appendChild(label);
-});
+  strands = data || [];
 
-// When strands are selected, load SLEs dynamically
+  // Populate strands as checkboxes
+  strandContainer.innerHTML = ""; // clear first
+  strands.forEach(s => {
+    const label = document.createElement("label");
+    label.className = "competency-checkbox";
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.value = s.id;
+    checkbox.className = "strandCheckbox";
+    label.appendChild(checkbox);
+    label.appendChild(document.createTextNode(s.name));
+    strandContainer.appendChild(label);
+  });
+
+  // Trigger loading SLEs when a strand is checked/unchecked
+  document.querySelectorAll(".strandCheckbox").forEach(cb => {
+    cb.addEventListener("change", loadSLEsForSelectedStrands);
+  });
+}
+
 // ✅ Load SLEs for selected strands
 async function loadSLEsForSelectedStrands() {
   const selectedStrands = Array.from(
     document.querySelectorAll(".strandCheckbox:checked")
   ).map(cb => cb.value);
+
+  // Save previously selected SLEs
+  const previouslySelectedSLEs = Array.from(document.querySelectorAll(".sleCheckbox:checked")).map(cb => cb.value);
 
   sleContainer.innerHTML = "";
 
@@ -348,13 +360,19 @@ async function loadSLEsForSelectedStrands() {
       checkbox.className = "sleCheckbox";
       checkbox.dataset.strandId = strandId;
 
+      // Re-check if previously selected
+      if (previouslySelectedSLEs.includes(sle.id)) checkbox.checked = true;
+
       label.appendChild(checkbox);
-      label.appendChild(document.createTextNode(`${sle.name} (${strands.find(st => st.id == strandId).name})`));
+      const strandName = strands.find(st => st.id == strandId)?.name || "";
+      label.appendChild(document.createTextNode(`${sle.name} (${strandName})`));
       sleContainer.appendChild(label);
     });
   }
 }
 
+// Call once on page load
+await loadStrandsAndAttachListeners();
 // ✅ Save assessment including strands + SLEs
 document.getElementById("saveAssessment").onclick = async () => {
   const selectedStrands = Array.from(document.querySelectorAll(".strandCheckbox:checked")).map(cb => cb.value);
