@@ -299,8 +299,8 @@ else tbody.innerHTML = students.map(s => `
 // Containers
 const strandContainer = document.getElementById("strandContainer");
 const sleContainer = document.getElementById("sleContainer");
-  strands = data || [];
-
+  
+let strands = []; // declare globally
 async function loadStrandsAndAttachListeners() {
   // Load strands for the selected subject
   const { data } = await supabase.from("strands")
@@ -309,6 +309,7 @@ async function loadStrandsAndAttachListeners() {
     .eq("grade", 10)
     .order("name");
 
+strands = data || [];
 
   // Populate strands as checkboxes
   strandContainer.innerHTML = ""; // clear first
@@ -373,6 +374,9 @@ async function loadSLEsForSelectedStrands() {
 
 // Call once on page load
 await loadStrandsAndAttachListeners();
+
+
+  
 // ✅ Save assessment including strands + SLEs
 document.getElementById("saveAssessment").onclick = async () => {
   const selectedStrands = Array.from(document.querySelectorAll(".strandCheckbox:checked")).map(cb => cb.value);
