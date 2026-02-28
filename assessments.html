@@ -477,28 +477,22 @@ async function loadExistingAssessment() {
   });
 
   // 7️⃣ Set editability based on 14-day window
- if (diffDays <= 14) {
-    statusEl.innerText = `Existing assessment found. You can update all fields (within ${Math.ceil(14 - diffDays)} days).`;
-    document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = false);
-    document.getElementById("subjectCompetency").disabled = false;
-    strandSelect.disabled = false;
-    sleSelect.disabled = false;
-    document.querySelectorAll(".coreCompetency").forEach(cb => cb.disabled = false);
-  } else if (diffDays > 14) {
-    statusEl.innerText = `Editing window closed (after 14 days). Next assessment allowed after ${Math.ceil(7 - diffDays)} days.`;
-    document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = true);
-    document.getElementById("subjectCompetency").disabled = true;
-    strandSelect.disabled = true;
-    sleSelect.disabled = true;
-    document.querySelectorAll(".coreCompetency").forEach(cb => cb.disabled = true);
-  } else {
-    statusEl.innerText = "You can create a new assessment now.";
-    document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = false);
-    document.getElementById("subjectCompetency").disabled = false;
-    strandSelect.disabled = false;
-    sleSelect.disabled = false;
-    document.querySelectorAll(".coreCompetency").forEach(cb => cb.disabled = false);
-  }
+// 7️⃣ Set editability based on 14-day window
+if (diffDays <= 14) {
+  statusEl.innerText = `Existing assessment found. You can update all fields (within ${Math.ceil(14 - diffDays)} days).`;
+  document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = false);
+  document.getElementById("subjectCompetency").disabled = false;
+  strandSelect.disabled = false;
+  sleSelect.disabled = false;
+  document.querySelectorAll(".coreCompetency").forEach(cb => cb.disabled = false);
+} else {
+  statusEl.innerText = `Editing window closed (after 14 days). You can create a new assessment now.`;
+  document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = true);
+  document.getElementById("subjectCompetency").disabled = true;
+  strandSelect.disabled = true;
+  sleSelect.disabled = true;
+  document.querySelectorAll(".coreCompetency").forEach(cb => cb.disabled = true);
+}
 
   return existingAssessment;
 }
