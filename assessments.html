@@ -656,15 +656,7 @@ if (strandData && strandData.length > 0) {
   });
 
 
-await loadSLEsForSelectedStrands();
 
-// Small delay to ensure dynamic checkboxes exist
-setTimeout(() => {
-  document.querySelectorAll(".sleCheckbox").forEach(cb => {
-    cb.checked = savedSLEIds.includes(cb.value);
-  });
-}, 100);
-}
   
 const EDIT_WINDOW_DAYS = 14;
 
