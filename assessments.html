@@ -289,7 +289,7 @@ document.getElementById("saveAssessment").onclick = async () => {
           assessment_date: today,
           created_by: user.id,
           core_competencies: selectedCoreCompetencies,
-          subject_competencies: subjectCompetency
+          subject_competencies: subjectCompetency.split(",").map(s => s.trim()).filter(Boolean)
         }])
         .select()
         .single();
@@ -322,7 +322,7 @@ document.getElementById("saveAssessment").onclick = async () => {
         assessment_date: today,
         created_by: user.id,
         core_competencies: selectedCoreCompetencies,
-        subject_competencies: subjectCompetency
+       subject_competencies: subjectCompetency.split(",").map(s => s.trim()).filter(Boolean)
       }])
       .select()
       .single();
