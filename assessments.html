@@ -268,48 +268,51 @@ let assessmentId;
 if (existingAssessment) {
   const createdDate = new Date(existingAssessment.created_at);
   const now = new Date();
-  const diffDays = (now - createdDate) / (1000 * 60 * 60 * 24);
+ const EDIT_WINDOW_DAYS = 14;
 
-  if (diffDays <= 14) {
-    // ✅ Edit existing (levels + competencies) within 14 days
-    assessmentId = existingAssessment.id;
+if (diffDays <= EDIT_WINDOW_DAYS) {
 
-    await supabase.from("assessments")
-      .update({
-        core_competencies: selectedCoreCompetencies,
-        subject_competencies: subjectCompetency
-      })
-      .eq("id", assessmentId);
+  // ✅ Allow editing existing
+  assessmentId = existingAssessment.id;
 
-  } else {
-    // ✅ Create new assessment after 14 days
-    const { data: newAssessment, error } = await supabase
-      .from("assessments")
-      .insert([{
-        title: assessmentTitle,
-        class_id: classId,
-        subject_id: subjectId,
-        learning_area_id: subjectId,
-        school_id: schoolId,
-        term_id: termId,
-        academic_year: academicYear,
-        assessment_type_id: assessmentTypeId,
-        assessment_date: today,
-        created_by: user.id,
-        core_competencies: selectedCoreCompetencies,
-        subject_competencies: subjectCompetency
-      }])
-      .select()
-      .single();
+  await supabase.from("assessments")
+    .update({
+      core_competencies: selectedCoreCompetencies,
+      subject_competencies: subjectCompetency
+    })
+    .eq("id", assessmentId);
 
-    if (error) {
-      document.getElementById("status").innerText = error.message;
-      return;
-    }
+} else {
 
-    assessmentId = newAssessment.id;
+  // ❌ DO NOT UPDATE OLD ONE
+  // ✅ CREATE NEW ONE INSTEAD
+
+  const { data: newAssessment, error } = await supabase
+    .from("assessments")
+    .insert([{
+      title: assessmentTitle,
+      class_id: classId,
+      subject_id: subjectId,
+      learning_area_id: subjectId,
+      school_id: schoolId,
+      term_id: termId,
+      academic_year: academicYear,
+      assessment_type_id: assessmentTypeId,
+      assessment_date: today,
+      created_by: user.id,
+      core_competencies: selectedCoreCompetencies,
+      subject_competencies: subjectCompetency
+    }])
+    .select()
+    .single();
+
+  if (error) {
+    document.getElementById("status").innerText = error.message;
+    return;
   }
 
+  assessmentId = newAssessment.id;
+}
   
   } else {
     // 🆕 First time → create assessment
@@ -417,7 +420,9 @@ async function loadExistingAssessment() {
   // 2️⃣ Calculate difference in days
   const createdDate = new Date(existingAssessment.created_at);
   const now = new Date();
-  const diffDays = (now - createdDate) / (1000 * 60 * 60 * 24);
+  const diffDays = Math.floor(
+  (now - createdDate) / (1000 * 60 * 60 * 24)
+);
 
   // 3️⃣ Load core competencies
   const selectedCoreIds = existingAssessment.core_competencies || [];
