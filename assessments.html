@@ -506,16 +506,16 @@ sleCheckboxes.forEach(cb => {
 });
 
 // Build assessment_strands rows
-const strandRows = [];
-selectedStrands.forEach(sId => {
-  const sleIdsForStrand = sleMap[sId] || [];
-  if (sleIdsForStrand.length) {
-    sleIdsForStrand.forEach(sleId => {
-      strandRows.push({
-        assessment_id: assessmentId,
-        strand_id: sId,
-        learning_experience_id: sleId
-      });
+const strandRows = selectedStrands.map(sId => {
+  const sleIdsForStrand = sleMap[sId] || []; // array of SLE IDs
+
+  return {
+    assessment_id: assessmentId,
+    strand_id: sId,
+    // Save all selected SLE IDs as JSON array or UUID array
+    learning_experience_id: sleIdsForStrand.length ? JSON.stringify(sleIdsForStrand) : null
+  };
+});
     });
   } else {
     // No SLE selected → still save the strand
@@ -623,9 +623,10 @@ const { data: strandData } = await supabase
 if (strandData && strandData.length > 0) {
 
   const savedStrandIds = [...new Set(strandData.map(s => s.strand_id))];
-  const savedSLEIds = strandData
-    .map(s => s.learning_experience_id)
-    .filter(id => id !== null);
+ const savedSLEIds = JSON.parse(strandRow.learning_experience_id || "[]");
+document.querySelectorAll(".sleCheckbox").forEach(cb => {
+  cb.checked = savedSLEIds.includes(cb.value);
+
 
   document.querySelectorAll(".strandCheckbox").forEach(cb => {
     cb.checked = savedStrandIds.includes(cb.value);
