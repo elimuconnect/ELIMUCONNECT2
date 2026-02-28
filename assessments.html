@@ -224,15 +224,18 @@ strands.forEach(s => {
 });
 
 // When strands are selected, load SLEs dynamically
-strandContainer.addEventListener("change", async () => {
-  const selectedStrands = Array.from(document.querySelectorAll(".strandCheckbox:checked")).map(cb => cb.value);
-  
-  sleContainer.innerHTML = ""; // clear previous SLEs
+async function loadSLEsForSelectedStrands() {
+  const selectedStrands = Array.from(
+    document.querySelectorAll(".strandCheckbox:checked")
+  ).map(cb => cb.value);
+
+  sleContainer.innerHTML = "";
 
   if (selectedStrands.length === 0) return;
 
   for (let strandId of selectedStrands) {
-    const { data: sles } = await supabase.from("learning_experiences")
+    const { data: sles } = await supabase
+      .from("learning_experiences")
       .select("id, name")
       .eq("strand_id", strandId)
       .order("name");
@@ -240,18 +243,27 @@ strandContainer.addEventListener("change", async () => {
     sles.forEach(sle => {
       const label = document.createElement("label");
       label.className = "competency-checkbox";
+
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
       checkbox.value = sle.id;
       checkbox.className = "sleCheckbox";
+
       label.appendChild(checkbox);
-      label.appendChild(document.createTextNode(`${sle.name} (${strands.find(st => st.id == strandId).name})`));
+      label.appendChild(
+        document.createTextNode(
+          `${sle.name} (${strands.find(st => st.id == strandId).name})`
+        )
+      );
+
       sleContainer.appendChild(label);
     });
   }
-});
+}
+  strandContainer.addEventListener("change", loadSLEsForSelectedStrands);
 
-// Save assessment
+
+  
 // Save assessment
 document.getElementById("saveAssessment").onclick = async () => {
 
@@ -562,13 +574,11 @@ if (strandData && strandData.length > 0) {
     cb.checked = savedStrandIds.includes(cb.value);
   });
 
-  strandContainer.dispatchEvent(new Event("change"));
+  await loadSLEsForSelectedStrands();
 
-  setTimeout(() => {
-    document.querySelectorAll(".sleCheckbox").forEach(cb => {
-      cb.checked = savedSLEIds.includes(cb.value);
-    });
-  }, 300);
+document.querySelectorAll(".sleCheckbox").forEach(cb => {
+  cb.checked = savedSLEIds.includes(cb.value);
+});
 }
 
   // 6️⃣ Load student results
