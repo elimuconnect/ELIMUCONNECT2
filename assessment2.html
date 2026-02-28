@@ -176,10 +176,11 @@ strandSelect.onchange = async () => {
 };
 
 // Save assessment
+// Save assessment
 document.getElementById("saveAssessment").onclick = async () => {
-  // Get selected values
   const strand = strandSelect.value;
-  const substrand = substrandSelect.value || null;
+  const sleId = sleSelect.value || null; // renamed from substrandSelect
+
   const termId = document.getElementById("termSelect").value;
   const termName = document.getElementById("termSelect").selectedOptions[0]?.text;
   const assessmentTypeId = document.getElementById("assessmentTypeSelect").value;
@@ -188,11 +189,6 @@ document.getElementById("saveAssessment").onclick = async () => {
                                         .map(cb => cb.value);
   const subjectCompetency = document.getElementById("subjectCompetency").value;
 
-  // --------------------
-  // 2️⃣ & 3️⃣ CBC-compliant validation BEFORE inserting results
-  // --------------------
-
-  // Step 2: Validate required selections
   if (!termId || !assessmentTypeId || !strand) {
     alert("Please select Term, Assessment Type, and Strand before saving.");
     return;
@@ -203,34 +199,23 @@ document.getElementById("saveAssessment").onclick = async () => {
   }
 
   const studentRows = document.querySelectorAll("#studentsBody tr");
-let missingLevel = false;
-
-for (let row of studentRows) {
-  const levelSelect = row.querySelector(".performanceLevel");
-  if (!levelSelect) continue; // Skip placeholder rows
-  const level = levelSelect.value;
-
-  // Reset previous highlighting
-  row.style.backgroundColor = "";
-
- if (!level) {
-    missingLevel = true;
-    row.style.backgroundColor = "rgba(255,0,0,0.2)"; // Highlight the row in light red
+  let missingLevel = false;
+  for (let row of studentRows) {
+    const levelSelect = row.querySelector(".performanceLevel");
+    if (!levelSelect) continue;
+    const level = levelSelect.value;
+    row.style.backgroundColor = "";
+    if (!level) {
+      missingLevel = true;
+      row.style.backgroundColor = "rgba(255,0,0,0.2)";
+    }
+    levelSelect.onchange = () => row.style.backgroundColor = "";
+  }
+  if (missingLevel) {
+    alert("Some students are missing a Performance Level. Highlighted in red. Please complete before saving.");
+    return;
   }
 
-  // Remove highlight when a level is selected
-  levelSelect.onchange = () => row.style.backgroundColor = "";
-}
-
-if (missingLevel) {
-  alert("Some students are missing a Performance Level. Highlighted in red. Please complete before saving.");
-  return; // Stop saving until teacher corrects
-}
-  
-
-  // --------------------
-  // Get logged-in user
-  // --------------------
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) { window.location.href="index.html"; return; }
 
@@ -244,10 +229,8 @@ if (missingLevel) {
   const today = new Date().toISOString();
   const assessmentTitle = `${subjectData.name} - ${termName} (${academicYear})`;
 
-  // --------------------
   // Insert assessment
-  // --------------------
-  const { data: assessment, error: assessmentError } = await supabase.from("assessments").insert([{
+  const { data: assessment, error: assessmentError } = await supabase.from("assessments").upsert([{
     title: assessmentTitle,
     class_id: classId,
     subject_id: subjectId,
@@ -261,16 +244,14 @@ if (missingLevel) {
     created_by: user.id,
     core_competencies: selectedCoreCompetencies,
     subject_competencies: subjectCompetency
-  }]).select().single();
+  }], { onConflict: ['id'], ignoreDuplicates: false }).select().single();
 
   if (assessmentError) {
     document.getElementById("status").innerText = `Error saving assessment: ${assessmentError.message}`;
     return;
   }
 
-  // --------------------
-  // Insert per-student results
-  // --------------------
+  // Insert/update per-student results
   const rows = Array.from(studentRows).map(tr => ({
     assessment_id: assessment.id,
     student_id: tr.dataset.id,
@@ -283,37 +264,28 @@ if (missingLevel) {
     created_by: user.id
   }));
 
-  const { error: resultError } = await supabase.from("assessment_results").insert(rows);
+  const { error: resultError } = await supabase.from("assessment_results").upsert(rows, { onConflict: ['assessment_id','student_id'], ignoreDuplicates: false });
   if (resultError) {
     document.getElementById("status").innerText = `Error saving results: ${resultError.message}`;
     return;
   }
 
-  // --------------------
-  // Insert strand & substrand
-  // --------------------
- const sleId = sleSelect.value || null;
+  // Insert/update strand & learning experience
+  if (strand) {
+    const { error: sleError } = await supabase.from("assessment_strands").upsert([{
+      assessment_id: assessment.id,
+      strand_id: strand,
+      learning_experience_id: sleId
+    }], { onConflict: ['assessment_id'], ignoreDuplicates: false });
 
-if (strand) {
-  const { error: sleError } = await supabase.from("assessment_strands").insert([{
-    assessment_id: assessment.id,
-    strand_id: strand,
-    learning_experience_id: sleId
-  }]);
-
-    if (strandError) {
-      document.getElementById("status").innerText = `Error saving strand: ${strandError.message}`;
+    if (sleError) {
+      document.getElementById("status").innerText = `Error saving strand/learning experience: ${sleError.message}`;
       return;
     }
   }
 
-  // ✅ Success
   document.getElementById("status").innerText = "Assessment and results saved successfully!";
-  console.log("Selected term ID:", termId);
 };
-
-
-
 </script>
 </body>
 </html> 
