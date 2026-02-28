@@ -91,7 +91,7 @@ document.getElementById("yearLabel").innerText = SYSTEM_YEAR;
 const classId = localStorage.getItem("class_id");
 const subjectId = localStorage.getItem("subject_id");
 const academicYear = localStorage.getItem("academic_year") || SYSTEM_YEAR;
-const learning_area_id: subjectId;
+const learning_area_id = subjectId;
 if (!classId || !subjectId) {
   alert("Please select a class and subject first.");
   window.location.href="teacher-dashboard.html";
