@@ -394,15 +394,20 @@ if (existingAssessment) {
 
 
 
-  // 🔥 Save strands + SLEs
-// 🔥 Save strands + SLEs (fixed version)
-await supabase.from("assessment_strands").delete().eq("assessment_id", assessmentId);
+ // 🔥 Save strands + SLEs (fixed for UUIDs)
+const selectedStrands = Array.from(document.querySelectorAll(".strandCheckbox:checked")).map(cb => cb.value);
+const selectedSLEs = Array.from(document.querySelectorAll(".sleCheckbox:checked")).map(cb => cb.value);
 
-// Build a map of selected SLEs by strand
+if (!selectedStrands.length) {
+  alert("Please select at least one strand.");
+  return;
+}
+
+// Build a map of strandId => array of SLE IDs
 const sleCheckboxes = Array.from(document.querySelectorAll(".sleCheckbox"));
 const sleMap = {};
 sleCheckboxes.forEach(cb => {
-  const strand = parseInt(cb.dataset.strandId);
+  const strand = cb.dataset.strandId; // UUID as string
   if (!sleMap[strand]) sleMap[strand] = [];
   if (selectedSLEs.includes(cb.value)) sleMap[strand].push(cb.value);
 });
@@ -412,18 +417,34 @@ const strandRows = [];
 selectedStrands.forEach(sId => {
   const sleIdsForStrand = sleMap[sId] || [];
   if (sleIdsForStrand.length) {
-    sleIdsForStrand.forEach(sleId => strandRows.push({
+    sleIdsForStrand.forEach(sleId => {
+      strandRows.push({
+        assessment_id: assessmentId,
+        strand_id: sId,
+        learning_experience_id: sleId
+      });
+    });
+  } else {
+    // No SLE selected → still save the strand
+    strandRows.push({
       assessment_id: assessmentId,
       strand_id: sId,
-      learning_experience_id: sleId
-    }));
-  } else {
-    strandRows.push({ assessment_id: assessmentId, strand_id: sId, learning_experience_id: null });
+      learning_experience_id: null
+    });
   }
 });
 
-if (strandRows.length) await supabase.from("assessment_strands").insert(strandRows);
+// First remove existing records for this assessment
+await supabase.from("assessment_strands").delete().eq("assessment_id", assessmentId);
 
+// Insert the new records
+if (strandRows.length) {
+  const { error } = await supabase.from("assessment_strands").insert(strandRows);
+  if (error) {
+    document.getElementById("status").innerText = "Error saving strands/SLEs: " + error.message;
+    return;
+  }
+}
   // Save student results
   const rows = Array.from(studentRows).map(tr => ({
     assessment_id: assessmentId,
