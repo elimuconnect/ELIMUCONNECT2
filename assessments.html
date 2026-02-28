@@ -112,8 +112,10 @@ const { data: assessmentTypes } = await supabase.from("assessment_types").select
 document.getElementById("assessmentTypeSelect").innerHTML = `<option value="" disabled selected>-- Select Assessment Type --</option>${assessmentTypes.map(a => `<option value="${a.id}">${a.name}</option>`).join("")}`;
 
 // Load achievement levels
-const { data: levels } = await supabase.from("achievement_levels").select("id, label").order("order_rank");
-
+const { data: levels } = await supabase
+  .from("achievement_levels")
+  .select("id, label")
+  .order("order_index", { ascending: true });
 // Load competencies and populate top core competencies
 const { data: competencies } = await supabase.from("competencies").select("id, name, subject_id").or("is_active.is.null,is_active.eq.true").order("name");
 const coreContainer = document.getElementById("coreCompetenciesContainer");
@@ -142,7 +144,7 @@ else tbody.innerHTML = students.map(s => `
   <td>${s.first_name} ${s.last_name}</td>
   <td>
     <select class="performanceLevel">
-      <option value="">Select Level</option>
+      <option value="" disabled selected>Select Level</option>
       ${levels.map(l => `<option value="${l.id}">${l.label}</option>`).join("")}
     </select>
   </td>
@@ -232,6 +234,20 @@ const { data: assessment, error: assessmentError } = await supabase.from("assess
     return;
   }
 
+// 🔴 VALIDATE performance level for ALL students
+const studentRows = document.querySelectorAll("#studentsBody tr");
+
+for (let row of studentRows) {
+  const level = row.querySelector(".performanceLevel").value;
+
+  if (!level) {
+    alert("All students must have a Performance Level selected before saving.");
+    return;
+  }
+}
+
+
+ 
   // 2️⃣ Insert per-student results
   const rows = Array.from(document.querySelectorAll("#studentsBody tr")).map(tr => ({
     assessment_id: assessment.id,
