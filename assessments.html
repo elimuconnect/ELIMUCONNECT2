@@ -394,10 +394,6 @@ if (existingAssessment) {
 
 
 
- // 🔥 Save strands + SLEs (fixed for UUIDs)
-const selectedStrands = Array.from(document.querySelectorAll(".strandCheckbox:checked")).map(cb => cb.value);
-const selectedSLEs = Array.from(document.querySelectorAll(".sleCheckbox:checked")).map(cb => cb.value);
-
 if (!selectedStrands.length) {
   alert("Please select at least one strand.");
   return;
