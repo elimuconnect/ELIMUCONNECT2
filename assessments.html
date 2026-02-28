@@ -201,18 +201,30 @@ document.getElementById("saveAssessment").onclick = async () => {
     return;
   }
 
-  // Step 3: Validate that all students have a performance level
   const studentRows = document.querySelectorAll("#studentsBody tr");
-  for (let row of studentRows) {
-    const levelSelect = row.querySelector(".performanceLevel");
-    if (!levelSelect) continue; // Skip placeholder rows
-    const level = levelSelect.value;
-    if (!level) {
-      const studentName = row.cells[1].innerText; // Get student name
-      alert(`Performance Level missing for student: ${studentName}. Please select a level before saving.`);
-      levelSelect.focus();
-      return; // Stop saving until teacher corrects
-    }
+let missingLevel = false;
+
+for (let row of studentRows) {
+  const levelSelect = row.querySelector(".performanceLevel");
+  if (!levelSelect) continue; // Skip placeholder rows
+  const level = levelSelect.value;
+
+  // Reset previous highlighting
+  row.style.backgroundColor = "";
+
+  if (!level) {
+    missingLevel = true;
+    row.style.backgroundColor = "rgba(255,0,0,0.2)"; // Highlight the row in light red
+  }
+
+  // Optional: remove highlight when a level is selected
+  levelSelect.onchange = () => row.style.backgroundColor = "";
+}
+
+if (missingLevel) {
+  alert("Some students are missing a Performance Level. Highlighted in red. Please complete before saving.");
+  return; // Stop saving until teacher corrects
+}
   }
 
   // --------------------
