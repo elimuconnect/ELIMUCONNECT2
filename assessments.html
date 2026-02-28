@@ -263,58 +263,54 @@ document.getElementById("saveAssessment").onclick = async () => {
     .limit(1)
     .maybeSingle();
 
-  let assessmentId;
+let assessmentId;
 
-  if (existingAssessment) {
-    const createdDate = new Date(existingAssessment.created_at);
-    const now = new Date();
-    const diffDays = (now - createdDate) / (1000 * 60 * 60 * 24);
+if (existingAssessment) {
+  const createdDate = new Date(existingAssessment.created_at);
+  const now = new Date();
+  const diffDays = (now - createdDate) / (1000 * 60 * 60 * 24);
 
-    if (diffDays <= 3) {
-      // ✅ Edit existing (levels only)
-      assessmentId = existingAssessment.id;
+  if (diffDays <= 14) {
+    // ✅ Edit existing (levels + competencies) within 14 days
+    assessmentId = existingAssessment.id;
 
-      // ✅ Also update subject competencies if editing
-      await supabase.from("assessments")
-        .update({
-          core_competencies: selectedCoreCompetencies,
-          subject_competencies: subjectCompetency
-        })
-        .eq("id", assessmentId);
+    await supabase.from("assessments")
+      .update({
+        core_competencies: selectedCoreCompetencies,
+        subject_competencies: subjectCompetency
+      })
+      .eq("id", assessmentId);
 
-    } else if (diffDays > 7) {
-      // ✅ Create new assessment
-      const { data: newAssessment, error } = await supabase
-        .from("assessments")
-        .insert([{
-          title: assessmentTitle,
-          class_id: classId,
-          subject_id: subjectId,
-          learning_area_id: subjectId,
-          school_id: schoolId,
-          term_id: termId,
-          academic_year: academicYear,
-          assessment_type_id: assessmentTypeId,
-          assessment_date: today,
-          created_by: user.id,
-          core_competencies: selectedCoreCompetencies,
-          subject_competencies: subjectCompetency
-        }])
-        .select()
-        .single();
+  } else {
+    // ✅ Create new assessment after 14 days
+    const { data: newAssessment, error } = await supabase
+      .from("assessments")
+      .insert([{
+        title: assessmentTitle,
+        class_id: classId,
+        subject_id: subjectId,
+        learning_area_id: subjectId,
+        school_id: schoolId,
+        term_id: termId,
+        academic_year: academicYear,
+        assessment_type_id: assessmentTypeId,
+        assessment_date: today,
+        created_by: user.id,
+        core_competencies: selectedCoreCompetencies,
+        subject_competencies: subjectCompetency
+      }])
+      .select()
+      .single();
 
-      if (error) {
-        document.getElementById("status").innerText = error.message;
-        return;
-      }
-
-      assessmentId = newAssessment.id;
-
-    } else {
-      alert("Editing window closed (after 3 days). New assessment allowed after 7 days.");
+    if (error) {
+      document.getElementById("status").innerText = error.message;
       return;
     }
 
+    assessmentId = newAssessment.id;
+  }
+
+  
   } else {
     // 🆕 First time → create assessment
     const { data: newAssessment, error } = await supabase
