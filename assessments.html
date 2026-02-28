@@ -399,7 +399,9 @@ if (existingAssessment) {
   const strandRows = [];
 
   for (let sId of selectedStrands) {
-    const sleIdsForStrand = selectedSLEs.filter(sleId => document.querySelector(`.sleCheckbox[value="${sleId}"]`)?.dataset.strandId === sId);
+   const sleIdsForStrand = selectedSLEs.filter(sleId => 
+  parseInt(document.querySelector(`.sleCheckbox[value="${sleId}"]`)?.dataset.strandId) === parseInt(sId)
+);
     if (sleIdsForStrand.length) {
       sleIdsForStrand.forEach(sleId => strandRows.push({ assessment_id: assessmentId, strand_id: sId, learning_experience_id: sleId }));
     } else {
