@@ -150,13 +150,41 @@
       width: 100%;
     }
   }
+
+
+
+/* Top row layout */
+.top-row {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+/* Make cards share space */
+.left-card {
+  flex: 1;
+}
+
+.right-card {
+  flex: 2;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .top-row {
+    flex-direction: column;
+  }
+}
+  
 </style>
 </head>
 <body>
 <div class="container">
   <h2>Assessment Entry</h2>
 
-  <div class="card">
+  <div class="top-row">
+
+  <div class="card left-card">
     <p><strong>Academic Year:</strong> <span id="yearLabel"></span></p>
     <p><strong>Class:</strong> <span id="classLabel"></span></p>
     <p><strong>Subject:</strong> <span id="subjectLabel"></span></p>
@@ -169,7 +197,7 @@
     <select id="assessmentTypeSelect"></select>
   </div>
 
-  <div class="card">
+  <div class="card right-card">
     <div class="competency-section">
       <label><strong>Core Competencies:</strong></label>
       <div class="dropdown">
@@ -200,6 +228,7 @@
     </div>
   </div>
 
+</div>
   <div class="card">
     <table>
       <thead>
