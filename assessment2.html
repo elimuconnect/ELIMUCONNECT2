@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
@@ -11,18 +11,8 @@
   select, input { width: 100%; padding: 4px; }
   button { margin-top: 15px; padding: 8px 12px; cursor: pointer; }
   .competency-section { margin-top: 20px; }
-
-
-.competency-checkbox {
-  display: block;
-  margin-bottom: 6px;
-  cursor: pointer;
-}
-
-.competency-checkbox input {
-  margin-right: 6px;
-}
-  
+  .competency-checkbox { display: block; margin-bottom: 6px; cursor: pointer; }
+  .competency-checkbox input { margin-right: 6px; }
 </style>
 </head>
 <body>
@@ -55,14 +45,19 @@
          placeholder="Enter subject-specific competencies, comma-separated">
 </div>
 
+<!-- Strand/Substrand -->
 <p>
-  <label>Strand(s):</label>
-  <input type="text" id="strandInput" placeholder="Enter strand(s)">
+  <label>Strand:</label>
+  <select id="strandSelect">
+    <option value="" disabled selected>-- Select Strand --</option>
+  </select>
 </p>
 
 <p>
-  <label>Substrand (optional):</label>
-  <input type="text" id="substrandInput" placeholder="Enter substrand">
+  <label>Specific Learning Experience:</label>
+  <select id="sleSelect">
+    <option value="" disabled selected>-- Select Learning Experience --</option>
+  </select>
 </p>
 
 <table>
@@ -81,6 +76,7 @@
 <br>
 <button id="saveAssessment">Save Assessment</button>
 <p id="status"></p>
+
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -116,8 +112,10 @@ const { data: assessmentTypes } = await supabase.from("assessment_types").select
 document.getElementById("assessmentTypeSelect").innerHTML = `<option value="" disabled selected>-- Select Assessment Type --</option>${assessmentTypes.map(a => `<option value="${a.id}">${a.name}</option>`).join("")}`;
 
 // Load achievement levels
-const { data: levels } = await supabase.from("achievement_levels").select("id, label").order("order_rank");
-
+const { data: levels } = await supabase
+  .from("achievement_levels")
+  .select("id, label")
+  .order("order_index", { ascending: true });
 // Load competencies and populate top core competencies
 const { data: competencies } = await supabase.from("competencies").select("id, name, subject_id").or("is_active.is.null,is_active.eq.true").order("name");
 const coreContainer = document.getElementById("coreCompetenciesContainer");
@@ -127,15 +125,12 @@ competencies
   .forEach(c => {
     const label = document.createElement("label");
     label.className = "competency-checkbox";
-
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.value = c.id;
     checkbox.className = "coreCompetency";
-
     label.appendChild(checkbox);
     label.appendChild(document.createTextNode(c.name));
-
     coreContainer.appendChild(label);
   });
 
@@ -149,37 +144,109 @@ else tbody.innerHTML = students.map(s => `
   <td>${s.first_name} ${s.last_name}</td>
   <td>
     <select class="performanceLevel">
-      <option value="">Select Level</option>
+      <option value="" disabled selected>Select Level</option>
       ${levels.map(l => `<option value="${l.id}">${l.label}</option>`).join("")}
     </select>
   </td>
 </tr>`).join("");
 
+// Load strands and sub-strands from DB
+const strandSelect = document.getElementById("strandSelect");
+
+
+// Load strands for the selected subject
+const { data: strands } = await supabase.from("strands")
+  .select("id, name")
+  .eq("subject_id", subjectId)
+  .eq("grade", 10)
+  .order("name");
+
+strands.forEach(s => strandSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+
+
+strandSelect.onchange = async () => {
+  const strandId = strandSelect.value;
+  const { data: sles } = await supabase.from("learning_experiences")
+    .select("id, name")
+    .eq("strand_id", strandId)
+    .order("name");
+
+  sleSelect.innerHTML = `<option value="" disabled selected>-- Select Learning Experience --</option>`;
+  sles.forEach(sle => sleSelect.innerHTML += `<option value="${sle.id}">${sle.name}</option>`);
+};
+
 // Save assessment
 document.getElementById("saveAssessment").onclick = async () => {
-  const strand = document.getElementById("strandInput").value;
-  const substrand = document.getElementById("substrandInput").value;
+  // Get selected values
+  const strand = strandSelect.value;
+  const substrand = substrandSelect.value || null;
   const termId = document.getElementById("termSelect").value;
   const termName = document.getElementById("termSelect").selectedOptions[0]?.text;
   const assessmentTypeId = document.getElementById("assessmentTypeSelect").value;
-const selectedCoreCompetencies = Array.from(
-  document.querySelectorAll(".coreCompetency:checked")
-).map(cb => cb.value);
+
+  const selectedCoreCompetencies = Array.from(document.querySelectorAll(".coreCompetency:checked"))
+                                        .map(cb => cb.value);
   const subjectCompetency = document.getElementById("subjectCompetency").value;
 
-  if (!termId || !assessmentTypeId) { alert("Select term and assessment type"); return; }
+  // --------------------
+  // 2️⃣ & 3️⃣ CBC-compliant validation BEFORE inserting results
+  // --------------------
 
-  const { data:{user} } = await supabase.auth.getUser();
+  // Step 2: Validate required selections
+  if (!termId || !assessmentTypeId || !strand) {
+    alert("Please select Term, Assessment Type, and Strand before saving.");
+    return;
+  }
+  if (!selectedCoreCompetencies.length) {
+    alert("Please select at least one core competency before saving.");
+    return;
+  }
+
+  const studentRows = document.querySelectorAll("#studentsBody tr");
+let missingLevel = false;
+
+for (let row of studentRows) {
+  const levelSelect = row.querySelector(".performanceLevel");
+  if (!levelSelect) continue; // Skip placeholder rows
+  const level = levelSelect.value;
+
+  // Reset previous highlighting
+  row.style.backgroundColor = "";
+
+ if (!level) {
+    missingLevel = true;
+    row.style.backgroundColor = "rgba(255,0,0,0.2)"; // Highlight the row in light red
+  }
+
+  // Remove highlight when a level is selected
+  levelSelect.onchange = () => row.style.backgroundColor = "";
+}
+
+if (missingLevel) {
+  alert("Some students are missing a Performance Level. Highlighted in red. Please complete before saving.");
+  return; // Stop saving until teacher corrects
+}
+  
+
+  // --------------------
+  // Get logged-in user
+  // --------------------
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) { window.location.href="index.html"; return; }
 
-  const { data: profile } = await supabase.from("profiles").select("school_id").eq("auth_id", user.id).single();
+  const { data: profile } = await supabase.from("profiles")
+                                         .select("school_id")
+                                         .eq("auth_id", user.id)
+                                         .single();
   if (!profile?.school_id) { alert("Cannot determine school_id"); return; }
   const schoolId = profile.school_id;
 
   const today = new Date().toISOString();
   const assessmentTitle = `${subjectData.name} - ${termName} (${academicYear})`;
 
-  // Insert assessment with top competencies
+  // --------------------
+  // Insert assessment
+  // --------------------
   const { data: assessment, error: assessmentError } = await supabase.from("assessments").insert([{
     title: assessmentTitle,
     class_id: classId,
@@ -192,31 +259,61 @@ const selectedCoreCompetencies = Array.from(
     learning_area_id: subjectId,
     assessment_date: today,
     created_by: user.id,
-    core_competencies: selectedCoreCompetencies,     // save array of core competency IDs
-    subject_competencies: subjectCompetency        // save manual input
+    core_competencies: selectedCoreCompetencies,
+    subject_competencies: subjectCompetency
   }]).select().single();
 
-  if (assessmentError) { document.getElementById("status").innerText = `Error: ${assessmentError.message}`; return; }
+  if (assessmentError) {
+    document.getElementById("status").innerText = `Error saving assessment: ${assessmentError.message}`;
+    return;
+  }
 
-  // Save results per student
-  const rows = Array.from(document.querySelectorAll("#studentsBody tr")).map(tr => ({
+  // --------------------
+  // Insert per-student results
+  // --------------------
+  const rows = Array.from(studentRows).map(tr => ({
     assessment_id: assessment.id,
     student_id: tr.dataset.id,
     subject_id: subjectId,
     term_id: termId,
     assessment_type_id: assessmentTypeId,
     achievement_level_id: tr.querySelector(".performanceLevel").value,
-    strand,
-    substrand,
     academic_year: academicYear,
     teacher_id: user.id,
     created_by: user.id
   }));
 
   const { error: resultError } = await supabase.from("assessment_results").insert(rows);
-  document.getElementById("status").innerText = resultError ? `Error saving results: ${resultError.message}` : "Assessment and results saved successfully!";
-};
-</script>
+  if (resultError) {
+    document.getElementById("status").innerText = `Error saving results: ${resultError.message}`;
+    return;
+  }
 
+  // --------------------
+  // Insert strand & substrand
+  // --------------------
+ const sleId = sleSelect.value || null;
+
+if (strand) {
+  const { error: sleError } = await supabase.from("assessment_strands").insert([{
+    assessment_id: assessment.id,
+    strand_id: strand,
+    learning_experience_id: sleId
+  }]);
+
+    if (strandError) {
+      document.getElementById("status").innerText = `Error saving strand: ${strandError.message}`;
+      return;
+    }
+  }
+
+  // ✅ Success
+  document.getElementById("status").innerText = "Assessment and results saved successfully!";
+  console.log("Selected term ID:", termId);
+};
+
+
+
+</script>
 </body>
 </html>
