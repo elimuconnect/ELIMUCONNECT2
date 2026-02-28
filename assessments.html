@@ -214,19 +214,13 @@ for (let row of studentRows) {
 
  if (!level) {
     missingLevel = true;
-    // Highlight all cells in this row
-    row.querySelectorAll("td").forEach(td => td.style.backgroundColor = "rgba(255,0,0,0.2)");
-} else {
-    // Reset highlight
-    row.querySelectorAll("td").forEach(td => td.style.backgroundColor = "");
+    row.style.backgroundColor = "rgba(255,0,0,0.2)"; // Highlight the row in light red
+  }
+
+  // Remove highlight when a level is selected
+  levelSelect.onchange = () => row.style.backgroundColor = "";
 }
 
-  // Optional: remove highlight when a level is selected
- 
-levelSelect.onchange = () => {
-    row.querySelectorAll("td").forEach(td => td.style.backgroundColor = "");
-};
- 
 if (missingLevel) {
   alert("Some students are missing a Performance Level. Highlighted in red. Please complete before saving.");
   return; // Stop saving until teacher corrects
