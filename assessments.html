@@ -603,23 +603,42 @@ document.getElementById("sleContainer").innerHTML = "";
 
   // 5️⃣ Load strands + learning experiences (checkbox version)
 
+// 5️⃣ Load strands + learning experiences (checkbox version)
 const { data: strandData } = await supabase
   .from("assessment_strands")
   .select("*")
   .eq("assessment_id", existingAssessment.id);
 
 if (strandData && strandData.length > 0) {
-
+  // Get saved strand IDs
   const savedStrandIds = [...new Set(strandData.map(s => s.strand_id))];
- const savedSLEIds = JSON.parse(strandRow.learning_experience_id || "[]");
-document.querySelectorAll(".sleCheckbox").forEach(cb => {
-  cb.checked = savedSLEIds.includes(cb.value);
-
-
+  
+  // Set strand checkboxes
   document.querySelectorAll(".strandCheckbox").forEach(cb => {
     cb.checked = savedStrandIds.includes(cb.value);
   });
 
+  // Collect all saved SLE IDs across strands
+  const savedSLEIds = strandData
+    .map(s => {
+      try {
+        return JSON.parse(s.learning_experience_id || "[]");
+      } catch (e) {
+        return [];
+      }
+    })
+    .flat(); // flatten into a single array
+
+  // Load SLE checkboxes after strands are set
+  await loadSLEsForSelectedStrands();
+
+  // Small delay to ensure dynamic checkboxes exist
+  setTimeout(() => {
+    document.querySelectorAll(".sleCheckbox").forEach(cb => {
+      cb.checked = savedSLEIds.includes(cb.value);
+    });
+  }, 100);
+}
 
   // 6️⃣ Load student results
   const { data: results } = await supabase
