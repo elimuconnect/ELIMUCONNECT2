@@ -156,7 +156,7 @@ else tbody.innerHTML = students.map(s => `
 
 // Load strands and sub-strands from DB
 const strandSelect = document.getElementById("strandSelect");
-
+const sleSelect = document.getElementById("sleSelect");
 // Load strands for the selected subject
 const { data: strands } = await supabase.from("strands")
   .select("id, name")
@@ -266,59 +266,31 @@ let assessmentId;
 
 if (existingAssessment) {
 
-const createdDate = new Date(existingAssessment.created_at);
-const now = new Date();
+  const createdDate = new Date(existingAssessment.created_at);
+  const now = new Date();
 
-const diffDays = Math.floor(
-  (now - createdDate) / (1000 * 60 * 60 * 24)
-);
+  const diffDays = Math.floor(
+    (now - createdDate) / (1000 * 60 * 60 * 24)
+  );
 
-const EDIT_WINDOW_DAYS = 14;
+  const EDIT_WINDOW_DAYS = 14;
 
-if (diffDays <= EDIT_WINDOW_DAYS) {
+  if (diffDays <= EDIT_WINDOW_DAYS) {
 
-  // ✅ Allow editing existing
-  assessmentId = existingAssessment.id;
+    // ✅ Update existing assessment
+    assessmentId = existingAssessment.id;
 
-  await supabase.from("assessments")
-    .update({
-      core_competencies: selectedCoreCompetencies,
-      subject_competencies: subjectCompetency
-    })
-    .eq("id", assessmentId);
+    await supabase.from("assessments")
+      .update({
+        core_competencies: selectedCoreCompetencies,
+        subject_competencies: subjectCompetency
+      })
+      .eq("id", assessmentId);
 
-} else {
-
-  // ✅ Create NEW assessment after 14 days
-  const { data: newAssessment, error } = await supabase
-    .from("assessments")
-    .insert([{
-      title: assessmentTitle,
-      class_id: classId,
-      subject_id: subjectId,
-      learning_area_id: subjectId,
-      school_id: schoolId,
-      term_id: termId,
-      academic_year: academicYear,
-      assessment_type_id: assessmentTypeId,
-      assessment_date: today,
-      created_by: user.id,
-      core_competencies: selectedCoreCompetencies,
-      subject_competencies: subjectCompetency
-    }])
-    .select()
-    .single();
-
-  if (error) {
-    document.getElementById("status").innerText = error.message;
-    return;
-  }
-
-  assessmentId = newAssessment.id;
-}
-  
   } else {
-    // 🆕 First time → create assessment
+
+    // ✅ Create NEW assessment (after 14 days)
+
     const { data: newAssessment, error } = await supabase
       .from("assessments")
       .insert([{
@@ -345,6 +317,37 @@ if (diffDays <= EDIT_WINDOW_DAYS) {
 
     assessmentId = newAssessment.id;
   }
+
+} else {
+
+  // 🆕 First time → create assessment
+
+  const { data: newAssessment, error } = await supabase
+    .from("assessments")
+    .insert([{
+      title: assessmentTitle,
+      class_id: classId,
+      subject_id: subjectId,
+      learning_area_id: subjectId,
+      school_id: schoolId,
+      term_id: termId,
+      academic_year: academicYear,
+      assessment_type_id: assessmentTypeId,
+      assessment_date: today,
+      created_by: user.id,
+      core_competencies: selectedCoreCompetencies,
+      subject_competencies: subjectCompetency
+    }])
+    .select()
+    .single();
+
+  if (error) {
+    document.getElementById("status").innerText = error.message;
+    return;
+  }
+
+  assessmentId = newAssessment.id;
+}
 
   // ✅ Save / Update results (levels only)
   const rows = Array.from(studentRows).map(tr => ({
