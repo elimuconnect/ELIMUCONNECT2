@@ -299,6 +299,7 @@ else tbody.innerHTML = students.map(s => `
 // Containers
 const strandContainer = document.getElementById("strandContainer");
 const sleContainer = document.getElementById("sleContainer");
+  strands = data || [];
 
 async function loadStrandsAndAttachListeners() {
   // Load strands for the selected subject
@@ -308,7 +309,6 @@ async function loadStrandsAndAttachListeners() {
     .eq("grade", 10)
     .order("name");
 
-  strands = data || [];
 
   // Populate strands as checkboxes
   strandContainer.innerHTML = ""; // clear first
