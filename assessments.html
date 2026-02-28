@@ -583,62 +583,91 @@ const strandRows = selectedStrands.map(sId => {
   };
 });
 
-// 🔹 For each selected strand, upsert the learning experiences
-for (let row of strandRows) {
-  const { data: existingRow, error: fetchError } = await supabase
-    .from("assessment_strands")
-    .select("*")
-    .eq("assessment_id", row.assessment_id)
-    .eq("strand_id", row.strand_id)
-    .maybeSingle();
 
-  if (fetchError) {
-    document.getElementById("status").innerText = "Error checking strand: " + fetchError.message;
+// 🔹 BULK SYNC assessment_strands
+
+// 1️⃣ Fetch all existing strands for this assessment
+const { data: existingStrands = [], error: fetchError } = await supabase
+  .from("assessment_strands")
+  .select("strand_id")
+  .eq("assessment_id", assessmentId);
+
+if (fetchError) {
+  statusEl.innerText = "Error checking strands: " + fetchError.message;
+  return;
+}
+
+// 2️⃣ Convert strandRows to array (SAFE)
+const strandArray = Array.from(strandRows);
+
+// 3️⃣ Prepare rows for bulk upsert
+const rowsToUpsert = strandArray.map(row => ({
+  assessment_id: assessmentId,
+  strand_id: row.strand_id,
+  learning_experience_id: row.learning_experience_id
+}));
+
+// 4️⃣ Bulk UPSERT
+const { error: upsertError } = await supabase
+  .from("assessment_strands")
+  .upsert(rowsToUpsert, {
+    onConflict: ["assessment_id", "strand_id"]
+  });
+
+if (upsertError) {
+  statusEl.innerText = "Error saving strands: " + upsertError.message;
+  return;
+}
+
+// 5️⃣ Delete removed strands
+const selectedStrandIds = strandArray.map(r => r.strand_id);
+const existingStrandIds = existingStrands.map(s => s.strand_id);
+
+const strandsToDelete = existingStrandIds.filter(
+  id => !selectedStrandIds.includes(id)
+);
+
+if (strandsToDelete.length > 0) {
+  const { error: deleteError } = await supabase
+    .from("assessment_strands")
+    .delete()
+    .eq("assessment_id", assessmentId)
+    .in("strand_id", strandsToDelete);
+
+  if (deleteError) {
+    statusEl.innerText =
+      "Error deleting removed strands: " + deleteError.message;
     return;
   }
-
-  if (existingRow) {
-    // ✅ Strand exists → update only learning_experience_id
-    const { error: updateError } = await supabase
-      .from("assessment_strands")
-      .update({ learning_experience_id: row.learning_experience_id })
-      .eq("id", existingRow.id);
-
-    if (updateError) {
-      document.getElementById("status").innerText = "Error updating SLEs: " + updateError.message;
-      return;
-    }
-  } else {
-    // 🆕 Strand not yet saved → insert new row
-    const { error: insertError } = await supabase
-      .from("assessment_strands")
-      .insert([row]);
-
-    if (insertError) {
-      document.getElementById("status").innerText = "Error saving strand: " + insertError.message;
-      return;
-    }
-  }
 }
-  // Save student results
-  const rows = Array.from(studentRows).map(tr => ({
-    assessment_id: assessmentId,
-    student_id: tr.dataset.id,
-    subject_id: subjectId,
-    term_id: termId,
-    assessment_type_id: assessmentTypeId,
-    achievement_level_id: tr.querySelector(".performanceLevel").value,
-    academic_year: academicYear,
-    teacher_id: user.id,
-    created_by: user.id
-  }));
-  const { error: resultError } = await supabase.from("assessment_results").upsert(rows, { onConflict: ['assessment_id','student_id'] });
-  if (resultError) { document.getElementById("status").innerText = resultError.message; return; }
 
-  statusEl.style.color = "green";
+// 🔹 Save student results (already optimized)
+const rows = Array.from(studentRows).map(tr => ({
+  assessment_id: assessmentId,
+  student_id: tr.dataset.id,
+  subject_id: subjectId,
+  term_id: termId,
+  assessment_type_id: assessmentTypeId,
+  achievement_level_id: tr.querySelector(".performanceLevel").value,
+  academic_year: academicYear,
+  teacher_id: user.id,
+  created_by: user.id
+}));
+
+const { error: resultError } = await supabase
+  .from("assessment_results")
+  .upsert(rows, {
+    onConflict: ["assessment_id", "student_id"]
+  });
+
+if (resultError) {
+  statusEl.innerText = resultError.message;
+  return;
+}
+
+statusEl.style.color = "green";
 statusEl.innerText = "Assessment saved successfully!";
-
-
+    
       } catch (err) {
     statusEl.style.color = "red";
     statusEl.innerText = "Error: " + err.message;
