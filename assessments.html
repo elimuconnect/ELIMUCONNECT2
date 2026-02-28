@@ -541,8 +541,11 @@ async function loadExistingAssessment() {
     statusEl.innerText = "No previous assessment found. You can create a new one.";
     document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = false);
     document.getElementById("subjectCompetency").value = "";
-    strandSelect.value = "";
-    sleSelect.innerHTML = `<option value="" disabled selected>-- Select Learning Experience --</option>`;
+    // Uncheck all strand checkboxes
+document.querySelectorAll(".strandCheckbox").forEach(cb => cb.checked = false);
+
+// Clear all SLE checkboxes
+document.getElementById("sleContainer").innerHTML = "";
     document.querySelectorAll(".coreCompetency").forEach(cb => cb.checked = false);
     return null;
   }
