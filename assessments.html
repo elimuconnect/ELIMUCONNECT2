@@ -54,9 +54,9 @@
 </p>
 
 <p>
-  <label>Substrand (optional):</label>
-  <select id="substrandSelect">
-    <option value="" disabled selected>-- Select Substrand --</option>
+  <label>Specific Learning Experience:</label>
+  <select id="sleSelect">
+    <option value="" disabled selected>-- Select Learning Experience --</option>
   </select>
 </p>
 
@@ -163,15 +163,16 @@ const { data: strands } = await supabase.from("strands")
 
 strands.forEach(s => strandSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`);
 
-// Load sub-strands when a strand is selected
+
 strandSelect.onchange = async () => {
   const strandId = strandSelect.value;
-  const { data: subStrands } = await supabase.from("sub_strands")
+  const { data: sles } = await supabase.from("learning_experiences")
     .select("id, name")
     .eq("strand_id", strandId)
     .order("name");
-  substrandSelect.innerHTML = `<option value="" disabled selected>-- Select Substrand --</option>`;
-  subStrands.forEach(ss => substrandSelect.innerHTML += `<option value="${ss.id}">${ss.name}</option>`);
+
+  sleSelect.innerHTML = `<option value="" disabled selected>-- Select Learning Experience --</option>`;
+  sles.forEach(sle => sleSelect.innerHTML += `<option value="${sle.id}">${sle.name}</option>`);
 };
 
 // Save assessment
@@ -291,12 +292,15 @@ if (missingLevel) {
   // --------------------
   // Insert strand & substrand
   // --------------------
-  if (strand) {
-    const { error: strandError } = await supabase.from("assessment_strands").insert([{
-      assessment_id: assessment.id,
-      strand_id: strand,
-      substrand_id: substrand
-    }]);
+ const sleId = sleSelect.value || null;
+
+if (strand) {
+  const { error: sleError } = await supabase.from("assessment_strands").insert([{
+    assessment_id: assessment.id,
+    strand_id: strand,
+    learning_experience_id: sleId
+  }]);
+
     if (strandError) {
       document.getElementById("status").innerText = `Error saving strand: ${strandError.message}`;
       return;
