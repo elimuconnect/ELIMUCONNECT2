@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+ <!DOCTYPE html> 
 <html>
 <head>
 <meta charset="UTF-8">
@@ -224,18 +224,15 @@ strands.forEach(s => {
 });
 
 // When strands are selected, load SLEs dynamically
-async function loadSLEsForSelectedStrands() {
-  const selectedStrands = Array.from(
-    document.querySelectorAll(".strandCheckbox:checked")
-  ).map(cb => cb.value);
-
-  sleContainer.innerHTML = "";
+strandContainer.addEventListener("change", async () => {
+  const selectedStrands = Array.from(document.querySelectorAll(".strandCheckbox:checked")).map(cb => cb.value);
+  
+  sleContainer.innerHTML = ""; // clear previous SLEs
 
   if (selectedStrands.length === 0) return;
 
   for (let strandId of selectedStrands) {
-    const { data: sles } = await supabase
-      .from("learning_experiences")
+    const { data: sles } = await supabase.from("learning_experiences")
       .select("id, name")
       .eq("strand_id", strandId)
       .order("name");
@@ -243,30 +240,18 @@ async function loadSLEsForSelectedStrands() {
     sles.forEach(sle => {
       const label = document.createElement("label");
       label.className = "competency-checkbox";
-
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
       checkbox.value = sle.id;
       checkbox.className = "sleCheckbox";
-
-      // ✅ Add strand_id as a data attribute
-      checkbox.dataset.strandId = strandId;
-
       label.appendChild(checkbox);
-      label.appendChild(
-        document.createTextNode(
-          `${sle.name} (${strands.find(st => st.id == strandId).name})`
-        )
-      );
-
+      label.appendChild(document.createTextNode(`${sle.name} (${strands.find(st => st.id == strandId).name})`));
       sleContainer.appendChild(label);
     });
   }
-}
-  strandContainer.addEventListener("change", loadSLEsForSelectedStrands);
+});
 
-
-  
+// Save assessment
 // Save assessment
 document.getElementById("saveAssessment").onclick = async () => {
 
@@ -454,14 +439,8 @@ await supabase
 const strandRows = [];
 
 for (let sId of selectedStrands) {
-  // Only SLEs that belong to this strand
-  const sleIdsForStrand = selectedSLEs.filter(sleId => {
-    const sleEl = document.querySelector(`.sleCheckbox[value="${sleId}"]`);
-    return sleEl && sleEl.dataset.strandId === sId;
-  });
-
-  if (sleIdsForStrand.length > 0) {
-    sleIdsForStrand.forEach(sleId => {
+  if (selectedSLEs.length > 0) {
+    selectedSLEs.forEach(sleId => {
       strandRows.push({
         assessment_id: assessmentId,
         strand_id: sId,
@@ -480,6 +459,8 @@ for (let sId of selectedStrands) {
 if (strandRows.length > 0) {
   await supabase.from("assessment_strands").insert(strandRows);
 }
+
+  
   // ✅ Save / Update results (levels only)
   const rows = Array.from(studentRows).map(tr => ({
     assessment_id: assessmentId,
@@ -541,11 +522,8 @@ async function loadExistingAssessment() {
     statusEl.innerText = "No previous assessment found. You can create a new one.";
     document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = false);
     document.getElementById("subjectCompetency").value = "";
-    // Uncheck all strand checkboxes
-document.querySelectorAll(".strandCheckbox").forEach(cb => cb.checked = false);
-
-// Clear all SLE checkboxes
-document.getElementById("sleContainer").innerHTML = "";
+    strandSelect.value = "";
+    sleSelect.innerHTML = `<option value="" disabled selected>-- Select Learning Experience --</option>`;
     document.querySelectorAll(".coreCompetency").forEach(cb => cb.checked = false);
     return null;
   }
@@ -584,6 +562,14 @@ if (strandData && strandData.length > 0) {
     cb.checked = savedStrandIds.includes(cb.value);
   });
 
+  strandContainer.dispatchEvent(new Event("change"));
+
+  setTimeout(() => {
+    document.querySelectorAll(".sleCheckbox").forEach(cb => {
+      cb.checked = savedSLEIds.includes(cb.value);
+    });
+  }, 300);
+}
 
   // 6️⃣ Load student results
   const { data: results } = await supabase
@@ -601,16 +587,6 @@ if (strandData && strandData.length > 0) {
   });
 
 
-await loadSLEsForSelectedStrands();
-
-// Small delay to ensure dynamic checkboxes exist
-setTimeout(() => {
-  document.querySelectorAll(".sleCheckbox").forEach(cb => {
-    cb.checked = savedSLEIds.includes(cb.value);
-  });
-}, 100);
-}
-  
 const EDIT_WINDOW_DAYS = 14;
 
 if (diffDays <= EDIT_WINDOW_DAYS) {
