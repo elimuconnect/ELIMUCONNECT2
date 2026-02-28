@@ -451,8 +451,14 @@ await supabase
 const strandRows = [];
 
 for (let sId of selectedStrands) {
-  if (selectedSLEs.length > 0) {
-    selectedSLEs.forEach(sleId => {
+  // Only SLEs that belong to this strand
+  const sleIdsForStrand = selectedSLEs.filter(sleId => {
+    const sleEl = document.querySelector(`.sleCheckbox[value="${sleId}"]`);
+    return sleEl && sleEl.parentElement.textContent.includes(strands.find(st => st.id == sId).name);
+  });
+
+  if (sleIdsForStrand.length > 0) {
+    sleIdsForStrand.forEach(sleId => {
       strandRows.push({
         assessment_id: assessmentId,
         strand_id: sId,
@@ -471,7 +477,6 @@ for (let sId of selectedStrands) {
 if (strandRows.length > 0) {
   await supabase.from("assessment_strands").insert(strandRows);
 }
-
   
   // ✅ Save / Update results (levels only)
   const rows = Array.from(studentRows).map(tr => ({
@@ -574,12 +579,14 @@ if (strandData && strandData.length > 0) {
     cb.checked = savedStrandIds.includes(cb.value);
   });
 
-  await loadSLEsForSelectedStrands();
+ await loadSLEsForSelectedStrands();
 
-document.querySelectorAll(".sleCheckbox").forEach(cb => {
-  cb.checked = savedSLEIds.includes(cb.value);
-});
-}
+// Small delay to ensure dynamic checkboxes exist
+setTimeout(() => {
+  document.querySelectorAll(".sleCheckbox").forEach(cb => {
+    cb.checked = savedSLEIds.includes(cb.value);
+  });
+}, 50);
 
   // 6️⃣ Load student results
   const { data: results } = await supabase
