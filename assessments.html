@@ -185,20 +185,39 @@ document.getElementById("saveAssessment").onclick = async () => {
 
   const selectedCoreCompetencies = Array.from(document.querySelectorAll(".coreCompetency:checked"))
                                         .map(cb => cb.value);
-
   const subjectCompetency = document.getElementById("subjectCompetency").value;
 
-  // Validation
+  // --------------------
+  // 2️⃣ & 3️⃣ CBC-compliant validation BEFORE inserting results
+  // --------------------
+
+  // Step 2: Validate required selections
   if (!termId || !assessmentTypeId || !strand) {
-    alert("Please select Term, Assessment Type, and Strand");
+    alert("Please select Term, Assessment Type, and Strand before saving.");
     return;
   }
   if (!selectedCoreCompetencies.length) {
-    alert("Please select at least one core competency");
+    alert("Please select at least one core competency before saving.");
     return;
   }
 
+  // Step 3: Validate that all students have a performance level
+  const studentRows = document.querySelectorAll("#studentsBody tr");
+  for (let row of studentRows) {
+    const levelSelect = row.querySelector(".performanceLevel");
+    if (!levelSelect) continue; // Skip placeholder rows
+    const level = levelSelect.value;
+    if (!level) {
+      const studentName = row.cells[1].innerText; // Get student name
+      alert(`Performance Level missing for student: ${studentName}. Please select a level before saving.`);
+      levelSelect.focus();
+      return; // Stop saving until teacher corrects
+    }
+  }
+
+  // --------------------
   // Get logged-in user
+  // --------------------
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) { window.location.href="index.html"; return; }
 
@@ -212,15 +231,16 @@ document.getElementById("saveAssessment").onclick = async () => {
   const today = new Date().toISOString();
   const assessmentTitle = `${subjectData.name} - ${termName} (${academicYear})`;
 
- 
-
-const { data: assessment, error: assessmentError } = await supabase.from("assessments").insert([{
+  // --------------------
+  // Insert assessment
+  // --------------------
+  const { data: assessment, error: assessmentError } = await supabase.from("assessments").insert([{
     title: assessmentTitle,
     class_id: classId,
     subject_id: subjectId,
     school_id: schoolId,
     term_id: termId,
-   term: termName, 
+    term: termName,
     academic_year: academicYear,
     assessment_type_id: assessmentTypeId,
     learning_area_id: subjectId,
@@ -228,45 +248,37 @@ const { data: assessment, error: assessmentError } = await supabase.from("assess
     created_by: user.id,
     core_competencies: selectedCoreCompetencies,
     subject_competencies: subjectCompetency
-}]).select().single();
+  }]).select().single();
+
   if (assessmentError) {
     document.getElementById("status").innerText = `Error saving assessment: ${assessmentError.message}`;
     return;
   }
 
-// 🔴 VALIDATE performance level for ALL students
-const studentRows = document.querySelectorAll("#studentsBody tr");
-
-for (let row of studentRows) {
-  const level = row.querySelector(".performanceLevel").value;
-
-  if (!level) {
-    alert("All students must have a Performance Level selected before saving.");
-    return;
-  }
-}
-
-
- 
-  // 2️⃣ Insert per-student results
-  const rows = Array.from(document.querySelectorAll("#studentsBody tr")).map(tr => ({
+  // --------------------
+  // Insert per-student results
+  // --------------------
+  const rows = Array.from(studentRows).map(tr => ({
     assessment_id: assessment.id,
     student_id: tr.dataset.id,
     subject_id: subjectId,
-    term_id: termId,  // ✅ only term_id
+    term_id: termId,
     assessment_type_id: assessmentTypeId,
     achievement_level_id: tr.querySelector(".performanceLevel").value,
     academic_year: academicYear,
     teacher_id: user.id,
     created_by: user.id
-}));
+  }));
+
   const { error: resultError } = await supabase.from("assessment_results").insert(rows);
   if (resultError) {
     document.getElementById("status").innerText = `Error saving results: ${resultError.message}`;
     return;
   }
 
-  // 3️⃣ Insert strand & substrand
+  // --------------------
+  // Insert strand & substrand
+  // --------------------
   if (strand) {
     const { error: strandError } = await supabase.from("assessment_strands").insert([{
       assessment_id: assessment.id,
@@ -281,11 +293,11 @@ for (let row of studentRows) {
 
   // ✅ Success
   document.getElementById("status").innerText = "Assessment and results saved successfully!";
-
-console.log("Selected term ID:", termId);
-
-
+  console.log("Selected term ID:", termId);
 };
+
+
+
 </script>
 </body>
 </html>
