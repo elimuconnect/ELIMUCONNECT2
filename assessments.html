@@ -504,27 +504,15 @@ sleCheckboxes.forEach(cb => {
   if (!sleMap[strand]) sleMap[strand] = [];
   if (selectedSLEs.includes(cb.value)) sleMap[strand].push(cb.value);
 });
-
-// Build assessment_strands rows
+// Build assessment_strands rows (one row per strand)
 const strandRows = selectedStrands.map(sId => {
   const sleIdsForStrand = sleMap[sId] || []; // array of SLE IDs
 
   return {
     assessment_id: assessmentId,
     strand_id: sId,
-    // Save all selected SLE IDs as JSON array or UUID array
     learning_experience_id: sleIdsForStrand.length ? JSON.stringify(sleIdsForStrand) : null
   };
-});
-    });
-  } else {
-    // No SLE selected → still save the strand
-    strandRows.push({
-      assessment_id: assessmentId,
-      strand_id: sId,
-      learning_experience_id: null
-    });
-  }
 });
 
 // First remove existing records for this assessment
