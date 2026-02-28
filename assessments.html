@@ -21,7 +21,7 @@
 <p><strong>Academic Year:</strong> <span id="yearLabel"></span></p>
 <p><strong>Class:</strong> <span id="classLabel"></span></p>
 <p><strong>Subject:</strong> <span id="subjectLabel"></span></p>
-
+<p id="assessmentStatus" style="font-weight:bold; color:blue;"></p>
 <p>
   <label>Term:</label>
   <select id="termSelect"></select>
@@ -369,6 +369,75 @@ document.getElementById("saveAssessment").onclick = async () => {
   document.getElementById("status").innerText =
     "Assessment saved successfully!";
 };
+
+
+// 🔹 Load existing assessment results and guide user
+async function loadExistingAssessment() {
+  const termSelect = document.getElementById("termSelect");
+  const assessmentTypeSelect = document.getElementById("assessmentTypeSelect");
+
+  const termId = termSelect.value;
+  const assessmentTypeId = assessmentTypeSelect.value;
+  const statusEl = document.getElementById("assessmentStatus");
+
+  if (!termId || !assessmentTypeId) {
+    statusEl.innerText = "";
+    return;
+  }
+
+  const { data: existingAssessment } = await supabase
+    .from("assessments")
+    .select("*")
+    .eq("class_id", classId)
+    .eq("subject_id", subjectId)
+    .eq("term_id", termId)
+    .eq("assessment_type_id", assessmentTypeId)
+    .eq("academic_year", academicYear)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!existingAssessment) {
+    statusEl.innerText = "No previous assessment found. You can create a new one.";
+    document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = false);
+    return null;
+  }
+
+  // Calculate days difference
+  const createdDate = new Date(existingAssessment.created_at);
+  const now = new Date();
+  const diffDays = (now - createdDate) / (1000 * 60 * 60 * 24);
+
+  // Load existing student results
+  const { data: results } = await supabase
+    .from("assessment_results")
+    .select("*")
+    .eq("assessment_id", existingAssessment.id);
+
+  const studentRows = document.querySelectorAll("#studentsBody tr");
+  studentRows.forEach(tr => {
+    const studentResult = results.find(r => r.student_id === tr.dataset.id);
+    if (studentResult) {
+      const sel = tr.querySelector(".performanceLevel");
+      sel.value = studentResult.achievement_level_id;
+    }
+  });
+
+  if (diffDays <= 3) {
+    statusEl.innerText = `Existing assessment found. You can update results (within ${Math.ceil(3 - diffDays)} days).`;
+    document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = false);
+  } else if (diffDays <= 7) {
+    statusEl.innerText = `Editing window closed (after 3 days). Next assessment allowed after ${Math.ceil(7 - diffDays)} days.`;
+    document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = true);
+  } else {
+    statusEl.innerText = "You can create a new assessment now.";
+    document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = false);
+  }
+
+  return existingAssessment;
+}
+  document.getElementById("termSelect").onchange = loadExistingAssessment;
+document.getElementById("assessmentTypeSelect").onchange = loadExistingAssessment;
 </script>
 </body>
 </html> 
