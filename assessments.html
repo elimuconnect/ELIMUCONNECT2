@@ -587,7 +587,7 @@ setTimeout(() => {
     cb.checked = savedSLEIds.includes(cb.value);
   });
 }, 50);
-
+}
   // 6️⃣ Load student results
   const { data: results } = await supabase
     .from("assessment_results")
