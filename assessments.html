@@ -134,8 +134,9 @@
     margin-top: 12px;
   }
   #status {
-    color: green;
-  }
+  font-weight: 600;
+  margin-top: 12px;
+}
   #assessmentStatus {
     color: #1a73e8;
   }
@@ -379,6 +380,21 @@ await loadStrandsAndAttachListeners();
   
 // ✅ Save assessment including strands + SLEs
 document.getElementById("saveAssessment").onclick = async () => {
+
+  const statusEl = document.getElementById("status");
+  const saveBtn = document.getElementById("saveAssessment");
+
+  // 🔵 Show saving message immediately
+  statusEl.style.color = "#1a73e8";
+  statusEl.innerText = "Saving assessment...";
+  saveBtn.disabled = true;
+  saveBtn.innerText = "Saving...";
+
+  try {
+
+    // -------------------------
+    // YOUR EXISTING SAVE CODE
+    // -------------------------
   const selectedStrands = Array.from(document.querySelectorAll(".strandCheckbox:checked")).map(cb => cb.value);
   const selectedSLEs = Array.from(document.querySelectorAll(".sleCheckbox:checked")).map(cb => cb.value);
 
@@ -589,8 +605,19 @@ for (let row of strandRows) {
   const { error: resultError } = await supabase.from("assessment_results").upsert(rows, { onConflict: ['assessment_id','student_id'] });
   if (resultError) { document.getElementById("status").innerText = resultError.message; return; }
 
-  document.getElementById("status").innerText = "Assessment saved successfully!";
+  statusEl.style.color = "green";
+statusEl.innerText = "Assessment saved successfully!";
+
+
+      } catch (err) {
+    statusEl.style.color = "red";
+    statusEl.innerText = "Error: " + err.message;
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.innerText = "Save Assessment";
+  }
 };
+
 
 
  
