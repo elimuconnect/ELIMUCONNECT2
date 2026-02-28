@@ -1,125 +1,222 @@
-<!DOCTYPE html> 
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Assessment Students</title>
+<title>Assessment - School Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  body { font-family: Arial, sans-serif; margin: 20px; }
-  table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-  th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-  th { background: #f0f0f0; }
-  select, input { width: 100%; padding: 4px; }
-  button { margin-top: 15px; padding: 8px 12px; cursor: pointer; }
-  .competency-section { margin-top: 20px; }
-  .competency-checkbox { display: block; margin-bottom: 6px; cursor: pointer; }
-  .competency-checkbox input { margin-right: 6px; }
+  /* Global Styles */
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #f4f6f9;
+    margin: 0;
+    padding: 0;
+    color: #333;
+  }
+  h2 {
+    color: #1a73e8;
+    font-weight: 600;
+    margin-bottom: 20px;
+  }
+  .container {
+    max-width: 1200px;
+    margin: auto;
+    padding: 20px;
+  }
 
+  /* Card-style sections */
+  .card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  }
 
+  /* Labels and selects */
+  label {
+    font-weight: 500;
+    display: block;
+    margin-bottom: 6px;
+  }
+  select, input[type=text] {
+    width: 100%;
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+  }
 
-  /* Dropdown container */
-.dropdown {
-  position: relative;
-  display: inline-block;
-  width: 100%;
-}
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  }
+  th, td {
+    padding: 12px 10px;
+    text-align: left;
+  }
+  th {
+    background: #1a73e8;
+    color: #fff;
+    font-weight: 500;
+  }
+  tr:nth-child(even) {
+    background: #f9f9f9;
+  }
+  tr:hover {
+    background: rgba(26,115,232,0.1);
+  }
 
-.dropdown-content {
-  display: none;
-  position: absolute;
-  background-color: #f9f9f9;
-  width: 100%;
-  max-height: 200px;
-  overflow-y: auto;
-  border: 1px solid #ccc;
-  z-index: 1;
-  padding: 10px;
-}
+  /* Buttons */
+  button {
+    background: #1a73e8;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 16px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.3s;
+  }
+  button:hover {
+    background: #155ab6;
+  }
 
-.dropdown-content label {
-  display: block;
-  cursor: pointer;
-  margin-bottom: 6px;
-}
+  /* Dropdowns */
+  .dropdown {
+    position: relative;
+    width: 100%;
+    margin-bottom: 10px;
+  }
+  .dropdown-content {
+    display: none;
+    position: absolute;
+    background: #fff;
+    width: 100%;
+    max-height: 220px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 12px;
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  .dropdown-content label {
+    display: block;
+    cursor: pointer;
+    margin-bottom: 6px;
+  }
+  .dropdown-content input {
+    margin-right: 8px;
+  }
+  .dropdown button {
+    width: 100%;
+    text-align: left;
+    padding: 8px 10px;
+    background: #f0f0f0;
+    color: #333;
+  }
 
-.dropdown-content input {
-  margin-right: 6px;
-}
+  /* Competency sections */
+  .competency-section {
+    margin-top: 15px;
+  }
 
-#dropdownBtn {
-  width: 100%;
-  padding: 6px;
-  text-align: left;
-  cursor: pointer;
-}
+  /* Status messages */
+  #status, #assessmentStatus {
+    font-weight: 500;
+    margin-top: 12px;
+  }
+  #status {
+    color: green;
+  }
+  #assessmentStatus {
+    color: #1a73e8;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    table, th, td {
+      font-size: 14px;
+    }
+    button {
+      width: 100%;
+    }
+  }
 </style>
 </head>
 <body>
-<h2>New Assessment Table</h2>
+<div class="container">
+  <h2>Assessment Entry</h2>
 
-<p><strong>Academic Year:</strong> <span id="yearLabel"></span></p>
-<p><strong>Class:</strong> <span id="classLabel"></span></p>
-<p><strong>Subject:</strong> <span id="subjectLabel"></span></p>
-<p id="assessmentStatus" style="font-weight:bold; color:blue;"></p>
-<p>
-  <label>Term:</label>
-  <select id="termSelect"></select>
-</p>
+  <div class="card">
+    <p><strong>Academic Year:</strong> <span id="yearLabel"></span></p>
+    <p><strong>Class:</strong> <span id="classLabel"></span></p>
+    <p><strong>Subject:</strong> <span id="subjectLabel"></span></p>
+    <p id="assessmentStatus"></p>
 
-<p>
-  <label>Assessment Type:</label>
-  <select id="assessmentTypeSelect"></select>
-</p>
+    <label>Term:</label>
+    <select id="termSelect"></select>
 
-<!-- Core Competencies -->
-<div class="competency-section">
-  <label><strong>Core Competencies:</strong></label>
-  <div class="dropdown">
-    <button type="button" id="dropdownBtn">Select Core Competencies ▼</button>
-    <div id="coreCompetenciesContainer" class="dropdown-content"></div>
+    <label>Assessment Type:</label>
+    <select id="assessmentTypeSelect"></select>
+  </div>
+
+  <div class="card">
+    <div class="competency-section">
+      <label><strong>Core Competencies:</strong></label>
+      <div class="dropdown">
+        <button id="dropdownBtn">Select Core Competencies ▼</button>
+        <div id="coreCompetenciesContainer" class="dropdown-content"></div>
+      </div>
+    </div>
+
+    <div class="competency-section">
+      <label>Subject-specific Competencies (manual input):</label>
+      <input type="text" id="subjectCompetency" placeholder="Enter competencies, comma-separated">
+    </div>
+
+    <div class="competency-section">
+      <label><strong>Strands:</strong></label>
+      <div class="dropdown">
+        <button id="dropdownStrandBtn">Select Strands ▼</button>
+        <div id="strandContainer" class="dropdown-content"></div>
+      </div>
+    </div>
+
+    <div class="competency-section">
+      <label><strong>Learning Experiences:</strong></label>
+      <div class="dropdown">
+        <button id="dropdownSLEBtn">Select Learning Experiences ▼</button>
+        <div id="sleContainer" class="dropdown-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Adm/Assess No.</th>
+          <th>Name</th>
+          <th>Performance Level</th>
+        </tr>
+      </thead>
+      <tbody id="studentsBody">
+        <tr><td colspan="3">Loading students...</td></tr>
+      </tbody>
+    </table>
+    <br>
+    <button id="saveAssessment">Save Assessment</button>
+    <p id="status"></p>
   </div>
 </div>
-
-<!-- Subject-specific manual input -->
-<div class="competency-section">
-  <label>Subject-specific Competencies (manual input):</label>
-  <input type="text" id="subjectCompetency" 
-         placeholder="Enter subject-specific competencies, comma-separated">
-</div>
-
-<!-- Strand -->
-<div class="competency-section">
-  <label><strong>Strands:</strong></label>
-  <div class="dropdown">
-    <button type="button" id="dropdownStrandBtn">Select Strands ▼</button>
-    <div id="strandContainer" class="dropdown-content"></div>
-  </div>
-</div>
-
-<!-- Specific Learning Experience -->
-<div class="competency-section">
-  <label><strong>Learning Experiences:</strong></label>
-  <div class="dropdown">
-    <button type="button" id="dropdownSLEBtn">Select Learning Experiences ▼</button>
-    <div id="sleContainer" class="dropdown-content"></div>
-  </div>
-</div>
-
-<table>
-  <thead>
-    <tr>
-      <th>Adm/Assess NO.</th>
-      <th>Name</th>
-      <th>Performance Level</th>
-    </tr>
-  </thead>
-  <tbody id="studentsBody">
-    <tr><td colspan="3">Loading students...</td></tr>
-  </tbody>
-</table>
-
-<br>
-<button id="saveAssessment">Save Assessment</button>
-<p id="status"></p>
 
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
