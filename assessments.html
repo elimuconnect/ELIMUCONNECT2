@@ -478,7 +478,7 @@ async function loadExistingAssessment() {
 
   // 7️⃣ Set editability based on 14-day window
  if (diffDays <= 14) {
-    statusEl.innerText = `Existing assessment found. You can update all fields (within ${Math.ceil(3 - diffDays)} days).`;
+    statusEl.innerText = `Existing assessment found. You can update all fields (within ${Math.ceil(14 - diffDays)} days).`;
     document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = false);
     document.getElementById("subjectCompetency").disabled = false;
     strandSelect.disabled = false;
