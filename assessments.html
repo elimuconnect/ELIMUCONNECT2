@@ -374,15 +374,13 @@ document.getElementById("saveAssessment").onclick = async () => {
     "Assessment saved successfully!";
 };
 
-
-// 🔹 Load existing assessment results and guide user
 async function loadExistingAssessment() {
   const termSelect = document.getElementById("termSelect");
   const assessmentTypeSelect = document.getElementById("assessmentTypeSelect");
+  const statusEl = document.getElementById("assessmentStatus");
 
   const termId = termSelect.value;
   const assessmentTypeId = assessmentTypeSelect.value;
-  const statusEl = document.getElementById("assessmentStatus");
 
   if (!termId || !assessmentTypeId) {
     statusEl.innerText = "";
@@ -404,38 +402,82 @@ async function loadExistingAssessment() {
   if (!existingAssessment) {
     statusEl.innerText = "No previous assessment found. You can create a new one.";
     document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = false);
+    document.querySelectorAll(".coreCompetency").forEach(cb => cb.disabled = false);
+    document.getElementById("subjectCompetency").disabled = false;
+    strandSelect.disabled = false;
+    sleSelect.disabled = false;
     return null;
   }
 
-  // Calculate days difference
-  const createdDate = new Date(existingAssessment.created_at);
-  const now = new Date();
-  const diffDays = (now - createdDate) / (1000 * 60 * 60 * 24);
-
-  // Load existing student results
+  // ✅ Fill student results
   const { data: results } = await supabase
     .from("assessment_results")
     .select("*")
     .eq("assessment_id", existingAssessment.id);
 
-  const studentRows = document.querySelectorAll("#studentsBody tr");
-  studentRows.forEach(tr => {
+  document.querySelectorAll("#studentsBody tr").forEach(tr => {
     const studentResult = results.find(r => r.student_id === tr.dataset.id);
     if (studentResult) {
-      const sel = tr.querySelector(".performanceLevel");
-      sel.value = studentResult.achievement_level_id;
+      tr.querySelector(".performanceLevel").value = studentResult.achievement_level_id;
     }
   });
 
+  // ✅ Fill core competencies
+  const selectedCore = existingAssessment.core_competencies || [];
+  document.querySelectorAll(".coreCompetency").forEach(cb => {
+    cb.checked = selectedCore.includes(cb.value);
+  });
+
+  // ✅ Fill subject competencies
+  document.getElementById("subjectCompetency").value = existingAssessment.subject_competencies || "";
+
+  // ✅ Fill strand + learning experience
+  const { data: strandsData } = await supabase
+    .from("assessment_strands")
+    .select("*")
+    .eq("assessment_id", existingAssessment.id)
+    .single()
+    .catch(() => ({ strand_id: null, learning_experience_id: null }));
+
+  if (strandsData) {
+    if (strandsData.strand_id) strandSelect.value = strandsData.strand_id;
+    if (strandsData.learning_experience_id) {
+      // Load SLEs for that strand first
+      const { data: sles } = await supabase
+        .from("learning_experiences")
+        .select("id, name")
+        .eq("strand_id", strandsData.strand_id);
+
+      sleSelect.innerHTML = `<option value="" disabled selected>-- Select Learning Experience --</option>`;
+      sles.forEach(sle => sleSelect.innerHTML += `<option value="${sle.id}">${sle.name}</option>`);
+
+      if (strandsData.learning_experience_id) sleSelect.value = strandsData.learning_experience_id;
+    }
+  }
+
+  // ✅ Handle editing window
+  const createdDate = new Date(existingAssessment.created_at);
+  const now = new Date();
+  const diffDays = (now - createdDate) / (1000 * 60 * 60 * 24);
+
   if (diffDays <= 3) {
-    statusEl.innerText = `Existing assessment found. You can update results (within ${Math.ceil(3 - diffDays)} days).`;
-    document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = false);
+    statusEl.innerText = `Existing assessment found. You can update all fields (within ${Math.ceil(3 - diffDays)} days).`;
+    document.querySelectorAll(".performanceLevel, .coreCompetency").forEach(el => el.disabled = false);
+    document.getElementById("subjectCompetency").disabled = false;
+    strandSelect.disabled = false;
+    sleSelect.disabled = false;
   } else if (diffDays <= 7) {
     statusEl.innerText = `Editing window closed (after 3 days). Next assessment allowed after ${Math.ceil(7 - diffDays)} days.`;
-    document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = true);
+    document.querySelectorAll(".performanceLevel, .coreCompetency").forEach(el => el.disabled = true);
+    document.getElementById("subjectCompetency").disabled = true;
+    strandSelect.disabled = true;
+    sleSelect.disabled = true;
   } else {
     statusEl.innerText = "You can create a new assessment now.";
-    document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = false);
+    document.querySelectorAll(".performanceLevel, .coreCompetency").forEach(el => el.disabled = false);
+    document.getElementById("subjectCompetency").disabled = false;
+    strandSelect.disabled = false;
+    sleSelect.disabled = false;
   }
 
   return existingAssessment;
