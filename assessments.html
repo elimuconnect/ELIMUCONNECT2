@@ -395,20 +395,34 @@ if (existingAssessment) {
 
 
   // 🔥 Save strands + SLEs
-  await supabase.from("assessment_strands").delete().eq("assessment_id", assessmentId);
-  const strandRows = [];
+// 🔥 Save strands + SLEs (fixed version)
+await supabase.from("assessment_strands").delete().eq("assessment_id", assessmentId);
 
-  for (let sId of selectedStrands) {
-   const sleIdsForStrand = selectedSLEs.filter(sleId => 
-  parseInt(document.querySelector(`.sleCheckbox[value="${sleId}"]`)?.dataset.strandId) === parseInt(sId)
-);
-    if (sleIdsForStrand.length) {
-      sleIdsForStrand.forEach(sleId => strandRows.push({ assessment_id: assessmentId, strand_id: sId, learning_experience_id: sleId }));
-    } else {
-      strandRows.push({ assessment_id: assessmentId, strand_id: sId, learning_experience_id: null });
-    }
+// Build a map of selected SLEs by strand
+const sleCheckboxes = Array.from(document.querySelectorAll(".sleCheckbox"));
+const sleMap = {};
+sleCheckboxes.forEach(cb => {
+  const strand = parseInt(cb.dataset.strandId);
+  if (!sleMap[strand]) sleMap[strand] = [];
+  if (selectedSLEs.includes(cb.value)) sleMap[strand].push(cb.value);
+});
+
+// Build assessment_strands rows
+const strandRows = [];
+selectedStrands.forEach(sId => {
+  const sleIdsForStrand = sleMap[sId] || [];
+  if (sleIdsForStrand.length) {
+    sleIdsForStrand.forEach(sleId => strandRows.push({
+      assessment_id: assessmentId,
+      strand_id: sId,
+      learning_experience_id: sleId
+    }));
+  } else {
+    strandRows.push({ assessment_id: assessmentId, strand_id: sId, learning_experience_id: null });
   }
-  if (strandRows.length) await supabase.from("assessment_strands").insert(strandRows);
+});
+
+if (strandRows.length) await supabase.from("assessment_strands").insert(strandRows);
 
   // Save student results
   const rows = Array.from(studentRows).map(tr => ({
