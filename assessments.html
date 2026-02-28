@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
@@ -117,12 +117,12 @@ const { data: levels } = await supabase
   .select("id, label")
   .order("order_index", { ascending: true });
 
-// Load competencies and populate top core competencies
+// Load competencies
 const { data: competencies } = await supabase.from("competencies").select("id, name, subject_id").or("is_active.is.null,is_active.eq.true").order("name");
 const coreContainer = document.getElementById("coreCompetenciesContainer");
 
 competencies
-  .filter(c => !c.subject_id)   // Only global core competencies
+  .filter(c => !c.subject_id)
   .forEach(c => {
     const label = document.createElement("label");
     label.className = "competency-checkbox";
@@ -151,39 +151,53 @@ else tbody.innerHTML = students.map(s => `
   </td>
 </tr>`).join("");
 
-// Load strands and sub-strands
+// Load strands & learning experiences
 const strandSelect = document.getElementById("strandSelect");
 const sleSelect = document.getElementById("sleSelect");
-const { data: strands } = await supabase.from("strands")
-  .select("id, name")
-  .eq("subject_id", subjectId)
-  .eq("grade", 10)
-  .order("name");
-
+const { data: strands } = await supabase.from("strands").select("id, name").eq("subject_id", subjectId).eq("grade", 10).order("name");
 strands.forEach(s => strandSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`);
 
 strandSelect.onchange = async () => {
   const strandId = strandSelect.value;
-  const { data: sles } = await supabase.from("learning_experiences")
-    .select("id, name")
-    .eq("strand_id", strandId)
-    .order("name");
-
+  const { data: sles } = await supabase.from("learning_experiences").select("id, name").eq("strand_id", strandId).order("name");
   sleSelect.innerHTML = `<option value="" disabled selected>-- Select Learning Experience --</option>`;
   sles.forEach(sle => sleSelect.innerHTML += `<option value="${sle.id}">${sle.name}</option>`);
 };
 
-
-// --------------------
-// Preload existing assessment (if any) for editing
-// --------------------
-async function preloadAssessment() {
+// Save assessment with 3/7-day rule
+document.getElementById("saveAssessment").onclick = async () => {
+  const strand = strandSelect.value;
+  const sleId = sleSelect.value || null;
   const termId = document.getElementById("termSelect").value;
+  const termName = document.getElementById("termSelect").selectedOptions[0]?.text;
   const assessmentTypeId = document.getElementById("assessmentTypeSelect").value;
+  const selectedCoreCompetencies = Array.from(document.querySelectorAll(".coreCompetency:checked")).map(cb => cb.value);
+  const subjectCompetency = document.getElementById("subjectCompetency").value;
 
-  if (!termId || !assessmentTypeId) return;
+  if (!termId || !assessmentTypeId || !strand) { alert("Please select Term, Assessment Type, and Strand."); return; }
+  if (!selectedCoreCompetencies.length) { alert("Select at least one core competency."); return; }
 
-  // Fetch existing assessment
+  const studentRows = document.querySelectorAll("#studentsBody tr");
+  let missingLevel = false;
+  for (let row of studentRows) {
+    const levelSelect = row.querySelector(".performanceLevel");
+    if (!levelSelect) continue;
+    const level = levelSelect.value;
+    row.style.backgroundColor = "";
+    if (!level) { missingLevel = true; row.style.backgroundColor = "rgba(255,0,0,0.2)"; }
+    levelSelect.onchange = () => row.style.backgroundColor = "";
+  }
+  if (missingLevel) { alert("Some students are missing Performance Levels."); return; }
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) { window.location.href="index.html"; return; }
+
+  const { data: profile } = await supabase.from("profiles").select("school_id").eq("auth_id", user.id).single();
+  const schoolId = profile?.school_id;
+  const today = new Date().toISOString();
+  const assessmentTitle = `${subjectData.name} - ${termName} (${academicYear})`;
+
+  // Check existing assessment
   const { data: existingAssessment } = await supabase.from("assessments")
     .select("*")
     .eq("class_id", classId)
@@ -192,172 +206,47 @@ async function preloadAssessment() {
     .eq("assessment_type_id", assessmentTypeId)
     .single();
 
-  if (!existingAssessment) return; // nothing to preload
-
-  // Preload core competencies
-  const existingCores = existingAssessment.core_competencies || [];
-  document.querySelectorAll(".coreCompetency").forEach(cb => {
-    cb.checked = existingCores.includes(cb.value);
-  });
-
-  // Preload subject-specific competencies
-  document.getElementById("subjectCompetency").value = existingAssessment.subject_competencies || "";
-
-  // Preload strand and learning experience
-  if (existingAssessment.strand_id) {
-    strandSelect.value = existingAssessment.strand_id;
-
-    // Load learning experiences for the strand
-    const { data: sles } = await supabase.from("learning_experiences")
-      .select("id, name")
-      .eq("strand_id", existingAssessment.strand_id)
-      .order("name");
-
-    sleSelect.innerHTML = `<option value="" disabled>-- Select Learning Experience --</option>`;
-    sles.forEach(sle => sleSelect.innerHTML += `<option value="${sle.id}">${sle.name}</option>`);
-
-    if (existingAssessment.learning_experience_id) {
-      sleSelect.value = existingAssessment.learning_experience_id;
-    }
+  let isUpdate = false;
+  if (existingAssessment) {
+    const createdAt = new Date(existingAssessment.created_at);
+    const diffDays = Math.floor((new Date() - createdAt)/(1000*60*60*24));
+    if (diffDays <= 3) isUpdate = true;
+    else if (diffDays > 7) isUpdate = false;
+    else { isUpdate = confirm(`Assessment created ${diffDays} days ago. Update it?`); if (!isUpdate) return; }
   }
 
-  // Preload per-student achievement levels
-  const { data: results } = await supabase.from("assessment_results")
-    .select("student_id, achievement_level_id")
-    .eq("assessment_id", existingAssessment.id);
+  // Upsert or insert assessment
+  const { data: assessment, error: assessmentError } = await supabase.from("assessments").upsert([{
+    class_id, subject_id, term_id, assessment_type_id, school_id, title: assessmentTitle,
+    academic_year, core_competencies: selectedCoreCompetencies, subject_competencies: subjectCompetency,
+    strand_id: strand, learning_experience_id: sleId, updated_at: today, updated_by: user.id, created_by: user.id
+  }], { onConflict: isUpdate ? ["class_id","subject_id","term_id","assessment_type_id"] : undefined }).select().single();
 
-  if (results?.length) {
-    results.forEach(r => {
-      const row = document.querySelector(`#studentsBody tr[data-id='${r.student_id}']`);
-      if (row) {
-        const sel = row.querySelector(".performanceLevel");
-        if (sel) sel.value = r.achievement_level_id;
-      }
-    });
-  }
-}
+  if (assessmentError) { document.getElementById("status").innerText = `Error: ${assessmentError.message}`; return; }
 
-// Call preloadAssessment whenever term or assessment type changes
-document.getElementById("termSelect").onchange = preloadAssessment;
-document.getElementById("assessmentTypeSelect").onchange = preloadAssessment;
+  // Upsert student results
+  const rows = Array.from(studentRows).map(tr => ({
+    assessment_id: assessment.id,
+    student_id: tr.dataset.id,
+    subject_id: subjectId,
+    term_id: termId,
+    assessment_type_id: assessmentTypeId,
+    achievement_level_id: tr.querySelector(".performanceLevel").value,
+    academic_year, teacher_id: user.id, created_by: user.id, updated_at: today, updated_by: user.id
+  }));
 
- 
-document.getElementById("saveAssessment").onclick = async () => {
-  try {
-    const strand = strandSelect.value;
-    const sleId = sleSelect.value || null;
+  const { error: resultError } = await supabase.from("assessment_results").upsert(rows, { onConflict: ["assessment_id","student_id"], ignoreDuplicates: false });
+  if (resultError) { document.getElementById("status").innerText = `Error saving results: ${resultError.message}`; return; }
 
-    const termId = document.getElementById("termSelect").value;
-    const termName = document.getElementById("termSelect").selectedOptions[0]?.text;
-    const assessmentTypeId = document.getElementById("assessmentTypeSelect").value;
-
-    const selectedCoreCompetencies = Array.from(document.querySelectorAll(".coreCompetency:checked")).map(cb => cb.value);
-    const subjectCompetency = document.getElementById("subjectCompetency").value;
-
-    // Validate selections
-    if (!termId || !assessmentTypeId || !strand) {
-      alert("Please select Term, Assessment Type, and Strand before saving.");
-      return;
-    }
-    if (!selectedCoreCompetencies.length) {
-      alert("Please select at least one core competency before saving.");
-      return;
-    }
-
-    // Check per-student levels
-    const studentRows = document.querySelectorAll("#studentsBody tr");
-    let missingLevel = false;
-    studentRows.forEach(row => {
-      const levelSelect = row.querySelector(".performanceLevel");
-      if (!levelSelect) return;
-      if (!levelSelect.value) {
-        missingLevel = true;
-        row.style.backgroundColor = "rgba(255,0,0,0.2)";
-      }
-      levelSelect.onchange = () => row.style.backgroundColor = "";
-    });
-    if (missingLevel) {
-      alert("Some students are missing a Performance Level. Highlighted in red.");
-      return;
-    }
-
-    // Get logged-in user
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { window.location.href = "index.html"; return; }
-
-    const { data: profile } = await supabase.from("profiles").select("school_id").eq("auth_id", user.id).single();
-    const schoolId = profile?.school_id;
-
-    const today = new Date().toISOString();
-    const assessmentTitle = `${subjectData.name} - ${termName} (${academicYear})`;
-
-    // Upsert assessment
-    const { data: assessment, error: assessmentError } = await supabase.from("assessments").upsert([{
-      class_id: classId,
-      subject_id: subjectId,
-      term_id: termId,
-      assessment_type_id: assessmentTypeId,
-      school_id: schoolId,
-      title: assessmentTitle,
-      academic_year: academicYear,
-      core_competencies: selectedCoreCompetencies,
-      subject_competencies: subjectCompetency,
-      strand_id: strand,
-      learning_experience_id: sleId,
-      updated_at: today,
-      updated_by: user.id,
-      created_by: user.id
-    }], {
-      onConflict: ["class_id", "subject_id", "term_id", "assessment_type_id"]
-    }).select().single();
-
-    if (assessmentError) {
-      document.getElementById("status").innerText = `Error saving assessment: ${assessmentError.message}`;
-      return;
-    }
-
-    // Upsert per-student results
-    const rows = Array.from(studentRows).map(tr => ({
-      assessment_id: assessment.id,
-      student_id: tr.dataset.id,
-      subject_id: subjectId,
-      term_id: termId,
-      assessment_type_id: assessmentTypeId,
-      achievement_level_id: tr.querySelector(".performanceLevel").value,
-      academic_year: academicYear,
-      teacher_id: user.id,
-      created_by: user.id,
-      updated_at: today,
-      updated_by: user.id
-    }));
-
-    const { error: resultError } = await supabase.from("assessment_results").upsert(rows, {
-      onConflict: ["assessment_id", "student_id", "term_id", "assessment_type_id"]
-    });
-    if (resultError) {
-      document.getElementById("status").innerText = `Error saving results: ${resultError.message}`;
-      return;
-    }
-
-    // Upsert strand & learning experience
+  // Upsert strand & learning experience
+  if (strand) {
     const { error: sleError } = await supabase.from("assessment_strands").upsert([{
-      assessment_id: assessment.id,
-      strand_id: strand,
-      learning_experience_id: sleId
-    }], {
-      onConflict: ["assessment_id"]
-    });
-
-    if (sleError) {
-      document.getElementById("status").innerText = `Error saving strand/learning experience: ${sleError.message}`;
-      return;
-    }
-
-    document.getElementById("status").innerText = "Assessment and results updated successfully!";
-  } catch (err) {
-    console.error(err);
-    document.getElementById("status").innerText = `Unexpected error: ${err.message}`;
+      assessment_id: assessment.id, strand_id: strand, learning_experience_id: sleId
+    }], { onConflict: ["assessment_id"] });
+    if (sleError) { document.getElementById("status").innerText = `Error saving strand: ${sleError.message}`; return; }
   }
+
+  document.getElementById("status").innerText = "Assessment and results saved successfully!";
 };
 </script>
 </body>
