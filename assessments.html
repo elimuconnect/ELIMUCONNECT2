@@ -1,4 +1,4 @@
- <!DOCTYPE html> 
+<!DOCTYPE html> 
 <html>
 <head>
 <meta charset="UTF-8">
@@ -224,15 +224,19 @@ strands.forEach(s => {
 });
 
 // When strands are selected, load SLEs dynamically
-strandContainer.addEventListener("change", async () => {
-  const selectedStrands = Array.from(document.querySelectorAll(".strandCheckbox:checked")).map(cb => cb.value);
-  
-  sleContainer.innerHTML = ""; // clear previous SLEs
+// ✅ Load SLEs for selected strands
+async function loadSLEsForSelectedStrands() {
+  const selectedStrands = Array.from(
+    document.querySelectorAll(".strandCheckbox:checked")
+  ).map(cb => cb.value);
 
-  if (selectedStrands.length === 0) return;
+  sleContainer.innerHTML = "";
+
+  if (!selectedStrands.length) return;
 
   for (let strandId of selectedStrands) {
-    const { data: sles } = await supabase.from("learning_experiences")
+    const { data: sles } = await supabase
+      .from("learning_experiences")
       .select("id, name")
       .eq("strand_id", strandId)
       .order("name");
@@ -240,99 +244,59 @@ strandContainer.addEventListener("change", async () => {
     sles.forEach(sle => {
       const label = document.createElement("label");
       label.className = "competency-checkbox";
+
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
       checkbox.value = sle.id;
       checkbox.className = "sleCheckbox";
+      checkbox.dataset.strandId = strandId;
+
       label.appendChild(checkbox);
       label.appendChild(document.createTextNode(`${sle.name} (${strands.find(st => st.id == strandId).name})`));
       sleContainer.appendChild(label);
     });
   }
-});
+}
 
-// Save assessment
-// Save assessment
+// ✅ Save assessment including strands + SLEs
 document.getElementById("saveAssessment").onclick = async () => {
+  const selectedStrands = Array.from(document.querySelectorAll(".strandCheckbox:checked")).map(cb => cb.value);
+  const selectedSLEs = Array.from(document.querySelectorAll(".sleCheckbox:checked")).map(cb => cb.value);
 
-const selectedStrands = Array.from(document.querySelectorAll(".strandCheckbox:checked")).map(cb => cb.value);
-const selectedSLEs = Array.from(document.querySelectorAll(".sleCheckbox:checked")).map(cb => cb.value);
-
-if (!selectedStrands.length) {
-  alert("Please select at least one strand.");
-  return;
-}
-
-
-  
-  const termId = document.getElementById("termSelect").value;
-  const termName = document.getElementById("termSelect").selectedOptions[0]?.text;
-  const assessmentTypeId = document.getElementById("assessmentTypeSelect").value;
-
-  const selectedCoreCompetencies = Array.from(
-    document.querySelectorAll(".coreCompetency:checked")
-  ).map(cb => cb.value);
-
-  // ✅ Save as plain text (comma-separated)
-  const subjectCompetency = document.getElementById("subjectCompetency").value.trim();
-
-  if (!termId || !assessmentTypeId) {
-  alert("Please select Term and Assessment Type before saving.");
-  return;
-}
-
-  if (!selectedCoreCompetencies.length) {
-    alert("Please select at least one core competency before saving.");
+  if (!selectedStrands.length) {
+    alert("Please select at least one strand.");
     return;
   }
+
+  const termId = document.getElementById("termSelect").value;
+  const assessmentTypeId = document.getElementById("assessmentTypeSelect").value;
+  const selectedCoreCompetencies = Array.from(document.querySelectorAll(".coreCompetency:checked")).map(cb => cb.value);
+  const subjectCompetency = document.getElementById("subjectCompetency").value.trim();
+
+  if (!termId || !assessmentTypeId) { alert("Select Term and Assessment Type."); return; }
+  if (!selectedCoreCompetencies.length) { alert("Select at least one core competency."); return; }
 
   const studentRows = document.querySelectorAll("#studentsBody tr");
   let missingLevel = false;
-
-  for (let row of studentRows) {
-    const levelSelect = row.querySelector(".performanceLevel");
-    if (!levelSelect) continue;
-
-    const level = levelSelect.value;
-    row.style.backgroundColor = "";
-
-    if (!level) {
-      missingLevel = true;
-      row.style.backgroundColor = "rgba(255,0,0,0.2)";
-    }
-
-    levelSelect.onchange = () => row.style.backgroundColor = "";
-  }
-
-  if (missingLevel) {
-    alert("Some students are missing a Performance Level.");
-    return;
-  }
+  studentRows.forEach(row => {
+    const level = row.querySelector(".performanceLevel")?.value;
+    if (!level) { missingLevel = true; row.style.backgroundColor = "rgba(255,0,0,0.2)"; }
+    else row.style.backgroundColor = "";
+  });
+  if (missingLevel) { alert("Some students are missing a Performance Level."); return; }
 
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    window.location.href = "index.html";
-    return;
-  }
+  if (!user) return window.location.href = "index.html";
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("school_id")
-    .eq("auth_id", user.id)
-    .single();
-
-  if (!profile?.school_id) {
-    alert("Cannot determine school_id");
-    return;
-  }
+  const { data: profile } = await supabase.from("profiles").select("school_id").eq("auth_id", user.id).single();
+  if (!profile?.school_id) { alert("Cannot determine school_id"); return; }
 
   const schoolId = profile.school_id;
   const today = new Date().toISOString();
-  const assessmentTitle = `${subjectData.name} - ${termName} (${academicYear})`;
+  const assessmentTitle = `${subjectData.name} - ${document.getElementById("termSelect").selectedOptions[0].text} (${academicYear})`;
 
-  // 🔎 Check if similar assessment exists
-  const { data: existingAssessment } = await supabase
-    .from("assessments")
+  // 🔎 Check existing assessment
+  let { data: existingAssessment } = await supabase.from("assessments")
     .select("*")
     .eq("class_id", classId)
     .eq("subject_id", subjectId)
@@ -428,40 +392,23 @@ if (existingAssessment) {
   assessmentId = newAssessment.id;
 }
 
-// 🔥 Save selected strands + learning experiences
 
-// Delete old ones if editing
-await supabase
-  .from("assessment_strands")
-  .delete()
-  .eq("assessment_id", assessmentId);
 
-const strandRows = [];
+  // 🔥 Save strands + SLEs
+  await supabase.from("assessment_strands").delete().eq("assessment_id", assessmentId);
+  const strandRows = [];
 
-for (let sId of selectedStrands) {
-  if (selectedSLEs.length > 0) {
-    selectedSLEs.forEach(sleId => {
-      strandRows.push({
-        assessment_id: assessmentId,
-        strand_id: sId,
-        learning_experience_id: sleId
-      });
-    });
-  } else {
-    strandRows.push({
-      assessment_id: assessmentId,
-      strand_id: sId,
-      learning_experience_id: null
-    });
+  for (let sId of selectedStrands) {
+    const sleIdsForStrand = selectedSLEs.filter(sleId => document.querySelector(`.sleCheckbox[value="${sleId}"]`)?.dataset.strandId === sId);
+    if (sleIdsForStrand.length) {
+      sleIdsForStrand.forEach(sleId => strandRows.push({ assessment_id: assessmentId, strand_id: sId, learning_experience_id: sleId }));
+    } else {
+      strandRows.push({ assessment_id: assessmentId, strand_id: sId, learning_experience_id: null });
+    }
   }
-}
+  if (strandRows.length) await supabase.from("assessment_strands").insert(strandRows);
 
-if (strandRows.length > 0) {
-  await supabase.from("assessment_strands").insert(strandRows);
-}
-
-  
-  // ✅ Save / Update results (levels only)
+  // Save student results
   const rows = Array.from(studentRows).map(tr => ({
     assessment_id: assessmentId,
     student_id: tr.dataset.id,
@@ -473,25 +420,14 @@ if (strandRows.length > 0) {
     teacher_id: user.id,
     created_by: user.id
   }));
+  const { error: resultError } = await supabase.from("assessment_results").upsert(rows, { onConflict: ['assessment_id','student_id'] });
+  if (resultError) { document.getElementById("status").innerText = resultError.message; return; }
 
-  const { error: resultError } = await supabase
-    .from("assessment_results")
-    .upsert(rows, {
-      onConflict: ['assessment_id','student_id'],
-      ignoreDuplicates: false
-    });
-
-  if (resultError) {
-    document.getElementById("status").innerText = resultError.message;
-    return;
-  }
-
-  
-
-  document.getElementById("status").innerText =
-    "Assessment saved successfully!";
+  document.getElementById("status").innerText = "Assessment saved successfully!";
 };
 
+
+ 
 async function loadExistingAssessment() {
   const termSelect = document.getElementById("termSelect");
   const assessmentTypeSelect = document.getElementById("assessmentTypeSelect");
@@ -522,8 +458,11 @@ async function loadExistingAssessment() {
     statusEl.innerText = "No previous assessment found. You can create a new one.";
     document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = false);
     document.getElementById("subjectCompetency").value = "";
-    strandSelect.value = "";
-    sleSelect.innerHTML = `<option value="" disabled selected>-- Select Learning Experience --</option>`;
+    // Uncheck all strand checkboxes
+document.querySelectorAll(".strandCheckbox").forEach(cb => cb.checked = false);
+
+// Clear all SLE checkboxes
+document.getElementById("sleContainer").innerHTML = "";
     document.querySelectorAll(".coreCompetency").forEach(cb => cb.checked = false);
     return null;
   }
@@ -562,14 +501,6 @@ if (strandData && strandData.length > 0) {
     cb.checked = savedStrandIds.includes(cb.value);
   });
 
-  strandContainer.dispatchEvent(new Event("change"));
-
-  setTimeout(() => {
-    document.querySelectorAll(".sleCheckbox").forEach(cb => {
-      cb.checked = savedSLEIds.includes(cb.value);
-    });
-  }, 300);
-}
 
   // 6️⃣ Load student results
   const { data: results } = await supabase
@@ -587,6 +518,16 @@ if (strandData && strandData.length > 0) {
   });
 
 
+await loadSLEsForSelectedStrands();
+
+// Small delay to ensure dynamic checkboxes exist
+setTimeout(() => {
+  document.querySelectorAll(".sleCheckbox").forEach(cb => {
+    cb.checked = savedSLEIds.includes(cb.value);
+  });
+}, 100);
+}
+  
 const EDIT_WINDOW_DAYS = 14;
 
 if (diffDays <= EDIT_WINDOW_DAYS) {
