@@ -156,7 +156,6 @@ else tbody.innerHTML = students.map(s => `
 
 // Load strands and sub-strands from DB
 const strandSelect = document.getElementById("strandSelect");
-const substrandSelect = document.getElementById("substrandSelect");
 
 // Load strands for the selected subject
 const { data: strands } = await supabase.from("strands")
@@ -266,9 +265,15 @@ document.getElementById("saveAssessment").onclick = async () => {
 let assessmentId;
 
 if (existingAssessment) {
-  const createdDate = new Date(existingAssessment.created_at);
-  const now = new Date();
- const EDIT_WINDOW_DAYS = 14;
+
+const createdDate = new Date(existingAssessment.created_at);
+const now = new Date();
+
+const diffDays = Math.floor(
+  (now - createdDate) / (1000 * 60 * 60 * 24)
+);
+
+const EDIT_WINDOW_DAYS = 14;
 
 if (diffDays <= EDIT_WINDOW_DAYS) {
 
@@ -284,9 +289,7 @@ if (diffDays <= EDIT_WINDOW_DAYS) {
 
 } else {
 
-  // ❌ DO NOT UPDATE OLD ONE
-  // ✅ CREATE NEW ONE INSTEAD
-
+  // ✅ Create NEW assessment after 14 days
   const { data: newAssessment, error } = await supabase
     .from("assessments")
     .insert([{
