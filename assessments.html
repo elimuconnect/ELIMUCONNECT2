@@ -263,20 +263,6 @@ if (!selectedStrands.length) {
   return;
 }
 
-// For assessment_strands table
-if (!existingAssessment || (existingAssessment && assessmentId !== existingAssessment.id)) {
-  const strandRows = [];
-  for (let sId of selectedStrands) {
-    for (let sleId of selectedSLEs.length ? selectedSLEs : [null]) {
-      strandRows.push({
-        assessment_id: assessmentId,
-        strand_id: sId,
-        learning_experience_id: sleId
-      });
-    }
-  }
-  await supabase.from("assessment_strands").insert(strandRows);
-}
 
   
   const termId = document.getElementById("termSelect").value;
