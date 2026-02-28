@@ -483,17 +483,27 @@ async function loadExistingAssessment() {
     }
   });
 
-  // 7️⃣ Set editability based on 14-day window
-// 7️⃣ Set editability based on 14-day window
-if (diffDays <= 14) {
-  statusEl.innerText = `Existing assessment found. You can update all fields (within ${Math.ceil(14 - diffDays)} days).`;
+
+const EDIT_WINDOW_DAYS = 14;
+
+if (diffDays <= EDIT_WINDOW_DAYS) {
+
+  const remainingDays = EDIT_WINDOW_DAYS - diffDays;
+
+  statusEl.innerText =
+    `Existing assessment found. Editing allowed for ${remainingDays} more day(s).`;
+
   document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = false);
   document.getElementById("subjectCompetency").disabled = false;
   strandSelect.disabled = false;
   sleSelect.disabled = false;
   document.querySelectorAll(".coreCompetency").forEach(cb => cb.disabled = false);
+
 } else {
-  statusEl.innerText = `Editing window closed (after 14 days). You can create a new assessment now.`;
+
+  statusEl.innerText =
+    `Editing window closed (after ${EDIT_WINDOW_DAYS} days). You can create a new assessment now.`;
+
   document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = true);
   document.getElementById("subjectCompetency").disabled = true;
   strandSelect.disabled = true;
@@ -501,6 +511,7 @@ if (diffDays <= 14) {
   document.querySelectorAll(".coreCompetency").forEach(cb => cb.disabled = true);
 }
 
+  
   return existingAssessment;
 }
   document.getElementById("termSelect").onchange = loadExistingAssessment;
