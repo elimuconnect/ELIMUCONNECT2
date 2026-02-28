@@ -152,7 +152,7 @@ else tbody.innerHTML = students.map(s => `
 
 // Load strands and sub-strands from DB
 const strandSelect = document.getElementById("strandSelect");
-const substrandSelect = document.getElementById("substrandSelect");
+
 
 // Load strands for the selected subject
 const { data: strands } = await supabase.from("strands")
