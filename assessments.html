@@ -515,15 +515,41 @@ const strandRows = selectedStrands.map(sId => {
   };
 });
 
-// First remove existing records for this assessment
-await supabase.from("assessment_strands").delete().eq("assessment_id", assessmentId);
+// 🔹 For each selected strand, upsert the learning experiences
+for (let row of strandRows) {
+  const { data: existingRow, error: fetchError } = await supabase
+    .from("assessment_strands")
+    .select("*")
+    .eq("assessment_id", row.assessment_id)
+    .eq("strand_id", row.strand_id)
+    .maybeSingle();
 
-// Insert the new records
-if (strandRows.length) {
-  const { error } = await supabase.from("assessment_strands").insert(strandRows);
-  if (error) {
-    document.getElementById("status").innerText = "Error saving strands/SLEs: " + error.message;
+  if (fetchError) {
+    document.getElementById("status").innerText = "Error checking strand: " + fetchError.message;
     return;
+  }
+
+  if (existingRow) {
+    // ✅ Strand exists → update only learning_experience_id
+    const { error: updateError } = await supabase
+      .from("assessment_strands")
+      .update({ learning_experience_id: row.learning_experience_id })
+      .eq("id", existingRow.id);
+
+    if (updateError) {
+      document.getElementById("status").innerText = "Error updating SLEs: " + updateError.message;
+      return;
+    }
+  } else {
+    // 🆕 Strand not yet saved → insert new row
+    const { error: insertError } = await supabase
+      .from("assessment_strands")
+      .insert([row]);
+
+    if (insertError) {
+      document.getElementById("status").innerText = "Error saving strand: " + insertError.message;
+      return;
+    }
   }
 }
   // Save student results
