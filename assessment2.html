@@ -21,7 +21,7 @@
 <p><strong>Academic Year:</strong> <span id="yearLabel"></span></p>
 <p><strong>Class:</strong> <span id="classLabel"></span></p>
 <p><strong>Subject:</strong> <span id="subjectLabel"></span></p>
-
+<p id="assessmentStatus" style="font-weight:bold; color:blue;"></p>
 <p>
   <label>Term:</label>
   <select id="termSelect"></select>
@@ -111,6 +111,10 @@ document.getElementById("termSelect").innerHTML = `<option value="" disabled sel
 const { data: assessmentTypes } = await supabase.from("assessment_types").select("id, name");
 document.getElementById("assessmentTypeSelect").innerHTML = `<option value="" disabled selected>-- Select Assessment Type --</option>${assessmentTypes.map(a => `<option value="${a.id}">${a.name}</option>`).join("")}`;
 
+// Auto-check on page load after terms/types are loaded
+loadExistingAssessment();
+
+  
 // Load achievement levels
 const { data: levels } = await supabase
   .from("achievement_levels")
@@ -152,8 +156,7 @@ else tbody.innerHTML = students.map(s => `
 
 // Load strands and sub-strands from DB
 const strandSelect = document.getElementById("strandSelect");
-const substrandSelect = document.getElementById("substrandSelect");
-
+const sleSelect = document.getElementById("sleSelect");
 // Load strands for the selected subject
 const { data: strands } = await supabase.from("strands")
   .select("id, name")
@@ -179,20 +182,24 @@ strandSelect.onchange = async () => {
 // Save assessment
 document.getElementById("saveAssessment").onclick = async () => {
   const strand = strandSelect.value;
-  const sleId = sleSelect.value || null; // renamed from substrandSelect
+  const sleId = sleSelect.value || null;
 
   const termId = document.getElementById("termSelect").value;
   const termName = document.getElementById("termSelect").selectedOptions[0]?.text;
   const assessmentTypeId = document.getElementById("assessmentTypeSelect").value;
 
-  const selectedCoreCompetencies = Array.from(document.querySelectorAll(".coreCompetency:checked"))
-                                        .map(cb => cb.value);
-  const subjectCompetency = document.getElementById("subjectCompetency").value;
+  const selectedCoreCompetencies = Array.from(
+    document.querySelectorAll(".coreCompetency:checked")
+  ).map(cb => cb.value);
+
+  // ✅ Save as plain text (comma-separated)
+  const subjectCompetency = document.getElementById("subjectCompetency").value.trim();
 
   if (!termId || !assessmentTypeId || !strand) {
     alert("Please select Term, Assessment Type, and Strand before saving.");
     return;
   }
+
   if (!selectedCoreCompetencies.length) {
     alert("Please select at least one core competency before saving.");
     return;
@@ -200,60 +207,151 @@ document.getElementById("saveAssessment").onclick = async () => {
 
   const studentRows = document.querySelectorAll("#studentsBody tr");
   let missingLevel = false;
+
   for (let row of studentRows) {
     const levelSelect = row.querySelector(".performanceLevel");
     if (!levelSelect) continue;
+
     const level = levelSelect.value;
     row.style.backgroundColor = "";
+
     if (!level) {
       missingLevel = true;
       row.style.backgroundColor = "rgba(255,0,0,0.2)";
     }
+
     levelSelect.onchange = () => row.style.backgroundColor = "";
   }
+
   if (missingLevel) {
-    alert("Some students are missing a Performance Level. Highlighted in red. Please complete before saving.");
+    alert("Some students are missing a Performance Level.");
     return;
   }
 
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) { window.location.href="index.html"; return; }
-
-  const { data: profile } = await supabase.from("profiles")
-                                         .select("school_id")
-                                         .eq("auth_id", user.id)
-                                         .single();
-  if (!profile?.school_id) { alert("Cannot determine school_id"); return; }
-  const schoolId = profile.school_id;
-
-  const today = new Date().toISOString();
-  const assessmentTitle = `${subjectData.name} - ${termName} (${academicYear})`;
-
-  // Insert assessment
-  const { data: assessment, error: assessmentError } = await supabase.from("assessments").upsert([{
-    title: assessmentTitle,
-    class_id: classId,
-    subject_id: subjectId,
-    school_id: schoolId,
-    term_id: termId,
-    term: termName,
-    academic_year: academicYear,
-    assessment_type_id: assessmentTypeId,
-    learning_area_id: subjectId,
-    assessment_date: today,
-    created_by: user.id,
-    core_competencies: selectedCoreCompetencies,
-    subject_competencies: subjectCompetency
-  }], { onConflict: ['id'], ignoreDuplicates: false }).select().single();
-
-  if (assessmentError) {
-    document.getElementById("status").innerText = `Error saving assessment: ${assessmentError.message}`;
+  if (!user) {
+    window.location.href = "index.html";
     return;
   }
 
-  // Insert/update per-student results
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("school_id")
+    .eq("auth_id", user.id)
+    .single();
+
+  if (!profile?.school_id) {
+    alert("Cannot determine school_id");
+    return;
+  }
+
+  const schoolId = profile.school_id;
+  const today = new Date().toISOString();
+  const assessmentTitle = `${subjectData.name} - ${termName} (${academicYear})`;
+
+  // 🔎 Check if similar assessment exists
+  const { data: existingAssessment } = await supabase
+    .from("assessments")
+    .select("*")
+    .eq("class_id", classId)
+    .eq("subject_id", subjectId)
+    .eq("term_id", termId)
+    .eq("assessment_type_id", assessmentTypeId)
+    .eq("academic_year", academicYear)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+let assessmentId;
+
+if (existingAssessment) {
+
+  const createdDate = new Date(existingAssessment.created_at);
+  const now = new Date();
+
+  const diffDays = Math.floor(
+    (now - createdDate) / (1000 * 60 * 60 * 24)
+  );
+
+  const EDIT_WINDOW_DAYS = 14;
+
+  if (diffDays <= EDIT_WINDOW_DAYS) {
+
+    // ✅ Update existing assessment
+    assessmentId = existingAssessment.id;
+
+    await supabase.from("assessments")
+      .update({
+        core_competencies: selectedCoreCompetencies,
+        subject_competencies: subjectCompetency
+      })
+      .eq("id", assessmentId);
+
+  } else {
+
+    // ✅ Create NEW assessment (after 14 days)
+
+    const { data: newAssessment, error } = await supabase
+      .from("assessments")
+      .insert([{
+        title: assessmentTitle,
+        class_id: classId,
+        subject_id: subjectId,
+        learning_area_id: subjectId,
+        school_id: schoolId,
+        term_id: termId,
+        academic_year: academicYear,
+        assessment_type_id: assessmentTypeId,
+        assessment_date: today,
+        created_by: user.id,
+        core_competencies: selectedCoreCompetencies,
+        subject_competencies: subjectCompetency
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      document.getElementById("status").innerText = error.message;
+      return;
+    }
+
+    assessmentId = newAssessment.id;
+  }
+
+} else {
+
+  // 🆕 First time → create assessment
+
+  const { data: newAssessment, error } = await supabase
+    .from("assessments")
+    .insert([{
+      title: assessmentTitle,
+      class_id: classId,
+      subject_id: subjectId,
+      learning_area_id: subjectId,
+      school_id: schoolId,
+      term_id: termId,
+      academic_year: academicYear,
+      assessment_type_id: assessmentTypeId,
+      assessment_date: today,
+      created_by: user.id,
+      core_competencies: selectedCoreCompetencies,
+      subject_competencies: subjectCompetency
+    }])
+    .select()
+    .single();
+
+  if (error) {
+    document.getElementById("status").innerText = error.message;
+    return;
+  }
+
+  assessmentId = newAssessment.id;
+}
+
+  // ✅ Save / Update results (levels only)
   const rows = Array.from(studentRows).map(tr => ({
-    assessment_id: assessment.id,
+    assessment_id: assessmentId,
     student_id: tr.dataset.id,
     subject_id: subjectId,
     term_id: termId,
@@ -264,28 +362,160 @@ document.getElementById("saveAssessment").onclick = async () => {
     created_by: user.id
   }));
 
-  const { error: resultError } = await supabase.from("assessment_results").upsert(rows, { onConflict: ['assessment_id','student_id'], ignoreDuplicates: false });
+  const { error: resultError } = await supabase
+    .from("assessment_results")
+    .upsert(rows, {
+      onConflict: ['assessment_id','student_id'],
+      ignoreDuplicates: false
+    });
+
   if (resultError) {
-    document.getElementById("status").innerText = `Error saving results: ${resultError.message}`;
+    document.getElementById("status").innerText = resultError.message;
     return;
   }
 
-  // Insert/update strand & learning experience
-  if (strand) {
-    const { error: sleError } = await supabase.from("assessment_strands").upsert([{
-      assessment_id: assessment.id,
+  // Save strand + learning experience ONLY when new assessment created
+  if (!existingAssessment || (existingAssessment && assessmentId !== existingAssessment.id)) {
+    await supabase.from("assessment_strands").insert([{
+      assessment_id: assessmentId,
       strand_id: strand,
       learning_experience_id: sleId
-    }], { onConflict: ['assessment_id'], ignoreDuplicates: false });
+    }]);
+  }
 
-    if (sleError) {
-      document.getElementById("status").innerText = `Error saving strand/learning experience: ${sleError.message}`;
-      return;
+  document.getElementById("status").innerText =
+    "Assessment saved successfully!";
+};
+
+async function loadExistingAssessment() {
+  const termSelect = document.getElementById("termSelect");
+  const assessmentTypeSelect = document.getElementById("assessmentTypeSelect");
+  const statusEl = document.getElementById("assessmentStatus");
+
+  const termId = termSelect.value;
+  const assessmentTypeId = assessmentTypeSelect.value;
+
+  if (!termId || !assessmentTypeId) {
+    statusEl.innerText = "";
+    return null;
+  }
+
+  // 1️⃣ Get existing assessment
+  const { data: existingAssessment } = await supabase
+    .from("assessments")
+    .select("*")
+    .eq("class_id", classId)
+    .eq("subject_id", subjectId)
+    .eq("term_id", termId)
+    .eq("assessment_type_id", assessmentTypeId)
+    .eq("academic_year", academicYear)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!existingAssessment) {
+    statusEl.innerText = "No previous assessment found. You can create a new one.";
+    document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = false);
+    document.getElementById("subjectCompetency").value = "";
+    strandSelect.value = "";
+    sleSelect.innerHTML = `<option value="" disabled selected>-- Select Learning Experience --</option>`;
+    document.querySelectorAll(".coreCompetency").forEach(cb => cb.checked = false);
+    return null;
+  }
+
+  // 2️⃣ Calculate difference in days
+  const createdDate = new Date(existingAssessment.created_at);
+  const now = new Date();
+  const diffDays = Math.floor(
+  (now - createdDate) / (1000 * 60 * 60 * 24)
+);
+
+  // 3️⃣ Load core competencies
+  const selectedCoreIds = existingAssessment.core_competencies || [];
+  document.querySelectorAll(".coreCompetency").forEach(cb => {
+    cb.checked = selectedCoreIds.includes(cb.value);
+  });
+
+  // 4️⃣ Load subject competencies
+  document.getElementById("subjectCompetency").value = existingAssessment.subject_competencies || "";
+
+  // 5️⃣ Load strand and SLE
+  const { data: strandData } = await supabase
+    .from("assessment_strands")
+    .select("*")
+    .eq("assessment_id", existingAssessment.id)
+    .maybeSingle();
+
+  if (strandData) {
+    // Set strand
+    if (strandData.strand_id) strandSelect.value = strandData.strand_id;
+
+    // Load SLEs for that strand
+    if (strandData.strand_id) {
+      const { data: sles } = await supabase
+        .from("learning_experiences")
+        .select("id, name")
+        .eq("strand_id", strandData.strand_id)
+        .order("name");
+
+      sleSelect.innerHTML = `<option value="" disabled selected>-- Select Learning Experience --</option>`;
+      sles.forEach(sle => sleSelect.innerHTML += `<option value="${sle.id}">${sle.name}</option>`);
+
+      // Set selected SLE
+      if (strandData.learning_experience_id) {
+        sleSelect.value = strandData.learning_experience_id;
+      }
     }
   }
 
-  document.getElementById("status").innerText = "Assessment and results saved successfully!";
-};
+  // 6️⃣ Load student results
+  const { data: results } = await supabase
+    .from("assessment_results")
+    .select("*")
+    .eq("assessment_id", existingAssessment.id);
+
+  const studentRows = document.querySelectorAll("#studentsBody tr");
+  studentRows.forEach(tr => {
+    const studentResult = results.find(r => r.student_id === tr.dataset.id);
+    if (studentResult) {
+      const sel = tr.querySelector(".performanceLevel");
+      sel.value = studentResult.achievement_level_id;
+    }
+  });
+
+
+const EDIT_WINDOW_DAYS = 14;
+
+if (diffDays <= EDIT_WINDOW_DAYS) {
+
+  const remainingDays = EDIT_WINDOW_DAYS - diffDays;
+
+  statusEl.innerText =
+    `Existing assessment found. Editing allowed for ${remainingDays} more day(s).`;
+
+  document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = false);
+  document.getElementById("subjectCompetency").disabled = false;
+  strandSelect.disabled = false;
+  sleSelect.disabled = false;
+  document.querySelectorAll(".coreCompetency").forEach(cb => cb.disabled = false);
+
+} else {
+
+  statusEl.innerText =
+    `Editing window closed (after ${EDIT_WINDOW_DAYS} days). You can create a new assessment now.`;
+
+  document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = true);
+  document.getElementById("subjectCompetency").disabled = true;
+  strandSelect.disabled = true;
+  sleSelect.disabled = true;
+  document.querySelectorAll(".coreCompetency").forEach(cb => cb.disabled = true);
+}
+
+  
+  return existingAssessment;
+}
+  document.getElementById("termSelect").onchange = loadExistingAssessment;
+document.getElementById("assessmentTypeSelect").onchange = loadExistingAssessment;
 </script>
 </body>
 </html> 
