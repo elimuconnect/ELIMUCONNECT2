@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -269,6 +269,21 @@ if (!classId || !subjectId) {
   window.location.href="teacher-dashboard.html";
 }
 
+
+
+function resetSaveButton() {
+  const saveBtn = document.getElementById("saveAssessment");
+  const statusEl = document.getElementById("status");
+
+  if (saveBtn) {
+    saveBtn.disabled = false;
+    saveBtn.innerText = "Save Assessment";
+  }
+
+  if (statusEl) statusEl.innerText = "";
+}
+
+  
 // Display class and subject
 const { data: classData } = await supabase.from("classes").select("name").eq("id", classId).single();
 const { data: subjectData } = await supabase.from("subjects").select("name").eq("id", subjectId).single();
@@ -428,11 +443,14 @@ document.getElementById("saveAssessment").onclick = async () => {
   const selectedStrands = Array.from(document.querySelectorAll(".strandCheckbox:checked")).map(cb => cb.value);
   const selectedSLEs = Array.from(document.querySelectorAll(".sleCheckbox:checked")).map(cb => cb.value);
 
-  if (!selectedStrands.length) {
-    alert("Please select at least one strand.");
-    return;
-  }
+ 
 
+if (!selectedStrands.length) {
+  alert("Please select at least one strand.");
+  resetSaveButton();
+  return;
+}
+    
   const termId = document.getElementById("termSelect").value;
   const assessmentTypeId = document.getElementById("assessmentTypeSelect").value;
   const selectedCoreCompetencies = Array.from(document.querySelectorAll(".coreCompetency:checked")).map(cb => cb.value);
@@ -558,89 +576,68 @@ if (existingAssessment) {
 }
 
 
-
 if (!selectedStrands.length) {
   alert("Please select at least one strand.");
   return;
 }
 
-// Build a map of strandId => array of SLE IDs
+// Build map of strandId -> array of selected SLE IDs
 const sleCheckboxes = Array.from(document.querySelectorAll(".sleCheckbox"));
 const sleMap = {};
+
 sleCheckboxes.forEach(cb => {
-  const strand = cb.dataset.strandId; // UUID as string
+  const strand = cb.dataset.strandId;
   if (!sleMap[strand]) sleMap[strand] = [];
-  if (selectedSLEs.includes(cb.value)) sleMap[strand].push(cb.value);
-});
-// Build assessment_strands rows (one row per strand)
-const strandRows = selectedStrands.map(sId => {
-  const sleIdsForStrand = sleMap[sId] || []; // array of SLE IDs
-
-  return {
-    assessment_id: assessmentId,
-    strand_id: sId,
-    learning_experience_id: sleIdsForStrand.length ? JSON.stringify(sleIdsForStrand) : null
-  };
+  if (selectedSLEs.includes(cb.value)) {
+    sleMap[strand].push(cb.value);
+  }
 });
 
+// Build strand rows (one row per strand or SLE)
+const strandRows = [];
 
-// 🔹 BULK SYNC assessment_strands
+selectedStrands.forEach(sId => {
+  const sleIdsForStrand = sleMap[sId] || [];
 
-// 1️⃣ Fetch all existing strands for this assessment
-const { data: existingStrands = [], error: fetchError } = await supabase
+  if (sleIdsForStrand.length) {
+    sleIdsForStrand.forEach(sleId => {
+      strandRows.push({
+        assessment_id: assessmentId,
+        strand_id: sId,
+        learning_experience_id: sleId
+      });
+    });
+  } else {
+    strandRows.push({
+      assessment_id: assessmentId,
+      strand_id: sId,
+      learning_experience_id: null
+    });
+  }
+});
+
+// 1. delete all for this assessment
+const { error: delError } = await supabase
   .from("assessment_strands")
-  .select("strand_id")
+  .delete()
   .eq("assessment_id", assessmentId);
 
-if (fetchError) {
-  statusEl.innerText = "Error checking strands: " + fetchError.message;
+if (delError) {
+  statusEl.innerText = delError.message;
   return;
 }
 
-// 2️⃣ Convert strandRows to array (SAFE)
-const strandArray = Array.from(strandRows);
-
-// 3️⃣ Prepare rows for bulk upsert
-const rowsToUpsert = strandArray.map(row => ({
-  assessment_id: assessmentId,
-  strand_id: row.strand_id,
-  learning_experience_id: row.learning_experience_id
-}));
-
-// 4️⃣ Bulk UPSERT
-const { error: upsertError } = await supabase
-  .from("assessment_strands")
-  .upsert(rowsToUpsert, {
-    onConflict: ["assessment_id", "strand_id"]
-  });
-
-if (upsertError) {
-  statusEl.innerText = "Error saving strands: " + upsertError.message;
-  return;
-}
-
-// 5️⃣ Delete removed strands
-const selectedStrandIds = strandArray.map(r => r.strand_id);
-const existingStrandIds = existingStrands.map(s => s.strand_id);
-
-const strandsToDelete = existingStrandIds.filter(
-  id => !selectedStrandIds.includes(id)
-);
-
-if (strandsToDelete.length > 0) {
-  const { error: deleteError } = await supabase
+// 2. insert fresh rows
+if (strandRows.length) {
+  const { error } = await supabase
     .from("assessment_strands")
-    .delete()
-    .eq("assessment_id", assessmentId)
-    .in("strand_id", strandsToDelete);
+    .insert(strandRows);
 
-  if (deleteError) {
-    statusEl.innerText =
-      "Error deleting removed strands: " + deleteError.message;
+  if (error) {
+    statusEl.innerText = error.message;
     return;
   }
 }
-
 // 🔹 Save student results (already optimized)
 const rows = Array.from(studentRows).map(tr => ({
   assessment_id: assessmentId,
@@ -754,14 +751,8 @@ if (strandData && strandData.length > 0) {
 
   // Collect all saved SLE IDs across strands
   const savedSLEIds = strandData
-    .map(s => {
-      try {
-        return JSON.parse(s.learning_experience_id || "[]");
-      } catch (e) {
-        return [];
-      }
-    })
-    .flat(); // flatten into a single array
+  .map(s => s.learning_experience_id)
+  .filter(id => id !== null);
 
   // Load SLE checkboxes after strands are set
   await loadSLEsForSelectedStrands();
@@ -862,4 +853,4 @@ document.addEventListener("click", function(event) {
   
 </script>
 </body>
-</html> 
+</html>
