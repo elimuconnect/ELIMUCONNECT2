@@ -619,12 +619,12 @@ selectedStrands.forEach(sId => {
   }
 });
 
-// Remove old rows for this assessment
-await supabase.from("assessment_strands").delete().eq("assessment_id", assessmentId);
-
-// Insert fresh rows
 if (strandRows.length) {
-  const { error } = await supabase.from("assessment_strands").insert(strandRows);
+  const { error } = await supabase
+    .from("assessment_strands")
+    .upsert(strandRows, {
+      onConflict: ["assessment_id", "strand_id", "learning_experience_id"]
+    });
 
   if (error) {
     statusEl.innerText = "Error saving strands/SLEs: " + error.message;
