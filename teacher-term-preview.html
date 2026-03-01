@@ -1144,13 +1144,16 @@ function generateInsight(subjects) {
     subjectsArray[0].avg >= 3 &&
     subjectsArray[0].avg - subjectsArray[1].avg >= 0.5
   ) {
-    strengthSentence = `, with stronger performance in <strong>${subjectsArray[0].subject}</strong>`;
+   strengthSentence = ", with stronger performance in <strong>" +
+  subjectsArray[0].subject +
+  "</strong>";
   }
 
- return "<p style='margin:6px 0 12px 0;font-style:italic;color:#444;'>" +
-       "Overall, based on current evidence, the learner is <strong>" + overall + "</strong>" +
-       strengthSentence +
-       ".</p>";
+return `
+  <p ...>
+    Overall, based on current evidence, the learner is <strong>${overall}</strong>${strengthSentence}.
+  </p>
+`;
 }
 
 
