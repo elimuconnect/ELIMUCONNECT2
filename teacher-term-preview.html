@@ -871,35 +871,19 @@ ${intelligence.schoolImprovement !== null ? `
 }
 
   
-
 function getPerformanceBadge(level) {
   if (!level) return "";
 
   const map = {
-    "Below Expectations": "🔴",
-    "Approaching Expectations": "🟠",
-    "Meeting Expectations": "🟡",
-    "Exceeding Expectations": "🟢",
-    "Not Assessed(X)": "⚪"
+    "Below Expectations": "🔴 Below Expectations",
+    "Approaching Expectations": "🟠 Approaching Expectations",
+    "Meeting Expectations": "🟡 Meeting Expectations",
+    "Exceeding Expectations": "🟢 Exceeding Expectations",
+    "Not Assessed(X)": "⚪ Not Assessed"
   };
 
-  const icon = map[level] || "⚪";
-
-  return `
-    <span style="
-      display:inline-block;
-      padding:4px 10px;
-      border-radius:20px;
-      font-size:0.85rem;
-      font-weight:600;
-      background:#f3f4f6;
-      border:1px solid #ddd;
-    ">
-      ${icon} ${level}
-    </span>
-  `;
+  return map[level] || `⚪ ${level}`;
 }
-
 
   
 function renderGrouped(grouped, avgMap) {
