@@ -682,7 +682,7 @@ function renderSchoolAnalytics(records, termName, year, intelligence, schoolName
 
   let classMap = {};
   let subjectMap = {};
-  let bandCount = { below(1): 0, approaching(2): 0, meeting(3): 0, exceeding(4): 0 };
+  let bandCount = { below: 0, approaching: 0, meeting: 0, exceeding: 0 };
 
   // ===== PROCESS DATA =====
   records.forEach(r => {
