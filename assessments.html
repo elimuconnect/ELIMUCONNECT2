@@ -445,11 +445,6 @@ document.getElementById("saveAssessment").onclick = async () => {
 
  
 
-if (!selectedStrands.length) {
-  alert("Please select at least one strand.");
-  resetSaveButton();
-  return;
-}
     
   const termId = document.getElementById("termSelect").value;
   const assessmentTypeId = document.getElementById("assessmentTypeSelect").value;
