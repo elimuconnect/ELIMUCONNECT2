@@ -500,15 +500,14 @@ const records = data.map(r => ({
   className: r.class_name,
   schoolName: r.school_name,
   subject: r.subject,
-  competency: r.core_competencies,
+
+  core_competencies: r.core_competencies,
+  subject_competencies: r.subject_competencies,
+
   level: r.achievement_level,
   remarks: r.remarks,
-  assessment_id: r.assessment_id   // 👈 ADD THIS
+  assessment_id: r.assessment_id
 }));
-
-
-
-
 
   const { data: strandData } = await supabase
   .from("assessment_strands_view")
@@ -1026,7 +1025,12 @@ const strandOutcomes = (strandMap && strandMap[assessmentId]) || [];
       <tbody>
         ${rows.map(r => `
           <tr style="background:${levelColor[r.level] || '#fff'}">
-           <td>${r.core_competencies || r.subject_competencies || "—"}</td>
+
+<td>
+  ${r.core_competencies ? `<strong>Core:</strong> ${r.core_competencies}<br>` : ""}
+  ${r.subject_competencies ? `<strong>Subject:</strong> ${r.subject_competencies}` : ""}
+</td>
+           
             <td>${r.level || "—"}</td>
             <td>${r.remarks || "—"}</td>
           </tr>`).join("")}
