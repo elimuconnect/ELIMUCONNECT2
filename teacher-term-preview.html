@@ -1192,7 +1192,7 @@ function generateSupportFlag(subjects) {
     belowCount >= 3 ||                // repeated difficulty
     subjectAverages.filter(a => a <= 2).length >= 2 // weak in 2+ subjects
   ) {
-    return `<span style="color:#c0392b;font-weight:bold;">🔴 Needs Learning Support</span>`;
+   return "<span style='color:#c0392b;font-weight:bold;'>🔴 Needs Learning Support</span>";
   }
 
   /* 🟢 HIGH POTENTIAL */
