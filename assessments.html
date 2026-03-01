@@ -579,7 +579,7 @@ if (!selectedStrands.length) {
   return;
 }
 
-// 🔎 Check if strands already exist for this assessment (avoid duplicates)
+// 🔎 Check if rows already exist in DB
 const { data: existingStrands, error: checkError } = await supabase
   .from("assessment_strands")
   .select("id")
@@ -590,16 +590,25 @@ if (checkError) {
   return;
 }
 
-// 🚫 If rows already exist → do not insert again
-if (existingStrands && existingStrands.length > 0) {
-  console.log("Strands already exist. Skipping insert to avoid duplication.");
-} else {
+const hasExisting = existingStrands && existingStrands.length > 0;
 
-  // 🆕 Build rows only if none exist
+// ❌ Only require selection IF nothing exists in DB
+if (!selectedStrands.length && !hasExisting) {
+  alert("Please select at least one strand.");
+  return;
+}
+
+// ==============================
+// UPDATE LOGIC
+// ==============================
+
+// If user selected new strands OR wants to update → replace rows
+if (selectedStrands.length) {
+
+  // Build map of SLEs
   const sleCheckboxes = Array.from(document.querySelectorAll(".sleCheckbox"));
   const strandRows = [];
 
-  // Add checked SLEs
   sleCheckboxes.forEach(cb => {
     if (cb.checked) {
       strandRows.push({
@@ -610,7 +619,6 @@ if (existingStrands && existingStrands.length > 0) {
     }
   });
 
-  // Add strand rows without SLE
   selectedStrands.forEach(sId => {
     const hasSLE = strandRows.some(row => row.strand_id === sId);
     if (!hasSLE) {
@@ -622,7 +630,11 @@ if (existingStrands && existingStrands.length > 0) {
     }
   });
 
-  // 💾 Insert once
+  // Delete old rows and insert fresh
+  await supabase.from("assessment_strands")
+    .delete()
+    .eq("assessment_id", assessmentId);
+
   if (strandRows.length) {
     const { error } = await supabase
       .from("assessment_strands")
