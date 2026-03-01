@@ -574,54 +574,67 @@ if (existingAssessment) {
 
   assessmentId = newAssessment.id;
 }
-
-// ===============================
-// SAVE STRANDS + LEARNING EXPERIENCES
-// (Run ONLY when creating assessment)
-// ===============================
-
 if (!selectedStrands.length) {
   alert("Please select at least one strand.");
   return;
 }
 
-const sleCheckboxes = Array.from(document.querySelectorAll(".sleCheckbox"));
-const strandRows = [];
+// 🔎 Check if strands already exist for this assessment (avoid duplicates)
+const { data: existingStrands, error: checkError } = await supabase
+  .from("assessment_strands")
+  .select("id")
+  .eq("assessment_id", assessmentId);
 
-// Add checked SLEs
-sleCheckboxes.forEach(cb => {
-  if (cb.checked) {
-    strandRows.push({
-      assessment_id: assessmentId,
-      strand_id: cb.dataset.strandId,
-      learning_experience_id: cb.value
-    });
-  }
-});
-
-// If strand selected but no SLE selected
-selectedStrands.forEach(sId => {
-  const hasSLE = strandRows.some(row => row.strand_id === sId);
-  if (!hasSLE) {
-    strandRows.push({
-      assessment_id: assessmentId,
-      strand_id: sId,
-      learning_experience_id: null
-    });
-  }
-});
-
-// Insert once (NO DELETE, NO UPSERT)
-if (strandRows.length) {
-  const { error } = await supabase
-    .from("assessment_strands")
-    .insert(strandRows);
-
-  if (error) {
-    statusEl.innerText = error.message;
-    return;
-  }
+if (checkError) {
+  statusEl.innerText = checkError.message;
+  return;
 }
+
+// 🚫 If rows already exist → do not insert again
+if (existingStrands && existingStrands.length > 0) {
+  console.log("Strands already exist. Skipping insert to avoid duplication.");
+} else {
+
+  // 🆕 Build rows only if none exist
+  const sleCheckboxes = Array.from(document.querySelectorAll(".sleCheckbox"));
+  const strandRows = [];
+
+  // Add checked SLEs
+  sleCheckboxes.forEach(cb => {
+    if (cb.checked) {
+      strandRows.push({
+        assessment_id: assessmentId,
+        strand_id: cb.dataset.strandId,
+        learning_experience_id: cb.value
+      });
+    }
+  });
+
+  // Add strand rows without SLE
+  selectedStrands.forEach(sId => {
+    const hasSLE = strandRows.some(row => row.strand_id === sId);
+    if (!hasSLE) {
+      strandRows.push({
+        assessment_id: assessmentId,
+        strand_id: sId,
+        learning_experience_id: null
+      });
+    }
+  });
+
+  // 💾 Insert once
+  if (strandRows.length) {
+    const { error } = await supabase
+      .from("assessment_strands")
+      .insert(strandRows);
+
+    if (error) {
+      statusEl.innerText = error.message;
+      return;
+    }
+  }
+
+
 // 🔹 Save student results (already optimized)
 const rows = Array.from(studentRows).map(tr => ({
   assessment_id: assessmentId,
