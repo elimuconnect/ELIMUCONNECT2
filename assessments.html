@@ -472,6 +472,8 @@ document.getElementById("saveAssessment").onclick = async () => {
   const schoolId = profile.school_id;
   const today = new Date().toISOString();
 // Count existing assessments for this subject + term + year
+// inside saveAssessment onclick -> try block (after validation)
+
 const { data: existingList } = await supabase
   .from("assessments")
   .select("id")
@@ -482,8 +484,8 @@ const { data: existingList } = await supabase
 
 const sequence = (existingList?.length || 0) + 1;
 
-// Title with sequence
-const assessmentTitle = `${subjectData.name} - ${document.getElementById("termSelect").selectedOptions[
+const assessmentTitle =
+  `${subjectData.name} - ${document.getElementById("termSelect").selectedOptions[0].text} (${academicYear})-${sequence}`;
 
   // 🔎 Check existing assessment
   let { data: existingAssessment } = await supabase.from("assessments")
