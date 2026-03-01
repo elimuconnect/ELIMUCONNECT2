@@ -581,61 +581,24 @@ if (!selectedStrands.length) {
   return;
 }
 
-// Build map of strandId -> array of selected SLE IDs
-const sleCheckboxes = Array.from(document.querySelectorAll(".sleCheckbox"));
-const sleMap = {};
+if (!existingAssessment) {
 
-sleCheckboxes.forEach(cb => {
-  const strand = cb.dataset.strandId;
-  if (!sleMap[strand]) sleMap[strand] = [];
-  if (selectedSLEs.includes(cb.value)) {
-    sleMap[strand].push(cb.value);
-  }
-});
+  // 🔹 Build rows once (on create only)
+  const strandRows = selectedStrands.map(sId => ({
+    assessment_id: assessmentId,
+    strand_id: sId,
+    learning_experience_id: null
+  }));
 
-// Build strand rows (one row per strand or SLE)
-const strandRows = [];
+  if (strandRows.length) {
+    const { error } = await supabase
+      .from("assessment_strands")
+      .insert(strandRows);
 
-selectedStrands.forEach(sId => {
-  const sleIdsForStrand = sleMap[sId] || [];
-
-  if (sleIdsForStrand.length) {
-    sleIdsForStrand.forEach(sleId => {
-      strandRows.push({
-        assessment_id: assessmentId,
-        strand_id: sId,
-        learning_experience_id: sleId
-      });
-    });
-  } else {
-    strandRows.push({
-      assessment_id: assessmentId,
-      strand_id: sId,
-      learning_experience_id: null
-    });
-  }
-});
-
-// 1. delete all for this assessment
-const { error: delError } = await supabase
-  .from("assessment_strands")
-  .delete()
-  .eq("assessment_id", assessmentId);
-
-if (delError) {
-  statusEl.innerText = delError.message;
-  return;
-}
-
-// 2. insert fresh rows
-if (strandRows.length) {
-  const { error } = await supabase
-    .from("assessment_strands")
-    .insert(strandRows);
-
-  if (error) {
-    statusEl.innerText = error.message;
-    return;
+    if (error) {
+      statusEl.innerText = error.message;
+      return;
+    }
   }
 }
 // 🔹 Save student results (already optimized)
