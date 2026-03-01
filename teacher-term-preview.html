@@ -1051,8 +1051,17 @@ const strandOutcomes = (strandMap && strandMap[assessmentId]) || [];
       </thead>
       <tbody>
         ${rows.map(r => `
-          <tr style="background:${levelColor[r.level] || '#fff'}">
-
+         
+<tr style="
+  background:${levelColor[(r.level || "").trim()] || '#fff'};
+  border-left:4px solid ${
+    (r.level || "").trim() === "Below Expectations" ? "#e74c3c" :
+    (r.level || "").trim() === "Approaching Expectations" ? "#f1c40f" :
+    (r.level || "").trim() === "Meeting Expectations" ? "#3498db" :
+    (r.level || "").trim() === "Exceeding Expectations" ? "#2ecc71" :
+    "#ccc"
+  };
+">
 <td>
   ${r.core_competencies ? `<div><strong>Core:</strong> ${r.core_competencies}</div>` : ""}
   ${r.subject_competencies ? `<div><strong>Subject:</strong> ${r.subject_competencies.replace(/,/g, ", ")}</div>` : ""}
