@@ -272,14 +272,16 @@ if (!classId || !subjectId) {
 
 
 function resetSaveButton() {
-  const saveBtn = document.getElementById("saveAssessmentBtn");
+  const saveBtn = document.getElementById("saveAssessment");
   const statusEl = document.getElementById("status");
 
-  saveBtn.disabled = false;
-  saveBtn.innerText = "Save Assessment";
-  statusEl.innerText = "";
-}
+  if (saveBtn) {
+    saveBtn.disabled = false;
+    saveBtn.innerText = "Save Assessment";
+  }
 
+  if (statusEl) statusEl.innerText = "";
+}
 
   
 // Display class and subject
