@@ -574,12 +574,17 @@ if (existingAssessment) {
 
   assessmentId = newAssessment.id;
 }
-if (!selectedStrands.length) {
-  alert("Please select at least one strand.");
-  return;
-}
 
-// 🔎 Check if rows already exist in DB
+
+// ===============================
+// SAVE STRANDS + LEARNING EXPERIENCES
+// (Optional – only if selected)
+// ===============================
+
+const selectedStrands = Array.from(document.querySelectorAll(".strandCheckbox:checked")).map(cb => cb.value);
+const selectedSLEs = Array.from(document.querySelectorAll(".sleCheckbox:checked")).map(cb => cb.value);
+
+// 🔎 Check if assessment already has strands (to avoid duplicates)
 const { data: existingStrands, error: checkError } = await supabase
   .from("assessment_strands")
   .select("id")
@@ -590,22 +595,10 @@ if (checkError) {
   return;
 }
 
-const hasExisting = existingStrands && existingStrands.length > 0;
-
-// ❌ Only require selection IF nothing exists in DB
-if (!selectedStrands.length && !hasExisting) {
-  alert("Please select at least one strand.");
-  return;
-}
-
-// ==============================
-// UPDATE LOGIC
-// ==============================
-
-// If user selected new strands OR wants to update → replace rows
+// If user selected strands → update/replace rows
 if (selectedStrands.length) {
 
-  // Build map of SLEs
+  // Build rows for strands and SLEs
   const sleCheckboxes = Array.from(document.querySelectorAll(".sleCheckbox"));
   const strandRows = [];
 
@@ -630,8 +623,9 @@ if (selectedStrands.length) {
     }
   });
 
-  // Delete old rows and insert fresh
-  await supabase.from("assessment_strands")
+  // Delete old rows then insert fresh (replace)
+  await supabase
+    .from("assessment_strands")
     .delete()
     .eq("assessment_id", assessmentId);
 
@@ -645,8 +639,15 @@ if (selectedStrands.length) {
       return;
     }
   }
+
+} else {
+  // 👉 User did not select strands → skip strand saving
+  console.log("No strands selected. Skipping strand save.");
 }
 
+
+
+    
 // 🔹 Save student results (already optimized)
 const rows = Array.from(studentRows).map(tr => ({
   assessment_id: assessmentId,
