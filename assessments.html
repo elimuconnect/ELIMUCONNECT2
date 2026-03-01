@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -575,131 +575,89 @@ if (existingAssessment) {
   assessmentId = newAssessment.id;
 }
 
+// ===============================
+// SAVE STRANDS + LEARNING EXPERIENCES
+// (Run ONLY when creating assessment)
+// ===============================
 
-  if (!existingAssessment) {
-
-    const { data: newAssessment, error } = await supabase
-      .from("assessments")
-      .insert([{
-        title: assessmentTitle,
-        class_id: classId,
-        subject_id: subjectId,
-        learning_area_id: subjectId,
-        school_id: schoolId,
-        term_id: termId,
-        academic_year: academicYear,
-        assessment_type_id: assessmentTypeId,
-        assessment_date: new Date(),
-        created_by: user.id,
-        core_competencies: selectedCoreCompetencies,
-        subject_competencies: subjectCompetency
-      }])
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    assessmentId = newAssessment.id;
-
-    // ===============================
-    // SAVE STRANDS + SLEs (ONLY ON CREATE)
-    // ===============================
-
-    if (!selectedStrands.length) {
-      alert("Please select at least one strand.");
-      saveBtn.disabled = false;
-      return;
-    }
-
-    const sleCheckboxes = Array.from(document.querySelectorAll(".sleCheckbox"));
-    const strandRows = [];
-
-    sleCheckboxes.forEach(cb => {
-      if (cb.checked) {
-        strandRows.push({
-          assessment_id: assessmentId,
-          strand_id: cb.dataset.strandId,
-          learning_experience_id: cb.value
-        });
-      }
-    });
-
-    // If strand selected but no SLE selected
-    selectedStrands.forEach(sId => {
-      const hasSLE = strandRows.some(r => r.strand_id === sId);
-      if (!hasSLE) {
-        strandRows.push({
-          assessment_id: assessmentId,
-          strand_id: sId,
-          learning_experience_id: null
-        });
-      }
-    });
-
-    if (strandRows.length) {
-      const { error } = await supabase
-        .from("assessment_strands")
-        .insert(strandRows);
-
-      if (error) throw error;
-    }
-
-  } else {
-
-    // ===============================
-    // EXISTING → ONLY UPDATE COMPETENCIES
-    // ===============================
-
-    assessmentId = existingAssessment.id;
-
-    const { error } = await supabase
-      .from("assessments")
-      .update({
-        core_competencies: selectedCoreCompetencies,
-        subject_competencies: subjectCompetency
-      })
-      .eq("id", assessmentId);
-
-    if (error) throw error;
-  }
-
-  // =========================================
-  // ALWAYS SAVE STUDENT RESULTS (BOTH CASES)
-  // =========================================
-
-  const rows = Array.from(studentRows).map(tr => ({
-    assessment_id: assessmentId,
-    student_id: tr.dataset.id,
-    subject_id: subjectId,
-    term_id: termId,
-    assessment_type_id: assessmentTypeId,
-    achievement_level_id: tr.querySelector(".performanceLevel").value,
-    academic_year: academicYear,
-    teacher_id: user.id,
-    created_by: user.id
-  }));
-
-  const { error: resultError } = await supabase
-    .from("assessment_results")
-    .upsert(rows, {
-      onConflict: ["assessment_id", "student_id"]
-    });
-
-  if (resultError) throw resultError;
-
-  statusEl.style.color = "green";
-  statusEl.innerText = "Assessment saved successfully!";
-
-} catch (err) {
-
-  statusEl.style.color = "red";
-  statusEl.innerText = "Error: " + err.message;
-
-} finally {
-
-  saveBtn.disabled = false;
-  saveBtn.innerText = "Save Assessment";
+if (!selectedStrands.length) {
+  alert("Please select at least one strand.");
+  return;
 }
+
+const sleCheckboxes = Array.from(document.querySelectorAll(".sleCheckbox"));
+const strandRows = [];
+
+// Add checked SLEs
+sleCheckboxes.forEach(cb => {
+  if (cb.checked) {
+    strandRows.push({
+      assessment_id: assessmentId,
+      strand_id: cb.dataset.strandId,
+      learning_experience_id: cb.value
+    });
+  }
+});
+
+// If strand selected but no SLE selected
+selectedStrands.forEach(sId => {
+  const hasSLE = strandRows.some(row => row.strand_id === sId);
+  if (!hasSLE) {
+    strandRows.push({
+      assessment_id: assessmentId,
+      strand_id: sId,
+      learning_experience_id: null
+    });
+  }
+});
+
+// Insert once (NO DELETE, NO UPSERT)
+if (strandRows.length) {
+  const { error } = await supabase
+    .from("assessment_strands")
+    .insert(strandRows);
+
+  if (error) {
+    statusEl.innerText = error.message;
+    return;
+  }
+}
+// 🔹 Save student results (already optimized)
+const rows = Array.from(studentRows).map(tr => ({
+  assessment_id: assessmentId,
+  student_id: tr.dataset.id,
+  subject_id: subjectId,
+  term_id: termId,
+  assessment_type_id: assessmentTypeId,
+  achievement_level_id: tr.querySelector(".performanceLevel").value,
+  academic_year: academicYear,
+  teacher_id: user.id,
+  created_by: user.id
+}));
+
+const { error: resultError } = await supabase
+  .from("assessment_results")
+  .upsert(rows, {
+    onConflict: ["assessment_id", "student_id"]
+  });
+
+if (resultError) {
+  statusEl.innerText = resultError.message;
+  return;
+}
+
+statusEl.style.color = "green";
+statusEl.innerText = "Assessment saved successfully!";
+    
+      } catch (err) {
+    statusEl.style.color = "red";
+    statusEl.innerText = "Error: " + err.message;
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.innerText = "Save Assessment";
+  }
+};
+
 
 
  
