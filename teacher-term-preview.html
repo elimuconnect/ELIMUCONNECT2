@@ -983,73 +983,94 @@ ${Object.entries(subjects).map(([subject, rows]) => {
   }
 
   // ===== STRANDS & LEARNING OUTCOMES =====
-  const learnerId = subjects.__admission;
-  const strandOutcomes = strandMap?.[learnerId]?.[subject] || [];
+
+
+// ===== STRANDS & LEARNING OUTCOMES =====
+const learnerId = subjects.__admission;
+const strandOutcomes = (strandMap && strandMap[learnerId] && strandMap[learnerId][subject]) || [];
 const strandCount = strandOutcomes.length;
-  return `
-  <div class="split-block subject-block">
-    <h5>📘 ${subject} — Assessments: <strong>${rows.length}</strong></h5>
 
-    <p style="font-weight:bold;color:${evidence.color};">
-      ${evidence.label} — <span style="font-weight:normal">${evidence.note}</span>
-    </p>
+return `
+<div class="split-block subject-block">
+  <h5>📘 ${subject} — Assessments: <strong>${rows.length}</strong></h5>
 
-   <!-- STRANDS & LEARNING OUTCOMES -->
-${strandOutcomes.length ? `
-  <div style="margin:8px 0;padding:8px;border-left:4px solid #3498db;background:#f8fbff;">
-    <strong>🧠 Strands & Learning Outcomes</strong>
-    <ul>
-      ${strandOutcomes.map(o => `
-        <li>
-          <strong>${o.strand}</strong> — ${o.outcome || "Outcome not recorded"}
-        </li>
-      `).join("")}
-    </ul>
+  <p style="font-weight:bold;color:${evidence.color};">
+    ${evidence.label} — <span style="font-weight:normal">${evidence.note}</span>
+  </p>
 
-    <p>🧠 Outcomes Covered: ${strandOutcomes.length}</p>
-  </div>
-` : `
-  <p style="color:#999;">No strands or learning outcomes recorded for this subject.</p>
-`}
+  <!-- STRANDS & LEARNING OUTCOMES -->
+  ${
+    strandCount > 0
+      ? `
+        <div style="margin:8px 0;padding:8px;border-left:4px solid #3498db;background:#f8fbff;">
+          <strong>🧠 Strands & Learning Outcomes</strong>
+          <ul>
+            ${strandOutcomes
+              .map(o => `
+                <li>
+                  <strong>${o.strand || "Unnamed Strand"}</strong> —
+                  ${o.outcome || "Outcome not recorded"}
+                </li>
+              `)
+              .join("")}
+          </ul>
 
-    <div class="table-wrapper">
-      <table>
-        <thead>
-          <tr>
-            <th>Competency</th>
-            <th>Achievement</th>
-            <th>Remarks</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rows.map(r => `
-            <tr style="background:${levelColor[r.level]}">
-              <td>${r.competency}</td>
-              <td>${r.level}</td>
+          <p>🧠 Outcomes Covered: ${strandCount}</p>
+        </div>
+      `
+      : `
+        <p style="color:#999;">No strands or learning outcomes recorded for this subject.</p>
+      `
+  }
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Competency</th>
+          <th>Achievement</th>
+          <th>Remarks</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows
+          .map(
+            r => `
+            <tr style="background:${levelColor[r.level] || '#fff'}">
+              <td>${r.competency || "—"}</td>
+              <td>${r.level || "—"}</td>
               <td>${r.remarks || "—"}</td>
-            </tr>`).join("")}
-        </tbody>
+            </tr>`
+          )
+          .join("")}
+      </tbody>
 
-        ${subjectAvg !== null ? `
-        <tfoot>
-          <tr style="font-weight:bold; background:#f0f0f0;">
-            <td>SUBJECT/LEARNING AREA AVERAGE</td>
-            <td colspan="2">
-              <span style="
-                padding: 3px 8px;
-                border-radius: 12px;
-                font-weight:bold;
-                color:white;
-                background:${getAvgColor(subjectAvg)};
-              ">
-                ${subjectAvg.toFixed(2)} — ${getAchievementLabel(subjectAvg)}
-              </span>
-            </td>
-          </tr>
-        </tfoot>` : ""}
-      </table>
-    </div>
-  </div>`;
+      ${
+        subjectAvg !== null
+          ? `
+          <tfoot>
+            <tr style="font-weight:bold; background:#f0f0f0;">
+              <td>SUBJECT/LEARNING AREA AVERAGE</td>
+              <td colspan="2">
+                <span style="
+                  padding: 3px 8px;
+                  border-radius: 12px;
+                  font-weight:bold;
+                  color:white;
+                  background:${getAvgColor(subjectAvg)};
+                ">
+                  ${subjectAvg.toFixed(2)} — ${getAchievementLabel(subjectAvg)}
+                </span>
+              </td>
+            </tr>
+          </tfoot>`
+          : ""
+      }
+    </table>
+  </div>
+</div>
+`;
+  
 }).join("")}
 }
 
