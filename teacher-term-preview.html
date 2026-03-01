@@ -1147,11 +1147,10 @@ function generateInsight(subjects) {
     strengthSentence = `, with stronger performance in <strong>${subjectsArray[0].subject}</strong>`;
   }
 
-  return `
-    <p style="margin:6px 0 12px 0;font-style:italic;color:#444;">
-      Overall, based on current evidence, the learner is <strong>${overall}</strong>${strengthSentence}.
-    </p>
-  `;
+ return "<p style='margin:6px 0 12px 0;font-style:italic;color:#444;'>" +
+       "Overall, based on current evidence, the learner is <strong>" + overall + "</strong>" +
+       strengthSentence +
+       ".</p>";
 }
 
 
