@@ -500,7 +500,7 @@ const records = data.map(r => ({
   className: r.class_name,
   schoolName: r.school_name,
   subject: r.subject,
-  competency: r.competency,
+  competency: r.core_competencies,
   level: r.achievement_level,
   remarks: r.remarks,
   assessment_id: r.assessment_id   // 👈 ADD THIS
@@ -1026,7 +1026,7 @@ const strandOutcomes = (strandMap && strandMap[assessmentId]) || [];
       <tbody>
         ${rows.map(r => `
           <tr style="background:${levelColor[r.level] || '#fff'}">
-            <td>${r.competency || "—"}</td>
+           <td>${r.core_competencies || r.subject_competencies || "—"}</td>
             <td>${r.level || "—"}</td>
             <td>${r.remarks || "—"}</td>
           </tr>`).join("")}
@@ -1360,39 +1360,6 @@ const chartOptions = {
 
 
 
-/* ===== TERM VIEW ===== */
-if (viewMode.value === "term") {
-  const grouped = {};
-  records.forEach(r => {
-    grouped[r.student] ??= { __admission: r.admission };
-    grouped[r.student][r.subject] ??= [];
-    grouped[r.student][r.subject].push(r);
-  });
-
-  const intelligence = calculateTermIntelligence(
-    records,
-    previousRecords,
-    previousTerm
-  );
-
-  document.getElementById("schoolAnalytics").innerHTML =
-    renderSchoolAnalytics(
-      records,
-      termName,
-      SYSTEM_YEAR,
-      intelligence,
-      schoolName,
-      className
-    );
-
-  reportDiv.innerHTML = renderGrouped(grouped);
-
-  if (!window.__EXPORTING_PDF__) {
-    requestAnimationFrame(() => {
-      splitLearnerIntoPages();
-    });
-  }
-}
 
   /* ===== TERM VIEW ===== */
   if (viewMode.value === "term") {
