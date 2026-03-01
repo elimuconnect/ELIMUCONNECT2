@@ -1,125 +1,253 @@
-<!DOCTYPE html> 
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Assessment Students</title>
+<title>Assessment - School Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  body { font-family: Arial, sans-serif; margin: 20px; }
-  table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-  th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-  th { background: #f0f0f0; }
-  select, input { width: 100%; padding: 4px; }
-  button { margin-top: 15px; padding: 8px 12px; cursor: pointer; }
-  .competency-section { margin-top: 20px; }
-  .competency-checkbox { display: block; margin-bottom: 6px; cursor: pointer; }
-  .competency-checkbox input { margin-right: 6px; }
+  /* Global Styles */
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #f4f6f9;
+    margin: 0;
+    padding: 0;
+    color: #333;
+  }
+  h2 {
+  color: #1a73e8;
+  font-weight: 600;
+  margin-bottom: 20px;
+  text-align: center;
+}
+  .container {
+    max-width: 1200px;
+    margin: auto;
+    padding: 20px;
+  }
+
+  /* Card-style sections */
+  .card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  }
+
+  /* Labels and selects */
+  label {
+    font-weight: 500;
+    display: block;
+    margin-bottom: 6px;
+  }
+  select, input[type=text] {
+    width: 100%;
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  }
+  th, td {
+    padding: 12px 10px;
+    text-align: left;
+  }
+  th {
+    background: #1a73e8;
+    color: #fff;
+    font-weight: 500;
+  }
+  tr:nth-child(even) {
+    background: #f9f9f9;
+  }
+  tr:hover {
+    background: rgba(26,115,232,0.1);
+  }
+
+  /* Buttons */
+  button {
+    background: #1a73e8;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 16px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.3s;
+  }
+  button:hover {
+    background: #155ab6;
+  }
+
+  /* Dropdowns */
+  .dropdown {
+    position: relative;
+    width: 100%;
+    margin-bottom: 10px;
+  }
+  .dropdown-content {
+    display: none;
+    position: absolute;
+    background: #fff;
+    width: 100%;
+    max-height: 220px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 12px;
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  .dropdown-content label {
+    display: block;
+    cursor: pointer;
+    margin-bottom: 6px;
+  }
+  .dropdown-content input {
+    margin-right: 8px;
+  }
+  .dropdown button {
+    width: 100%;
+    text-align: left;
+    padding: 8px 10px;
+    background: #f0f0f0;
+    color: #333;
+  }
+
+  /* Competency sections */
+  .competency-section {
+    margin-top: 15px;
+  }
+
+  /* Status messages */
+  #status, #assessmentStatus {
+    font-weight: 500;
+    margin-top: 12px;
+  }
+  #status {
+  font-weight: 600;
+  margin-top: 12px;
+}
+  #assessmentStatus {
+    color: #1a73e8;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    table, th, td {
+      font-size: 14px;
+    }
+    button {
+      width: 100%;
+    }
+  }
 
 
 
-  /* Dropdown container */
-.dropdown {
-  position: relative;
-  display: inline-block;
-  width: 100%;
+/* Top row layout */
+.top-row {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
 }
 
-.dropdown-content {
-  display: none;
-  position: absolute;
-  background-color: #f9f9f9;
-  width: 100%;
-  max-height: 200px;
-  overflow-y: auto;
-  border: 1px solid #ccc;
-  z-index: 1;
-  padding: 10px;
+/* Make cards share space */
+.left-card {
+  flex: 1;
 }
 
-.dropdown-content label {
-  display: block;
-  cursor: pointer;
-  margin-bottom: 6px;
+.right-card {
+  flex: 2;
 }
 
-.dropdown-content input {
-  margin-right: 6px;
+/* Responsive */
+@media (max-width: 900px) {
+  .top-row {
+    flex-direction: column;
+  }
 }
-
-#dropdownBtn {
-  width: 100%;
-  padding: 6px;
-  text-align: left;
-  cursor: pointer;
-}
+  
 </style>
 </head>
 <body>
-<h2>New Assessment Table</h2>
+<div class="container">
+  <h2>Smart Elimu Connect CBE Assessment & Reporting System</h2>
 
-<p><strong>Academic Year:</strong> <span id="yearLabel"></span></p>
-<p><strong>Class:</strong> <span id="classLabel"></span></p>
-<p><strong>Subject:</strong> <span id="subjectLabel"></span></p>
-<p id="assessmentStatus" style="font-weight:bold; color:blue;"></p>
-<p>
-  <label>Term:</label>
-  <select id="termSelect"></select>
-</p>
+  <div class="top-row">
 
-<p>
-  <label>Assessment Type:</label>
-  <select id="assessmentTypeSelect"></select>
-</p>
+  <div class="card left-card">
+    <p><strong>Academic Year:</strong> <span id="yearLabel"></span></p>
+    <p><strong>Class:</strong> <span id="classLabel"></span></p>
+    <p><strong>Subject:</strong> <span id="subjectLabel"></span></p>
+    <p id="assessmentStatus"></p>
 
-<!-- Core Competencies -->
-<div class="competency-section">
-  <label><strong>Core Competencies:</strong></label>
-  <div class="dropdown">
-    <button type="button" id="dropdownBtn">Select Core Competencies ▼</button>
-    <div id="coreCompetenciesContainer" class="dropdown-content"></div>
+    <label>Term:</label>
+    <select id="termSelect"></select>
+
+    <label>Assessment Type:</label>
+    <select id="assessmentTypeSelect"></select>
+  </div>
+
+  <div class="card right-card">
+    <div class="competency-section">
+      <label><strong>Core Competencies:</strong></label>
+      <div class="dropdown">
+        <button id="dropdownBtn">Select Core Competencies ▼</button>
+        <div id="coreCompetenciesContainer" class="dropdown-content"></div>
+      </div>
+    </div>
+
+    <div class="competency-section">
+      <label>Subject-specific Competencies (manual input):</label>
+      <input type="text" id="subjectCompetency" placeholder="Enter competencies, comma-separated">
+    </div>
+
+    <div class="competency-section">
+      <label><strong>Strands:</strong></label>
+      <div class="dropdown">
+        <button id="dropdownStrandBtn">Select Strands ▼</button>
+        <div id="strandContainer" class="dropdown-content"></div>
+      </div>
+    </div>
+
+    <div class="competency-section">
+      <label><strong>Learning Experiences:</strong></label>
+      <div class="dropdown">
+        <button id="dropdownSLEBtn">Select Learning Experiences ▼</button>
+        <div id="sleContainer" class="dropdown-content"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Adm/Assess No.</th>
+          <th>Name</th>
+          <th>Performance Level</th>
+        </tr>
+      </thead>
+      <tbody id="studentsBody">
+        <tr><td colspan="3">Loading students...</td></tr>
+      </tbody>
+    </table>
+    <br>
+    <button id="saveAssessment">Save Assessment</button>
+    <p id="status"></p>
   </div>
 </div>
-
-<!-- Subject-specific manual input -->
-<div class="competency-section">
-  <label>Subject-specific Competencies (manual input):</label>
-  <input type="text" id="subjectCompetency" 
-         placeholder="Enter subject-specific competencies, comma-separated">
-</div>
-
-<!-- Strand -->
-<div class="competency-section">
-  <label><strong>Strands:</strong></label>
-  <div class="dropdown">
-    <button type="button" id="dropdownStrandBtn">Select Strands ▼</button>
-    <div id="strandContainer" class="dropdown-content"></div>
-  </div>
-</div>
-
-<!-- Specific Learning Experience -->
-<div class="competency-section">
-  <label><strong>Learning Experiences:</strong></label>
-  <div class="dropdown">
-    <button type="button" id="dropdownSLEBtn">Select Learning Experiences ▼</button>
-    <div id="sleContainer" class="dropdown-content"></div>
-  </div>
-</div>
-
-<table>
-  <thead>
-    <tr>
-      <th>Adm/Assess NO.</th>
-      <th>Name</th>
-      <th>Performance Level</th>
-    </tr>
-  </thead>
-  <tbody id="studentsBody">
-    <tr><td colspan="3">Loading students...</td></tr>
-  </tbody>
-</table>
-
-<br>
-<button id="saveAssessment">Save Assessment</button>
-<p id="status"></p>
 
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
@@ -202,33 +330,46 @@ else tbody.innerHTML = students.map(s => `
 // Containers
 const strandContainer = document.getElementById("strandContainer");
 const sleContainer = document.getElementById("sleContainer");
+  
+let strands = []; // declare globally
+async function loadStrandsAndAttachListeners() {
+  // Load strands for the selected subject
+  const { data } = await supabase.from("strands")
+    .select("id, name")
+    .eq("subject_id", subjectId)
+    .eq("grade", 10)
+    .order("name");
 
-// Load strands for the selected subject
-const { data: strands } = await supabase.from("strands")
-  .select("id, name")
-  .eq("subject_id", subjectId)
-  .eq("grade", 10)
-  .order("name");
+strands = data || [];
 
-// Populate strands as checkboxes
-strands.forEach(s => {
-  const label = document.createElement("label");
-  label.className = "competency-checkbox";
-  const checkbox = document.createElement("input");
-  checkbox.type = "checkbox";
-  checkbox.value = s.id;
-  checkbox.className = "strandCheckbox";
-  label.appendChild(checkbox);
-  label.appendChild(document.createTextNode(s.name));
-  strandContainer.appendChild(label);
-});
+  // Populate strands as checkboxes
+  strandContainer.innerHTML = ""; // clear first
+  strands.forEach(s => {
+    const label = document.createElement("label");
+    label.className = "competency-checkbox";
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.value = s.id;
+    checkbox.className = "strandCheckbox";
+    label.appendChild(checkbox);
+    label.appendChild(document.createTextNode(s.name));
+    strandContainer.appendChild(label);
+  });
 
-// When strands are selected, load SLEs dynamically
+  // Trigger loading SLEs when a strand is checked/unchecked
+  document.querySelectorAll(".strandCheckbox").forEach(cb => {
+    cb.addEventListener("change", loadSLEsForSelectedStrands);
+  });
+}
+
 // ✅ Load SLEs for selected strands
 async function loadSLEsForSelectedStrands() {
   const selectedStrands = Array.from(
     document.querySelectorAll(".strandCheckbox:checked")
   ).map(cb => cb.value);
+
+  // Save previously selected SLEs
+  const previouslySelectedSLEs = Array.from(document.querySelectorAll(".sleCheckbox:checked")).map(cb => cb.value);
 
   sleContainer.innerHTML = "";
 
@@ -251,15 +392,39 @@ async function loadSLEsForSelectedStrands() {
       checkbox.className = "sleCheckbox";
       checkbox.dataset.strandId = strandId;
 
+      // Re-check if previously selected
+      if (previouslySelectedSLEs.includes(sle.id)) checkbox.checked = true;
+
       label.appendChild(checkbox);
-      label.appendChild(document.createTextNode(`${sle.name} (${strands.find(st => st.id == strandId).name})`));
+      const strandName = strands.find(st => st.id == strandId)?.name || "";
+      label.appendChild(document.createTextNode(`${sle.name} (${strandName})`));
       sleContainer.appendChild(label);
     });
   }
 }
 
+// Call once on page load
+await loadStrandsAndAttachListeners();
+
+
+  
 // ✅ Save assessment including strands + SLEs
 document.getElementById("saveAssessment").onclick = async () => {
+
+  const statusEl = document.getElementById("status");
+  const saveBtn = document.getElementById("saveAssessment");
+
+  // 🔵 Show saving message immediately
+  statusEl.style.color = "#1a73e8";
+  statusEl.innerText = "Saving assessment...";
+  saveBtn.disabled = true;
+  saveBtn.innerText = "Saving...";
+
+  try {
+
+    // -------------------------
+    // YOUR EXISTING SAVE CODE
+    // -------------------------
   const selectedStrands = Array.from(document.querySelectorAll(".strandCheckbox:checked")).map(cb => cb.value);
   const selectedSLEs = Array.from(document.querySelectorAll(".sleCheckbox:checked")).map(cb => cb.value);
 
@@ -407,57 +572,111 @@ sleCheckboxes.forEach(cb => {
   if (!sleMap[strand]) sleMap[strand] = [];
   if (selectedSLEs.includes(cb.value)) sleMap[strand].push(cb.value);
 });
+// Build assessment_strands rows (one row per strand)
+const strandRows = selectedStrands.map(sId => {
+  const sleIdsForStrand = sleMap[sId] || []; // array of SLE IDs
 
-// Build assessment_strands rows
-const strandRows = [];
-selectedStrands.forEach(sId => {
-  const sleIdsForStrand = sleMap[sId] || [];
-  if (sleIdsForStrand.length) {
-    sleIdsForStrand.forEach(sleId => {
-      strandRows.push({
-        assessment_id: assessmentId,
-        strand_id: sId,
-        learning_experience_id: sleId
-      });
-    });
-  } else {
-    // No SLE selected → still save the strand
-    strandRows.push({
-      assessment_id: assessmentId,
-      strand_id: sId,
-      learning_experience_id: null
-    });
-  }
+  return {
+    assessment_id: assessmentId,
+    strand_id: sId,
+    learning_experience_id: sleIdsForStrand.length ? JSON.stringify(sleIdsForStrand) : null
+  };
 });
 
-// First remove existing records for this assessment
-await supabase.from("assessment_strands").delete().eq("assessment_id", assessmentId);
 
-// Insert the new records
-if (strandRows.length) {
-  const { error } = await supabase.from("assessment_strands").insert(strandRows);
-  if (error) {
-    document.getElementById("status").innerText = "Error saving strands/SLEs: " + error.message;
+// 🔹 BULK SYNC assessment_strands
+
+// 1️⃣ Fetch all existing strands for this assessment
+const { data: existingStrands = [], error: fetchError } = await supabase
+  .from("assessment_strands")
+  .select("strand_id")
+  .eq("assessment_id", assessmentId);
+
+if (fetchError) {
+  statusEl.innerText = "Error checking strands: " + fetchError.message;
+  return;
+}
+
+// 2️⃣ Convert strandRows to array (SAFE)
+const strandArray = Array.from(strandRows);
+
+// 3️⃣ Prepare rows for bulk upsert
+const rowsToUpsert = strandArray.map(row => ({
+  assessment_id: assessmentId,
+  strand_id: row.strand_id,
+  learning_experience_id: row.learning_experience_id
+}));
+
+// 4️⃣ Bulk UPSERT
+const { error: upsertError } = await supabase
+  .from("assessment_strands")
+  .upsert(rowsToUpsert, {
+    onConflict: ["assessment_id", "strand_id"]
+  });
+
+if (upsertError) {
+  statusEl.innerText = "Error saving strands: " + upsertError.message;
+  return;
+}
+
+// 5️⃣ Delete removed strands
+const selectedStrandIds = strandArray.map(r => r.strand_id);
+const existingStrandIds = existingStrands.map(s => s.strand_id);
+
+const strandsToDelete = existingStrandIds.filter(
+  id => !selectedStrandIds.includes(id)
+);
+
+if (strandsToDelete.length > 0) {
+  const { error: deleteError } = await supabase
+    .from("assessment_strands")
+    .delete()
+    .eq("assessment_id", assessmentId)
+    .in("strand_id", strandsToDelete);
+
+  if (deleteError) {
+    statusEl.innerText =
+      "Error deleting removed strands: " + deleteError.message;
     return;
   }
 }
-  // Save student results
-  const rows = Array.from(studentRows).map(tr => ({
-    assessment_id: assessmentId,
-    student_id: tr.dataset.id,
-    subject_id: subjectId,
-    term_id: termId,
-    assessment_type_id: assessmentTypeId,
-    achievement_level_id: tr.querySelector(".performanceLevel").value,
-    academic_year: academicYear,
-    teacher_id: user.id,
-    created_by: user.id
-  }));
-  const { error: resultError } = await supabase.from("assessment_results").upsert(rows, { onConflict: ['assessment_id','student_id'] });
-  if (resultError) { document.getElementById("status").innerText = resultError.message; return; }
 
-  document.getElementById("status").innerText = "Assessment saved successfully!";
+// 🔹 Save student results (already optimized)
+const rows = Array.from(studentRows).map(tr => ({
+  assessment_id: assessmentId,
+  student_id: tr.dataset.id,
+  subject_id: subjectId,
+  term_id: termId,
+  assessment_type_id: assessmentTypeId,
+  achievement_level_id: tr.querySelector(".performanceLevel").value,
+  academic_year: academicYear,
+  teacher_id: user.id,
+  created_by: user.id
+}));
+
+const { error: resultError } = await supabase
+  .from("assessment_results")
+  .upsert(rows, {
+    onConflict: ["assessment_id", "student_id"]
+  });
+
+if (resultError) {
+  statusEl.innerText = resultError.message;
+  return;
+}
+
+statusEl.style.color = "green";
+statusEl.innerText = "Assessment saved successfully!";
+    
+      } catch (err) {
+    statusEl.style.color = "red";
+    statusEl.innerText = "Error: " + err.message;
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.innerText = "Save Assessment";
+  }
 };
+
 
 
  
@@ -518,22 +737,42 @@ document.getElementById("sleContainer").innerHTML = "";
 
   // 5️⃣ Load strands + learning experiences (checkbox version)
 
+// 5️⃣ Load strands + learning experiences (checkbox version)
 const { data: strandData } = await supabase
   .from("assessment_strands")
   .select("*")
   .eq("assessment_id", existingAssessment.id);
 
 if (strandData && strandData.length > 0) {
-
+  // Get saved strand IDs
   const savedStrandIds = [...new Set(strandData.map(s => s.strand_id))];
-  const savedSLEIds = strandData
-    .map(s => s.learning_experience_id)
-    .filter(id => id !== null);
-
+  
+  // Set strand checkboxes
   document.querySelectorAll(".strandCheckbox").forEach(cb => {
     cb.checked = savedStrandIds.includes(cb.value);
   });
 
+  // Collect all saved SLE IDs across strands
+  const savedSLEIds = strandData
+    .map(s => {
+      try {
+        return JSON.parse(s.learning_experience_id || "[]");
+      } catch (e) {
+        return [];
+      }
+    })
+    .flat(); // flatten into a single array
+
+  // Load SLE checkboxes after strands are set
+  await loadSLEsForSelectedStrands();
+
+  // Small delay to ensure dynamic checkboxes exist
+  setTimeout(() => {
+    document.querySelectorAll(".sleCheckbox").forEach(cb => {
+      cb.checked = savedSLEIds.includes(cb.value);
+    });
+  }, 100);
+}
 
   // 6️⃣ Load student results
   const { data: results } = await supabase
@@ -551,15 +790,7 @@ if (strandData && strandData.length > 0) {
   });
 
 
-await loadSLEsForSelectedStrands();
 
-// Small delay to ensure dynamic checkboxes exist
-setTimeout(() => {
-  document.querySelectorAll(".sleCheckbox").forEach(cb => {
-    cb.checked = savedSLEIds.includes(cb.value);
-  });
-}, 100);
-}
   
 const EDIT_WINDOW_DAYS = 14;
 
