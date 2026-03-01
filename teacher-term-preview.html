@@ -505,6 +505,32 @@ const records = data.map(r => ({
   remarks: r.remarks
 }));
 
+// ===== STRANDS & LEARNING OUTCOMES =====
+const { data: strandData } = await supabase
+  .from("assessment_strands_view")   // your view
+  .select("*")
+  .eq("assessment_id", records[0]?.assessment_id); // link by assessment
+
+// group by student -> subject -> strands
+const strandMap = {};
+
+strandData?.forEach(row => {
+  const student = row.student_id || row.admission_number || row.assessment_id;
+  const subject = row.strand || "Unlinked Strand";
+
+  strandMap[student] ??= {};
+  strandMap[student][subject] ??= [];
+
+  strandMap[student][subject].push({
+    strand: row.strand,
+    outcome: row.learning_experience
+  });
+});
+
+
+
+
+  
 function renderOverviewHeader({ school, poBox, postal, town, phone, email, className, term, year }) {
   return `
     <div class="report-overview no-split" style="
@@ -929,84 +955,103 @@ function renderGrouped(grouped, avgMap){
       </div>` : ""}
 
     <!-- SUBJECTS -->
-    ${Object.entries(subjects).map(([subject, rows]) => {
-      if (subject === "__admission") return "";
+    
+${Object.entries(subjects).map(([subject, rows]) => {
+  if (subject === "__admission") return "";
 
-      const evidence = getEvidenceStatus(rows);
+  const evidence = getEvidenceStatus(rows);
 
-      // compute subject average
-      let subjectAvg = avgMap?.[student]?.[subject.trim()]?.average_score ?? null;
-      if (subjectAvg === null) {
-        const scores = rows.map(r => levelToScore(r.level)).filter(s => s > 0);
-        subjectAvg = scores.length ? scores.reduce((a,b)=>a+b,0)/scores.length : null;
-      }
+  // subject average
+  let subjectAvg = avgMap?.[student]?.[subject.trim()]?.average_score ?? null;
+  if (subjectAvg === null) {
+    const scores = rows.map(r => levelToScore(r.level)).filter(s => s > 0);
+    subjectAvg = scores.length ? scores.reduce((a,b)=>a+b,0)/scores.length : null;
+  }
 
-      function getAchievementLabel(score) {
-        if (score >= 3.5) return "Exceeding Expectations";
-        if (score >= 2.5) return "Meeting Expectations";
-        if (score >= 1.5) return "Approaching Expectations";
-        return "Below Expectations";
-      }
+  function getAchievementLabel(score) {
+    if (score >= 3.5) return "Exceeding Expectations";
+    if (score >= 2.5) return "Meeting Expectations";
+    if (score >= 1.5) return "Approaching Expectations";
+    return "Below Expectations";
+  }
 
-      function getAvgColor(score) {
-        if (score >= 3.5) return "#2ecc71";
-        if (score >= 2.5) return "#3498db";
-        if (score >= 1.5) return "#f1c40f";
-        return "#e74c3c";
-      }
+  function getAvgColor(score) {
+    if (score >= 3.5) return "#2ecc71";
+    if (score >= 2.5) return "#3498db";
+    if (score >= 1.5) return "#f1c40f";
+    return "#e74c3c";
+  }
 
-      return `
-      <div class="split-block subject-block">
-        <h5>📘 ${subject} — Assessments: <strong>${rows.length}</strong></h5>
-        <p style="font-weight:bold;color:${evidence.color};">
-          ${evidence.label} — <span style="font-weight:normal">${evidence.note}</span>
-        </p>
-     <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Competency</th>
-              <th>Achievement</th>
-              <th>Remarks</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows.map(r => `
-              <tr style="background:${levelColor[r.level]}">
-                <td>${r.competency}</td>
-                <td>${r.level}</td>
-                <td>${r.remarks || "—"}</td>
-              </tr>`).join("")}
-          </tbody>
-          ${subjectAvg !== null ? `
-          <tfoot>
-            <tr style="font-weight:bold; background:#f0f0f0;">
-              <td>SUBJECT/LEARNING AREA AVERAGE</td>
-              <td colspan="2">
-                <span style="
-                  padding: 3px 8px;
-                  border-radius: 12px;
-                  font-weight:bold;
-                  color:white;
-                  background:${getAvgColor(subjectAvg)};
-                ">
-                  ${subjectAvg.toFixed(2)} — ${getAchievementLabel(subjectAvg)}
-                </span>
-              </td>
-            </tr>
-          </tfoot>` : ""}
-        </table>
-       </div>
-      </div>`;
-    }).join("")}
+  // ===== STRANDS & LEARNING OUTCOMES =====
+  const learnerId = subjects.__admission;
+  const strandOutcomes = strandMap?.[learnerId]?.[subject] || [];
+const strandCount = strandOutcomes.length;
+  return `
+  <div class="split-block subject-block">
+    <h5>📘 ${subject} — Assessments: <strong>${rows.length}</strong></h5>
 
-  
+    <p style="font-weight:bold;color:${evidence.color};">
+      ${evidence.label} — <span style="font-weight:normal">${evidence.note}</span>
+    </p>
+
+   <!-- STRANDS & LEARNING OUTCOMES -->
+${strandOutcomes.length ? `
+  <div style="margin:8px 0;padding:8px;border-left:4px solid #3498db;background:#f8fbff;">
+    <strong>🧠 Strands & Learning Outcomes</strong>
+    <ul>
+      ${strandOutcomes.map(o => `
+        <li>
+          <strong>${o.strand}</strong> — ${o.outcome || "Outcome not recorded"}
+        </li>
+      `).join("")}
+    </ul>
+
+    <p>🧠 Outcomes Covered: ${strandOutcomes.length}</p>
   </div>
-</div>`;
-  }).join("");
+` : `
+  <p style="color:#999;">No strands or learning outcomes recorded for this subject.</p>
+`}
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Competency</th>
+            <th>Achievement</th>
+            <th>Remarks</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(r => `
+            <tr style="background:${levelColor[r.level]}">
+              <td>${r.competency}</td>
+              <td>${r.level}</td>
+              <td>${r.remarks || "—"}</td>
+            </tr>`).join("")}
+        </tbody>
+
+        ${subjectAvg !== null ? `
+        <tfoot>
+          <tr style="font-weight:bold; background:#f0f0f0;">
+            <td>SUBJECT/LEARNING AREA AVERAGE</td>
+            <td colspan="2">
+              <span style="
+                padding: 3px 8px;
+                border-radius: 12px;
+                font-weight:bold;
+                color:white;
+                background:${getAvgColor(subjectAvg)};
+              ">
+                ${subjectAvg.toFixed(2)} — ${getAchievementLabel(subjectAvg)}
+              </span>
+            </td>
+          </tr>
+        </tfoot>` : ""}
+      </table>
+    </div>
+  </div>`;
+}).join("")}
 }
-
-
 
 
 
