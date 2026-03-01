@@ -1565,18 +1565,21 @@ requestAnimationFrame(() => {
     });
   }
 
-
-
- /* ===== CLASS VIEW ===== */
+/* ===== CLASS VIEW ===== */
 if (viewMode.value === "class") {
 
-  const classes = [...new Set(records.map(r => r.className))];
+  const classes = [...new Set(records.map(r => r.className).filter(Boolean))];
+
+  if (!classes.length) {
+    filterBox.innerHTML = "<p>No classes found for this term.</p>";
+    return;
+  }
 
   filterBox.innerHTML = `
     <label>Class</label><br />
     <select id="classSelect">
       <option value="">Select class</option>
-      ${classes.map(c => `<option>${c}</option>`).join("")}
+      ${classes.map(c => `<option value="${c}">${c}</option>`).join("")}
     </select>
   `;
 
@@ -1586,13 +1589,7 @@ if (viewMode.value === "class") {
 
     const filtered = records.filter(r => r.className === selectedClass);
 
-    if (!filtered.length) {
-      reportDiv.innerHTML = "<p>No results found for this class</p>";
-      return;
-    }
-
     const grouped = {};
-
     filtered.forEach(r => {
       grouped[r.student] ??= { __admission: r.admission };
       grouped[r.student][r.subject] ??= [];
@@ -1601,14 +1598,15 @@ if (viewMode.value === "class") {
 
     reportDiv.innerHTML = `
       <h3>${selectedClass} – All Learners</h3>
-      ${renderGrouped(grouped)}
+      ${renderGrouped(grouped, avgMap)}
     `;
 
     requestAnimationFrame(() => {
       splitLearnerIntoPages();
     });
   });
-} 
+}
+
 termSelect.addEventListener("change", loadReport);
 viewMode.addEventListener("change", loadReport);
 
