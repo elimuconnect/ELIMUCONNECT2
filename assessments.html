@@ -616,20 +616,25 @@ selectedStrands.forEach(sId => {
   }
 });
 
-// Remove old rows for this assessment
-await supabase
+// 1. delete all for this assessment
+const { error: delError } = await supabase
   .from("assessment_strands")
   .delete()
   .eq("assessment_id", assessmentId);
 
-// Insert fresh rows
+if (delError) {
+  statusEl.innerText = delError.message;
+  return;
+}
+
+// 2. insert fresh rows
 if (strandRows.length) {
   const { error } = await supabase
     .from("assessment_strands")
     .insert(strandRows);
 
   if (error) {
-    statusEl.innerText = "Error saving strands/SLEs: " + error.message;
+    statusEl.innerText = error.message;
     return;
   }
 }
