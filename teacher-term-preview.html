@@ -326,11 +326,11 @@ td {
 <label>Term</label><br />
 <select id="termSelect"></select><br /><br />
 
-<label>View As</label><br />
 <select id="viewMode">
   <option value="term">Term Results</option>
-  <option value="student">Student (Admission No/UPI No</option>
+  <option value="student">Student (Admission No/UPI No)</option>
   <option value="subject">Subject</option>
+  <option value="class">Class</option>   <!-- ✅ NEW -->
 </select><br /><br />
 
 <div id="filterBox"></div>
@@ -559,6 +559,7 @@ strandData?.forEach(row => {
 });
 
 
+  
 
   
 function renderOverviewHeader({ school, poBox, postal, town, phone, email, className, term, year }) {
@@ -1565,10 +1566,58 @@ requestAnimationFrame(() => {
   }
 }
 
+
+ /* ===== CLASS VIEW ===== */
+if (viewMode.value === "class") {
+
+  const classes = [...new Set(records.map(r => r.className))];
+
+  filterBox.innerHTML = `
+    <label>Class</label><br />
+    <select id="classSelect">
+      <option value="">Select class</option>
+      ${classes.map(c => `<option>${c}</option>`).join("")}
+    </select>
+  `;
+
+  document.getElementById("classSelect").addEventListener("change", e => {
+    const selectedClass = e.target.value;
+    if (!selectedClass) return;
+
+    const filtered = records.filter(r => r.className === selectedClass);
+
+    if (!filtered.length) {
+      reportDiv.innerHTML = "<p>No results found for this class</p>";
+      return;
+    }
+
+    const grouped = {};
+
+    filtered.forEach(r => {
+      grouped[r.student] ??= { __admission: r.admission };
+      grouped[r.student][r.subject] ??= [];
+      grouped[r.student][r.subject].push(r);
+    });
+
+    reportDiv.innerHTML = `
+      <h3>${selectedClass} – All Learners</h3>
+      ${renderGrouped(grouped)}
+    `;
+
+    requestAnimationFrame(() => {
+      splitLearnerIntoPages();
+    });
+  });
+} 
 termSelect.addEventListener("change", loadReport);
 viewMode.addEventListener("change", loadReport);
 
 
+
+
+
+
+  
 function getTrend(currentAvg, previousAvg) {
   if (previousAvg === null) return "🆕 New Entry";
 
