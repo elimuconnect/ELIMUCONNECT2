@@ -871,12 +871,14 @@ ${intelligence.schoolImprovement !== null ? `
 }
 
   
-function renderGrouped(grouped, avgMap){
+
+function renderGrouped(grouped, avgMap) {
+
   return Object.entries(grouped).map(([student, subjects]) => {
 
     const admission = subjects.__admission || "N/A";
 
-    // Collect raw scores for trends & support flags (not for averages)
+    // ----- trend & support -----
     const currentScores = [];
     Object.entries(subjects).forEach(([subject, rows]) => {
       if (subject === "__admission") return;
@@ -886,10 +888,9 @@ function renderGrouped(grouped, avgMap){
       });
     });
 
-    const currentAvgScore =
-      currentScores.length
-        ? currentScores.reduce((a, b) => a + b, 0) / currentScores.length
-        : null;
+    const currentAvgScore = currentScores.length
+      ? currentScores.reduce((a, b) => a + b, 0) / currentScores.length
+      : null;
 
     const prevData = previousAverages[admission];
     const previousAvg = prevData ? prevData.total / prevData.count : null;
@@ -900,8 +901,7 @@ function renderGrouped(grouped, avgMap){
     const { strengths, needs } = generateStrengthsAndNeeds(subjects);
     const recommendations = generateRecommendations(subjects, trend, supportFlag);
 
-
-  return `
+    return `
 <div class="a4-page learner-page">
   <div class="learner-card">
     ${renderOverviewHeader({
@@ -916,14 +916,12 @@ function renderGrouped(grouped, avgMap){
       year: SYSTEM_YEAR
     })}
 
-
-    <!-- HEADER -->
-    <div class="split-block learner-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+    <div class="split-block learner-header"
+         style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
       <h4>👤 ${student} <small>(<strong>Adm: ${admission}</strong>)</small></h4>
       <div style="font-weight:bold;">${supportFlag}</div>
     </div>
 
-    <!-- TREND SUMMARY -->
     <div class="split-block">
       <p style="margin:6px 0 10px 0;font-weight:bold;">
         📊 Progress Trend: ${trend}
@@ -931,23 +929,23 @@ function renderGrouped(grouped, avgMap){
       ${insight}
     </div>
 
-    <!-- STRENGTHS / NEEDS -->
     <div class="split-block" style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:10px;">
       ${strengths.length ? `<p><strong>💪 Strengths:</strong> ${strengths.join(", ")}</p>` : ""}
       ${needs.length ? `<p><strong>🎯 Areas for Improvement:</strong> ${needs.join(", ")}</p>` : ""}
     </div>
 
-    <!-- RECOMMENDATIONS -->
     ${recommendations.teacher.length ? `
       <div class="split-block" style="margin:10px 0;padding:10px;border-left:4px solid #3498db;background:#f8fbff;">
         <strong>👩🏽‍🏫 Teacher Actions</strong>
         <ul>${recommendations.teacher.map(r => `<li>${r}</li>`).join("")}</ul>
       </div>` : ""}
+
     ${recommendations.parent.length ? `
       <div class="split-block" style="margin:10px 0;padding:10px;border-left:4px solid #f39c12;background:#fffaf3;">
         <strong>🏠 Parent Support</strong>
         <ul>${recommendations.parent.map(r => `<li>${r}</li>`).join("")}</ul>
       </div>` : ""}
+
     ${recommendations.learner.length ? `
       <div class="split-block" style="margin:10px 0;padding:10px;border-left:4px solid #2ecc71;background:#f6fffa;">
         <strong>🎯 Learner Focus</strong>
@@ -955,42 +953,39 @@ function renderGrouped(grouped, avgMap){
       </div>` : ""}
 
     <!-- SUBJECTS -->
-    
-${Object.entries(subjects).map(([subject, rows]) => {
-  if (subject === "__admission") return "";
+    ${Object.entries(subjects).map(([subject, rows]) => {
+      if (subject === "__admission") return "";
 
-  const evidence = getEvidenceStatus(rows);
+      const evidence = getEvidenceStatus(rows);
 
-  // subject average
-  let subjectAvg = avgMap?.[student]?.[subject.trim()]?.average_score ?? null;
-  if (subjectAvg === null) {
-    const scores = rows.map(r => levelToScore(r.level)).filter(s => s > 0);
-    subjectAvg = scores.length ? scores.reduce((a,b)=>a+b,0)/scores.length : null;
-  }
+      let subjectAvg = avgMap?.[student]?.[subject.trim()]?.average_score ?? null;
+      if (subjectAvg === null) {
+        const scores = rows.map(r => levelToScore(r.level)).filter(s => s > 0);
+        subjectAvg = scores.length
+          ? scores.reduce((a,b)=>a+b,0) / scores.length
+          : null;
+      }
 
-  function getAchievementLabel(score) {
-    if (score >= 3.5) return "Exceeding Expectations";
-    if (score >= 2.5) return "Meeting Expectations";
-    if (score >= 1.5) return "Approaching Expectations";
-    return "Below Expectations";
-  }
+      function getAchievementLabel(score) {
+        if (score >= 3.5) return "Exceeding Expectations";
+        if (score >= 2.5) return "Meeting Expectations";
+        if (score >= 1.5) return "Approaching Expectations";
+        return "Below Expectations";
+      }
 
-  function getAvgColor(score) {
-    if (score >= 3.5) return "#2ecc71";
-    if (score >= 2.5) return "#3498db";
-    if (score >= 1.5) return "#f1c40f";
-    return "#e74c3c";
-  }
+      function getAvgColor(score) {
+        if (score >= 3.5) return "#2ecc71";
+        if (score >= 2.5) return "#3498db";
+        if (score >= 1.5) return "#f1c40f";
+        return "#e74c3c";
+      }
 
-  // ===== STRANDS & LEARNING OUTCOMES =====
+      const learnerId = subjects.__admission;
+      const strandOutcomes =
+        (strandMap && strandMap[learnerId] && strandMap[learnerId][subject]) || [];
+      const strandCount = strandOutcomes.length;
 
-
-// ===== STRANDS & LEARNING OUTCOMES =====
-const learnerId = subjects.__admission;
-const strandOutcomes = (strandMap && strandMap[learnerId] && strandMap[learnerId][subject]) || [];
-const strandCount = strandOutcomes.length;
-
-return `
+      return `
 <div class="split-block subject-block">
   <h5>📘 ${subject} — Assessments: <strong>${rows.length}</strong></h5>
 
@@ -998,23 +993,19 @@ return `
     ${evidence.label} — <span style="font-weight:normal">${evidence.note}</span>
   </p>
 
-  <!-- STRANDS & LEARNING OUTCOMES -->
   ${
     strandCount > 0
       ? `
         <div style="margin:8px 0;padding:8px;border-left:4px solid #3498db;background:#f8fbff;">
           <strong>🧠 Strands & Learning Outcomes</strong>
           <ul>
-            ${strandOutcomes
-              .map(o => `
-                <li>
-                  <strong>${o.strand || "Unnamed Strand"}</strong> —
-                  ${o.outcome || "Outcome not recorded"}
-                </li>
-              `)
-              .join("")}
+            ${strandOutcomes.map(o => `
+              <li>
+                <strong>${o.strand || "Unnamed Strand"}</strong> —
+                ${o.outcome || "Outcome not recorded"}
+              </li>
+            `).join("")}
           </ul>
-
           <p>🧠 Outcomes Covered: ${strandCount}</p>
         </div>
       `
@@ -1033,16 +1024,12 @@ return `
         </tr>
       </thead>
       <tbody>
-        ${rows
-          .map(
-            r => `
-            <tr style="background:${levelColor[r.level] || '#fff'}">
-              <td>${r.competency || "—"}</td>
-              <td>${r.level || "—"}</td>
-              <td>${r.remarks || "—"}</td>
-            </tr>`
-          )
-          .join("")}
+        ${rows.map(r => `
+          <tr style="background:${levelColor[r.level] || '#fff'}">
+            <td>${r.competency || "—"}</td>
+            <td>${r.level || "—"}</td>
+            <td>${r.remarks || "—"}</td>
+          </tr>`).join("")}
       </tbody>
 
       ${
@@ -1070,11 +1057,12 @@ return `
   </div>
 </div>
 `;
-  
-}).join("")}
+    }).join("")}
+  </div>
+</div>
+`;
+  });
 }
-
-
 
 
 function splitLearnerIntoPages() {
