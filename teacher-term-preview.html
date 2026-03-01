@@ -698,10 +698,10 @@ function renderSchoolAnalytics(records, termName, year, intelligence, schoolName
     if (score > 0) subjectMap[r.subject].push(score);
 
     // BAND DISTRIBUTION
-    if (score === 1) bandCount.below(1)++;
-    if (score === 2) bandCount.approaching(2)++;
-    if (score === 3) bandCount.meeting(3)++;
-    if (score === 4) bandCount.exceeding(4)++;
+    if (score === 1) bandCount.below++;
+    if (score === 2) bandCount.approaching++;
+    if (score === 3) bandCount.meeting++;
+    if (score === 4) bandCount.exceeding++;
   });
 
 
