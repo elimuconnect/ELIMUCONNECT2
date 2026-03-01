@@ -269,6 +269,19 @@ if (!classId || !subjectId) {
   window.location.href="teacher-dashboard.html";
 }
 
+
+
+function resetSaveButton() {
+  const saveBtn = document.getElementById("saveAssessmentBtn");
+  const statusEl = document.getElementById("status");
+
+  saveBtn.disabled = false;
+  saveBtn.innerText = "Save Assessment";
+  statusEl.innerText = "";
+}
+
+
+  
 // Display class and subject
 const { data: classData } = await supabase.from("classes").select("name").eq("id", classId).single();
 const { data: subjectData } = await supabase.from("subjects").select("name").eq("id", subjectId).single();
@@ -428,11 +441,14 @@ document.getElementById("saveAssessment").onclick = async () => {
   const selectedStrands = Array.from(document.querySelectorAll(".strandCheckbox:checked")).map(cb => cb.value);
   const selectedSLEs = Array.from(document.querySelectorAll(".sleCheckbox:checked")).map(cb => cb.value);
 
-  if (!selectedStrands.length) {
-    alert("Please select at least one strand.");
-    return;
-  }
+ 
 
+if (!selectedStrands.length) {
+  alert("Please select at least one strand.");
+  resetSaveButton();
+  return;
+}
+    
   const termId = document.getElementById("termSelect").value;
   const assessmentTypeId = document.getElementById("assessmentTypeSelect").value;
   const selectedCoreCompetencies = Array.from(document.querySelectorAll(".coreCompetency:checked")).map(cb => cb.value);
