@@ -299,7 +299,7 @@ table {
 <label>View As</label><br />
 <select id="viewMode">
   <option value="term">Term Results</option>
-  <option value="student">Student (Admission No)</option>
+  <option value="student">Student (Admission No/UPI No</option>
   <option value="subject">Subject</option>
 </select><br /><br />
 
@@ -457,6 +457,7 @@ if (previousTerm) {
 }
 
 
+
 avgMap = {}; // populate it as before
 averages.forEach(a => {
   const student = `${a.first_name} ${a.last_name}`;
@@ -504,8 +505,6 @@ const records = data.map(r => ({
   remarks: r.remarks
 }));
 
-
-
 // ===== STRANDS & LEARNING OUTCOMES =====
 const { data: strandData } = await supabase
   .from("assessment_strands_view")   // your view
@@ -527,6 +526,9 @@ strandData?.forEach(row => {
     outcome: row.learning_experience
   });
 });
+
+
+
 
   
 function renderOverviewHeader({ school, poBox, postal, town, phone, email, className, term, year }) {
@@ -953,7 +955,7 @@ function renderGrouped(grouped, avgMap){
       </div>` : ""}
 
     <!-- SUBJECTS -->
-   <!-- SUBJECTS -->
+    
 ${Object.entries(subjects).map(([subject, rows]) => {
   if (subject === "__admission") return "";
 
@@ -992,7 +994,6 @@ const strandCount = strandOutcomes.length;
       ${evidence.label} — <span style="font-weight:normal">${evidence.note}</span>
     </p>
 
-    <!-- STRANDS & LEARNING OUTCOMES -->
    <!-- STRANDS & LEARNING OUTCOMES -->
 ${strandOutcomes.length ? `
   <div style="margin:8px 0;padding:8px;border-left:4px solid #3498db;background:#f8fbff;">
@@ -1051,7 +1052,6 @@ ${strandOutcomes.length ? `
   </div>`;
 }).join("")}
 }
-
 
 
 
@@ -1144,14 +1144,16 @@ function generateInsight(subjects) {
     subjectsArray[0].avg >= 3 &&
     subjectsArray[0].avg - subjectsArray[1].avg >= 0.5
   ) {
-    strengthSentence = `, with stronger performance in <strong>${subjectsArray[0].subject}</strong>`;
+   strengthSentence = ", with stronger performance in <strong>" +
+  subjectsArray[0].subject +
+  "</strong>";
   }
 
-  return `
-    <p style="margin:6px 0 12px 0;font-style:italic;color:#444;">
-      Overall, based on current evidence, the learner is <strong>${overall}</strong>${strengthSentence}.
-    </p>
-  `;
+return `
+  <p>
+    Overall, based on current evidence, the learner is <strong>${overall}</strong>${strengthSentence}.
+  </p>
+`;
 }
 
 
