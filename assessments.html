@@ -582,6 +582,21 @@ if (!selectedStrands.length) {
   return;
 }
 
+
+
+// Build map of strandId -> array of selected SLE IDs
+const sleCheckboxes = Array.from(document.querySelectorAll(".sleCheckbox"));
+const sleMap = {};
+
+sleCheckboxes.forEach(cb => {
+  const strand = cb.dataset.strandId; // strand UUID
+  if (!sleMap[strand]) sleMap[strand] = [];
+  if (selectedSLEs.includes(cb.value)) {
+    sleMap[strand].push(cb.value);
+  }
+});
+
+   
 const strandRows = [];
 
 selectedStrands.forEach(sId => {
