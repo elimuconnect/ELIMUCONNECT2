@@ -470,22 +470,23 @@ document.getElementById("saveAssessment").onclick = async () => {
   if (!profile?.school_id) { alert("Cannot determine school_id"); return; }
 
   const schoolId = profile.school_id;
-  const today = new Date().toISOString();
-// Count existing assessments for this subject + term + year
-// inside saveAssessment onclick -> try block (after validation)
+    const today = new Date().toISOString();
 
-const { data: existingList } = await supabase
-  .from("assessments")
-  .select("id")
-  .eq("class_id", classId)
-  .eq("subject_id", subjectId)
-  .eq("term_id", termId)
-  .eq("academic_year", academicYear);
+    // -------------------------
+    // TITLE WITH SEQUENCE NUMBER
+    // -------------------------
+    const { data: existingList } = await supabase
+      .from("assessments")
+      .select("id")
+      .eq("class_id", classId)
+      .eq("subject_id", subjectId)
+      .eq("term_id", termId)
+      .eq("academic_year", academicYear);
 
-const sequence = (existingList?.length || 0) + 1;
+    const sequence = (existingList?.length || 0) + 1;
 
-const assessmentTitle =
-  `${subjectData.name} - ${document.getElementById("termSelect").selectedOptions[0].text} (${academicYear})-${sequence}`;
+    const assessmentTitle =
+      `${subjectData.name} - ${document.getElementById("termSelect").selectedOptions[0].text} (${academicYear})-${sequence}`;
 
   // 🔎 Check existing assessment
   let { data: existingAssessment } = await supabase.from("assessments")
