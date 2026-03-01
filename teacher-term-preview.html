@@ -997,16 +997,16 @@ const strandOutcomes = (strandMap && strandMap[assessmentId]) || [];
     strandCount > 0
       ? `
         <div style="margin:8px 0;padding:8px;border-left:4px solid #3498db;background:#f8fbff;">
-          <strong>🧠 Strands & Learning Outcomes</strong>
+          <strong>🧠 Strands & Specific Learning Expeiences</strong>
           <ul>
             ${strandOutcomes.map(o => `
               <li>
                 <strong>${o.strand || "Unnamed Strand"}</strong> —
-                ${o.outcome || "Outcome not recorded"}
+                ${o.outcome || "Learning Experiences not recorded"}
               </li>
             `).join("")}
           </ul>
-          <p>🧠 Outcomes Covered: ${strandCount}</p>
+          <p>🧠 Learning Experiences Covered: ${strandCount}</p>
         </div>
       `
       : `
