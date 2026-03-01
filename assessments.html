@@ -581,8 +581,7 @@ if (existingAssessment) {
 // (Optional – only if selected)
 // ===============================
 
-const selectedStrands = Array.from(document.querySelectorAll(".strandCheckbox:checked")).map(cb => cb.value);
-const selectedSLEs = Array.from(document.querySelectorAll(".sleCheckbox:checked")).map(cb => cb.value);
+
 
 // 🔎 Check if assessment already has strands (to avoid duplicates)
 const { data: existingStrands, error: checkError } = await supabase
