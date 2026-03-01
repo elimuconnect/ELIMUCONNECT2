@@ -577,30 +577,47 @@ if (existingAssessment) {
 
 
 if (!selectedStrands.length) {
-  alert("Please select at least one strand.");
-  return;
-}
+        alert("Please select at least one strand.");
+        saveBtn.disabled = false;
+        return;
+      }
 
-if (!existingAssessment) {
+      const sleCheckboxes = Array.from(document.querySelectorAll(".sleCheckbox"));
+      const strandRows = [];
 
-  // 🔹 Build rows once (on create only)
-  const strandRows = selectedStrands.map(sId => ({
-    assessment_id: assessmentId,
-    strand_id: sId,
-    learning_experience_id: null
-  }));
+      sleCheckboxes.forEach(cb => {
+        if (cb.checked) {
+          strandRows.push({
+            assessment_id: assessmentId,
+            strand_id: cb.dataset.strandId,
+            learning_experience_id: cb.value
+          });
+        }
+      });
 
-  if (strandRows.length) {
-    const { error } = await supabase
-      .from("assessment_strands")
-      .insert(strandRows);
+      // If strand selected but no SLE selected
+      selectedStrands.forEach(sId => {
+        const hasSLE = strandRows.some(r => r.strand_id === sId);
+        if (!hasSLE) {
+          strandRows.push({
+            assessment_id: assessmentId,
+            strand_id: sId,
+            learning_experience_id: null
+          });
+        }
+      });
 
-    if (error) {
-      statusEl.innerText = error.message;
-      return;
-    }
-  }
-}
+      if (strandRows.length) {
+        const { error } = await supabase
+          .from("assessment_strands")
+          .insert(strandRows);
+
+        if (error) throw error;
+      }
+
+    } else {
+
+   
 // 🔹 Save student results (already optimized)
 const rows = Array.from(studentRows).map(tr => ({
   assessment_id: assessmentId,
