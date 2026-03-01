@@ -1149,14 +1149,12 @@ function generateInsight(subjects) {
   "</strong>";
   }
 
-return `
-  <p>
-    Overall, based on current evidence, the learner is <strong>${overall}</strong>${strengthSentence}.
-  </p>
-`;
+return "<p>Overall, based on current evidence, the learner is <strong>" +
+  overall +
+  "</strong>" +
+  strengthSentence +
+  ".</p>";
 }
-
-
 
 function generateSupportFlag(subjects) {
   let scores = [];
