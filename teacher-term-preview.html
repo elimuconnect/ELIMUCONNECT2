@@ -190,7 +190,22 @@ th {
 tr:last-child td {
   border-bottom: none;
 }
+/* Improve long text wrapping */
+td {
+  vertical-align: top;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
 
+/* Allow table to split across PDF pages */
+table {
+  page-break-inside: auto;
+}
+
+tr {
+  page-break-inside: avoid;
+}
 /* ================== SUMMARY BOX ================== */
 .summary-box {
   background: #f0f9ff;
@@ -240,11 +255,15 @@ tr:last-child td {
   height: auto !important;
 }
 
-table {
-  page-break-inside: avoid;
+
+
+ table {
+  page-break-inside: auto;
 }
 
- 
+tr {
+  page-break-inside: avoid;
+}
 
 
   
@@ -280,7 +299,18 @@ table {
 }
 
 
+td {
+  vertical-align: top;
+  white-space: normal !important;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
 
+
+  .a4-page {
+  height: auto !important;
+  overflow: visible !important;
+}
 </style>
 
 
@@ -1058,9 +1088,9 @@ const strandOutcomes = (strandMap && strandMap[assessmentId]) || [];
     <table>
       <thead>
         <tr>
-          <th>Competency</th>
-          <th>Achievement</th>
-          <th>Remarks</th>
+          <th style="width:55%">Competency</th>
+<th style="width:20%">Achievement</th>
+<th style="width:25%">Remarks</th>
         </tr>
       </thead>
       <tbody>
