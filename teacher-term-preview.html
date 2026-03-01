@@ -502,31 +502,32 @@ const records = data.map(r => ({
   subject: r.subject,
   competency: r.competency,
   level: r.achievement_level,
-  remarks: r.remarks
+  remarks: r.remarks,
+  assessment_id: r.assessment_id   // 👈 ADD THIS
 }));
 
-// ===== STRANDS & LEARNING OUTCOMES =====
-const { data: strandData } = await supabase
-  .from("assessment_strands_view")   // your view
-  .select("*")
-  .eq("assessment_id", records[0]?.assessment_id); // link by assessment
 
+
+
+
+  const { data: strandData } = await supabase
+  .from("assessment_strands_view")
+  .select("*")
+  .eq("assessment_id", records[0]?.assessment_id);  // correct
 // group by student -> subject -> strands
 const strandMap = {};
 
 strandData?.forEach(row => {
-  const student = row.student_id || row.admission_number || row.assessment_id;
-  const subject = row.strand || "Unlinked Strand";
+  const assessment = row.assessment_id;
+  if (!assessment) return;
 
-  strandMap[student] ??= {};
-  strandMap[student][subject] ??= [];
+  strandMap[assessment] ??= [];
 
-  strandMap[student][subject].push({
+  strandMap[assessment].push({
     strand: row.strand,
     outcome: row.learning_experience
   });
 });
-
 
 
 
@@ -980,9 +981,8 @@ function renderGrouped(grouped, avgMap) {
         return "#e74c3c";
       }
 
-      const learnerId = subjects.__admission;
-      const strandOutcomes =
-        (strandMap && strandMap[learnerId] && strandMap[learnerId][subject]) || [];
+     const assessmentId = subjects.__assessment_id || records[0]?.assessment_id;
+const strandOutcomes = (strandMap && strandMap[assessmentId]) || [];
       const strandCount = strandOutcomes.length;
 
       return `
