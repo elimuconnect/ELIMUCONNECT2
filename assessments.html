@@ -576,27 +576,24 @@ if (existingAssessment) {
 }
 
 
-
 if (!selectedStrands.length) {
   alert("Please select at least one strand.");
   return;
 }
-
-
 
 // Build map of strandId -> array of selected SLE IDs
 const sleCheckboxes = Array.from(document.querySelectorAll(".sleCheckbox"));
 const sleMap = {};
 
 sleCheckboxes.forEach(cb => {
-  const strand = cb.dataset.strandId; // strand UUID
+  const strand = cb.dataset.strandId;
   if (!sleMap[strand]) sleMap[strand] = [];
   if (selectedSLEs.includes(cb.value)) {
     sleMap[strand].push(cb.value);
   }
 });
 
-   
+// Build strand rows (one row per strand or SLE)
 const strandRows = [];
 
 selectedStrands.forEach(sId => {
@@ -619,19 +616,23 @@ selectedStrands.forEach(sId => {
   }
 });
 
+// Remove old rows for this assessment
+await supabase
+  .from("assessment_strands")
+  .delete()
+  .eq("assessment_id", assessmentId);
+
+// Insert fresh rows
 if (strandRows.length) {
   const { error } = await supabase
     .from("assessment_strands")
-    .upsert(strandRows, {
-      onConflict: ["assessment_id", "strand_id", "learning_experience_id"]
-    });
+    .insert(strandRows);
 
   if (error) {
     statusEl.innerText = "Error saving strands/SLEs: " + error.message;
     return;
   }
 }
-
 // 🔹 Save student results (already optimized)
 const rows = Array.from(studentRows).map(tr => ({
   assessment_id: assessmentId,
