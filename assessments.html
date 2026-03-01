@@ -576,12 +576,6 @@ if (existingAssessment) {
 }
 
 
-try {
-
-  // ===============================
-  // CREATE IF NOT EXISTS
-  // ===============================
-
   if (!existingAssessment) {
 
     const { data: newAssessment, error } = await supabase
