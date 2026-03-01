@@ -1023,17 +1023,31 @@ const strandOutcomes = (strandMap && strandMap[assessmentId]) || [];
     strandCount > 0
       ? `
         <div style="margin:8px 0;padding:8px;border-left:4px solid #3498db;background:#f8fbff;">
-          <strong>🧠 Strands & Specific Learning Expeiences</strong>
+  <strong>🧠 Strands & Learning Experiences</strong>
+  <ul>
+    ${(() => {
+      const grouped = {};
+
+      strandOutcomes.forEach(o => {
+        const strand = (o.strand || "Unspecified Strand").trim();
+        const outcome = o.outcome || "Learning experience not recorded";
+
+        grouped[strand] ??= new Set();
+        grouped[strand].add(outcome);
+      });
+
+      return Object.entries(grouped).map(([strand, outcomes]) => `
+        <li>
+          <strong>${strand}</strong>
           <ul>
-            ${strandOutcomes.map(o => `
-              <li>
-                <strong>${o.strand || "Unnamed Strand"}</strong> —
-                ${o.outcome || "Learning Experiences not recorded"}
-              </li>
-            `).join("")}
+            ${Array.from(outcomes).map(o => `<li>${o}</li>`).join("")}
           </ul>
-          <p>🧠 Learning Experiences Covered: ${strandCount}</p>
-        </div>
+        </li>
+      `).join("");
+    })()}
+  </ul>
+  <p>🧠 Learning Experiences Covered: ${strandOutcomes.length}</p>
+</div>
       `
       : `
         <p style="color:#999;">No strands or learning outcomes recorded for this subject.</p>
