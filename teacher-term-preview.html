@@ -1072,8 +1072,8 @@ const strandOutcomes = assessmentId ? (strandMap?.[assessmentId] || []) : [];
     <span style="font-weight:normal; font-size:11px;">
       Coverage —
       ${competencyCount} Assessments |
-      ${strandOutcomes.length} Strands |
-      ${strandOutcomes.length} Learning Experiences |
+     ${new Set(strandOutcomes.map(o => o.strand)).size} Strands |
+      ${new Set(strandOutcomes.map(o => o.outcome)).size} Learning Experiences
       ${coreSet.size} Core Competencies |
       ${subjectSet.size} Subject Competencies
     </span>
