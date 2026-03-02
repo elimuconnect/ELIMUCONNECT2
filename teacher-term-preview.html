@@ -389,7 +389,13 @@ const levelColor = {
   "Exceeding Expectations(4)": "#cce5ff"
 };
 
-
+function getAchievementLabel(score) {
+  if (!score || score < 1) return "No Data";
+  if (score >= 3.5) return "Exceeding Expectations(4)";
+  if (score >= 2.5) return "Meeting Expectations(3)";
+  if (score >= 1.5) return "Approaching Expectations(2)";
+  return "Below Expectations(1)";
+}
   
 const termSelect = document.getElementById("termSelect");
 const viewMode = document.getElementById("viewMode");
@@ -1024,13 +1030,7 @@ function renderGrouped(grouped, avgMap) {
           : null;
       }
 
-      function getAchievementLabel(score) {
-        if (score >= 3.5) return "Exceeding Expectations(4)";
-        if (score >= 2.5) return "Meeting Expectations(3)";
-        if (score >= 1.5) return "Approaching Expectations(2)";
-        return "Below Expectations(1)";
-      }
-
+      
       function getAvgColor(score) {
         if (score >= 3.5) return "#2ecc71";
         if (score >= 2.5) return "#3498db";
