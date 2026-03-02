@@ -1060,7 +1060,8 @@ function renderGrouped(grouped, avgMap) {
     competencyCount++;
   });
 
-  const strandOutcomes = strandMap?.[rows[0]?.assessment_id] || [];
+const assessmentId = rows?.[0]?.assessment_id;
+const strandOutcomes = assessmentId ? (strandMap?.[assessmentId] || []) : [];
 
   return `
 <div class="split-block subject-block">
