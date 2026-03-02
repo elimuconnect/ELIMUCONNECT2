@@ -545,26 +545,28 @@ const records = data.map(r => ({
   assessment_id: r.assessment_id
 }));
 
+
+// Collect all assessment IDs for this term
+const assessmentIds = [...new Set(records.map(r => r.assessment_id).filter(Boolean))];
+
+  
   const { data: strandData } = await supabase
   .from("assessment_strands_view")
   .select("*")
-  .eq("assessment_id", records[0]?.assessment_id);  // correct
-// group by student -> subject -> strands
+  .in("assessment_id", assessmentIds);
+
+
 const strandMap = {};
 
 strandData?.forEach(row => {
-  const assessment = row.assessment_id;
-  if (!assessment) return;
+  if (!row.assessment_id) return;
 
-  strandMap[assessment] ??= [];
-
-  strandMap[assessment].push({
+  strandMap[row.assessment_id] ??= [];
+  strandMap[row.assessment_id].push({
     strand: row.strand,
     outcome: row.learning_experience
   });
 });
-
-
   
 
   
@@ -1060,9 +1062,8 @@ function renderGrouped(grouped, avgMap) {
     competencyCount++;
   });
 
-const assessmentId = subjects.__assessment_id || records[0]?.assessment_id; 
-const strandOutcomes = (strandMap && strandMap[assessmentId]) || [];
-
+const assessmentId = rows?.[0]?.assessment_id;
+const strandOutcomes = assessmentId ? (strandMap?.[assessmentId] || []) : [];
   return `
 <div class="split-block subject-block">
 
