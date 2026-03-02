@@ -1032,15 +1032,8 @@ function renderGrouped(grouped, avgMap) {
 
 
 
-// ===== PER SUBJECT COVERAGE =====
-let strandSet = new Set();
-let learningExpCount = 0;
-let coreSet = new Set();
-let subjectSet = new Set();
-let competencyCount = 0;
 
-      
-      
+  
       function getAvgColor(score) {
         if (score >= 3.5) return "#2ecc71";
         if (score >= 2.5) return "#3498db";
@@ -1048,9 +1041,40 @@ let competencyCount = 0;
         return "#e74c3c";
       }
 
-     const assessmentId = subjects.__assessment_id || records[0]?.assessment_id;
-const strandOutcomes = (strandMap && strandMap[assessmentId]) || [];
-      const strandCount = strandOutcomes.length;
+      
+// ===== PER SUBJECT COVERAGE =====
+let strandSet = new Set();
+let learningExpCount = 0;
+let coreSet = new Set();
+let subjectSet = new Set();
+let competencyCount = 0;
+// Count competencies
+rows.forEach(r => {
+
+  if (r.core_competencies) {
+    r.core_competencies.split(",").forEach(c => {
+      if (c.trim()) coreSet.add(c.trim());
+    });
+  }
+
+  if (r.subject_competencies) {
+    r.subject_competencies.split(",").forEach(c => {
+      if (c.trim()) subjectSet.add(c.trim());
+    });
+  }
+
+  competencyCount++;
+});
+      
+    
+
+     const assessmentId = rows[0]?.assessment_id;
+const strandOutcomes = strandMap?.[assessmentId] || [];
+
+strandOutcomes.forEach(o => {
+  if (o.strand) strandSet.add(o.strand.trim());
+  if (o.outcome) learningExpCount++;
+});
 
       return `
 <div class="split-block subject-block">
@@ -1058,11 +1082,11 @@ const strandOutcomes = (strandMap && strandMap[assessmentId]) || [];
   ${subject}: 
   <span style="font-weight:normal; font-size:11px;">
     Coverage — 
+      ${competencyCount} Assessments | 
     ${strandSet.size} Strands | 
-    ${learningExpCount} LEs | 
-    ${competencyCount} Assessments | 
-    ${coreSet.size} Core | 
-    ${subjectSet.size} Subject
+    ${learningExpCount} Learning Expeiences | 
+    ${coreSet.size} Core Competencies | 
+    ${subjectSet.size} Subject Competencies
   </span>
 </h5>
 
