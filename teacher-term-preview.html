@@ -1068,8 +1068,7 @@ rows.forEach(r => {
       
     
 
-    const assessmentId = rows[0]?.assessment_id;
-const strandOutcomes = strandMap?.[assessmentId] || [];
+  const strandOutcomes = strandMap?.[rows[0]?.assessment_id] || [];
 
 return `
 <div class="split-block subject-block">
