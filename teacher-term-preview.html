@@ -1763,7 +1763,9 @@ clone.querySelectorAll("h3").forEach(h3 => {
           return `
             <tr>
               <td style="border:1px solid #000;padding:8px;">${subject}</td>
-              <td style="border:1px solid #000;padding:8px;text-align:center;">${avg.toFixed(2)}</td>
+            <td style="border:1px solid #000;padding:8px;text-align:center;">
+  ${getAchievementLabel(avg)}
+</td>
               <td style="border:1px solid #000;padding:8px;">${d.achievement_level}</td>
               <td style="border:1px solid #000;padding:8px;">${commentFromScore(avg)}</td>
             </tr>
