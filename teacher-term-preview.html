@@ -1090,39 +1090,38 @@ strandOutcomes.forEach(o => {
   </span>
 </h5>
 
-  <p style="font-weight:bold;color:${evidence.color};">
+ <p style="font-weight:bold;color:${evidence.color};">
     ${evidence.label} — <span style="font-weight:normal">${evidence.note}</span>
   </p>
 
   ${
-    strandCount > 0
+    strandOutcomes.length > 0
       ? `
         <div style="margin:8px 0;padding:8px;border-left:4px solid #3498db;background:#f8fbff;">
-  <strong>🧠 Strands & Learning Experiences</strong>
-  <ul>
-    ${(() => {
-      const grouped = {};
-
-      strandOutcomes.forEach(o => {
-        const strand = (o.strand || "Unspecified Strand").trim();
-        const outcome = o.outcome || "Learning experience not recorded";
-
-        grouped[strand] ??= new Set();
-        grouped[strand].add(outcome);
-      });
-
-      return Object.entries(grouped).map(([strand, outcomes]) => `
-        <li>
-          <strong>${strand}</strong>
+          <strong>Strands & Learning Experiences</strong>
           <ul>
-            ${Array.from(outcomes).map(o => `<li>${o}</li>`).join("")}
+            ${(() => {
+              const grouped = {};
+
+              strandOutcomes.forEach(o => {
+                const strand = (o.strand || "Unspecified Strand").trim();
+                const outcome = o.outcome || "Learning experience not recorded";
+
+                grouped[strand] ??= new Set();
+                grouped[strand].add(outcome);
+              });
+
+              return Object.entries(grouped).map(([strand, outcomes]) => `
+                <li>
+                  <strong>${strand}</strong>
+                  <ul>
+                    ${Array.from(outcomes).map(o => `<li>${o}</li>`).join("")}
+                  </ul>
+                </li>
+              `).join("");
+            })()}
           </ul>
-        </li>
-      `).join("");
-    })()}
-  </ul>
-  <p>🧠 Learning Experiences Covered: ${strandOutcomes.length}</p>
-</div>
+        </div>
       `
       : `
         <p style="color:#999;">No strands or learning outcomes recorded for this subject.</p>
