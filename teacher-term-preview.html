@@ -1044,7 +1044,17 @@ const strandOutcomes = (strandMap && strandMap[assessmentId]) || [];
 
       return `
 <div class="split-block subject-block">
-  <h5>📘 ${subject} — Assessments: <strong>${rows.length}</strong></h5>
+ <h5 style="margin:6px 0;">
+  ${subject}: 
+  <span style="font-weight:normal; font-size:11px;">
+    Coverage — 
+    ${strandSet.size} Strands | 
+    ${learningExpCount} LEs | 
+    ${competencyCount} Assessments | 
+    ${coreSet.size} Core | 
+    ${subjectSet.size} Subject
+  </span>
+</h5>
 
   <p style="font-weight:bold;color:${evidence.color};">
     ${evidence.label} — <span style="font-weight:normal">${evidence.note}</span>
