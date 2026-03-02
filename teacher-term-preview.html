@@ -1068,23 +1068,19 @@ rows.forEach(r => {
       
     
 
-     const assessmentId = rows[0]?.assessment_id;
+    const assessmentId = rows[0]?.assessment_id;
 const strandOutcomes = strandMap?.[assessmentId] || [];
 
-strandOutcomes.forEach(o => {
-  if (o.strand) strandSet.add(o.strand.trim());
-  if (o.outcome) learningExpCount++;
-});
-
-      return `
+return `
 <div class="split-block subject-block">
+
  <h5 style="margin:6px 0;">
   ${subject}: 
   <span style="font-weight:normal; font-size:11px;">
     Coverage — 
       ${competencyCount} Assessments | 
     ${strandSet.size} Strands | 
-    ${learningExpCount} Learning Expeiences | 
+    ${learningExpCount} Learning Experiences | 
     ${coreSet.size} Core Competencies | 
     ${subjectSet.size} Subject Competencies
   </span>
@@ -1127,6 +1123,7 @@ strandOutcomes.forEach(o => {
         <p style="color:#999;">No strands or learning outcomes recorded for this subject.</p>
       `
   }
+
 
   <div class="table-wrapper">
     <table>
