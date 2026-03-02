@@ -1030,6 +1030,16 @@ function renderGrouped(grouped, avgMap) {
           : null;
       }
 
+
+
+// ===== PER SUBJECT COVERAGE =====
+let strandSet = new Set();
+let learningExpCount = 0;
+let coreSet = new Set();
+let subjectSet = new Set();
+let competencyCount = 0;
+
+      
       
       function getAvgColor(score) {
         if (score >= 3.5) return "#2ecc71";
