@@ -1017,75 +1017,67 @@ function renderGrouped(grouped, avgMap) {
       </div>` : ""}
 
     <!-- SUBJECTS -->
-    ${Object.entries(subjects).map(([subject, rows]) => {
-      if (subject === "__admission") return "";
+   ${Object.entries(subjects).map(([subject, rows]) => {
+  if (subject === "__admission") return "";
 
-      const evidence = getEvidenceStatus(rows);
+  const evidence = getEvidenceStatus(rows);
 
-      let subjectAvg = avgMap?.[student]?.[subject.trim()]?.average_score ?? null;
-      if (subjectAvg === null) {
-        const scores = rows.map(r => levelToScore(r.level)).filter(s => s > 0);
-        subjectAvg = scores.length
-          ? scores.reduce((a,b)=>a+b,0) / scores.length
-          : null;
-      }
-
-
-
-
-  
-      function getAvgColor(score) {
-        if (score >= 3.5) return "#2ecc71";
-        if (score >= 2.5) return "#3498db";
-        if (score >= 1.5) return "#f1c40f";
-        return "#e74c3c";
-      }
-
-      
-// ===== PER SUBJECT COVERAGE =====
-let strandSet = new Set();
-let learningExpCount = 0;
-let coreSet = new Set();
-let subjectSet = new Set();
-let competencyCount = 0;
-// Count competencies
-rows.forEach(r => {
-
-  if (r.core_competencies) {
-    r.core_competencies.split(",").forEach(c => {
-      if (c.trim()) coreSet.add(c.trim());
-    });
+  let subjectAvg = avgMap?.[student]?.[subject.trim()]?.average_score ?? null;
+  if (subjectAvg === null) {
+    const scores = rows.map(r => levelToScore(r.level)).filter(s => s > 0);
+    subjectAvg = scores.length
+      ? scores.reduce((a,b)=>a+b,0) / scores.length
+      : null;
   }
 
-  if (r.subject_competencies) {
-    r.subject_competencies.split(",").forEach(c => {
-      if (c.trim()) subjectSet.add(c.trim());
-    });
+  function getAvgColor(score) {
+    if (score >= 3.5) return "#2ecc71";
+    if (score >= 2.5) return "#3498db";
+    if (score >= 1.5) return "#f1c40f";
+    return "#e74c3c";
   }
 
-  competencyCount++;
-});
-      
-    
+  // ===== PER SUBJECT COVERAGE =====
+  let strandSet = new Set();
+  let learningExpCount = 0;
+  let coreSet = new Set();
+  let subjectSet = new Set();
+  let competencyCount = 0;
+
+  rows.forEach(r => {
+    if (r.core_competencies) {
+      r.core_competencies.split(",").forEach(c => {
+        if (c.trim()) coreSet.add(c.trim());
+      });
+    }
+
+    if (r.subject_competencies) {
+      r.subject_competencies.split(",").forEach(c => {
+        if (c.trim()) subjectSet.add(c.trim());
+      });
+    }
+
+    competencyCount++;
+  });
 
   const strandOutcomes = strandMap?.[rows[0]?.assessment_id] || [];
 
-return `
+  return `
 <div class="split-block subject-block">
 
- <h5 style="margin:6px 0;">
-  ${subject}: 
-  <span style="font-weight:normal; font-size:11px;">
-    Coverage — 
-      ${competencyCount} Assessments | 
-    ${strandSet.size} Strands | 
-    ${learningExpCount} Learning Experiences | 
-    ${coreSet.size} Core Competencies | 
-    ${subjectSet.size} Subject Competencies
-  </span>
-</h5>
+  <h5 style="margin:6px 0;">
+    ${subject}:
+    <span style="font-weight:normal; font-size:11px;">
+      Coverage —
+      ${competencyCount} Assessments |
+      ${strandOutcomes.length} Strands |
+      ${strandOutcomes.length} Learning Experiences |
+      ${coreSet.size} Core Competencies |
+      ${subjectSet.size} Subject Competencies
+    </span>
+  </h5>
 
- <p style="font-weight:bold;color:${evidence.color};">
+  <p style="font-weight:bold;color:${evidence.color};">
     ${evidence.label} — <span style="font-weight:normal">${evidence.note}</span>
   </p>
 
