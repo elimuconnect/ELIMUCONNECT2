@@ -1814,6 +1814,15 @@ clone.querySelectorAll("h3").forEach(h3 => {
     generalBlock.style.lineHeight = "1.8";
 
     generalBlock.innerHTML = `
+<div style="margin-top:12px;font-size:13px;">
+  <strong>Coverage Summary:</strong>
+  ${competencyCount} Assessments |
+  ${strandSet.size} Strands |
+  ${learningExpCount} Learning Experiences |
+  ${coreSet.size} Core Competencies |
+  ${subjectSet.size} Subject Competencies
+</div>
+    
       <table style="width:100%;border-collapse:collapse;margin-top:6px;">
         <tr>
           <td style="border:1px solid #000;padding:8px;width:40%;"><strong>Learner's General Performance Level</strong></td>
@@ -1826,6 +1835,10 @@ clone.querySelectorAll("h3").forEach(h3 => {
           <td style="border:1px solid #000;padding:12px;">${generalComment(overallAvg)}</td>
         </tr>
       </table>
+
+
+
+    
       <div style="margin-top:20px;">
         <div style="display:flex;justify-content:space-between;margin-top:14px;">
           <div>Closing Date: ____________________</div>
