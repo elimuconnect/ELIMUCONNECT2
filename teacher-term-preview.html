@@ -1641,6 +1641,16 @@ window.downloadPDF = async function () {
   const original = reportDiv;
   const clone = original.cloneNode(true);
 
+/* =========================
+   REMOVE CLASS SUMMARY TITLE (e.g., 10A – All Learners)
+========================= */
+clone.querySelectorAll("h3").forEach(h3 => {
+  if (h3.innerText.includes("All Learners")) {
+    h3.remove();
+  }
+});
+
+  
   /* =========================
      REMOVE SCREEN PAGINATION
   ========================== */
