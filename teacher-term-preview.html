@@ -1127,22 +1127,22 @@ const strandOutcomes = (strandMap && strandMap[assessmentId]) || [];
       ${
         subjectAvg !== null
           ? `
-          <tfoot>
-            <tr style="font-weight:bold; background:#f0f0f0;">
-              <td>SUBJECT/LEARNING AREA AVERAGE</td>
-              <td colspan="2">
-                <span style="
-                  padding: 3px 8px;
-                  border-radius: 12px;
-                  font-weight:bold;
-                  color:white;
-                  background:${getAvgColor(subjectAvg)};
-                ">
-                  ${subjectAvg.toFixed(2)} — ${getAchievementLabel(subjectAvg)}
-                </span>
-              </td>
-            </tr>
-          </tfoot>`
+<tfoot>
+  <tr style="font-weight:bold; background:#f0f0f0;">
+    <td>SUBJECT/LEARNING AREA PERFORMANCE</td>
+    <td colspan="2">
+      <span style="
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-weight:bold;
+        color:white;
+        background:${getAvgColor(subjectAvg)};
+      ">
+        ${getAchievementLabel(subjectAvg)}
+      </span>
+    </td>
+  </tr>
+</tfoot>`
           : ""
       }
     </table>
@@ -1784,7 +1784,9 @@ clone.querySelectorAll("h3").forEach(h3 => {
       <table style="width:100%;border-collapse:collapse;margin-top:6px;">
         <tr>
           <td style="border:1px solid #000;padding:8px;width:40%;"><strong>Learner's General Performance Level</strong></td>
-          <td style="border:1px solid #000;padding:8px;">${overallAvg.toFixed(2)} — ${overallLevel(overallAvg)}</td>
+         <td style="border:1px solid #000;padding:8px;">
+  ${overallLevel(overallAvg)}
+</td>
         </tr>
         <tr>
           <td style="border:1px solid #000;padding:8px;"><strong>Teacher's General Comment</strong></td>
