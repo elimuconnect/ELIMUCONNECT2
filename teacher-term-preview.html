@@ -403,6 +403,18 @@ const filterBox = document.getElementById("filterBox");
 const reportDiv = document.getElementById("report");
 const status = document.getElementById("status");
 
+
+
+
+
+ // ===== PER SUBJECT COVERAGE =====
+  let strandSet = new Set();
+  let learningExpCount = 0;
+  let coreSet = new Set();
+  let subjectSet = new Set();
+  let competencyCount = 0;
+
+  
 /* ========== AUTH ========== */
 const { data: { user } } = await supabase.auth.getUser();
 if (!user) location.href = "index.html";
@@ -1039,12 +1051,7 @@ function renderGrouped(grouped, avgMap) {
     return "#e74c3c";
   }
 
-  // ===== PER SUBJECT COVERAGE =====
-  let strandSet = new Set();
-  let learningExpCount = 0;
-  let coreSet = new Set();
-  let subjectSet = new Set();
-  let competencyCount = 0;
+ 
 
   rows.forEach(r => {
     if (r.core_competencies) {
