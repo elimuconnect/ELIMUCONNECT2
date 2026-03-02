@@ -1052,7 +1052,12 @@ function renderGrouped(grouped, avgMap) {
   }
 
  
-
+strandSet = new Set();
+learningExpCount = 0;
+coreSet = new Set();
+subjectSet = new Set();
+competencyCount = 0;
+     
   rows.forEach(r => {
     if (r.core_competencies) {
       r.core_competencies.split(",").forEach(c => {
