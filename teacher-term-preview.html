@@ -489,6 +489,8 @@ if (previousTerm) {
     .eq("term", previousTerm)
     .eq("academic_year", SYSTEM_YEAR);
 
+  
+const schoolId = data[0]?.school_id;
   previousRecords = data || [];
 
   previousRecords.forEach(r => {
@@ -529,6 +531,7 @@ if (error) {
   status.innerText = "Error fetching report";
   return;
 }
+
 if (!data?.length) {
   status.innerText = "No results found.";
   return;
@@ -536,6 +539,19 @@ if (!data?.length) {
 
 results = data;
 
+// 🏫 GET SCHOOL LOGO (FETCH FROM SCHOOLS TABLE)
+const schoolId = data[0]?.school_id;
+let schoolLogo = null;
+
+if (schoolId) {
+  const { data: school } = await supabase
+    .from("schools")
+    .select("logo_url")
+    .eq("id", schoolId)
+    .single();
+
+  schoolLogo = school?.logo_url || null;
+}
 
 // school and class
 const schoolName = data[0]?.school_name ?? "—";
@@ -1030,7 +1046,7 @@ function renderGrouped(grouped, avgMap) {
       className: subjects.__class || className,
       term: termName,
       year: SYSTEM_YEAR,
-      logo: results[0]?.logo_url 
+     logo: schoolLogo
     })}
 
     <div class="split-block learner-header"
