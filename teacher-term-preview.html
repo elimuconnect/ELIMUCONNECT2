@@ -560,11 +560,7 @@ schoolLogo = schoolLogos[schoolName?.trim()] || null;
 
 
 
-  
-// school and class
-const schoolName = data[0]?.school_name ?? "—";
-const className  = data[0]?.class_name ?? "—";
-
+ 
 // normalized records
 const records = data.map(r => ({
   student: `${r.first_name} ${r.last_name}`,
