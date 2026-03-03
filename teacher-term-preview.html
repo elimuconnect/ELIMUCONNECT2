@@ -365,6 +365,17 @@ const SYSTEM_YEAR = "2026";
 let results = [];
 let schoolLogo = null;
 
+
+const schoolLogos = {
+  "6f94b65e-ae56-4e0c-afea-907e36d15dc4": "https://res.cloudinary.com/dwvt4e9o2/image/upload/v1772534098/WhatsApp_Image_2026-03-03_at_1.12.52_PM_e0gife.jpg",
+  "school-id-2": "https://res.cloudinary.com/...logo2.jpg",
+  "school-id-3": "https://res.cloudinary.com/...logo3.jpg",
+  "school-id-4": "https://res.cloudinary.com/...logo4.jpg"
+};
+
+
+
+  
 let trendMap = {};
 let avgMap = {}; // make it global so downloadPDF can access it
  
@@ -540,19 +551,9 @@ if (!data?.length) {
 
 results = data;
 
-// 🏫 GET SCHOOL LOGO (FETCH FROM SCHOOLS TABLE)
+// 🏫 GET SCHOOL LOGO (DIRECT URL MAPPING)
 const schoolId = data[0]?.school_id;
-schoolLogo = null;
-
-if (schoolId) {
-  const { data: school } = await supabase
-    .from("schools")
-    .select("logo_url")
-    .eq("id", schoolId)
-    .single();
-
-  schoolLogo = school?.logo_url || null;
-}
+schoolLogo = schoolLogos[schoolId] || null;
 
 // school and class
 const schoolName = data[0]?.school_name ?? "—";
