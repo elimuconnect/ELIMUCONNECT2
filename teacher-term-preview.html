@@ -465,7 +465,7 @@ const { data: termAverages } = await supabase
   /* ===== AVERAGES ===== */
   const { data: averages } = await supabase
     .from("term_subject_report_view")
-    .select("first_name,last_name,subject_name,average_score,achievement_level")
+   .select("full_name,subject_name,average_score,achievement_level")
     .eq("term", termName)
   
 
@@ -517,7 +517,7 @@ const schoolId = data[0]?.school_id;
 
 avgMap = {}; // populate it as before
 averages.forEach(a => {
-  const student = `${a.first_name} ${a.last_name}`;
+ const student = a.full_name;
   const subj = a.subject_name.trim();
   avgMap[student] ??= {};
   avgMap[student][subj] = a;
@@ -563,7 +563,7 @@ schoolLogo = schoolLogos[schoolName?.trim()] || null;
  
 // normalized records
 const records = data.map(r => ({
-  student: `${r.first_name} ${r.last_name}`,
+  student: r.full_name,
   admission: r.admission_number,
   className: r.class_name,
   schoolName: r.school_name,
