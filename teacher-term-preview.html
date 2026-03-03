@@ -366,19 +366,8 @@ let results = [];
 let schoolLogo = null;
 let data = [];
 
-// 🏫 GET SCHOOL NAME
-const schoolName = data[0]?.school_name?.trim();
 
-// DIRECT URL MAPPING BY SCHOOL NAME
-const schoolLogos = {
-  "SHANZU SENIOR SECONDARY SCHOOL":
-    "https://res.cloudinary.com/dwvt4e9o2/image/upload/v1772534098/WhatsApp_Image_2026-03-03_at_1.12.52_PM_e0gife.jpg",
 
-  
-};
-
-// PICK LOGO BY NAME
-schoolLogo = schoolLogos[schoolName] || null;
 
 
   
@@ -557,7 +546,21 @@ if (!data?.length) {
 
 results = data;
 
+// school and class
+const schoolName = data[0]?.school_name ?? "—";
+const className  = data[0]?.class_name ?? "—";
 
+// DIRECT URL LOGO MAP
+const schoolLogos = {
+  "SHANZU SENIOR SECONDARY SCHOOL":
+    "https://res.cloudinary.com/dwvt4e9o2/image/upload/v1772534098/WhatsApp_Image_2026-03-03_at_1.12.52_PM_e0gife.jpg"
+};
+
+schoolLogo = schoolLogos[schoolName?.trim()] || null;
+
+
+
+  
 // school and class
 const schoolName = data[0]?.school_name ?? "—";
 const className  = data[0]?.class_name ?? "—";
