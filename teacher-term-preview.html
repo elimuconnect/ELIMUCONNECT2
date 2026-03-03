@@ -582,30 +582,68 @@ strandData?.forEach(row => {
   
 
   
-function renderOverviewHeader({ school, poBox, postal, town, phone, email, className, term, year }) {
+function renderOverviewHeader({
+  school,
+  poBox,
+  postal,
+  town,
+  phone,
+  email,
+  className,
+  term,
+  year,
+  logo
+}) {
   return `
     <div class="report-overview no-split" style="
       border-bottom: 2px solid #333;
-      padding-bottom: 6px;
-      margin-bottom: 10px;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
+      padding-bottom: 10px;
+      margin-bottom: 12px;
     ">
-      <h3 style="margin:0; word-wrap: break-word; overflow-wrap: break-word;">${school}</h3>
-      <div style="font-size:0.9em;color:#555;">
-        <strong>P.O. Box:</strong> ${poBox} - ${postal} &nbsp; | &nbsp;
-        <strong>Town:</strong> ${town} <br />
-        <strong>Tel:</strong> ${phone} &nbsp; | &nbsp; <strong>Email:</strong> ${email}
-      </div>
-      <div style="font-size:0.9em;color:#555;margin-top:4px;">
-        <strong>Class:</strong> ${className} &nbsp; | &nbsp;
-        <strong>Term:</strong> ${term} – ${year}
+
+      <div style="
+        display:flex;
+        align-items:center;
+        gap:15px;
+        flex-wrap:wrap;
+        justify-content:center;
+      ">
+
+        <!-- SCHOOL LOGO (LINKED WITH SCHOOL ID) -->
+        ${logo ? `
+          <div style="flex-shrink:0;">
+            <img src="${logo}"
+                 style="
+                   width:80px;
+                   height:80px;
+                   object-fit:contain;
+                 "
+                 onerror="this.style.display='none';"
+            />
+          </div>
+        ` : ""}
+
+        <!-- SCHOOL DETAILS -->
+        <div style="flex:1; min-width:200px; text-align:center;">
+          <h3 style="margin:0;">${school}</h3>
+
+          <div style="font-size:0.9em;color:#555;">
+            <strong>P.O. Box:</strong> ${poBox} - ${postal} |
+            <strong>Town:</strong> ${town}<br/>
+            <strong>Tel:</strong> ${phone} |
+            <strong>Email:</strong> ${email}
+          </div>
+
+          <div style="font-size:0.9em;color:#555;margin-top:4px;">
+            <strong>Class:</strong> ${className} |
+            <strong>Term:</strong> ${term} – ${year}
+          </div>
+        </div>
+
       </div>
     </div>
   `;
 }
-
-
 
 
 function calculateTermIntelligence(records, previousRecords, previousTerm) {
@@ -991,7 +1029,8 @@ function renderGrouped(grouped, avgMap) {
       email: results[0]?.email || "info@democbc.ac.ke",
       className: subjects.__class || className,
       term: termName,
-      year: SYSTEM_YEAR
+      year: SYSTEM_YEAR,
+      logo: results[0]?.logo_url 
     })}
 
     <div class="split-block learner-header"
