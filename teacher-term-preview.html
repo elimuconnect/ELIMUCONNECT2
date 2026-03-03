@@ -1044,7 +1044,7 @@ function renderGrouped(grouped, avgMap) {
       postal: results[0]?.postal_code || "00100",
       town: results[0]?.town || "Nairobi",
       phone: results[0]?.phone || "0700123456",
-      email: results[0]?.email || "info@democbc.ac.ke",
+    
       className: subjects.__class || className,
       term: termName,
       year: SYSTEM_YEAR,
@@ -1138,11 +1138,11 @@ const strandOutcomes = assessmentId ? (strandMap?.[assessmentId] || []) : [];
 
   <h5 style="margin:6px 0;">
     ${subject}:
-    <span style="font-weight:normal; font-size:11px;">
+    <span style="font-weight:normal; font-size:20px;">
       Coverage —
       ${competencyCount} Assessments |
      ${new Set(strandOutcomes.map(o => o.strand)).size} Strands |
-      ${new Set(strandOutcomes.map(o => o.outcome)).size} Learning Experiences
+      ${new Set(strandOutcomes.map(o => o.outcome)).size} Learning Experiences |
       ${coreSet.size} Core Competencies |
       ${subjectSet.size} Subject Competencies
     </span>
