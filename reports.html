@@ -190,7 +190,22 @@ th {
 tr:last-child td {
   border-bottom: none;
 }
+/* Improve long text wrapping */
+td {
+  vertical-align: top;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
 
+/* Allow table to split across PDF pages */
+table {
+  page-break-inside: auto;
+}
+
+tr {
+  page-break-inside: avoid;
+}
 /* ================== SUMMARY BOX ================== */
 .summary-box {
   background: #f0f9ff;
@@ -240,11 +255,15 @@ tr:last-child td {
   height: auto !important;
 }
 
-table {
-  page-break-inside: avoid;
+
+
+ table {
+  page-break-inside: auto;
 }
 
- 
+tr {
+  page-break-inside: avoid;
+}
 
 
   
@@ -280,7 +299,18 @@ table {
 }
 
 
+td {
+  vertical-align: top;
+  white-space: normal !important;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
 
+
+  .a4-page {
+  height: auto !important;
+  overflow: visible !important;
+}
 </style>
 
 
@@ -296,11 +326,11 @@ table {
 <label>Term</label><br />
 <select id="termSelect"></select><br /><br />
 
-<label>View As</label><br />
 <select id="viewMode">
   <option value="term">Term Results</option>
-  <option value="student">Student (Admission No)</option>
+  <option value="student">Student (Admission No/UPI No)</option>
   <option value="subject">Subject</option>
+  <option value="class">Class</option>   <!-- ✅ NEW -->
 </select><br /><br />
 
 <div id="filterBox"></div>
@@ -333,7 +363,14 @@ const supabase = createClient(
 
 const SYSTEM_YEAR = "2026";
 let results = [];
+let schoolLogo = null;
+let data = [];
 
+
+
+
+
+  
 let trendMap = {};
 let avgMap = {}; // make it global so downloadPDF can access it
  
@@ -342,10 +379,10 @@ let previousAverages = {};
 
 function levelToScore(level) {
   switch (level) {
-    case "Below Expectations": return 1;
-    case "Approaching Expectations": return 2;
-    case "Meeting Expectations": return 3;
-    case "Exceeding Expectations": return 4;
+    case "Below Expectations(1)": return 1;
+    case "Approaching Expectations(2)(": return 2;
+    case "Meeting Expectations(3)": return 3;
+    case "Exceeding Expectations(4)": return 4;
     default: return 0;
   }
 }
@@ -353,13 +390,19 @@ function levelToScore(level) {
   
 
 const levelColor = {
-  "Below Expectations": "#f8d7da",
-  "Approaching Expectations": "#fff3cd",
-  "Meeting Expectations": "#d4edda",
-  "Exceeding Expectations": "#cce5ff"
+  "Below Expectations(1)": "#f8d7da",
+  "Approaching Expectations(2)": "#fff3cd",
+  "Meeting Expectations(3)": "#d4edda",
+  "Exceeding Expectations(4)": "#cce5ff"
 };
 
-
+function getAchievementLabel(score) {
+  if (!score || score < 1) return "No Data";
+  if (score >= 3.5) return "Exceeding Expectations(4)";
+  if (score >= 2.5) return "Meeting Expectations(3)";
+  if (score >= 1.5) return "Approaching Expectations(2)";
+  return "Below Expectations(1)";
+}
   
 const termSelect = document.getElementById("termSelect");
 const viewMode = document.getElementById("viewMode");
@@ -367,6 +410,18 @@ const filterBox = document.getElementById("filterBox");
 const reportDiv = document.getElementById("report");
 const status = document.getElementById("status");
 
+
+
+
+
+ // ===== PER SUBJECT COVERAGE =====
+  let strandSet = new Set();
+  let learningExpCount = 0;
+  let coreSet = new Set();
+  let subjectSet = new Set();
+  let competencyCount = 0;
+
+  
 /* ========== AUTH ========== */
 const { data: { user } } = await supabase.auth.getUser();
 if (!user) location.href = "index.html";
@@ -441,6 +496,8 @@ if (previousTerm) {
     .eq("term", previousTerm)
     .eq("academic_year", SYSTEM_YEAR);
 
+  
+const schoolId = data[0]?.school_id;
   previousRecords = data || [];
 
   previousRecords.forEach(r => {
@@ -481,6 +538,7 @@ if (error) {
   status.innerText = "Error fetching report";
   return;
 }
+
 if (!data?.length) {
   status.innerText = "No results found.";
   return;
@@ -488,11 +546,21 @@ if (!data?.length) {
 
 results = data;
 
-
 // school and class
 const schoolName = data[0]?.school_name ?? "—";
 const className  = data[0]?.class_name ?? "—";
 
+// DIRECT URL LOGO MAP
+const schoolLogos = {
+  "SHANZU SENIOR SECONDARY SCHOOL":
+    "https://res.cloudinary.com/dwvt4e9o2/image/upload/v1772534098/WhatsApp_Image_2026-03-03_at_1.12.52_PM_e0gife.jpg"
+};
+
+schoolLogo = schoolLogos[schoolName?.trim()] || null;
+
+
+
+ 
 // normalized records
 const records = data.map(r => ({
   student: `${r.first_name} ${r.last_name}`,
@@ -500,35 +568,97 @@ const records = data.map(r => ({
   className: r.class_name,
   schoolName: r.school_name,
   subject: r.subject,
-  competency: r.competency,
+
+  core_competencies: r.core_competencies,
+  subject_competencies: r.subject_competencies,
+
   level: r.achievement_level,
-  remarks: r.remarks
+  remarks: r.remarks,
+  assessment_id: r.assessment_id
 }));
 
-function renderOverviewHeader({ school, poBox, postal, town, phone, email, className, term, year }) {
-  return `
-    <div class="report-overview no-split" style="
-      border-bottom: 2px solid #333;
-      padding-bottom: 6px;
-      margin-bottom: 10px;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
-    ">
-      <h3 style="margin:0; word-wrap: break-word; overflow-wrap: break-word;">${school}</h3>
-      <div style="font-size:0.9em;color:#555;">
-        <strong>P.O. Box:</strong> ${poBox} - ${postal} &nbsp; | &nbsp;
-        <strong>Town:</strong> ${town} <br />
-        <strong>Tel:</strong> ${phone} &nbsp; | &nbsp; <strong>Email:</strong> ${email}
+
+// Collect all assessment IDs for this term
+const assessmentIds = [...new Set(records.map(r => r.assessment_id).filter(Boolean))];
+
+  
+  const { data: strandData } = await supabase
+  .from("assessment_strands_view")
+  .select("*")
+  .in("assessment_id", assessmentIds);
+
+
+const strandMap = {};
+
+strandData?.forEach(row => {
+  if (!row.assessment_id) return;
+
+  strandMap[row.assessment_id] ??= [];
+  strandMap[row.assessment_id].push({
+    strand: row.strand,
+    outcome: row.learning_experience
+  });
+});
+  
+
+  
+function renderOverviewHeader({
+  school,
+  poBox,
+  postal,
+  town,
+  phone,
+  email,
+  className,
+  term,
+  year,
+  logo
+}) {
+ return `
+  <div class="report-overview no-split" style="
+    border-bottom: 2px solid #333;
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+    text-align:center;
+  ">
+
+    <!-- BIG CENTERED LOGO -->
+    ${logo ? `
+      <div style="margin-bottom:8px;">
+        <img src="${logo}"
+             style="
+              width:250px !important;
+       height:250px !important;
+       max-width:250px !important;
+       object-fit:contain;
+       display:block;
+       margin:0 auto;
+             "
+             onerror="this.style.display='none';"
+        />
       </div>
-      <div style="font-size:0.9em;color:#555;margin-top:4px;">
-        <strong>Class:</strong> ${className} &nbsp; | &nbsp;
-        <strong>Term:</strong> ${term} – ${year}
+    ` : ""}
+
+    <!-- SCHOOL DETAILS BELOW -->
+    <h3 style="margin:0;">${school}</h3>
+
+    <div style="font-size:0.9em;color:#555;margin-top:4px;">
+      <strong>P.O. Box:</strong> ${poBox} - ${postal} |
+      <strong>Town:</strong> ${town}<br/>
+      <strong>Tel:</strong> ${phone} |
+      <strong>Email:</strong> ${email}
+    </div>
+
+    <div style="font-size:0.9em;color:#555;margin-top:4px;">
+      <strong>Class:</strong> ${className} |
+      <strong>Term:</strong> ${term} – ${year}
+    </div>
+  </div>
+
       </div>
     </div>
   `;
 }
-
-
 
 
 function calculateTermIntelligence(records, previousRecords, previousTerm) {
@@ -681,7 +811,7 @@ function renderSchoolAnalytics(records, termName, year, intelligence, schoolName
 
   // ===== AT-RISK COUNT =====
   const atRiskLearners = records.filter(
-    r => r.level === "Below Expectations"
+    r => r.level === "Below Expectations(1)"
   ).length;
 
   // ===== AVERAGE FUNCTION =====
@@ -702,7 +832,7 @@ function renderSchoolAnalytics(records, termName, year, intelligence, schoolName
     return `
       <tr>
         <td>${cls}</td>
-        <td>${mean.toFixed(2)}</td>
+        <td>${getAchievementLabel(mean)}</td>
         <td>${risk}</td>
       </tr>
     `;
@@ -720,7 +850,7 @@ function renderSchoolAnalytics(records, termName, year, intelligence, schoolName
     return `
       <tr>
         <td>${sub}</td>
-        <td>${mean.toFixed(2)}</td>
+       <td>${getAchievementLabel(mean)}</td>
         <td>${alert}</td>
       </tr>
     `;
@@ -787,7 +917,7 @@ ${intelligence.schoolImprovement !== null ? `
         <thead>
           <tr>
             <th>Class</th>
-            <th>Mean Score</th>
+           <th>Performance Level</th>
             <th>Status</th>
           </tr>
         </thead>
@@ -802,7 +932,7 @@ ${intelligence.schoolImprovement !== null ? `
         <thead>
           <tr>
             <th>Subject</th>
-            <th>Mean Score</th>
+            <th>Performance Level</th>
             <th>Alert</th>
           </tr>
         </thead>
@@ -831,7 +961,7 @@ ${intelligence.schoolImprovement !== null ? `
       <!-- 5️⃣ STRATEGIC ACTION -->
       <h4 style="margin-top:20px;">5️⃣ Strategic Recommendations</h4>
       <ul>
-        <li>Conduct targeted remediation for subjects below 2.3 mean.</li>
+        <li>Conduct targeted remediation for subjects below Approaching expectations mean.</li>
         <li>Organize teacher review meetings for declining performance trends.</li>
         <li>Introduce peer tutoring and reward high-performing classes</li>
  
@@ -845,12 +975,41 @@ ${intelligence.schoolImprovement !== null ? `
 }
 
   
-function renderGrouped(grouped, avgMap){
+function getPerformanceBadge(level) {
+  if (!level) return "";
+
+  const styles = {
+    "Below Expectations(1)": "background:#fee2e2;color:#b91c1c;",
+    "Approaching Expectations(2)": "background:#ffedd5;color:#c2410c;",
+    "Meeting Expectations(3)": "background:#fef9c3;color:#854d0e;",
+    "Exceeding Expectations(4)": "background:#dcfce7;color:#166534;",
+    "Not Assessed(X)": "background:#e5e7eb;color:#374151;"
+  };
+
+  const style = styles[level] || "background:#e5e7eb;color:#374151;";
+
+  return `
+    <span style="
+      display:inline-block;
+      padding:4px 10px;
+      border-radius:20px;
+      font-size:0.85rem;
+      font-weight:600;
+      ${style}
+    ">
+      ${level}
+    </span>
+  `;
+}
+
+  
+function renderGrouped(grouped, avgMap) {
+
   return Object.entries(grouped).map(([student, subjects]) => {
 
     const admission = subjects.__admission || "N/A";
 
-    // Collect raw scores for trends & support flags (not for averages)
+    // ----- trend & support -----
     const currentScores = [];
     Object.entries(subjects).forEach(([subject, rows]) => {
       if (subject === "__admission") return;
@@ -860,10 +1019,9 @@ function renderGrouped(grouped, avgMap){
       });
     });
 
-    const currentAvgScore =
-      currentScores.length
-        ? currentScores.reduce((a, b) => a + b, 0) / currentScores.length
-        : null;
+    const currentAvgScore = currentScores.length
+      ? currentScores.reduce((a, b) => a + b, 0) / currentScores.length
+      : null;
 
     const prevData = previousAverages[admission];
     const previousAvg = prevData ? prevData.total / prevData.count : null;
@@ -874,8 +1032,7 @@ function renderGrouped(grouped, avgMap){
     const { strengths, needs } = generateStrengthsAndNeeds(subjects);
     const recommendations = generateRecommendations(subjects, trend, supportFlag);
 
-
-  return `
+    return `
 <div class="a4-page learner-page">
   <div class="learner-card">
     ${renderOverviewHeader({
@@ -887,17 +1044,16 @@ function renderGrouped(grouped, avgMap){
       email: results[0]?.email || "info@democbc.ac.ke",
       className: subjects.__class || className,
       term: termName,
-      year: SYSTEM_YEAR
+      year: SYSTEM_YEAR,
+     logo: schoolLogo
     })}
 
-
-    <!-- HEADER -->
-    <div class="split-block learner-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+    <div class="split-block learner-header"
+         style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
       <h4>👤 ${student} <small>(<strong>Adm: ${admission}</strong>)</small></h4>
       <div style="font-weight:bold;">${supportFlag}</div>
     </div>
 
-    <!-- TREND SUMMARY -->
     <div class="split-block">
       <p style="margin:6px 0 10px 0;font-weight:bold;">
         📊 Progress Trend: ${trend}
@@ -905,23 +1061,23 @@ function renderGrouped(grouped, avgMap){
       ${insight}
     </div>
 
-    <!-- STRENGTHS / NEEDS -->
     <div class="split-block" style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:10px;">
       ${strengths.length ? `<p><strong>💪 Strengths:</strong> ${strengths.join(", ")}</p>` : ""}
       ${needs.length ? `<p><strong>🎯 Areas for Improvement:</strong> ${needs.join(", ")}</p>` : ""}
     </div>
 
-    <!-- RECOMMENDATIONS -->
     ${recommendations.teacher.length ? `
       <div class="split-block" style="margin:10px 0;padding:10px;border-left:4px solid #3498db;background:#f8fbff;">
         <strong>👩🏽‍🏫 Teacher Actions</strong>
         <ul>${recommendations.teacher.map(r => `<li>${r}</li>`).join("")}</ul>
       </div>` : ""}
+
     ${recommendations.parent.length ? `
       <div class="split-block" style="margin:10px 0;padding:10px;border-left:4px solid #f39c12;background:#fffaf3;">
         <strong>🏠 Parent Support</strong>
         <ul>${recommendations.parent.map(r => `<li>${r}</li>`).join("")}</ul>
       </div>` : ""}
+
     ${recommendations.learner.length ? `
       <div class="split-block" style="margin:10px 0;padding:10px;border-left:4px solid #2ecc71;background:#f6fffa;">
         <strong>🎯 Learner Focus</strong>
@@ -929,86 +1085,175 @@ function renderGrouped(grouped, avgMap){
       </div>` : ""}
 
     <!-- SUBJECTS -->
-    ${Object.entries(subjects).map(([subject, rows]) => {
-      if (subject === "__admission") return "";
+   ${Object.entries(subjects).map(([subject, rows]) => {
+  if (subject === "__admission") return "";
 
-      const evidence = getEvidenceStatus(rows);
+  const evidence = getEvidenceStatus(rows);
 
-      // compute subject average
-      let subjectAvg = avgMap?.[student]?.[subject.trim()]?.average_score ?? null;
-      if (subjectAvg === null) {
-        const scores = rows.map(r => levelToScore(r.level)).filter(s => s > 0);
-        subjectAvg = scores.length ? scores.reduce((a,b)=>a+b,0)/scores.length : null;
+  let subjectAvg = avgMap?.[student]?.[subject.trim()]?.average_score ?? null;
+  if (subjectAvg === null) {
+    const scores = rows.map(r => levelToScore(r.level)).filter(s => s > 0);
+    subjectAvg = scores.length
+      ? scores.reduce((a,b)=>a+b,0) / scores.length
+      : null;
+  }
+
+  function getAvgColor(score) {
+    if (score >= 3.5) return "#2ecc71";
+    if (score >= 2.5) return "#3498db";
+    if (score >= 1.5) return "#f1c40f";
+    return "#e74c3c";
+  }
+
+ 
+strandSet = new Set();
+learningExpCount = 0;
+coreSet = new Set();
+subjectSet = new Set();
+competencyCount = 0;
+     
+  rows.forEach(r => {
+    if (r.core_competencies) {
+      r.core_competencies.split(",").forEach(c => {
+        if (c.trim()) coreSet.add(c.trim());
+      });
+    }
+
+    if (r.subject_competencies) {
+      r.subject_competencies.split(",").forEach(c => {
+        if (c.trim()) subjectSet.add(c.trim());
+      });
+    }
+
+    competencyCount++;
+  });
+
+const assessmentId = rows?.[0]?.assessment_id;
+const strandOutcomes = assessmentId ? (strandMap?.[assessmentId] || []) : [];
+  return `
+<div class="split-block subject-block">
+
+  <h5 style="margin:6px 0;">
+    ${subject}:
+    <span style="font-weight:normal; font-size:11px;">
+      Coverage —
+      ${competencyCount} Assessments |
+     ${new Set(strandOutcomes.map(o => o.strand)).size} Strands |
+      ${new Set(strandOutcomes.map(o => o.outcome)).size} Learning Experiences
+      ${coreSet.size} Core Competencies |
+      ${subjectSet.size} Subject Competencies
+    </span>
+  </h5>
+
+  <p style="font-weight:bold;color:${evidence.color};">
+    ${evidence.label} — <span style="font-weight:normal">${evidence.note}</span>
+  </p>
+
+  ${
+    strandOutcomes.length > 0
+      ? `
+        <div style="margin:8px 0;padding:8px;border-left:4px solid #3498db;background:#f8fbff;">
+          <strong>Strands & Learning Experiences</strong>
+          <ul>
+            ${(() => {
+              const grouped = {};
+
+              strandOutcomes.forEach(o => {
+                const strand = (o.strand || "Unspecified Strand").trim();
+                const outcome = o.outcome || "Learning experience not recorded";
+
+                grouped[strand] ??= new Set();
+                grouped[strand].add(outcome);
+              });
+
+              return Object.entries(grouped).map(([strand, outcomes]) => `
+                <li>
+                  <strong>${strand}</strong>
+                  <ul>
+                    ${Array.from(outcomes).map(o => `<li>${o}</li>`).join("")}
+                  </ul>
+                </li>
+              `).join("");
+            })()}
+          </ul>
+        </div>
+      `
+      : `
+        <p style="color:#999;">No strands or learning outcomes recorded for this subject.</p>
+      `
+  }
+
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:55%">Competency</th>
+<th style="width:20%">Achievement</th>
+<th style="width:25%">Remarks</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(r => `
+         
+<tr style="
+  background:${levelColor[(r.level || "").trim()] || '#fff'};
+  border-left:4px solid ${
+    (r.level || "").trim() === "Below Expectations(1)" ? "#e74c3c" :
+    (r.level || "").trim() === "Approaching Expectations(2)" ? "#f1c40f" :
+    (r.level || "").trim() === "Meeting Expectations(3)" ? "#3498db" :
+    (r.level || "").trim() === "Exceeding Expectations(4)" ? "#2ecc71" :
+    "#ccc"
+  };
+">
+
+
+<td style="
+  border:1px solid #000;
+  padding:8px;
+  word-wrap: break-word;
+  white-space: normal;
+">
+  ${r.core_competencies ? `<div><strong>Core:</strong> ${r.core_competencies}</div>` : ""}
+  ${r.subject_competencies ? `<div><strong>Subject:</strong> ${r.subject_competencies.replace(/,/g, ", ")}</div>` : ""}
+</td>
+           
+            <td>${r.level || "—"}</td>
+            <td>${r.remarks || "—"}</td>
+          </tr>`).join("")}
+      </tbody>
+
+      ${
+        subjectAvg !== null
+          ? `
+<tfoot>
+  <tr style="font-weight:bold; background:#f0f0f0;">
+    <td>SUBJECT/LEARNING AREA PERFORMANCE</td>
+    <td colspan="2">
+      <span style="
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-weight:bold;
+        color:white;
+        background:${getAvgColor(subjectAvg)};
+      ">
+        ${getAchievementLabel(subjectAvg)}
+      </span>
+    </td>
+  </tr>
+</tfoot>`
+          : ""
       }
-
-      function getAchievementLabel(score) {
-        if (score >= 3.5) return "Exceeding Expectations";
-        if (score >= 2.5) return "Meeting Expectations";
-        if (score >= 1.5) return "Approaching Expectations";
-        return "Below Expectations";
-      }
-
-      function getAvgColor(score) {
-        if (score >= 3.5) return "#2ecc71";
-        if (score >= 2.5) return "#3498db";
-        if (score >= 1.5) return "#f1c40f";
-        return "#e74c3c";
-      }
-
-      return `
-      <div class="split-block subject-block">
-        <h5>📘 ${subject} — Assessments: <strong>${rows.length}</strong></h5>
-        <p style="font-weight:bold;color:${evidence.color};">
-          ${evidence.label} — <span style="font-weight:normal">${evidence.note}</span>
-        </p>
-     <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Competency</th>
-              <th>Achievement</th>
-              <th>Remarks</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows.map(r => `
-              <tr style="background:${levelColor[r.level]}">
-                <td>${r.competency}</td>
-                <td>${r.level}</td>
-                <td>${r.remarks || "—"}</td>
-              </tr>`).join("")}
-          </tbody>
-          ${subjectAvg !== null ? `
-          <tfoot>
-            <tr style="font-weight:bold; background:#f0f0f0;">
-              <td>SUBJECT/LEARNING AREA AVERAGE</td>
-              <td colspan="2">
-                <span style="
-                  padding: 3px 8px;
-                  border-radius: 12px;
-                  font-weight:bold;
-                  color:white;
-                  background:${getAvgColor(subjectAvg)};
-                ">
-                  ${subjectAvg.toFixed(2)} — ${getAchievementLabel(subjectAvg)}
-                </span>
-              </td>
-            </tr>
-          </tfoot>` : ""}
-        </table>
-       </div>
-      </div>`;
-    }).join("")}
-
-  
+    </table>
   </div>
-</div>`;
-  }).join("");
+</div>
+`;
+    }).join("")}
+  </div>
+</div>
+`;
+  });
 }
-
-
-
-
 
 
 function splitLearnerIntoPages() {
@@ -1080,10 +1325,10 @@ function generateInsight(subjects) {
   const overallAvg = total / count;
 
   const overall =
-    overallAvg >= 3.5 ? "exceeding expectations" :
-    overallAvg >= 2.5 ? "meeting expectations" :
-    overallAvg >= 1.5 ? "approaching expectations" :
-    "below expectations";
+    overallAvg >= 3.5 ? "exceeding expectations(4)" :
+    overallAvg >= 2.5 ? "meeting expectations(3)" :
+    overallAvg >= 1.5 ? "approaching expectations(2)" :
+    "below expectations(1)";
 
   const subjectsArray = Object.entries(subjectScores)
     .map(([s, scores]) => ({
@@ -1099,14 +1344,18 @@ function generateInsight(subjects) {
     subjectsArray[0].avg >= 3 &&
     subjectsArray[0].avg - subjectsArray[1].avg >= 0.5
   ) {
-    strengthSentence = `, with stronger performance in <strong>${subjectsArray[0].subject}</strong>`;
+   strengthSentence = ", with stronger performance in <strong>" +
+  subjectsArray[0].subject +
+  "</strong>";
   }
 
-  return `
-    <p style="margin:6px 0 12px 0;font-style:italic;color:#444;">
-      Overall, based on current evidence, the learner is <strong>${overall}</strong>${strengthSentence}.
-    </p>
-  `;
+return `
+ <p>
+  Overall, based on current evidence, the learner is 
+  ${getPerformanceBadge(overall)}
+  ${strengthSentence}.
+</p>
+`;
 }
 
 
@@ -1304,39 +1553,6 @@ const chartOptions = {
 
 
 
-/* ===== TERM VIEW ===== */
-if (viewMode.value === "term") {
-  const grouped = {};
-  records.forEach(r => {
-    grouped[r.student] ??= { __admission: r.admission };
-    grouped[r.student][r.subject] ??= [];
-    grouped[r.student][r.subject].push(r);
-  });
-
-  const intelligence = calculateTermIntelligence(
-    records,
-    previousRecords,
-    previousTerm
-  );
-
-  document.getElementById("schoolAnalytics").innerHTML =
-    renderSchoolAnalytics(
-      records,
-      termName,
-      SYSTEM_YEAR,
-      intelligence,
-      schoolName,
-      className
-    );
-
-  reportDiv.innerHTML = renderGrouped(grouped);
-
-  if (!window.__EXPORTING_PDF__) {
-    requestAnimationFrame(() => {
-      splitLearnerIntoPages();
-    });
-  }
-}
 
   /* ===== TERM VIEW ===== */
   if (viewMode.value === "term") {
@@ -1447,12 +1663,58 @@ requestAnimationFrame(() => {
 });   
     });
   }
-}
 
+/* ===== CLASS VIEW ===== */
+if (viewMode.value === "class") {
+
+  const classes = [...new Set(records.map(r => r.className).filter(Boolean))];
+
+  if (!classes.length) {
+    filterBox.innerHTML = "<p>No classes found for this term.</p>";
+    return;
+  }
+
+  filterBox.innerHTML = `
+    <label>Class</label><br />
+    <select id="classSelect">
+      <option value="">Select class</option>
+      ${classes.map(c => `<option value="${c}">${c}</option>`).join("")}
+    </select>
+  `;
+
+  document.getElementById("classSelect").addEventListener("change", e => {
+    const selectedClass = e.target.value;
+    if (!selectedClass) return;
+
+    const filtered = records.filter(r => r.className === selectedClass);
+
+    const grouped = {};
+    filtered.forEach(r => {
+      grouped[r.student] ??= { __admission: r.admission };
+      grouped[r.student][r.subject] ??= [];
+      grouped[r.student][r.subject].push(r);
+    });
+
+    reportDiv.innerHTML = `
+      <h3>${selectedClass} – All Learners</h3>
+      ${renderGrouped(grouped, avgMap)}
+    `;
+
+    requestAnimationFrame(() => {
+      splitLearnerIntoPages();
+    });
+  });
+}
+}
 termSelect.addEventListener("change", loadReport);
 viewMode.addEventListener("change", loadReport);
 
 
+
+
+
+
+  
 function getTrend(currentAvg, previousAvg) {
   if (previousAvg === null) return "🆕 New Entry";
 
@@ -1478,6 +1740,16 @@ window.downloadPDF = async function () {
   const original = reportDiv;
   const clone = original.cloneNode(true);
 
+/* =========================
+   REMOVE CLASS SUMMARY TITLE (e.g., 10A – All Learners)
+========================= */
+clone.querySelectorAll("h3").forEach(h3 => {
+  if (h3.innerText.includes("All Learners")) {
+    h3.remove();
+  }
+});
+
+  
   /* =========================
      REMOVE SCREEN PAGINATION
   ========================== */
@@ -1579,7 +1851,7 @@ window.downloadPDF = async function () {
       <thead>
         <tr>
           <th style="border:1px solid #000;padding:8px;width:30%;">Learning Area/Subject</th>
-          <th style="border:1px solid #000;padding:8px;width:15%;">Score</th>
+          
           <th style="border:1px solid #000;padding:8px;width:25%;">Performance Level</th>
           <th style="border:1px solid #000;padding:8px;width:30%;">Teacher Comment</th>
         </tr>
@@ -1590,7 +1862,7 @@ window.downloadPDF = async function () {
           return `
             <tr>
               <td style="border:1px solid #000;padding:8px;">${subject}</td>
-              <td style="border:1px solid #000;padding:8px;text-align:center;">${avg.toFixed(2)}</td>
+           
               <td style="border:1px solid #000;padding:8px;">${d.achievement_level}</td>
               <td style="border:1px solid #000;padding:8px;">${commentFromScore(avg)}</td>
             </tr>
@@ -1608,16 +1880,24 @@ window.downloadPDF = async function () {
     generalBlock.style.lineHeight = "1.8";
 
     generalBlock.innerHTML = `
+
+    
       <table style="width:100%;border-collapse:collapse;margin-top:6px;">
         <tr>
           <td style="border:1px solid #000;padding:8px;width:40%;"><strong>Learner's General Performance Level</strong></td>
-          <td style="border:1px solid #000;padding:8px;">${overallAvg.toFixed(2)} — ${overallLevel(overallAvg)}</td>
+         <td style="border:1px solid #000;padding:8px;">
+  ${overallLevel(overallAvg)}
+</td>
         </tr>
         <tr>
           <td style="border:1px solid #000;padding:8px;"><strong>Teacher's General Comment</strong></td>
           <td style="border:1px solid #000;padding:12px;">${generalComment(overallAvg)}</td>
         </tr>
       </table>
+
+
+
+    
       <div style="margin-top:20px;">
         <div style="display:flex;justify-content:space-between;margin-top:14px;">
           <div>Closing Date: ____________________</div>
