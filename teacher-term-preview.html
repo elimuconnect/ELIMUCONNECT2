@@ -363,6 +363,7 @@ const supabase = createClient(
 
 const SYSTEM_YEAR = "2026";
 let results = [];
+let schoolLogo = null;
 
 let trendMap = {};
 let avgMap = {}; // make it global so downloadPDF can access it
@@ -541,7 +542,7 @@ results = data;
 
 // 🏫 GET SCHOOL LOGO (FETCH FROM SCHOOLS TABLE)
 const schoolId = data[0]?.school_id;
-let schoolLogo = null;
+schoolLogo = null;
 
 if (schoolId) {
   const { data: school } = await supabase
