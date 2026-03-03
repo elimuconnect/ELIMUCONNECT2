@@ -326,13 +326,17 @@ competencies
   });
 
 // Load students
-const { data: students } = await supabase.from("students").select("id, admission_number, first_name, last_name").eq("class_id", classId).order("last_name");
+const { data: students } = await supabase
+  .from("students")
+  .select("id, admission_number, full_name")
+  .eq("class_id", classId)
+  .order("full_name");
 const tbody = document.getElementById("studentsBody");
 if (!students?.length) tbody.innerHTML = `<tr><td colspan="3">No students in this class</td></tr>`;
 else tbody.innerHTML = students.map(s => `
 <tr data-id="${s.id}">
   <td>${s.admission_number || ""}</td>
-  <td>${s.first_name} ${s.last_name}</td>
+  <td>${s.full_name || ""}</td>
   <td>
     <select class="performanceLevel">
       <option value="" disabled selected>Select Level</option>
