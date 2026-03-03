@@ -557,9 +557,6 @@ if (!data?.length) {
 
 results = data;
 
-// 🏫 GET SCHOOL LOGO (DIRECT URL MAPPING)
-const schoolId = data[0]?.school_id;
-schoolLogo = schoolLogos[schoolId] || null;
 
 // school and class
 const schoolName = data[0]?.school_name ?? "—";
