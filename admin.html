@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Admin Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <style>
   body { font-family: Arial, sans-serif; margin: 20px; }
   h2 { margin-top: 20px; }
@@ -30,6 +31,35 @@
 <h2>Current Assignments</h2>
 <div id="currentAssignments">Select a teacher to view assignments</div>
 
+
+
+<h2>Add Student (Single Entry)</h2>
+
+<input type="text" id="studentName" placeholder="Full Name">
+<select id="studentGender">
+  <option value="">Select Gender</option>
+  <option value="Male">Male</option>
+  <option value="Female">Female</option>
+</select>
+
+<input type="text" id="admissionNumber" placeholder="Admission Number">
+<input type="date" id="dob">
+<input type="number" id="admissionYear" placeholder="Admission Year">
+<select id="studentClass"></select>
+
+<button id="addStudentBtn">Add Student</button>
+<div id="studentStatus" class="status"></div>
+
+
+
+<h2>Upload Students (Excel)</h2>
+
+<input type="file" id="excelFile" accept=".xlsx, .xls">
+<select id="excelClass"></select>
+<button id="uploadExcelBtn">Upload</button>
+<div id="excelStatus" class="status"></div>
+
+  
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -223,13 +253,123 @@ currentAssignmentsDiv.addEventListener("click", async (e) => {
 // --------------------
 teacherSelect.addEventListener("change", loadCurrentAssignments);
 
+
+
+
+const studentClass = document.getElementById("studentClass");
+
+async function loadStudentClasses() {
+  const { data: classes } = await supabase
+    .from("classes")
+    .select("id, name")
+    .eq("school_id", adminProfile.school_id);
+
+  studentClass.innerHTML = classes
+    .map(c => `<option value="${c.id}">${c.name}</option>`)
+    .join('');
+}
+
+
+document.getElementById("addStudentBtn").onclick = async () => {
+
+  const full_name = document.getElementById("studentName").value;
+  const gender = document.getElementById("studentGender").value;
+  const admission_number = document.getElementById("admissionNumber").value;
+  const date_of_birth = document.getElementById("dob").value;
+  const admission_year = document.getElementById("admissionYear").value;
+  const class_id = studentClass.value;
+
+  if (!full_name || !gender || !admission_number || !class_id) {
+    document.getElementById("studentStatus").innerText = "Fill all required fields";
+    return;
+  }
+
+  const { error } = await supabase.from("students").insert([
+    {
+      school_id: adminProfile.school_id,
+      class_id,
+      full_name,
+      gender,
+      admission_number,
+      date_of_birth,
+      admission_year
+    }
+  ]);
+
+  if (error) {
+    document.getElementById("studentStatus").innerText = error.message;
+  } else {
+    document.getElementById("studentStatus").innerText = "Student added successfully";
+  }
+};
+
+
+const excelClass = document.getElementById("excelClass");
+
+async function loadExcelClasses() {
+  const { data: classes } = await supabase
+    .from("classes")
+    .select("id, name")
+    .eq("school_id", adminProfile.school_id);
+
+  excelClass.innerHTML = classes
+    .map(c => `<option value="${c.id}">${c.name}</option>`)
+    .join('');
+}
+
+await loadExcelClasses();
+
+  
 // --------------------
 // 7️⃣ Initial Load
 // --------------------
 await loadTeachers();
 await loadClasses();
 await loadSubjects();
+await loadStudentClasses();
 
+
+  document.getElementById("uploadExcelBtn").onclick = async () => {
+
+  const file = document.getElementById("excelFile").files[0];
+  const class_id = excelClass.value;
+
+  if (!file) {
+    document.getElementById("excelStatus").innerText = "Select Excel file";
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = async (e) => {
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, { type: "array" });
+
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const jsonData = XLSX.utils.sheet_to_json(sheet);
+
+    const studentsToInsert = jsonData.map(row => ({
+      school_id: adminProfile.school_id,
+      class_id,
+      full_name: row.full_name,
+      gender: row.gender,
+      admission_number: row.admission_number,
+      date_of_birth: row.date_of_birth,
+      admission_year: row.admission_year
+    }));
+
+    const { error } = await supabase.from("students").insert(studentsToInsert);
+
+    if (error) {
+      document.getElementById("excelStatus").innerText = error.message;
+    } else {
+      document.getElementById("excelStatus").innerText =
+        studentsToInsert.length + " students uploaded successfully";
+    }
+  };
+
+  reader.readAsArrayBuffer(file);
+};
 </script>
 </body>
 </html>
