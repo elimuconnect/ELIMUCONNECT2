@@ -394,6 +394,22 @@ function getAchievementLabel(score) {
   if (score >= 1.5) return "Approaching Expectations(2)";
   return "Below Expectations(1)";
 }
+
+
+
+function levelToScore(level) {
+  if (!level) return 0;
+
+  const clean = level.trim();
+
+  if (clean === "Exceeding Expectations(4)") return 4;
+  if (clean === "Meeting Expectations(3)") return 3;
+  if (clean === "Approaching Expectations(2)") return 2;
+  if (clean === "Below Expectations(1)") return 1;
+
+  return 0;
+}
+
   
 const termSelect = document.getElementById("termSelect");
 const viewMode = document.getElementById("viewMode");
