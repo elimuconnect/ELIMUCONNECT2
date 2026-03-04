@@ -377,15 +377,6 @@ let avgMap = {}; // make it global so downloadPDF can access it
 let previousRecords = [];
 let previousAverages = {};
 
-function levelToScore(level) {
-  switch (level) {
-    case "Below Expectations(1)": return 1;
-    case "Approaching Expectations(2)": return 2;
-    case "Meeting Expectations(3)": return 3;
-    case "Exceeding Expectations(4)": return 4;
-    default: return 0;
-  }
-}
 
   
 
@@ -515,12 +506,40 @@ const schoolId = data[0]?.school_id;
 
 
 
-avgMap = {}; // populate it as before
+const avgMap = {};
+
 averages.forEach(a => {
- const student = a.full_name;
-  const subj = a.subject_name.trim();
-  avgMap[student] ??= {};
+  const student = a.full_name;
+  const subj = a.subject_name;
+
+  if (!avgMap[student]) avgMap[student] = {};
+
   avgMap[student][subj] = a;
+});
+
+
+// ============================
+// STEP 3 — ADD THIS HERE
+// ============================
+
+const learnerSummary = {};
+
+Object.keys(avgMap).forEach(student => {
+
+  const subjects = Object.values(avgMap[student]);
+
+  const validAverages = subjects
+    .map(s => Number(s.average_score))
+    .filter(n => !isNaN(n));
+
+  const overallAvg = validAverages.length
+    ? validAverages.reduce((a,b)=>a+b,0) / validAverages.length
+    : null;
+
+  learnerSummary[student] = {
+    overall_average: overallAvg,
+    overall_level: getLevelFromScore(overallAvg)
+  };
 });
 
   
@@ -685,7 +704,7 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
 
   // ===== CURRENT TERM PROCESSING =====
   records.forEach(r => {
-    const score = levelToScore(r.level);
+    const score = levelToScore(r.achievement_level);
     if (!score) return;
 
     learnerMap[r.admission] ??= [];
@@ -794,8 +813,7 @@ function renderSchoolAnalytics(records, termName, year, intelligence, schoolName
   // ===== PROCESS DATA =====
   records.forEach(r => {
 
-    const score = levelToScore(r.level);
-
+    const score = levelToScore(r.achievement_level);
     // CLASS MEAN
     classMap[r.className] ??= [];
     if (score > 0) classMap[r.className].push(score);
@@ -813,9 +831,9 @@ function renderSchoolAnalytics(records, termName, year, intelligence, schoolName
 
 
   // ===== AT-RISK COUNT =====
-  const atRiskLearners = records.filter(
-    r => r.level === "Below Expectations(1)"
-  ).length;
+ const atRiskLearners = records.filter(
+  r => r.achievement_level === "Below Expectations(1)"
+).length;
 
   // ===== AVERAGE FUNCTION =====
   function avg(arr) {
@@ -1017,7 +1035,7 @@ function renderGrouped(grouped, avgMap) {
     Object.entries(subjects).forEach(([subject, rows]) => {
       if (subject === "__admission") return;
       rows.forEach(r => {
-        const score = levelToScore(r.level);
+       const score = levelToScore(r.achievement_level);
         if (score > 0) currentScores.push(score);
       });
     });
@@ -1093,14 +1111,14 @@ function renderGrouped(grouped, avgMap) {
 
   const evidence = getEvidenceStatus(rows);
 
-  let subjectAvg = avgMap?.[student]?.[subject.trim()]?.average_score ?? null;
-  if (subjectAvg === null) {
-    const scores = rows.map(r => levelToScore(r.level)).filter(s => s > 0);
-    subjectAvg = scores.length
-      ? scores.reduce((a,b)=>a+b,0) / scores.length
-      : null;
-  }
 
+const subjectData = avgMap?.[student]?.[subject.trim()];
+
+const subjectAvg = subjectData?.average_score ?? null;
+const subjectLevel = subjectData?.achievement_level ?? null;
+
+
+     
   function getAvgColor(score) {
     if (score >= 3.5) return "#2ecc71";
     if (score >= 2.5) return "#3498db";
@@ -1202,10 +1220,10 @@ const strandOutcomes = assessmentId ? (strandMap?.[assessmentId] || []) : [];
 <tr style="
   background:${levelColor[(r.level || "").trim()] || '#fff'};
   border-left:4px solid ${
-    (r.level || "").trim() === "Below Expectations(1)" ? "#e74c3c" :
-    (r.level || "").trim() === "Approaching Expectations(2)" ? "#f1c40f" :
-    (r.level || "").trim() === "Meeting Expectations(3)" ? "#3498db" :
-    (r.level || "").trim() === "Exceeding Expectations(4)" ? "#2ecc71" :
+    (r.achievement_level || "").trim() === "Below Expectations(1)" ? "#e74c3c" :
+   (r.achievement_level || "").trim() === "Approaching Expectations(2)" ? "#f1c40f" :
+   (r.achievement_level || "").trim() === "Meeting Expectations(3)" ? "#3498db" :
+    (r.achievement_level || "").trim() === "Exceeding Expectations(4)" ? "#2ecc71" :
     "#ccc"
   };
 ">
@@ -1221,7 +1239,7 @@ const strandOutcomes = assessmentId ? (strandMap?.[assessmentId] || []) : [];
   ${r.subject_competencies ? `<div><strong>Subject:</strong> ${r.subject_competencies.replace(/,/g, ", ")}</div>` : ""}
 </td>
            
-            <td>${r.level || "—"}</td>
+           <td>${r.achievement_level || "—"}</td>
             <td>${r.remarks || "—"}</td>
           </tr>`).join("")}
       </tbody>
