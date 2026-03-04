@@ -538,7 +538,7 @@ Object.keys(avgMap).forEach(student => {
 
   learnerSummary[student] = {
     overall_average: overallAvg,
-    overall_level: getLevelFromScore(overallAvg)
+   overall_level: getAchievementLabel(overallAvg)
   };
 });
 
