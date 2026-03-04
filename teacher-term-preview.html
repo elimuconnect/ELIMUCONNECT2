@@ -1128,7 +1128,10 @@ function renderGrouped(grouped, avgMap) {
   const evidence = getEvidenceStatus(rows);
 
 
-const subjectData = avgMap?.[student]?.[subject.trim()];
+const subjectKey = subject.trim().toLowerCase();
+
+const subjectData = Object.entries(avgMap?.[student] || {})
+  .find(([key]) => key.trim().toLowerCase() === subjectKey)?.[1];
 
 const subjectAvg = subjectData?.average_score ?? null;
 const subjectLevel = subjectData?.achievement_level ?? null;
