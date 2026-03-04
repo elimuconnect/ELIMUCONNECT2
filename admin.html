@@ -139,6 +139,24 @@ input[type="file"] {
     grid-template-columns: 1fr;
   }
 }
+
+
+
+/* Make subject multi-select large and clear */
+#subjectSelect {
+  min-height: 180px;
+  height: 220px;
+  padding: 10px;
+  background: #fff;
+  border: 2px solid #2a5298;
+  font-size: 14px;
+}
+
+/* Improve options spacing */
+#subjectSelect option {
+  padding: 6px;
+}
+  
 </style>
   
 </head>
@@ -154,12 +172,21 @@ input[type="file"] {
   <div class="card">
     <h2>Assign Classes & Subjects</h2>
 
-    <div class="form-grid">
-      <select id="teacherSelect"></select>
-      <select id="classSelect"></select>
-      <select id="subjectSelect" multiple></select>
-      <button id="assignBtn">Assign</button>
-    </div>
+    <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
+  <select id="teacherSelect"></select>
+  <select id="classSelect"></select>
+</div>
+
+<div style="margin-top:15px;">
+  <label style="font-weight:600; display:block; margin-bottom:6px;">
+    Select Subjects (Hold Ctrl to select multiple)
+  </label>
+  <select id="subjectSelect" multiple></select>
+</div>
+
+<div style="margin-top:15px;">
+  <button id="assignBtn">Assign Subjects</button>
+</div>
 
     <div id="assignStatus" class="status"></div>
   </div>
