@@ -1237,14 +1237,14 @@ const strandOutcomes = assessmentId ? (strandMap?.[assessmentId] || []) : [];
         ${rows.map(r => `
          
 <tr style="
-  background:${levelColor[(r.level || "").trim()] || '#fff'};
-  border-left:4px solid ${
-    (r.achievement_level || "").trim() === "Below Expectations(1)" ? "#e74c3c" :
-   (r.achievement_level || "").trim() === "Approaching Expectations(2)" ? "#f1c40f" :
-   (r.achievement_level || "").trim() === "Meeting Expectations(3)" ? "#3498db" :
-    (r.achievement_level || "").trim() === "Exceeding Expectations(4)" ? "#2ecc71" :
-    "#ccc"
-  };
+ background:${levelColor[(r.level || "").trim()] || '#fff'};
+border-left:4px solid ${
+  (r.level || "").trim() === "Below Expectations(1)" ? "#e74c3c" :
+  (r.level || "").trim() === "Approaching Expectations(2)" ? "#f1c40f" :
+  (r.level || "").trim() === "Meeting Expectations(3)" ? "#3498db" :
+  (r.level || "").trim() === "Exceeding Expectations(4)" ? "#2ecc71" :
+  "#ccc"
+};
 ">
 
 
@@ -1258,7 +1258,7 @@ const strandOutcomes = assessmentId ? (strandMap?.[assessmentId] || []) : [];
   ${r.subject_competencies ? `<div><strong>Subject:</strong> ${r.subject_competencies.replace(/,/g, ", ")}</div>` : ""}
 </td>
            
-           <td>${r.achievement_level || "—"}</td>
+          <td>${r.level || "—"}</td>
             <td>${r.remarks || "—"}</td>
           </tr>`).join("")}
       </tbody>
