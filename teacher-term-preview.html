@@ -364,7 +364,7 @@ const supabase = createClient(
 const SYSTEM_YEAR = "2026";
 let results = [];
 let schoolLogo = null;
-let data = [];
+
 
 
 
@@ -497,15 +497,15 @@ const previousTerm = terms
 
 if (previousTerm) {
 
-  const { data } = await supabase
+ const { data: previousData } = await supabase
     .from("assessment_results_view")
     .select("*")
     .eq("term", previousTerm)
     .eq("academic_year", SYSTEM_YEAR);
 
   
-const schoolId = data[0]?.school_id;
-  previousRecords = data || [];
+
+  previousRecords = previousData || [];
 
   previousRecords.forEach(r => {
     const adm = r.admission_number;
@@ -562,7 +562,7 @@ Object.keys(avgMap).forEach(student => {
 
   /* ===== RAW RESULTS ===== */
 
-const { data, error } = await supabase
+const { data: fetchedResults, error } = await supabase
   .from("assessment_results_view")
   .select("*")
   .eq("term", termName)
@@ -574,16 +574,16 @@ if (error) {
   return;
 }
 
-if (!data?.length) {
+if (!fetchedResults?.length) {
   status.innerText = "No results found.";
   return;
 }
 
-results = data;
+results = fetchedResults;
 
 // school and class
-const schoolName = data[0]?.school_name ?? "—";
-const className  = data[0]?.class_name ?? "—";
+const schoolName = fetchedResults[0]?.school_name ?? "—";
+const className  = fetchedResults[0]?.class_name ?? "—";
 
 // DIRECT URL LOGO MAP
 const schoolLogos = {
@@ -597,7 +597,7 @@ schoolLogo = schoolLogos[schoolName?.trim()] || null;
 
  
 // normalized records
-const records = data.map(r => ({
+const records = fetchedResults.map(r => ({
   student: r.full_name,
   admission: r.admission_number,
   className: r.class_name,
