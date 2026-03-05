@@ -509,8 +509,8 @@ if (previousTerm) {
 
   previousRecords.forEach(r => {
     const adm = r.admission_number;
-    const score = levelToScore(r.achievement_level);
-
+   const score = levelToScore(r.level);
+    
     if (!previousAverages[adm]) {
       previousAverages[adm] = { total: 0, count: 0 };
     }
