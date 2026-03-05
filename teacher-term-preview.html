@@ -735,7 +735,7 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
 
   // ===== PREVIOUS TERM PROCESSING =====
   previousRecords.forEach(r => {
-    const score = levelToScore(r.achievement_level);
+   const score = levelToScore(r.level);
     if (!score) return;
 
     const adm = r.admission_number;
