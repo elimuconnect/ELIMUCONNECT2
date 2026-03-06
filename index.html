@@ -19,64 +19,67 @@
     font-family: Arial, sans-serif;
     background: #f4f6fb;
 
-    /* Proper centering */
     display: flex;
     justify-content: center;
     align-items: center;
 
-    /* This prevents mobile bottom issues */
     min-height: 100vh;
   }
 
   .login-container {
     background: white;
-    padding: 32px;
-    border-radius: 14px;
+    padding: 36px;
+    border-radius: 16px;
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
-    width: 90%;
-    max-width: 380px;
+
+    width: 95%;
+    max-width: 420px; /* bigger on mobile */
     text-align: center;
   }
 
   h2 {
-    margin-bottom: 22px;
-    font-size: 24px;
+    margin-bottom: 24px;
+    font-size: 26px;
   }
 
   input {
     width: 100%;
-    padding: 14px;
+    padding: 16px;
     margin: 10px 0;
     border: 1px solid #ccc;
-    border-radius: 8px;
-    font-size: 16px;
+    border-radius: 10px;
+    font-size: 17px;
   }
 
   button {
     width: 100%;
-    padding: 14px;
+    padding: 16px;
     background: #0066ff;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     color: white;
-    font-size: 16px;
-    margin-top: 12px;
+    font-size: 17px;
+    margin-top: 14px;
   }
 
   .footer-text {
-    margin-top: 14px;
-    font-size: 13px;
+    margin-top: 16px;
+    font-size: 14px;
     color: #777;
   }
 
-  /* Mobile fix */
+  /* Mobile adjustments */
   @media (max-width: 480px) {
     .login-container {
-      width: 95%;
+      width: 96%;
+      padding: 32px;
+    }
+
+    input, button {
+      font-size: 18px; /* bigger mobile text */
     }
   }
 </style>
-
 <body>
 
   <div class="login-container">
