@@ -5,10 +5,15 @@
 <title>Teacher Dashboard</title>
 
 
-  <style>
+ <head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teacher Dashboard</title>
+
+<style>
 
 body{
-font-family: "Segoe UI", Arial, sans-serif;
+font-family:"Segoe UI", Arial, sans-serif;
 margin:0;
 background:#f4f6fb;
 }
@@ -17,77 +22,72 @@ background:#f4f6fb;
 
 .header{
 background:white;
-padding:18px 30px;
+padding:20px;
 box-shadow:0 2px 10px rgba(0,0,0,0.08);
 display:flex;
 justify-content:space-between;
 align-items:center;
+flex-wrap:wrap;
 }
 
 .header h1{
 margin:0;
-font-size:20px;
-color:#333;
+font-size:22px;
 }
 
 .logout{
 background:#ff4d4f;
 border:none;
 color:white;
-padding:8px 14px;
+padding:10px 16px;
 border-radius:6px;
+font-size:16px;
 cursor:pointer;
-font-size:14px;
 }
 
-/* MAIN */
+/* CONTAINER */
 
 .container{
-padding:30px;
-max-width:1100px;
+padding:20px;
+max-width:1200px;
 margin:auto;
 }
 
+/* TITLE */
+
 .title{
-font-size:22px;
+font-size:24px;
 margin-bottom:20px;
-color:#333;
 }
 
 /* GRID */
 
 .grid{
 display:grid;
-grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-gap:18px;
+grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+gap:20px;
 }
 
 /* CARD */
 
 .card{
 background:white;
-border-radius:10px;
-padding:18px;
+border-radius:12px;
+padding:20px;
 box-shadow:0 4px 14px rgba(0,0,0,0.08);
 transition:0.25s;
 }
 
-.card:hover{
-transform:translateY(-4px);
-box-shadow:0 8px 20px rgba(0,0,0,0.12);
-}
-
 .className{
-font-size:17px;
+font-size:20px;
 font-weight:600;
-margin-bottom:8px;
-color:#222;
+margin-bottom:10px;
 }
 
 .meta{
-font-size:14px;
+font-size:16px;
+margin-bottom:10px;
 color:#666;
-margin-bottom:12px;
 }
 
 /* BUTTON */
@@ -96,14 +96,11 @@ margin-bottom:12px;
 background:#0066ff;
 border:none;
 color:white;
-padding:8px 14px;
-border-radius:6px;
+padding:12px 18px;
+border-radius:8px;
+font-size:16px;
 cursor:pointer;
-font-size:14px;
-}
-
-.startBtn:hover{
-background:#004de0;
+width:100%;
 }
 
 /* EMPTY */
@@ -111,10 +108,40 @@ background:#004de0;
 .empty{
 background:white;
 padding:30px;
-border-radius:8px;
+border-radius:10px;
 text-align:center;
-color:#666;
-box-shadow:0 3px 10px rgba(0,0,0,0.08);
+font-size:18px;
+}
+
+/* MOBILE FIX */
+
+@media (max-width:600px){
+
+.container{
+padding:15px;
+}
+
+.grid{
+grid-template-columns:1fr;
+}
+
+.card{
+padding:18px;
+}
+
+.className{
+font-size:22px;
+}
+
+.meta{
+font-size:17px;
+}
+
+.startBtn{
+font-size:18px;
+padding:14px;
+}
+
 }
 
 </style>
