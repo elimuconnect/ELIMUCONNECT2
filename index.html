@@ -70,6 +70,10 @@
     <button id="loginBtn">Login</button>
 
     <p class="footer-text">Secure login powered by Supabase</p>
+
+<input id="newPassword" type="password" placeholder="New Password">
+<button id="updateBtn">Update Password</button>
+    
   </div>
 
 
@@ -126,7 +130,19 @@ if (profile.role === "teacher") {
     };
 
 
-    
+    document.getElementById("updateBtn").onclick = async () => {
+  const newPass = document.getElementById("newPassword").value;
+
+  const { error } = await supabase.auth.updateUser({
+    password: newPass
+  });
+
+  if (error) {
+    alert(error.message);
+  } else {
+    alert("Password updated successfully");
+  }
+};
   </script>
 
 </body>
