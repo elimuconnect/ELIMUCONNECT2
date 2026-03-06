@@ -1642,7 +1642,7 @@ document.getElementById("schoolAnalytics").innerHTML =
     className
   );
 
- reportDiv.innerHTML = renderGrouped(grouped);
+ reportDiv.innerHTML = renderGrouped(grouped, avgMap);
 
     if (!window.__EXPORTING_PDF__) {
   requestAnimationFrame(() => {
@@ -1715,7 +1715,7 @@ filtered.forEach(r => {
       
       reportDiv.innerHTML = `
         <h3>${subject} – All Students</h3>
-        ${renderGrouped(grouped)}
+        ${renderGrouped(grouped, avgMap)}
       `;
 
 requestAnimationFrame(() => {
