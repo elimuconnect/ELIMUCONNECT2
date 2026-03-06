@@ -1295,15 +1295,16 @@ border-left:4px solid ${
   <tr style="font-weight:bold; background:#f0f0f0;">
     <td>SUBJECT/LEARNING AREA PERFORMANCE</td>
     <td colspan="2">
-      <span style="
-        padding: 3px 8px;
-        border-radius: 12px;
-        font-weight:bold;
-        color:white;
-        background:${getAvgColor(subjectAvg)};
-      ">
-        ${getAchievementLabel(subjectAvg)}
-      </span>
+     <span style="
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-weight:bold;
+  color:white;
+  background:${getAvgColor(subjectAvg)};
+  white-space: nowrap;
+">
+  ${getAchievementLabel(subjectAvg)}
+</span>
     </td>
   </tr>
 </tfoot>`
