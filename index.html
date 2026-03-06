@@ -3,6 +3,10 @@
 <head>
   <title>CBC Login</title>
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       font-family: Arial, sans-serif;
@@ -10,42 +14,45 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
+      min-height: 100vh;
+      padding: 20px;
     }
 
     .login-container {
       background: white;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-      width: 320px;
+      padding: 32px;
+      border-radius: 14px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+      width: 100%;
+      max-width: 380px;
       text-align: center;
     }
 
     h2 {
-      margin-bottom: 20px;
+      margin-bottom: 22px;
       color: #222;
+      font-size: 24px;
     }
 
     input {
       width: 100%;
-      padding: 12px;
-      margin: 8px 0;
+      padding: 14px;
+      margin: 10px 0;
       border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 14px;
+      border-radius: 8px;
+      font-size: 16px;
     }
 
     button {
       width: 100%;
-      padding: 12px;
+      padding: 14px;
       background: #0066ff;
       border: none;
-      border-radius: 6px;
+      border-radius: 8px;
       color: white;
-      font-size: 15px;
+      font-size: 16px;
       cursor: pointer;
-      margin-top: 10px;
+      margin-top: 12px;
       transition: 0.3s;
     }
 
@@ -54,9 +61,17 @@
     }
 
     .footer-text {
-      margin-top: 12px;
-      font-size: 12px;
+      margin-top: 14px;
+      font-size: 13px;
       color: #777;
+    }
+
+    /* Mobile fix: avoid bottom cut-off */
+    @media (max-height: 500px) {
+      body {
+        align-items: flex-start;
+        padding-top: 40px;
+      }
     }
   </style>
 </head>
@@ -67,13 +82,13 @@
 
     <input id="email" type="email" placeholder="Email">
     <input id="password" type="password" placeholder="Password">
+
     <button id="loginBtn">Login</button>
 
     <p class="footer-text">Secure login powered by Supabase</p>
 
-<input id="newPassword" type="password" placeholder="New Password">
-<button id="updateBtn">Update Password</button>
-    
+    <input id="newPassword" type="password" placeholder="New Password">
+    <button id="updateBtn">Update Password</button>
   </div>
 
 
