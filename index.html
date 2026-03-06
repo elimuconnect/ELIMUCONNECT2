@@ -88,6 +88,25 @@
       padding: 20px;
     }
   }
+
+
+
+  .input-group{
+position:relative;
+width:100%;
+margin:12px 0;
+}
+
+.toggle{
+position:absolute;
+right:15px;
+top:50%;
+transform:translateY(-50%);
+cursor:pointer;
+font-size:14px;
+color:#0066ff;
+user-select:none;
+}
 </style>
 <body>
 
@@ -95,19 +114,38 @@
     <h2>Login</h2>
 
     <input id="email" type="email" placeholder="Email">
-    <input id="password" type="password" placeholder="Password">
-
+  <div class="input-group">
+<input id="password" type="password" placeholder="Password">
+<span class="toggle" onclick="togglePassword('password',this)">Show</span>
+</div>
     <button id="loginBtn">Login</button>
 
     <p class="footer-text">Secure login powered by Supabase</p>
 
-    <input id="newPassword" type="password" placeholder="New Password">
+    <div class="input-group">
+<input id="newPassword" type="password" placeholder="New Password">
+<span class="toggle" onclick="togglePassword('newPassword',this)">Show</span>
+</div>
     <button id="updateBtn">Update Password</button>
   </div>
 
 
 
+<script>
+function togglePassword(id,el){
 
+const input=document.getElementById(id);
+
+if(input.type==="password"){
+input.type="text";
+el.innerText="Hide";
+}else{
+input.type="password";
+el.innerText="Show";
+}
+
+}
+</script>
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
