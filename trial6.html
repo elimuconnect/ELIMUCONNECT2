@@ -1153,9 +1153,13 @@ function renderGrouped(grouped, avgMap) {
   const evidence = getEvidenceStatus(rows);
 
 
-const subjectData = avgMap?.[student]?.[subject];
-const subjectAvg = subjectData ? Number(subjectData.average_score) : null;
+const subjectData = Object.values(avgMap?.[student] || {}).find(
+  s => s.subject_name === subject
+);
 
+const subjectAvg = subjectData
+  ? Number(subjectData.average_score)
+  : null;
 
      
   function getAvgColor(score) {
