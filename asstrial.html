@@ -823,32 +823,34 @@ if (rows.length === 0) {
 }
 
 
-// 🔹 Save marks
-const { error: resultError } = await supabase
-  .from("results2")
-  .insert(rows);
 
-if (resultError) {
-  statusEl.style.color = "red";
-  statusEl.innerText = resultError.message;
-  return;
-}
+try {
 
-statusEl.style.color = "green";
-statusEl.innerText = "Marks saved successfully!";
+  // 🔹 Save marks
+  const { error: resultError } = await supabase
+    .from("results2")
+    .insert(rows);
+
+  if (resultError) {
+    statusEl.style.color = "red";
+    statusEl.innerText = resultError.message;
+    return;
+  }
+
+  statusEl.style.color = "green";
+  statusEl.innerText = "Marks saved successfully!";
 
 } catch (err) {
-
   statusEl.style.color = "red";
   statusEl.innerText = "Error: " + err.message;
 
 } finally {
-
   saveBtn.disabled = false;
   saveBtn.innerText = "Save Marks";
-
 }
- 
+
+
+      
 async function loadExistingAssessment() {
   const termSelect = document.getElementById("termSelect");
   const assessmentTypeSelect = document.getElementById("assessmentTypeSelect");
