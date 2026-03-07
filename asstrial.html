@@ -786,69 +786,60 @@ if (selectedStrands.length) {
 }
 
 
+document.getElementById("saveAssessment").onclick = async () => {
 
-// 🔹 Save student results using raw marks
-const rows = Array.from(studentRows)
-  .map(tr => {
+  // 🔹 build rows
+  const rows = Array.from(studentRows)
+    .map(tr => {
+      const marks = tr.querySelector(".marksInput").value;
+      if (!marks) return null;
 
-    const marks = tr.querySelector(".marksInput").value;
+      const markValue = parseFloat(marks);
 
-    // Skip if no marks entered
-    if (!marks) return null;
+      return {
+        student_id: tr.dataset.id,
+        subject_id: subjectId,
+        class_id: classId,
+        term_id: termId,
+        marks: markValue,
+        level: convertMarksToLevel(markValue),
+        academic_year: academicYear,
+        teacher_id: user.id
+      };
+    })
+    .filter(Boolean);
 
-    const markValue = parseFloat(marks);
-
-    return {
-      student_id: tr.dataset.id,
-      subject_id: subjectId,
-      class_id: classId,
-      term_id: termId,
-
-      marks: markValue,
-      level: convertMarksToLevel(markValue),
-
-      academic_year: academicYear,
-      teacher_id: user.id
-    };
-
-  })
-  .filter(Boolean); // remove skipped students
-
-
-// 🔹 Prevent saving empty results
-if (rows.length === 0) {
-  statusEl.style.color = "orange";
-  statusEl.innerText = "No marks were entered.";
-  return;
-}
-
-
-
-try {
-
-  // 🔹 Save marks
-  const { error: resultError } = await supabase
-    .from("results2")
-    .insert(rows);
-
-  if (resultError) {
-    statusEl.style.color = "red";
-    statusEl.innerText = resultError.message;
+  // 🔹 Prevent empty
+  if (rows.length === 0) {
+    statusEl.style.color = "orange";
+    statusEl.innerText = "No marks were entered.";
     return;
   }
 
-  statusEl.style.color = "green";
-  statusEl.innerText = "Marks saved successfully!";
+  try {
+    const { error: resultError } = await supabase
+      .from("results2")
+      .insert(rows);
 
-} catch (err) {
-  statusEl.style.color = "red";
-  statusEl.innerText = "Error: " + err.message;
+    if (resultError) {
+      statusEl.style.color = "red";
+      statusEl.innerText = resultError.message;
+      return;
+    }
 
-} finally {
-  saveBtn.disabled = false;
-  saveBtn.innerText = "Save Marks";
-}
-}; 
+    statusEl.style.color = "green";
+    statusEl.innerText = "Marks saved successfully!";
+
+  } catch (err) {
+    statusEl.style.color = "red";
+    statusEl.innerText = "Error: " + err.message;
+
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.innerText = "Save Marks";
+  }
+
+}; // 👈 closes onclick function
 
       
 async function loadExistingAssessment() {
