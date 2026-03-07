@@ -565,28 +565,43 @@ document.getElementById("saveAssessment").onclick = async () => {
 
  
 
-    
+    document.getElementById("saveAssessment").onclick = async () => {
+
   const termId = document.getElementById("termSelect").value;
   const assessmentTypeId = document.getElementById("assessmentTypeSelect").value;
   const selectedCoreCompetencies = Array.from(document.querySelectorAll(".coreCompetency:checked")).map(cb => cb.value);
-  const subjectCompetency = document.getElementById("subjectCompetency").value.trim();
 
   if (!termId || !assessmentTypeId) { alert("Select Term and Assessment Type."); return; }
-  if (!selectedCoreCompetencies.length) { alert("Select at least one core competency."); return; }
 
   const studentRows = document.querySelectorAll("#studentsBody tr");
   let missingLevel = false;
-  studentRows.forEach(row => {
-    
 
+  studentRows.forEach(row => {
+    const level = row.querySelector(".marksInput").value;
+    if (!level) missingLevel = true;
+  });
+
+  if (missingLevel) { alert("Some rows missing marks"); return; }
+
+  // ✅ NOW use await (inside async function)
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return window.location.href = "index.html";
 
-  const { data: profile } = await supabase.from("profiles").select("school_id").eq("auth_id", user.id).single();
-  if (!profile?.school_id) { alert("Cannot determine school_id"); return; }
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("school_id")
+    .eq("auth_id", user.id)
+    .single();
+
+  if (!profile?.school_id) {
+    alert("Cannot determine school");
+    return;
+  }
 
   const schoolId = profile.school_id;
-    const today = new Date().toISOString();
+  const today = new Date().toISOString();
+
+
 
     // -------------------------
     // TITLE WITH SEQUENCE NUMBER
