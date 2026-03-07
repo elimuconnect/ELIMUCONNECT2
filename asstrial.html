@@ -325,13 +325,14 @@
 </div>
   <div class="card">
     <table>
-      <thead>
-        <tr>
-          <th>Adm/Assess No.</th>
-          <th>Name</th>
-          <th>Performance Level</th>
-        </tr>
-      </thead>
+     <thead>
+<tr>
+  <th>Adm/Assess No.</th>
+  <th>Name</th>
+  <th>Marks</th>
+  <th>Level</th>
+</tr>
+</thead>
       <tbody id="studentsBody">
         <tr><td colspan="3">Loading students...</td></tr>
       </tbody>
@@ -451,15 +452,13 @@ else tbody.innerHTML = students.map(s => `
 <tr data-id="${s.id}">
   <td>${s.admission_number || ""}</td>
   <td>${s.full_name || ""}</td>
+
   <td>
-
-<td>
-<input type="number" class="marksInput" min="0" max="100" placeholder="0-100">
-</td>
-
-<td class="levelOutput"></td>
-
+    <input type="number" class="marksInput" min="0" max="100" placeholder="0-100">
   </td>
+
+  <td class="levelOutput"></td>
+
 </tr>`).join("");
 
 // Load strands and sub-strands from DB
@@ -578,11 +577,7 @@ document.getElementById("saveAssessment").onclick = async () => {
   const studentRows = document.querySelectorAll("#studentsBody tr");
   let missingLevel = false;
   studentRows.forEach(row => {
-    const level = row.querySelector(".performanceLevel")?.value;
-    if (!level) { missingLevel = true; row.style.backgroundColor = "rgba(255,0,0,0.2)"; }
-    else row.style.backgroundColor = "";
-  });
-  if (missingLevel) { alert("Some students are missing a Performance Level."); return; }
+    
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return window.location.href = "index.html";
@@ -900,18 +895,24 @@ document.getElementById("sleContainer").innerHTML = "";
 
   // 6️⃣ Load student results
   const { data: results } = await supabase
-    .from("assessment_results")
-    .select("*")
-    .eq("assessment_id", existingAssessment.id);
-
-  const studentRows = document.querySelectorAll("#studentsBody tr");
+  .from("results2")
+  .select("*")
+  .eq("class_id", classId)
+  .eq("subject_id", subjectId)
+  .eq("term_id", termId)
+  .eq("academic_year", academicYear);
   studentRows.forEach(tr => {
-    const studentResult = results.find(r => r.student_id === tr.dataset.id);
-    if (studentResult) {
-      const sel = tr.querySelector(".performanceLevel");
-      sel.value = studentResult.achievement_level_id;
-    }
-  });
+
+  const studentResult = results.find(r => r.student_id === tr.dataset.id);
+
+  if(studentResult){
+
+    tr.querySelector(".marksInput").value = studentResult.marks;
+    tr.querySelector(".levelOutput").innerText = studentResult.level;
+
+  }
+
+});
 
 
 
