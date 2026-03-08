@@ -386,7 +386,12 @@ const levelColor = {
   "Meeting Expectations(3)": "#d4edda",
   "Exceeding Expectations(4)": "#cce5ff"
 };
-function getAchievementLabel(score) {
+
+
+function getAchievementLabel(score, isSingleAssessment=false) {
+  if(isSingleAssessment) {
+
+  
   if (!score || score < 1) return "BE1";
 
   if (score >= 3.5) return "EE2";   // Exceeding higher
@@ -402,8 +407,7 @@ function getAchievementLabel(score) {
 }
 
 
-function getAchievementLabel(score, isSingleAssessment=false) {
-  if(isSingleAssessment) {
+
   
   if (!level) return 0;
 
