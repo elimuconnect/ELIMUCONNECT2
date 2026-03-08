@@ -1924,27 +1924,28 @@ clone.querySelectorAll("h3").forEach(h3 => {
     overallAvg = Number(overallAvg.toFixed(2));
 
     function overallLevel(score) {
-      if (!score || score < 1) return "No Data";
-      if (score >= 3.5) return "Exceeding Expectations";
-      if (score >= 2.5) return "Meeting Expectations";
-      if (score >= 1.5) return "Approaching Expectations";
-      return "Below Expectations";
-    }
+  return getAchievementLabel(score);
+}
+   function generalComment(score) {
 
-    function generalComment(score) {
-      if (score >= 3.5) return "Excellent performance. Keep it up.";
-      if (score >= 2.5) return "Good progress. Continue working hard.";
-      if (score >= 1.5) return "Fair work. Aim higher next term.";
-      return "Needs more effort and support.";
-    }
+  const level = getAchievementLabel(score);
 
-    function commentFromScore(score) {
-      if (score >= 3.5) return "Excellent work";
-      if (score >= 2.5) return "Good progress";
-      if (score >= 1.5) return "Fair work";
-      return "Put more effort";
-    }
+  if (level === "EE2") return "Outstanding mastery of learning expectations.";
+  if (level === "EE1") return "Very strong performance across most learning areas.";
 
+  if (level === "ME2") return "Consistently meets learning expectations.";
+  if (level === "ME1") return "Generally meeting expectations with good progress.";
+
+  if (level === "AE2") return "Approaching expectations; improvement is evident.";
+  if (level === "AE1") return "Developing understanding; continued effort needed.";
+
+  if (level === "BE2") return "Below expectations; structured support recommended.";
+  if (level === "BE1") return "Significant support required to meet expectations.";
+
+  return "No performance data available.";
+}
+
+    
    
     /* =========================
        SUBJECT TABLE (PAGE 2)
