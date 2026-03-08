@@ -471,7 +471,7 @@ const { data: termAverages } = await supabase
   
   /* ===== AVERAGES ===== */
   const { data: averages } = await supabase
-    .from("term_subject_report_view")
+    .from("term_subject_report_view2")
    .select("full_name,subject_name,average_score,achievement_level")
     .eq("term", termName)
   
