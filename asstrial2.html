@@ -767,14 +767,15 @@ if (selectedStrands.length) {
 
 
     
-// 🔹 Save student results (skip "Not Assessed")
+// 🔹 Get student rows
+const studentRows = document.querySelectorAll("#studentsBody tr");
+
 // 🔹 Save student results using raw marks
 const rows = Array.from(studentRows)
   .map(tr => {
 
     const marks = tr.querySelector(".marksInput").value;
 
-    // Skip if no marks entered
     if (!marks) return null;
 
     const markValue = parseFloat(marks);
@@ -784,17 +785,14 @@ const rows = Array.from(studentRows)
       subject_id: subjectId,
       class_id: classId,
       term_id: termId,
-
       marks: markValue,
       level: convertMarksToLevel(markValue),
-
       academic_year: academicYear,
       teacher_id: user.id
     };
 
   })
-  .filter(Boolean); // remove skipped students
-
+  .filter(Boolean);
 
 // 🔹 Prevent saving empty results
 if (rows.length === 0) {
