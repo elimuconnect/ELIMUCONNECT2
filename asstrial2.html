@@ -781,6 +781,7 @@ const rows = Array.from(studentRows)
     const markValue = parseFloat(marks);
 
     return {
+      assessment_id: assessmentId, // <--- ADD THIS
       student_id: tr.dataset.id,
       subject_id: subjectId,
       class_id: classId,
