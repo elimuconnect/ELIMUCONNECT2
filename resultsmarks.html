@@ -835,10 +835,20 @@ function renderSchoolAnalytics(records, termName, year, intelligence, schoolName
 
   let classMap = {};
   let subjectMap = {};
-  let bandCount = { below: 0, approaching: 0, meeting: 0, exceeding: 0 };
+ // Two-tier achievement band count
+let bandCount = {
+  BE1: 0,
+  BE2: 0,
+  AE1: 0,
+  AE2: 0,
+  ME1: 0,
+  ME2: 0,
+  EE1: 0,
+  EE2: 0
+};
 
-  // ===== PROCESS DATA =====
- records.forEach(r => {
+// ===== PROCESS DATA =====
+records.forEach(r => {
 
   const subjectData = avgMap?.[r.student]?.[r.subject];
   if (!subjectData) return;
@@ -852,10 +862,11 @@ function renderSchoolAnalytics(records, termName, year, intelligence, schoolName
   subjectMap[r.subject] ??= [];
   subjectMap[r.subject].push(score);
 
-  if (score >= 3.5) bandCount.exceeding++;
-  else if (score >= 2.5) bandCount.meeting++;
-  else if (score >= 1.5) bandCount.approaching++;
-  else bandCount.below++;
+  // Count exact achievement level (two-tier)
+  const level = getAchievementLabel(score, true); // true = single assessment style
+  if (bandCount.hasOwnProperty(level)) {
+    bandCount[level]++;
+  }
 });
 
   const atRiskLearners = records.filter(r => {
@@ -1016,13 +1027,19 @@ ${intelligence.schoolImprovement !== null ? `
 
       <!-- 3️⃣ BAND DISTRIBUTION -->
       <h4 style="margin-top:20px;">3️⃣ Performance Band Distribution</h4>
-      <p>
-        🔴 Below: ${bandCount.below} |
-        🟡 Approaching: ${bandCount.approaching} |
-        🔵 Meeting: ${bandCount.meeting} |
-        🟢 Exceeding: ${bandCount.exceeding}
-      </p>
 
+
+<p>
+  <span style="color:#c0392b;">BE1: ${bandCount.BE1}</span> | 
+  <span style="color:#e74c3c;">BE2: ${bandCount.BE2}</span> | 
+  <span style="color:#f39c12;">AE1: ${bandCount.AE1}</span> | 
+  <span style="color:#f1c40f;">AE2: ${bandCount.AE2}</span> | 
+  <span style="color:#3498db;">ME1: ${bandCount.ME1}</span> | 
+  <span style="color:#2980b9;">ME2: ${bandCount.ME2}</span> | 
+  <span style="color:#27ae60;">EE1: ${bandCount.EE1}</span> | 
+  <span style="color:#2ecc71;">EE2: ${bandCount.EE2}</span>
+</p>
+     
       <!-- 4️⃣ RISK SUMMARY -->
       <h4 style="margin-top:20px;">4️⃣ Learner Risk Overview</h4>
       <p>
