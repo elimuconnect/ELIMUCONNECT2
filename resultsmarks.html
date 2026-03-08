@@ -1946,7 +1946,31 @@ clone.querySelectorAll("h3").forEach(h3 => {
 }
 
     
-   
+
+
+
+
+function commentFromScore(score) {
+
+  const level = getAchievementLabel(score);
+
+  if (level === "EE2") return "Outstanding performance. Keep up the excellent work.";
+  if (level === "EE1") return "Very good performance. Continue striving for excellence.";
+
+  if (level === "ME2") return "Consistently meets expectations.";
+  if (level === "ME1") return "Good progress in most learning areas.";
+
+  if (level === "AE2") return "Approaching expectations; more practice will help.";
+  if (level === "AE1") return "Developing understanding; continued effort required.";
+
+  if (level === "BE2") return "Below expectations; structured support recommended.";
+  if (level === "BE1") return "Significant improvement required.";
+
+  return "";
+}
+
+
+    
     /* =========================
        SUBJECT TABLE (PAGE 2)
     ========================== */
