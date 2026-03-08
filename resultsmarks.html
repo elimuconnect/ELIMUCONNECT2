@@ -386,26 +386,37 @@ const levelColor = {
   "Meeting Expectations(3)": "#d4edda",
   "Exceeding Expectations(4)": "#cce5ff"
 };
-
 function getAchievementLabel(score) {
-  if (!score || score < 1) return "No Data";
-  if (score >= 3.5) return "Exceeding Expectations(4)";
-  if (score >= 2.5) return "Meeting Expectations(3)";
-  if (score >= 1.5) return "Approaching Expectations(2)";
-  return "Below Expectations(1)";
+  if (!score || score < 1) return "BE";
+
+  if (score >= 3.5) return "EE2";   // Exceeding higher
+  if (score >= 3.0) return "EE1";   // Exceeding lower
+
+  if (score >= 2.5) return "ME2";   // Meeting higher
+  if (score >= 2.0) return "ME1";   // Meeting lower
+
+  if (score >= 1.5) return "AE2";   // Approaching higher
+  if (score >= 1.0) return "AE1";   // Approaching lower
+
+  return "BE";                     // Below Expectations
 }
-
-
 
 function levelToScore(level) {
   if (!level) return 0;
 
-  const clean = level.trim();
+  const clean = level.trim().toUpperCase();
 
-  if (clean === "Exceeding Expectations(4)") return 4;
-  if (clean === "Meeting Expectations(3)") return 3;
-  if (clean === "Approaching Expectations(2)") return 2;
-  if (clean === "Below Expectations(1)") return 1;
+  if (clean === "EE2") return 4;   // Exceeding higher
+  if (clean === "EE1") return 3.5; // Exceeding lower (still high score)
+
+  if (clean === "ME2") return 3;   // Meeting higher
+  if (clean === "ME1") return 2.5; // Meeting lower
+
+  if (clean === "AE2") return 2;   // Approaching higher
+  if (clean === "AE1") return 1.5; // Approaching lower
+
+  if (clean === "BE2") return 1;   // Below higher
+  if (clean === "BE1") return 0.5; // Below lower
 
   return 0;
 }
