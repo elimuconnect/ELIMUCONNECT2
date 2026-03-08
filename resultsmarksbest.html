@@ -1127,11 +1127,15 @@ function renderGrouped(grouped, avgMap) {
     const previousAvg = prevData ? prevData.total / prevData.count : null;
 
     const trend = getTrend(currentAvgScore, previousAvg);
-    const supportFlag = generateSupportFlag(subjects);
+
+    const flag = generateSupportFlag(student, subjects);
+   
     const insight = generateInsight(student, subjects);
     
-    const { strengths, needs } = generateStrengthsAndNeeds(subjects);
-    const recommendations = generateRecommendations(subjects, trend, supportFlag);
+
+const { strengths, needs } = generateStrengthsAndNeeds(student, subjects);
+    
+    const recommendations = generateRecommendations(student, subjects, trend, supportFlag)
 
     return `
 <div class="a4-page learner-page">
@@ -1481,41 +1485,32 @@ function generateInsight(student, subjects) {
 }
 
 
-function generateSupportFlag(subjects) {
-  let scores = [];
-  let belowCount = 0;
-  let subjectAverages = [];
+function generateSupportFlag(student, subjects) {
 
-  Object.entries(subjects).forEach(([subject, rows]) => {
+  const subjectAverages = [];
+
+  Object.entries(subjects).forEach(([subject]) => {
     if (subject === "__admission") return;
 
-    let subjectScores = [];
+    const subjectData = avgMap?.[student]?.[subject];
+    if (!subjectData) return;
 
-    rows.forEach(r => {
-      const score = levelToScore(r.level);
-      if (score > 0) {
-        scores.push(score);
-        subjectScores.push(score);
-        if (score === 1) belowCount++;
-      }
-    });
-
-    if (subjectScores.length) {
-      subjectAverages.push(
-        subjectScores.reduce((a, b) => a + b, 0) / subjectScores.length
-      );
+    const score = Number(subjectData.average_score);
+    if (!isNaN(score)) {
+      subjectAverages.push(score);
     }
   });
 
-  if (!scores.length) return "";
+  if (!subjectAverages.length) return "";
 
-  const overall = scores.reduce((a, b) => a + b, 0) / scores.length;
+  const overall = subjectAverages.reduce((a,b)=>a+b,0) / subjectAverages.length;
+
+  const belowCount = subjectAverages.filter(a => a <= 2).length;
 
   /* 🔴 NEEDS SUPPORT */
   if (
-    overall < 2.3 ||                 // overall struggling
-    belowCount >= 3 ||                // repeated difficulty
-    subjectAverages.filter(a => a <= 2).length >= 2 // weak in 2+ subjects
+    overall < 2.3 ||          // overall struggling
+    belowCount >= 2           // weak in 2+ subjects
   ) {
     return `<span style="color:#c0392b;font-weight:bold;">🔴 Needs Learning Support</span>`;
   }
@@ -1533,30 +1528,25 @@ function generateSupportFlag(subjects) {
   return `<span style="color:#b9770e;font-weight:bold;">🟡 On Track</span>`;
 }
 
-
-
-
-function generateStrengthsAndNeeds(subjects) {
+function generateStrengthsAndNeeds(student, subjects) {
   const strengths = [];
   const needs = [];
 
-  Object.entries(subjects).forEach(([subject, rows]) => {
+  Object.entries(subjects).forEach(([subject]) => {
     if (subject === "__admission") return;
 
-    let scores = rows.map(r => levelToScore(r.level)).filter(s => s > 0);
-    if (!scores.length) return;
+    const subjectData = avgMap?.[student]?.[subject];
+    if (!subjectData) return;
 
-    const avg = scores.reduce((a,b)=>a+b,0) / scores.length;
-    const weakCount = scores.filter(s => s <= 2).length;
+    const avg = Number(subjectData.average_score);
+    if (isNaN(avg)) return;
 
-  if (avg >= 3.5 && weakCount === 0) {
-  strengths.push(subject);
-}
+    if (avg >= 3.5) {
+      strengths.push(subject);
+    }
 
-if (avg < 2.5 || weakCount >= 2) {
-  needs.push(subject);
-
-
+    if (avg < 2.5) {
+      needs.push(subject);
     }
   });
 
@@ -1565,12 +1555,12 @@ if (avg < 2.5 || weakCount >= 2) {
 
 
 
-function generateRecommendations(subjects, trend, supportFlag) {
+function generateRecommendations(student, subjects, trend, supportFlag) {
   const teacher = [];
   const parent = [];
   const learner = [];
 
-  const { strengths, needs } = generateStrengthsAndNeeds(subjects);
+  const { strengths, needs } = generateStrengthsAndNeeds(student, subjects);
 
   /* ===== TEACHER ===== */
   if (supportFlag.includes("Needs Learning Support")) {
@@ -1611,7 +1601,7 @@ function generateRecommendations(subjects, trend, supportFlag) {
   return { teacher, parent, learner };
 }
 
-
+  
 function getEvidenceStatus(rows) {
   const count = rows.length;
 
@@ -1631,6 +1621,8 @@ function getEvidenceStatus(rows) {
 }
 
 
+
+
 const achievementBandsPlugin = {
   id: "achievementBands",
   beforeDraw(chart) {
@@ -1638,35 +1630,52 @@ const achievementBandsPlugin = {
     if (!chartArea) return;
 
     const y = scales.y;
+
     const bands = [
-      { from: 1, to: 2, color: "rgba(248,215,218,0.35)" }, // Below
-      { from: 2, to: 3, color: "rgba(255,243,205,0.35)" }, // Approaching
-      { from: 3, to: 4, color: "rgba(212,237,218,0.35)" }, // Meeting
-      { from: 4, to: 4.999, color: "rgba(204,229,255,0.35)" }  // Exceeding (slightly below max)
+      { from: 1, to: 2, color: "rgba(248,215,218,0.35)" },   // Below
+      { from: 2, to: 3, color: "rgba(255,243,205,0.35)" },   // Approaching
+      { from: 3, to: 4, color: "rgba(212,237,218,0.35)" },   // Meeting
+      { from: 4, to: 5, color: "rgba(204,229,255,0.35)" }    // Exceeding
     ];
 
     ctx.save();
+
     bands.forEach(b => {
       const yTop = y.getPixelForValue(b.to);
       const yBottom = y.getPixelForValue(b.from);
+
       ctx.fillStyle = b.color;
-      ctx.fillRect(chartArea.left, yTop, chartArea.right - chartArea.left, yBottom - yTop);
+      ctx.fillRect(
+        chartArea.left,
+        yTop,
+        chartArea.right - chartArea.left,
+        yBottom - yTop
+      );
     });
+
     ctx.restore();
   }
 };
 
+  
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
-  plugins: { legend: { display: false } },
+  plugins: {
+    legend: { display: false }
+  },
   scales: {
     y: {
       min: 1,
-      max: 4, // match the Exceeding band
+      max: 5,   // allow space for "Exceeding"
       ticks: {
         stepSize: 1,
-        callback: v => ["", "Below", "Approaching", "Meeting", "Exceeding"][v]
+        callback: v => ({
+          1: "Below",
+          2: "Approaching",
+          3: "Meeting",
+          4: "Exceeding"
+        })[v] || ""
       }
     }
   }
