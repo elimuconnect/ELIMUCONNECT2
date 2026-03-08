@@ -1339,7 +1339,7 @@ border-left:4px solid ${
   word-wrap: break-word;
   white-space: normal;
 ">
-${r.core_competencies ? <div><strong>Core:</strong> ${r.core_competencies}</div> : ""}
+  ${r.core_competencies ? `<div><strong>Core:</strong> ${r.core_competencies}</div>` : ""}
   ${r.subject_competencies ? `<div><strong>Subject:</strong> ${r.subject_competencies.replace(/,/g, ", ")}</div>` : ""}
 </td>
            
