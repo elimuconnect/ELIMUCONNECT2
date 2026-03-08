@@ -387,7 +387,7 @@ const levelColor = {
   "Exceeding Expectations(4)": "#cce5ff"
 };
 function getAchievementLabel(score) {
-  if (!score || score < 1) return "BE";
+  if (!score || score < 1) return "BE1";
 
   if (score >= 3.5) return "EE2";   // Exceeding higher
   if (score >= 3.0) return "EE1";   // Exceeding lower
@@ -398,10 +398,13 @@ function getAchievementLabel(score) {
   if (score >= 1.5) return "AE2";   // Approaching higher
   if (score >= 1.0) return "AE1";   // Approaching lower
 
-  return "BE";                     // Below Expectations
+  return "BE1";                     // Below Expectations
 }
 
-function levelToScore(level) {
+
+function getAchievementLabel(score, isSingleAssessment=false) {
+  if(isSingleAssessment) {
+  
   if (!level) return 0;
 
   const clean = level.trim().toUpperCase();
@@ -1314,7 +1317,8 @@ border-left:4px solid ${
   background:${getAvgColor(subjectAvg)};
   white-space: nowrap;
 ">
-  ${getAchievementLabel(subjectAvg)}
+ const singleAssessment = true; // flag
+getAchievementLabel(score, singleAssessment)
 </span>
     </td>
   </tr>
