@@ -552,23 +552,29 @@ averages.forEach(a => {
 learnerSummary = {};
 
 Object.keys(avgMap).forEach(student => {
-
   const subjects = Object.values(avgMap[student]);
+  
+  if (subjects.length === 1) {
+    // Only one subject: take its actual achievement level
+    learnerSummary[student] = {
+      overall_average: Number(subjects[0].average_score),
+      overall_level: subjects[0].achievement_level // <- use this directly
+    };
+  } else {
+    const validAverages = subjects
+      .map(s => Number(s.average_score))
+      .filter(n => !isNaN(n));
 
-  const validAverages = subjects
-    .map(s => Number(s.average_score))
-    .filter(n => !isNaN(n));
+    const overallAvg = validAverages.length
+      ? validAverages.reduce((a,b)=>a+b,0) / validAverages.length
+      : null;
 
-  const overallAvg = validAverages.length
-    ? validAverages.reduce((a,b)=>a+b,0) / validAverages.length
-    : null;
-
-  learnerSummary[student] = {
-    overall_average: overallAvg,
-   overall_level: getAchievementLabel(overallAvg)
-  };
+    learnerSummary[student] = {
+      overall_average: overallAvg,
+      overall_level: getAchievementLabel(overallAvg)
+    };
+  }
 });
-
   
 
   /* ===== RAW RESULTS ===== */
