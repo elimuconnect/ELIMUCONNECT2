@@ -737,7 +737,7 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
 
   // ===== CURRENT TERM PROCESSING =====
   records.forEach(r => {
-    const score = levelToScore(r.achievement_level);
+    const score = levelToScore(r.level);
     if (!score) return;
 
     learnerMap[r.admission] ??= [];
@@ -1114,7 +1114,7 @@ function renderGrouped(grouped, avgMap) {
     Object.entries(subjects).forEach(([subject, rows]) => {
       if (subject === "__admission") return;
       rows.forEach(r => {
-       const score = levelToScore(r.achievement_level);
+      const score = levelToScore(r.level);
         if (score > 0) currentScores.push(score);
       });
     });
@@ -1329,7 +1329,7 @@ const strandOutcomes = assessmentId ? (strandMap?.[assessmentId] || []) : [];
         ${rows.map(r => `
          
 <tr style="
- background:${levelColor[(r.level || "").trim()] || '#fff'};
+background:${levelColor[(r.level || "").trim()]}
 border-left:4px solid ${
   (r.level || "").trim() === "BE1" ? "#e74c3c" :
   (r.level || "").trim() === "BE2" ? "#f39c12" :
