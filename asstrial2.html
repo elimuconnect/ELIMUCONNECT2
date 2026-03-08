@@ -900,7 +900,7 @@ const { data: results } = await supabase
   const studentRows = document.querySelectorAll("#studentsBody tr");
  studentRows.forEach(tr => {
 
-  const studentResult = results.find(r => r.student_id === tr.dataset.id);
+ const studentResult = results?.find(r => r.student_id === tr.dataset.id);
 
   if(studentResult){
 
