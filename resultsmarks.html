@@ -1205,21 +1205,40 @@ coreSet = new Set();
 subjectSet = new Set();
 competencyCount = 0;
      
-  rows.forEach(r => {
+rows.forEach(r => {
+
+    // CORE COMPETENCIES (UUID ARRAY OR STRING)
     if (r.core_competencies) {
-      r.core_competencies.split(",").forEach(c => {
-        if (c.trim()) coreSet.add(c.trim());
-      });
+
+        if (Array.isArray(r.core_competencies)) {
+            r.core_competencies.forEach(c => {
+                if (c) coreSet.add(c);
+            });
+        }
+        else if (typeof r.core_competencies === "string") {
+            r.core_competencies.split(",").forEach(c => {
+                if (c.trim()) coreSet.add(c.trim());
+            });
+        }
     }
 
+    // SUBJECT COMPETENCIES (ARRAY OR STRING)
     if (r.subject_competencies) {
-      r.subject_competencies.split(",").forEach(c => {
-        if (c.trim()) subjectSet.add(c.trim());
-      });
+
+        if (Array.isArray(r.subject_competencies)) {
+            r.subject_competencies.forEach(c => {
+                if (c) subjectSet.add(c);
+            });
+        }
+        else if (typeof r.subject_competencies === "string") {
+            r.subject_competencies.split(",").forEach(c => {
+                if (c.trim()) subjectSet.add(c.trim());
+            });
+        }
     }
 
     competencyCount++;
-  });
+});
 
 const assessmentId = rows?.[0]?.assessment_id;
 const strandOutcomes = assessmentId ? (strandMap?.[assessmentId] || []) : [];
