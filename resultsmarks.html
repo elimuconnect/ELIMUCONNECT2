@@ -1400,13 +1400,8 @@ function generateInsight(subjects) {
   if (!count) return "";
 
   const overallAvg = total / count;
-
-  const overall =
-    overallAvg >= 3.5 ? "exceeding expectations(4)" :
-    overallAvg >= 2.5 ? "meeting expectations(3)" :
-    overallAvg >= 1.5 ? "approaching expectations(2)" :
-    "below expectations(1)";
-
+const overall = getAchievementLabel(overallAvg);
+ 
   const subjectsArray = Object.entries(subjectScores)
     .map(([s, scores]) => ({
       subject: s,
@@ -1427,11 +1422,13 @@ function generateInsight(subjects) {
   }
 
 return `
- <p>
+
+<p>
   Overall, based on current evidence, the learner is 
   ${getPerformanceBadge(overall)}
   ${strengthSentence}.
 </p>
+ 
 `;
 }
 
