@@ -390,19 +390,13 @@ const levelColor = {
 
 
 function getAchievementLabel(score) {
-  if (!score || score < 1) return "BE1";
-
   if (score >= 3.75) return "EE2";
   if (score >= 3.25) return "EE1";
-
   if (score >= 2.75) return "ME2";
   if (score >= 2.25) return "ME1";
-
   if (score >= 1.75) return "AE2";
   if (score >= 1.25) return "AE1";
-
   if (score >= 0.75) return "BE2";
-
   return "BE1";
 }
 
