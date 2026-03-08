@@ -874,7 +874,7 @@ function renderSchoolAnalytics(records, termName, year, intelligence, schoolName
   const classSummary = Object.entries(classMap).map(([cls, scores]) => {
 
     const mean = avg(scores);
-    const risk = mean < 2.5
+    const risk = mean < 2
       ? `<span style="color:#c0392b;font-weight:bold;">🔴 Needs Intervention</span>`
       : `<span style="color:#1e8449;font-weight:bold;">🟢 Stable</span>`;
 
@@ -892,7 +892,7 @@ function renderSchoolAnalytics(records, termName, year, intelligence, schoolName
 
     const mean = avg(scores);
 
-    const alert = mean < 2.3
+    const alert = mean < 1.5
       ? `<span style="color:#c0392b;font-weight:bold;">⚠ Immediate Review Required</span>`
       : "";
 
