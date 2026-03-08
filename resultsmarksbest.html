@@ -471,7 +471,7 @@ async function loadReport() {
 
 /* ===== LEARNER TERM AVERAGES FOR GRAPHS ===== */
 const { data: termAverages } = await supabase
-  .from("learner_term_averages") // ✅ the view you already created
+  .from("learner_term_levels") // ✅ the view you already created
   .select("admission_number, term, average_score")
   .eq("academic_year", SYSTEM_YEAR);
 
