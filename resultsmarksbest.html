@@ -1868,8 +1868,8 @@ function getTrend(currentAvg, previousAvg) {
 
 
 
-window.downloadPDF = async function () {
 
+window.downloadPDF = async function () {
   if (!reportDiv.innerHTML.trim()) {
     alert("No report to download");
     return;
@@ -1881,24 +1881,19 @@ window.downloadPDF = async function () {
   const original = reportDiv;
   const clone = original.cloneNode(true);
 
-/* =========================
-   REMOVE CLASS SUMMARY TITLE (e.g., 10A – All Learners)
-========================= */
-clone.querySelectorAll("h3").forEach(h3 => {
-  if (h3.innerText.includes("All Learners")) {
-    h3.remove();
-  }
-});
+  /* =========================
+     REMOVE CLASS SUMMARY TITLE (e.g., 10A – All Learners)
+  ========================== */
+  clone.querySelectorAll("h3").forEach(h3 => {
+    if (h3.innerText.includes("All Learners")) h3.remove();
+  });
 
-  
   /* =========================
      REMOVE SCREEN PAGINATION
   ========================== */
   clone.querySelectorAll(".a4-page").forEach(page => {
     const parent = page.parentNode;
-    while (page.firstChild) {
-      parent.insertBefore(page.firstChild, page);
-    }
+    while (page.firstChild) parent.insertBefore(page.firstChild, page);
     parent.removeChild(page);
   });
 
@@ -1907,19 +1902,10 @@ clone.querySelectorAll("h3").forEach(h3 => {
   clone.style.padding = "0";
   clone.style.boxSizing = "border-box";
 
-  const first = results?.[0];
- 
   const cards = clone.querySelectorAll(".learner-card");
 
-
-  
-
   cards.forEach((card, index) => {
-  if (index !== 0) {
-    card.style.pageBreakBefore = "always";
-  }
-
-
+    if (index !== 0) card.style.pageBreakBefore = "always";
 
     card.style.margin = "0";
     card.style.padding = "0";
@@ -1942,155 +1928,151 @@ clone.querySelectorAll("h3").forEach(h3 => {
     if (!subjectData) return;
 
     /* =========================
-   /* =========================
-   CALCULATE OVERALL AVERAGE & LEVEL
-========================= */
-const subjectScores = Object.values(subjectData)
-  .map(d => parseFloat(d.average_score))
-  .filter(score => !isNaN(score) && score > 0);
+       CONVERT LEVELS TO NUMERIC SCORES
+    ========================== */
+    const numericScoresMap = {};
+    const numericScores = [];
 
-let overallAvg = 0;
-if (subjectScores.length) {
-  overallAvg = subjectScores.reduce((sum, score) => sum + score, 0) / subjectScores.length;
-}
-overallAvg = Number(overallAvg.toFixed(2)); // keep two decimals
-
-// Get overall performance level from the average score
-const overallLevelLabel = subjectScores.length ? getAchievementLabel(overallAvg) : "No Data";
-
-/* =========================
-   GENERAL COMMENT FUNCTION
-========================= */
-function generalCommentFromLevel(level) {
-  if (level === "EE2") return "Outstanding mastery of learning expectations.";
-  if (level === "EE1") return "Very strong performance across most learning areas.";
-
-  if (level === "ME2") return "Consistently meets learning expectations.";
-  if (level === "ME1") return "Generally meeting expectations with good progress.";
-
-  if (level === "AE2") return "Approaching expectations; improvement is evident.";
-  if (level === "AE1") return "Developing understanding; continued effort needed.";
-
-  if (level === "BE2") return "Below expectations; structured support recommended.";
-  if (level === "BE1") return "Significant support required to meet expectations.";
-
-  return "No performance data available.";
-}
-
-/* =========================
-   COMMENT FROM SCORE (PER SUBJECT)
-========================= */
-function commentFromScore(score) {
-  const level = getAchievementLabel(score);
-
-  if (level === "EE2") return "Outstanding performance. Keep up the excellent work.";
-  if (level === "EE1") return "Very good performance. Continue striving for excellence.";
-
-  if (level === "ME2") return "Consistently meets expectations.";
-  if (level === "ME1") return "Good progress in most learning areas.";
-
-  if (level === "AE2") return "Approaching expectations; more practice will help.";
-  if (level === "AE1") return "Developing understanding; continued effort required.";
-
-  if (level === "BE2") return "Below expectations; structured support recommended.";
-  if (level === "BE1") return "Significant improvement required.";
-
-  return "";
-}
-
-/* =========================
-   SUBJECT TABLE (PAGE 2)
-========================= */
-const table = document.createElement("table");
-table.style.width = "100%";
-table.style.borderCollapse = "collapse";
-table.style.marginTop = "6px";
-table.style.fontSize = "14px";
-table.style.tableLayout = "fixed";
-
-table.innerHTML = `
-  <thead>
-    <tr>
-      <th style="border:1px solid #000;padding:8px;width:30%;">Learning Area/Subject</th>
-      <th style="border:1px solid #000;padding:8px;width:25%;">Performance Level</th>
-      <th style="border:1px solid #000;padding:8px;width:30%;">Teacher Comment</th>
-    </tr>
-  </thead>
-  <tbody>
-    ${Object.entries(subjectData).map(([subject, d]) => {
-      const avg = Number(d.average_score);
-      return `
-        <tr>
-          <td style="border:1px solid #000;padding:8px;">${subject}</td>
-          <td style="border:1px solid #000;padding:8px;">${d.achievement_level}</td>
-          <td style="border:1px solid #000;padding:8px;">${commentFromScore(avg)}</td>
-        </tr>
-      `;
-    }).join("")}
-  </tbody>
-`;
-
-/* =========================
-   GENERAL PERFORMANCE BLOCK
-========================= */
-const generalBlock = document.createElement("div");
-generalBlock.style.marginTop = "10px";
-generalBlock.style.fontSize = "14px";
-generalBlock.style.lineHeight = "1.8";
-
-generalBlock.innerHTML = `
-  <table style="width:100%;border-collapse:collapse;margin-top:6px;">
-    <tr>
-      <td style="border:1px solid #000;padding:8px;width:40%;"><strong>Learner's General Performance Level</strong></td>
-      <td style="border:1px solid #000;padding:8px;">${overallLevelLabel}</td>
-    </tr>
-    <tr>
-      <td style="border:1px solid #000;padding:8px;"><strong>Teacher's General Comment</strong></td>
-      <td style="border:1px solid #000;padding:12px;">${generalCommentFromLevel(overallLevelLabel)}</td>
-    </tr>
-  </table>
-
-    
-      <div style="margin-top:20px;">
-        <div style="display:flex;justify-content:space-between;margin-top:14px;">
-          <div>Closing Date: ____________________</div>
-          <div>Opening Date: ____________________</div>
-        </div>
-        <div style="display:flex;justify-content:space-between;margin-top:18px;">
-          <div>Class Teacher Signature: ____________________</div>
-          <div>Head of Institution Signature: ____________________</div>
-        </div>
-      </div>
-    `;
-
-
+    Object.entries(subjectData).forEach(([subject, d]) => {
+      const score = levelToScore(d.achievement_level);
+      if (score > 0) {
+        numericScores.push(score);
+        numericScoresMap[subject] = score;
+      }
+    });
 
     /* =========================
-   FOOTER (CREATE FIRST)
-========================= */
-const footer = document.createElement("div");
-footer.style.fontSize = "10px";
-footer.style.textAlign = "center";
-footer.style.marginTop = "12px";
-footer.style.borderTop = "1px solid #ddd";
-footer.style.paddingTop = "6px";
+       CALCULATE OVERALL AVERAGE
+    ========================== */
+    let overallAvg = numericScores.length
+      ? numericScores.reduce((a, b) => a + b, 0) / numericScores.length
+      : 0;
+    overallAvg = Number(overallAvg.toFixed(2));
 
-footer.innerText =
-  "Assessment is competency-based and evidence-driven, guided by KICD CBE curriculum designs.";
+    /* =========================
+       DETERMINE STRENGTHS
+    ========================== */
+    const subjectsArray = Object.entries(numericScoresMap)
+      .map(([subject, score]) => ({ subject, score }))
+      .sort((a, b) => b.score - a.score);
 
+    let strengthSentence = "";
+    let strengths = [];
+    if (subjectsArray.length > 1 && subjectsArray[0].score - subjectsArray[1].score >= 0.5) {
+      strengthSentence = `, with stronger performance in <strong>${subjectsArray[0].subject}</strong>`;
+      strengths.push(subjectsArray[0].subject);
+    } else if (subjectsArray.length >= 1) {
+      strengths = subjectsArray.map(s => s.subject);
+    }
 
-/* =========================
-   TABLE BLOCK (NEW PAGE)
-========================= */
-const tableWrapper = document.createElement("div");
+    /* =========================
+       HELPER FUNCTIONS
+    ========================== */
+    function overallLevel(score) {
+      return getAchievementLabel(score); // converts numeric back to EE1, ME1, etc
+    }
 
+    function generalComment(score) {
+      const level = getAchievementLabel(score);
+      if (level === "EE2") return "Outstanding mastery of learning expectations.";
+      if (level === "EE1") return "Very strong performance across most learning areas.";
+      if (level === "ME2") return "Consistently meets learning expectations.";
+      if (level === "ME1") return "Generally meeting expectations with good progress.";
+      if (level === "AE2") return "Approaching expectations; improvement is evident.";
+      if (level === "AE1") return "Developing understanding; continued effort needed.";
+      if (level === "BE2") return "Below expectations; structured support recommended.";
+      if (level === "BE1") return "Significant support required to meet expectations.";
+      return "No performance data available.";
+    }
 
-tableWrapper.appendChild(table);
-tableWrapper.appendChild(generalBlock);
-tableWrapper.appendChild(footer);
+    function commentFromScore(score) {
+      const level = getAchievementLabel(score);
+      if (level === "EE2") return "Outstanding performance. Keep up the excellent work.";
+      if (level === "EE1") return "Very good performance. Continue striving for excellence.";
+      if (level === "ME2") return "Consistently meets expectations.";
+      if (level === "ME1") return "Good progress in most learning areas.";
+      if (level === "AE2") return "Approaching expectations; more practice will help.";
+      if (level === "AE1") return "Developing understanding; continued effort required.";
+      if (level === "BE2") return "Below expectations; structured support recommended.";
+      if (level === "BE1") return "Significant improvement required.";
+      return "";
+    }
 
-card.appendChild(tableWrapper);
-});
+    /* =========================
+       SUBJECT TABLE
+    ========================== */
+    const table = document.createElement("table");
+    table.style.width = "100%";
+    table.style.borderCollapse = "collapse";
+    table.style.marginTop = "6px";
+    table.style.fontSize = "14px";
+    table.style.tableLayout = "fixed";
+
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th style="border:1px solid #000;padding:8px;width:30%;">Learning Area/Subject</th>
+          <th style="border:1px solid #000;padding:8px;width:25%;">Performance Level</th>
+          <th style="border:1px solid #000;padding:8px;width:30%;">Teacher Comment</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${Object.entries(subjectData).map(([subject, d]) => {
+          const avg = numericScoresMap[subject] || 0;
+          return `
+            <tr>
+              <td style="border:1px solid #000;padding:8px;">${subject}</td>
+              <td style="border:1px solid #000;padding:8px;">${d.achievement_level}</td>
+              <td style="border:1px solid #000;padding:8px;">${commentFromScore(avg)}</td>
+            </tr>
+          `;
+        }).join("")}
+      </tbody>
+    `;
+
+    /* =========================
+       GENERAL PERFORMANCE BLOCK
+    ========================== */
+    const generalBlock = document.createElement("div");
+    generalBlock.style.marginTop = "10px";
+    generalBlock.style.fontSize = "14px";
+    generalBlock.style.lineHeight = "1.8";
+
+    generalBlock.innerHTML = `
+      <table style="width:100%;border-collapse:collapse;margin-top:6px;">
+        <tr>
+          <td style="border:1px solid #000;padding:8px;width:40%;"><strong>Learner's General Performance Level</strong></td>
+          <td style="border:1px solid #000;padding:8px;">${overallLevel(overallAvg)}</td>
+        </tr>
+        <tr>
+          <td style="border:1px solid #000;padding:8px;"><strong>Teacher's General Comment</strong></td>
+          <td style="border:1px solid #000;padding:12px;">${generalComment(overallAvg)}</td>
+        </tr>
+      </table>
+      <p>💪 Strengths: ${strengths.join(", ")}</p>
+    `;
+
+    /* =========================
+       FOOTER
+    ========================== */
+    const footer = document.createElement("div");
+    footer.style.fontSize = "10px";
+    footer.style.textAlign = "center";
+    footer.style.marginTop = "12px";
+    footer.style.borderTop = "1px solid #ddd";
+    footer.style.paddingTop = "6px";
+    footer.innerText = "Assessment is competency-based and evidence-driven, guided by KICD CBE curriculum designs.";
+
+    /* =========================
+       COMBINE TABLE, GENERAL PERFORMANCE, FOOTER
+    ========================== */
+    const tableWrapper = document.createElement("div");
+    tableWrapper.appendChild(table);
+    tableWrapper.appendChild(generalBlock);
+    tableWrapper.appendChild(footer);
+
+    card.appendChild(tableWrapper);
+  });
 
  
   /* =========================
@@ -2106,11 +2088,6 @@ card.appendChild(tableWrapper);
   }).from(clone).save();
 };
 
-
-
-
-
-  
 
 
 
