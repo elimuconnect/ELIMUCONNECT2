@@ -1438,27 +1438,18 @@ function splitLearnerIntoPages() {
 
 
 
-
-  
 function generateInsight(student, subjects) {
-
   const subjectScores = {};
   const allScores = [];
 
-  Object.entries(subjects).forEach(([subject, rows]) => {
+  Object.keys(subjects).forEach(subject => {
     if (subject === "__admission") return;
 
-    const scores = rows
-      .map(r => levelToScore(r.level))
-      .filter(s => s > 0);
-
-    if (!scores.length) return;
-
-    const avg = scores.reduce((a,b)=>a+b,0) / scores.length;
+    const avg = avgMap?.[student]?.[subject]?.average_score;
+    if (!avg) return;
 
     subjectScores[subject] = avg;
-
-    allScores.push(...scores);
+    allScores.push(avg);
   });
 
   // ===== OVERALL LEVEL =====
@@ -1466,9 +1457,7 @@ function generateInsight(student, subjects) {
     ? allScores.reduce((a,b)=>a+b,0) / allScores.length
     : null;
 
-  const overall = overallAvg
-    ? getAchievementLabel(overallAvg)
-    : null;
+  const overallLevel = overallAvg ? getAchievementLabel(overallAvg) : null;
 
   // ===== SUBJECT RANKING =====
   const subjectsArray = Object.entries(subjectScores)
@@ -1476,28 +1465,26 @@ function generateInsight(student, subjects) {
     .sort((a,b)=>b.avg - a.avg);
 
   // ===== STRENGTH DETECTION =====
-  let strengthSentence = "";
+  const strengths = subjectsArray.filter((s,i) => {
+    return s.avg >= 3 && (i === 0 || s.avg - subjectsArray[i+1]?.avg >= 0.5);
+  }).map(s => s.subject);
 
-  if (
-    subjectsArray.length > 1 &&
-    subjectsArray[0].avg >= 3 &&
-    subjectsArray[0].avg - subjectsArray[1].avg >= 0.5
-  ) {
-    strengthSentence =
-      ", with stronger performance in <strong>" +
-      subjectsArray[0].subject +
+  let strengthSentence = "";
+  if (strengths.length) {
+    strengthSentence = ", with stronger performance in <strong>" +
+      strengths.join(", ") +
       "</strong>";
   }
 
   return `
-  <p>
-    Overall, based on current evidence, the learner is 
-    ${getPerformanceBadge(overall)}
-    ${strengthSentence}.
-  </p>
+    <p>
+      Overall, based on current evidence, the learner is 
+      ${getPerformanceBadge(overallLevel)}
+      ${strengthSentence}.
+    </p>
   `;
 }
-
+ 
 
 function generateSupportFlag(student, subjects) {
 
