@@ -1196,13 +1196,17 @@ const { strengths, needs } = generateStrengthsAndNeeds(student, subjects);
   const evidence = getEvidenceStatus(rows);
 
 
-const subjectKey = subject.trim().toLowerCase();
+const scores = rows
+  .map(r => levelToScore(r.level))
+  .filter(s => s > 0);
 
-const subjectData = Object.entries(avgMap?.[student] || {})
-  .find(([key]) => key.trim().toLowerCase() === subjectKey)?.[1];
+const subjectAvg = scores.length
+  ? scores.reduce((a,b)=>a+b,0) / scores.length
+  : null;
 
-const subjectAvg = subjectData?.average_score ?? null;
-const subjectLevel = subjectData?.achievement_level ?? null;
+const subjectLevel = subjectAvg
+  ? getAchievementLabel(subjectAvg)
+  : null;
 
 
      
@@ -1374,7 +1378,7 @@ border-left:4px solid ${
   background:${getAvgColor(subjectAvg)};
   white-space: nowrap;
 ">
-${subjectLevel}
+${getAchievementLabel(subjectAvg)}
 </span>
     </td>
   </tr>
