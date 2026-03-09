@@ -1544,28 +1544,30 @@ function generateStrengthsAndNeeds(student, subjects) {
   const strengths = [];
   const needs = [];
 
-  Object.entries(subjects).forEach(([subject]) => {
-    if (subject === "__admission") return;
+  // Collect subject averages
+  const subjectScores = Object.entries(subjects)
+    .filter(([sub]) => sub !== "__admission")  // skip metadata
+    .map(([sub, rows]) => {
+      const avg = rows
+        .map(r => levelToScore(r.level))
+        .filter(s => s > 0)
+        .reduce((a,b) => a+b, 0) / rows.length;
+      return { sub, avg };
+    })
+    .sort((a,b) => b.avg - a.avg);
 
-    const subjectData = avgMap?.[student]?.[subject];
-    if (!subjectData) return;
+  // Only top subject with clear difference is a strength
+  if (subjectScores.length > 1 && (subjectScores[0].avg - subjectScores[1].avg >= 0.5)) {
+    strengths.push(subjectScores[0].sub);
+  }
 
-    const avg = Number(subjectData.average_score);
-    if (isNaN(avg)) return;
-
-    if (avg >= 3.5) {
-      strengths.push(subject);
-    }
-
-    if (avg < 2.5) {
-      needs.push(subject);
-    }
+  // Any subject below 2 (AE2 or lower) is a need
+  subjectScores.forEach(s => {
+    if (s.avg < 2) needs.push(s.sub);
   });
 
   return { strengths, needs };
 }
-
-
 
 function generateRecommendations(student, subjects, trend, supportFlag) {
   const teacher = [];
