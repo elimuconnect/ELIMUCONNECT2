@@ -1942,26 +1942,26 @@ clone.querySelectorAll("h3").forEach(h3 => {
     if (!subjectData) return;
 
     /* =========================
-       CALCULATE OVERALL AVERAGE
-    ========================== */
-    const subjectScores = Object.values(subjectData)
-      .map(d => parseFloat(d.average_score))
-      .filter(score => !isNaN(score) && score > 0);
+   /* =========================
+   CALCULATE OVERALL AVERAGE & LEVEL
+========================= */
+const subjectScores = Object.values(subjectData)
+  .map(d => parseFloat(d.average_score))
+  .filter(score => !isNaN(score) && score > 0);
 
-    let overallAvg = 0;
-    if (subjectScores.length) {
-      const total = subjectScores.reduce((sum, score) => sum + score, 0);
-      overallAvg = total / subjectScores.length;
-    }
-    overallAvg = Number(overallAvg.toFixed(2));
-
-    function overallLevel(score) {
-  return getAchievementLabel(score);
+let overallAvg = 0;
+if (subjectScores.length) {
+  overallAvg = subjectScores.reduce((sum, score) => sum + score, 0) / subjectScores.length;
 }
-   function generalComment(score) {
+overallAvg = Number(overallAvg.toFixed(2)); // keep two decimals
 
-  const level = getAchievementLabel(score);
+// Get overall performance level from the average score
+const overallLevelLabel = subjectScores.length ? getAchievementLabel(overallAvg) : "No Data";
 
+/* =========================
+   GENERAL COMMENT FUNCTION
+========================= */
+function generalCommentFromLevel(level) {
   if (level === "EE2") return "Outstanding mastery of learning expectations.";
   if (level === "EE1") return "Very strong performance across most learning areas.";
 
@@ -1977,13 +1977,10 @@ clone.querySelectorAll("h3").forEach(h3 => {
   return "No performance data available.";
 }
 
-    
-
-
-
-
+/* =========================
+   COMMENT FROM SCORE (PER SUBJECT)
+========================= */
 function commentFromScore(score) {
-
   const level = getAchievementLabel(score);
 
   if (level === "EE2") return "Outstanding performance. Keep up the excellent work.";
@@ -2001,67 +1998,57 @@ function commentFromScore(score) {
   return "";
 }
 
+/* =========================
+   SUBJECT TABLE (PAGE 2)
+========================= */
+const table = document.createElement("table");
+table.style.width = "100%";
+table.style.borderCollapse = "collapse";
+table.style.marginTop = "6px";
+table.style.fontSize = "14px";
+table.style.tableLayout = "fixed";
 
-    
-    /* =========================
-       SUBJECT TABLE (PAGE 2)
-    ========================== */
-    const table = document.createElement("table");
-    table.style.width = "100%";
-    table.style.borderCollapse = "collapse";
-    table.style.marginTop = "6px";
-    table.style.fontSize = "14px";
-    table.style.tableLayout = "fixed";
-
-    table.innerHTML = `
-      <thead>
+table.innerHTML = `
+  <thead>
+    <tr>
+      <th style="border:1px solid #000;padding:8px;width:30%;">Learning Area/Subject</th>
+      <th style="border:1px solid #000;padding:8px;width:25%;">Performance Level</th>
+      <th style="border:1px solid #000;padding:8px;width:30%;">Teacher Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${Object.entries(subjectData).map(([subject, d]) => {
+      const avg = Number(d.average_score);
+      return `
         <tr>
-          <th style="border:1px solid #000;padding:8px;width:30%;">Learning Area/Subject</th>
-          
-          <th style="border:1px solid #000;padding:8px;width:25%;">Performance Level</th>
-          <th style="border:1px solid #000;padding:8px;width:30%;">Teacher Comment</th>
+          <td style="border:1px solid #000;padding:8px;">${subject}</td>
+          <td style="border:1px solid #000;padding:8px;">${d.achievement_level}</td>
+          <td style="border:1px solid #000;padding:8px;">${commentFromScore(avg)}</td>
         </tr>
-      </thead>
-      <tbody>
-        ${Object.entries(subjectData).map(([subject, d]) => {
-          const avg = Number(d.average_score);
-          return `
-            <tr>
-              <td style="border:1px solid #000;padding:8px;">${subject}</td>
-           
-              <td style="border:1px solid #000;padding:8px;">${d.achievement_level}</td>
-              <td style="border:1px solid #000;padding:8px;">${commentFromScore(avg)}</td>
-            </tr>
-          `;
-        }).join("")}
-      </tbody>
-    `;
+      `;
+    }).join("")}
+  </tbody>
+`;
 
-    /* =========================
-       GENERAL PERFORMANCE BLOCK
-    ========================== */
-    const generalBlock = document.createElement("div");
-    generalBlock.style.marginTop = "10px";
-    generalBlock.style.fontSize = "14px";
-    generalBlock.style.lineHeight = "1.8";
+/* =========================
+   GENERAL PERFORMANCE BLOCK
+========================= */
+const generalBlock = document.createElement("div");
+generalBlock.style.marginTop = "10px";
+generalBlock.style.fontSize = "14px";
+generalBlock.style.lineHeight = "1.8";
 
-    generalBlock.innerHTML = `
-
-    
-      <table style="width:100%;border-collapse:collapse;margin-top:6px;">
-        <tr>
-          <td style="border:1px solid #000;padding:8px;width:40%;"><strong>Learner's General Performance Level</strong></td>
-         <td style="border:1px solid #000;padding:8px;">
-  ${overallLevel(overallAvg)}
-</td>
-        </tr>
-        <tr>
-          <td style="border:1px solid #000;padding:8px;"><strong>Teacher's General Comment</strong></td>
-          <td style="border:1px solid #000;padding:12px;">${generalComment(overallAvg)}</td>
-        </tr>
-      </table>
-
-
+generalBlock.innerHTML = `
+  <table style="width:100%;border-collapse:collapse;margin-top:6px;">
+    <tr>
+      <td style="border:1px solid #000;padding:8px;width:40%;"><strong>Learner's General Performance Level</strong></td>
+      <td style="border:1px solid #000;padding:8px;">${overallLevelLabel}</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #000;padding:8px;"><strong>Teacher's General Comment</strong></td>
+      <td style="border:1px solid #000;padding:12px;">${generalCommentFromLevel(overallLevelLabel)}</td>
+    </tr>
+  </table>
 
     
       <div style="margin-top:20px;">
