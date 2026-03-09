@@ -1440,32 +1440,42 @@ function splitLearnerIntoPages() {
 
 
   
-
 function generateInsight(student, subjects) {
 
   const subjectScores = {};
+  const allScores = [];
 
   Object.entries(subjects).forEach(([subject, rows]) => {
     if (subject === "__admission") return;
 
-    const subjectData = avgMap?.[student]?.[subject];
-    if (!subjectData) return;
+    const scores = rows
+      .map(r => levelToScore(r.level))
+      .filter(s => s > 0);
 
-    const score = Number(subjectData.average_score);
-    if (!isNaN(score)) {
-      subjectScores[subject] = score;
-    }
+    if (!scores.length) return;
+
+    const avg = scores.reduce((a,b)=>a+b,0) / scores.length;
+
+    subjectScores[subject] = avg;
+
+    allScores.push(...scores);
   });
 
-  const overall = learnerSummary?.[student]?.overall_level;
+  // ===== OVERALL LEVEL =====
+  const overallAvg = allScores.length
+    ? allScores.reduce((a,b)=>a+b,0) / allScores.length
+    : null;
 
+  const overall = overallAvg
+    ? getAchievementLabel(overallAvg)
+    : null;
+
+  // ===== SUBJECT RANKING =====
   const subjectsArray = Object.entries(subjectScores)
-    .map(([s, score]) => ({
-      subject: s,
-      avg: score
-    }))
+    .map(([subject, avg]) => ({ subject, avg }))
     .sort((a,b)=>b.avg - a.avg);
 
+  // ===== STRENGTH DETECTION =====
   let strengthSentence = "";
 
   if (
