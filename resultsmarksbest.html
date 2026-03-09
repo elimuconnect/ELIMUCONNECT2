@@ -2030,28 +2030,40 @@ window.downloadPDF = async function () {
       </tbody>
     `;
 
-    /* =========================
-       GENERAL PERFORMANCE BLOCK
-    ========================== */
-    const generalBlock = document.createElement("div");
-    generalBlock.style.marginTop = "10px";
-    generalBlock.style.fontSize = "14px";
-    generalBlock.style.lineHeight = "1.8";
+   /* =========================
+   GENERAL PERFORMANCE BLOCK
+========================= */
+const generalBlock = document.createElement("div");
+generalBlock.style.marginTop = "10px";
+generalBlock.style.fontSize = "14px";
+generalBlock.style.lineHeight = "1.8";
 
-    generalBlock.innerHTML = `
-      <table style="width:100%;border-collapse:collapse;margin-top:6px;">
-        <tr>
-          <td style="border:1px solid #000;padding:8px;width:40%;"><strong>Learner's General Performance Level</strong></td>
-          <td style="border:1px solid #000;padding:8px;">${overallLevel(overallAvg)}</td>
-        </tr>
-        <tr>
-          <td style="border:1px solid #000;padding:8px;"><strong>Teacher's General Comment</strong></td>
-          <td style="border:1px solid #000;padding:12px;">${generalComment(overallAvg)}</td>
-        </tr>
-      </table>
-      <p>💪 Strengths: ${strengths.join(", ")}</p>
-    `;
+generalBlock.innerHTML = `
+  <table style="width:100%;border-collapse:collapse;margin-top:6px;">
+    <tr>
+      <td style="border:1px solid #000;padding:8px;width:40%;"><strong>Learner's General Performance Level</strong></td>
+      <td style="border:1px solid #000;padding:8px;">${overallLevel(overallAvg)}</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #000;padding:8px;"><strong>Teacher's General Comment</strong></td>
+      <td style="border:1px solid #000;padding:12px;">${generalComment(overallAvg)}</td>
+    </tr>
+  </table>
 
+  <p>💪 Strengths: ${strengths.join(", ")}</p>
+
+  <div style="margin-top:20px;">
+    <div style="display:flex;justify-content:space-between;margin-top:14px;">
+      <div>Closing Date: ____________________</div>
+      <div>Opening Date: ____________________</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:18px;">
+      <div>Class Teacher Signature: ____________________</div>
+      <div>Head of Institution Signature: ____________________</div>
+    </div>
+  </div>
+`;
+    
     /* =========================
        FOOTER
     ========================== */
