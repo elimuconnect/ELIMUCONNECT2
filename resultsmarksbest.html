@@ -836,49 +836,51 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
 
 
 
-  
-function renderSchoolAnalytics(records, termName, year, intelligence, schoolName, className) {
+  function renderSchoolAnalytics(records, termName, year, intelligence, schoolName, className) {
 
   let classMap = {};
   let subjectMap = {};
- // Two-tier achievement band count
-let bandCount = {
-  BE1: 0,
-  BE2: 0,
-  AE1: 0,
-  AE2: 0,
-  ME1: 0,
-  ME2: 0,
-  EE1: 0,
-  EE2: 0
-};
 
-// ===== PROCESS DATA =====
-records.forEach(r => {
+  // Two-tier achievement band count
+  let bandCount = {
+    BE1: 0,
+    BE2: 0,
+    AE1: 0,
+    AE2: 0,
+    ME1: 0,
+    ME2: 0,
+    EE1: 0,
+    EE2: 0
+  };
 
-  const subjectData = avgMap?.[r.student]?.[r.subject];
-  if (!subjectData) return;
+  // ===== PROCESS DATA =====
+  records.forEach(r => {
+    const subjectData = avgMap?.[r.student]?.[r.subject];
+    if (!subjectData) return;
 
-  const score = subjectData.average_score;
-  if (!score) return;
+    const score = subjectData.average_score;
+    if (!score && score !== 0) return;
 
-  classMap[r.className] ??= [];
-  classMap[r.className].push(score);
+    classMap[r.className] ??= [];
+    classMap[r.className].push(score);
 
-  subjectMap[r.subject] ??= [];
-  subjectMap[r.subject].push(score);
+    subjectMap[r.subject] ??= [];
+    subjectMap[r.subject].push(score);
 
-  // Count exact achievement level (two-tier)
-  const level = getAchievementLabel(score, true); // true = single assessment style
-  if (bandCount.hasOwnProperty(level)) {
-    bandCount[level]++;
-  }
-});
+    // Count exact achievement level (two-tier)
+    const level = getAchievementLabel(score, true);
+    if (bandCount.hasOwnProperty(level)) {
+      bandCount[level]++;
+    } else {
+      console.warn("Unknown level:", level, score);
+    }
+  });
 
+  // Learners below expectations
   const atRiskLearners = records.filter(r => {
-  const subjectData = avgMap?.[r.student]?.[r.subject];
-  return subjectData && subjectData.average_score < 1.5;
-}).length;
+    const subjectData = avgMap?.[r.student]?.[r.subject];
+    return subjectData && subjectData.average_score < 1.5;
+  }).length;
 
   // ===== AVERAGE FUNCTION =====
   function avg(arr) {
@@ -889,8 +891,8 @@ records.forEach(r => {
 
   // ===== CLASS SUMMARY =====
   const classSummary = Object.entries(classMap).map(([cls, scores]) => {
-
     const mean = avg(scores);
+    const level = getAchievementLabel(mean, true);
     const risk = mean < 2
       ? `<span style="color:#c0392b;font-weight:bold;">🔴 Needs Intervention</span>`
       : `<span style="color:#1e8449;font-weight:bold;">🟢 Stable</span>`;
@@ -898,7 +900,7 @@ records.forEach(r => {
     return `
       <tr>
         <td>${cls}</td>
-        <td>${getAchievementLabel(mean)}</td>
+        <td>${getPerformanceBadge(level)}</td>
         <td>${risk}</td>
       </tr>
     `;
@@ -906,9 +908,8 @@ records.forEach(r => {
 
   // ===== SUBJECT ALERTS =====
   const subjectAlerts = Object.entries(subjectMap).map(([sub, scores]) => {
-
     const mean = avg(scores);
-
+    const level = getAchievementLabel(mean, true);
     const alert = mean < 1.5
       ? `<span style="color:#c0392b;font-weight:bold;">⚠ Immediate Review Required</span>`
       : "";
@@ -916,7 +917,7 @@ records.forEach(r => {
     return `
       <tr>
         <td>${sub}</td>
-       <td>${getAchievementLabel(mean)}</td>
+        <td>${getPerformanceBadge(level)}</td>
         <td>${alert}</td>
       </tr>
     `;
@@ -924,167 +925,114 @@ records.forEach(r => {
 
   // ===== RETURN FULL ANALYTICS PAGE =====
   return `
- <div class="a4-page school-analytics">
+<div class="a4-page school-analytics">
+  <div class="learner-card">
 
-
-<div class="learner-card">
-
-  <!-- SCHOOL & CLASS HEADER -->
-<div class="report-overview no-split" style="
-  border-bottom: 2px solid #333;
-  padding-bottom: 10px;
-  margin-bottom: 12px;
-">
-
-  <div style="
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    text-align:center;
-  ">
-
-    ${schoolLogo ? `
-      <div style="flex-shrink:0;">
-        <img src="${schoolLogo}"
-             style="
-               width:200px !important;
-               height:160px !important;
-               max-width:200px !important;
-               object-fit:contain;
-             "
-             onerror="this.style.display='none';"
-        />
+    <!-- SCHOOL & CLASS HEADER -->
+    <div class="report-overview no-split" style="border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 12px;">
+      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
+        ${schoolLogo ? `
+          <div style="flex-shrink:0;">
+            <img src="${schoolLogo}" style="width:200px !important; height:160px !important; max-width:200px !important; object-fit:contain;" onerror="this.style.display='none';" />
+          </div>
+        ` : ""}
+        <h3 style="margin:6px 0 0 0;">${schoolName}</h3>
+        <div style="font-size:0.9em;color:#555;margin-top:4px;">
+          <strong>Class:</strong> ${className} |
+          <strong>Term:</strong> ${termName} – ${year}
+        </div>
       </div>
-    ` : ""}
-
-    <h3 style="margin:6px 0 0 0;">${schoolName}</h3>
-
-    <div style="font-size:0.9em;color:#555;margin-top:4px;">
-      <strong>Class:</strong> ${className} |
-      <strong>Term:</strong> ${termName} – ${year}
     </div>
+
+    <h3>📊 School Performance Analytics</h3>
+
+    <!-- 🧠 TERM INTELLIGENCE -->
+    <h4 style="margin-top:20px;">🧠 Term Intelligence Summary</h4>
+    ${intelligence.schoolImprovement !== null ? `
+      <p>📊 School Performance Change: 
+        <strong style="color:${intelligence.schoolImprovement >= 0 ? '#1e8449' : '#c0392b'};">
+          ${intelligence.schoolImprovement.toFixed(2)}%
+        </strong>
+      </p>
+      <p>📈 Improving Learners: <strong>${intelligence.improvingLearners}</strong></p>
+      <p>🏫 Improved Classes: ${intelligence.improvedClasses.length ? intelligence.improvedClasses.join(", ") : "None"}</p>
+      <p>📉 Subjects Requiring Attention: ${intelligence.decliningSubjects.length ? intelligence.decliningSubjects.join(", ") : "None"}</p>
+    ` : `<p>🆕 No previous term data available for comparison.</p>`}
+
+    <!-- 1️⃣ CLASS MEAN -->
+    <h4>1️⃣ Class Mean Overview</h4>
+    <table>
+      <thead>
+        <tr>
+          <th>Class</th>
+          <th>Performance Level</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${classSummary}
+      </tbody>
+    </table>
+
+    <!-- 2️⃣ SUBJECT ANALYSIS -->
+    <h4 style="margin-top:20px;">2️⃣ Subject/Learning Area Mean Analysis</h4>
+    <table>
+      <thead>
+        <tr>
+          <th>Subject</th>
+          <th>Performance Level</th>
+          <th>Alert</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${subjectAlerts}
+      </tbody>
+    </table>
+
+    <!-- 3️⃣ BAND DISTRIBUTION -->
+    <h4 style="margin-top:20px;">3️⃣ Performance Band Distribution</h4>
+    <p>
+      <span style="color:#c0392b;">BE1: ${bandCount.BE1}</span> | 
+      <span style="color:#e74c3c;">BE2: ${bandCount.BE2}</span> | 
+      <span style="color:#f39c12;">AE1: ${bandCount.AE1}</span> | 
+      <span style="color:#f1c40f;">AE2: ${bandCount.AE2}</span> | 
+      <span style="color:#3498db;">ME1: ${bandCount.ME1}</span> | 
+      <span style="color:#2980b9;">ME2: ${bandCount.ME2}</span> | 
+      <span style="color:#27ae60;">EE1: ${bandCount.EE1}</span> | 
+      <span style="color:#2ecc71;">EE2: ${bandCount.EE2}</span>
+    </p>
+
+    <!-- 4️⃣ RISK SUMMARY -->
+    <h4 style="margin-top:20px;">4️⃣ Learner Risk Overview</h4>
+    <p>${atRiskLearners} learners currently below expectations require structured intervention.</p>
+
+    <!-- 5️⃣ STRATEGIC ACTION -->
+    <h4 style="margin-top:20px;">5️⃣ Strategic Recommendations</h4>
+    <ul>
+      <li>Conduct targeted remediation for subjects below Approaching expectations mean.</li>
+      <li>Organize teacher review meetings for declining performance trends.</li>
+      <li>Introduce peer tutoring and reward high-performing classes.</li>
+    </ul>
+
   </div>
 </div>
-
-  <h3>📊 School Performance Analytics</h3>
-
-    
-<!-- 🧠 TERM INTELLIGENCE -->
-<h4 style="margin-top:20px;">🧠 Term Intelligence Summary</h4>
-${intelligence.schoolImprovement !== null ? `
-<p>
-  📊 School Performance Change: 
-  <strong style="color:${intelligence.schoolImprovement >= 0 ? '#1e8449' : '#c0392b'};">
-    ${intelligence.schoolImprovement.toFixed(2)}%
-  </strong>
-</p>
-
-<p>📈 Improving Learners: <strong>${intelligence.improvingLearners}</strong></p>
-
-<p>🏫 Improved Classes: 
-  ${intelligence.improvedClasses.length
-    ? intelligence.improvedClasses.join(", ")
-    : "None"}
-</p>
-
-<p>📉 Subjects Requiring Attention: 
-  ${intelligence.decliningSubjects.length
-    ? intelligence.decliningSubjects.join(", ")
-    : "None"}
-</p>
-` : `
-<p>🆕 No previous term data available for comparison.</p>
-`}
-
-
-
-
-
-      <!-- 1️⃣ CLASS MEAN -->
-      <h4>1️⃣ Class Mean Overview</h4>
-      <table>
-        <thead>
-          <tr>
-            <th>Class</th>
-           <th>Performance Level</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${classSummary}
-        </tbody>
-      </table>
-
-      <!-- 2️⃣ SUBJECT ANALYSIS -->
-      <h4 style="margin-top:20px;">2️⃣ Subject/Learning Area Mean Analysis</h4>
-      <table>
-        <thead>
-          <tr>
-            <th>Subject</th>
-            <th>Performance Level</th>
-            <th>Alert</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${subjectAlerts}
-        </tbody>
-      </table>
-
-      <!-- 3️⃣ BAND DISTRIBUTION -->
-      <h4 style="margin-top:20px;">3️⃣ Performance Band Distribution</h4>
-
-
-<p>
-  <span style="color:#c0392b;">BE1: ${bandCount.BE1}</span> | 
-  <span style="color:#e74c3c;">BE2: ${bandCount.BE2}</span> | 
-  <span style="color:#f39c12;">AE1: ${bandCount.AE1}</span> | 
-  <span style="color:#f1c40f;">AE2: ${bandCount.AE2}</span> | 
-  <span style="color:#3498db;">ME1: ${bandCount.ME1}</span> | 
-  <span style="color:#2980b9;">ME2: ${bandCount.ME2}</span> | 
-  <span style="color:#27ae60;">EE1: ${bandCount.EE1}</span> | 
-  <span style="color:#2ecc71;">EE2: ${bandCount.EE2}</span>
-</p>
-     
-      <!-- 4️⃣ RISK SUMMARY -->
-      <h4 style="margin-top:20px;">4️⃣ Learner Risk Overview</h4>
-      <p>
-        ${atRiskLearners} learners currently below expectations require structured intervention.
-      </p>
-
-     
-
-      <!-- 5️⃣ STRATEGIC ACTION -->
-      <h4 style="margin-top:20px;">5️⃣ Strategic Recommendations</h4>
-      <ul>
-        <li>Conduct targeted remediation for subjects below Approaching expectations mean.</li>
-        <li>Organize teacher review meetings for declining performance trends.</li>
-        <li>Introduce peer tutoring and reward high-performing classes</li>
- 
-         
-        
-      </ul>
-
-    </div>
-  </div>
   `;
 }
 
-  
+// ===== UTILITY: PERFORMANCE BADGES =====
 function getPerformanceBadge(level) {
   if (!level) return "";
 
   const styles = {
-  "BE1": "background:#fee2e2;color:#b91c1c;",
-  "BE2": "background:#f8d7da;color:#b91c1c;",
-  "AE1": "background:#ffedd5;color:#c2410c;",
-  "AE2": "background:#fff3cd;color:#c2410c;",
-  "ME1": "background:#d4edda;color:#166534;",
-  "ME2": "background:#cce5ff;color:#166534;",
-  "EE1": "background:#dcfce7;color:#065f46;",
-  "EE2": "background:#c6f6d5;color:#065f46;",
-  
-};
+    "BE1": "background:#fee2e2;color:#b91c1c;",
+    "BE2": "background:#f8d7da;color:#b91c1c;",
+    "AE1": "background:#ffedd5;color:#c2410c;",
+    "AE2": "background:#fff3cd;color:#c2410c;",
+    "ME1": "background:#d4edda;color:#166534;",
+    "ME2": "background:#cce5ff;color:#166534;",
+    "EE1": "background:#dcfce7;color:#065f46;",
+    "EE2": "background:#c6f6d5;color:#065f46;",
+  };
 
   const style = styles[level] || "background:#e5e7eb;color:#374151;";
 
@@ -1100,6 +1048,25 @@ function getPerformanceBadge(level) {
       ${level}
     </span>
   `;
+}
+
+// ===== UTILITY: TWO-TIER ACHIEVEMENT LABELS =====
+function getAchievementLabel(score, twoTier = false) {
+  if (twoTier) {
+    if (score < 1) return "BE1";
+    if (score >= 1 && score < 1.5) return "BE2";
+    if (score >= 1.5 && score < 2) return "AE1";
+    if (score >= 2 && score < 2.5) return "AE2";
+    if (score >= 2.5 && score < 3) return "ME1";
+    if (score >= 3 && score < 3.5) return "ME2";
+    if (score >= 3.5 && score < 4) return "EE1";
+    if (score >= 4) return "EE2";
+  } else {
+    if (score < 1.5) return "Below Expectations";
+    if (score >= 1.5 && score < 2.5) return "Approaching Expectations";
+    if (score >= 2.5 && score < 3.5) return "Meeting Expectations";
+    if (score >= 3.5) return "Exceeding Expectations";
+  }
 }
 
   
