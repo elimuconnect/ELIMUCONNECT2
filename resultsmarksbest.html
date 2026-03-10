@@ -863,7 +863,7 @@ Object.entries(avgMap).forEach(([student, subjects]) => {
     const score = Number(data.average_score);
     if (!score) return;
 
-    const level = data.achievement_level;
+   
 
     classMap[className] ??= [];
     classMap[className].push(score);
@@ -871,15 +871,14 @@ Object.entries(avgMap).forEach(([student, subjects]) => {
     subjectMap[subject] ??= [];
     subjectMap[subject].push(score);
 
-    if (bandCount[level] !== undefined) {
-      bandCount[level]++;
     }
 
   });
 
 });
 
-  
+
+
 let atRiskLearners = 0;
 
 Object.entries(avgMap).forEach(([student, subjects]) => {
@@ -890,11 +889,18 @@ Object.entries(avgMap).forEach(([student, subjects]) => {
 
   if (!scores.length) return;
 
-  const avg = scores.reduce((a,b)=>a+b,0) / scores.length;
+  const avgScore = scores.reduce((a,b)=>a+b,0) / scores.length;
 
-  if (avg < 1.5) atRiskLearners++;
+  const level = getAchievementLabel(avgScore);
+
+  if (bandCount[level] !== undefined) {
+    bandCount[level]++;
+  }
+
+  if (avgScore < 1.5) atRiskLearners++;
 
 });
+
   
 
   // ===== AVERAGE FUNCTION =====
