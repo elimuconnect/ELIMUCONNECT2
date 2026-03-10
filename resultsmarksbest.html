@@ -848,19 +848,7 @@ function renderSchoolAnalytics(records, termName, year, intelligence, schoolName
   let subjectMap = {};
   let learnerMap = {};
 
-  // Two-tier achievement band count
-  let bandCount = {
-    BE1: 0,
-    BE2: 0,
-    AE1: 0,
-    AE2: 0,
-    ME1: 0,
-    ME2: 0,
-    EE1: 0,
-    EE2: 0
-  };
-
- let atRiskLearners = 0;
+ 
  
   // ===== CURRENT TERM PROCESSING =====
 const countedSubjects = new Set();
@@ -882,19 +870,37 @@ for (const r of records) {
 
 
   
- records.forEach(r => {
 
-  const level = (r.level || "").trim().toUpperCase();
+// ===== PERFORMANCE BAND DISTRIBUTION & AT-RISK CALCULATION =====
+const bandDistribution = {
+  BE1: 0,
+  BE2: 0,
+  AE1: 0,
+  AE2: 0,
+  ME1: 0,
+  ME2: 0,
+  EE1: 0,
+  EE2: 0
+};
 
-  if (bandCount[level] !== undefined) {
-    bandCount[level]++;
+let atRiskLearners = 0;
+
+// Count each learner's overall average
+Object.entries(learnerMap).forEach(([admission, scores]) => {
+  const mean = avg(scores); // average across all subjects
+
+  // Determine band
+  const band = getAchievementLabel(mean).toUpperCase();
+  if (bandDistribution[band] !== undefined) {
+    bandDistribution[band]++;
   }
 
-  if (data.overall_average < 1.5) {
-    atRiskLearners++;
-  }
-
+  // At-risk: mean < 1.5
+  if (mean < 1.5) atRiskLearners++;
 });
+
+
+  
 
   // ===== AVERAGE FUNCTION =====
   function avg(arr) {
@@ -1049,25 +1055,33 @@ ${subjectAlerts}
 </table>
 
 
+
+
 <h4 style="margin-top:20px;">3️⃣ Performance Band Distribution</h4>
-
 <p>
-<span style="color:#c0392b;">BE1: ${bandCount.BE1}</span> | 
-<span style="color:#e74c3c;">BE2: ${bandCount.BE2}</span> | 
-<span style="color:#f39c12;">AE1: ${bandCount.AE1}</span> | 
-<span style="color:#f1c40f;">AE2: ${bandCount.AE2}</span> | 
-<span style="color:#3498db;">ME1: ${bandCount.ME1}</span> | 
-<span style="color:#2980b9;">ME2: ${bandCount.ME2}</span> | 
-<span style="color:#27ae60;">EE1: ${bandCount.EE1}</span> | 
-<span style="color:#2ecc71;">EE2: ${bandCount.EE2}</span>
+${Object.entries(bandDistribution).map(([band, count]) => {
+  const percent = Object.keys(learnerMap).length
+    ? ((count / Object.keys(learnerMap).length) * 100).toFixed(1)
+    : 0;
+  const colorMap = {
+    BE1: '#c0392b', BE2: '#e74c3c',
+    AE1: '#f39c12', AE2: '#f1c40f',
+    ME1: '#3498db', ME2: '#2980b9',
+    EE1: '#27ae60', EE2: '#2ecc71'
+  };
+  return `<span style="color:${colorMap[band]}">${band}: ${count} (${percent}%)</span>`;
+}).join(' | ')}
 </p>
-
 
 <h4 style="margin-top:20px;">4️⃣ Learner Risk Overview</h4>
-
 <p>
-${atRiskLearners} learners currently below expectations require structured intervention.
+${atRiskLearners} learners (${Object.keys(learnerMap).length ? ((atRiskLearners / Object.keys(learnerMap).length) * 100).toFixed(1) : 0}%) currently below expectations require structured intervention.
 </p>
+
+
+
+
+
 
 
 <h4 style="margin-top:20px;">5️⃣ Strategic Recommendations</h4>
