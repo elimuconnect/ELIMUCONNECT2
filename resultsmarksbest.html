@@ -855,31 +855,47 @@ let bandCount = {
 };
 
 // ===== PROCESS DATA =====
-records.forEach(r => {
 
-  const subjectData = avgMap?.[r.student]?.[r.subject];
-  if (!subjectData) return;
+Object.entries(avgMap).forEach(([student, subjects]) => {
 
-  const score = subjectData.average_score;
-  if (!score) return;
+  Object.entries(subjects).forEach(([subject, data]) => {
 
-  classMap[r.className] ??= [];
-  classMap[r.className].push(score);
+    const score = Number(data.average_score);
+    if (!score) return;
 
-  subjectMap[r.subject] ??= [];
-  subjectMap[r.subject].push(score);
+    const level = data.achievement_level;
 
-  // Count exact achievement level (two-tier)
-  const level = getAchievementLabel(score, true); // true = single assessment style
-  if (bandCount.hasOwnProperty(level)) {
-    bandCount[level]++;
-  }
+    classMap[className] ??= [];
+    classMap[className].push(score);
+
+    subjectMap[subject] ??= [];
+    subjectMap[subject].push(score);
+
+    if (bandCount[level] !== undefined) {
+      bandCount[level]++;
+    }
+
+  });
+
 });
 
-  const atRiskLearners = records.filter(r => {
-  const subjectData = avgMap?.[r.student]?.[r.subject];
-  return subjectData && subjectData.average_score < 1.5;
-}).length;
+  
+let atRiskLearners = 0;
+
+Object.entries(avgMap).forEach(([student, subjects]) => {
+
+  const scores = Object.values(subjects)
+    .map(s => Number(s.average_score))
+    .filter(s => !isNaN(s));
+
+  if (!scores.length) return;
+
+  const avg = scores.reduce((a,b)=>a+b,0) / scores.length;
+
+  if (avg < 1.5) atRiskLearners++;
+
+});
+  
 
   // ===== AVERAGE FUNCTION =====
   function avg(arr) {
