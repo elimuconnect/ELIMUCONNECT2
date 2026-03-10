@@ -860,49 +860,41 @@ function renderSchoolAnalytics(records, termName, year, intelligence, schoolName
     EE2: 0
   };
 
-  // ===== PROCESS DATA =====
-  records.forEach(r => {
+ 
+ 
+  // ===== CURRENT TERM PROCESSING =====
+const countedSubjects = new Set();
 
-    const subjectData = avgMap?.[r.student]?.[r.subject];
-    if (!subjectData) return;
+for (const r of records) {
 
-    const score = Number(subjectData.average_score);
-    if (!score) return;
+  const key = r.admission + "_" + r.subject;
+  if (countedSubjects.has(key)) continue;
+  countedSubjects.add(key);
 
-    // CLASS MAP
-    classMap[className] ??= [];
-    classMap[className].push(score);
+  const score = levelToScore(r.level);
+  if (!score) continue;
 
-    // SUBJECT MAP
-    subjectMap[r.subject] ??= [];
-    subjectMap[r.subject].push(score);
+  (learnerMap[r.admission] ??= []).push(score);
+  (classMap[r.className] ??= []).push(score);
+  (subjectMap[r.subject] ??= []).push(score);
 
-    // LEARNER MAP
-    learnerMap[r.student] ??= [];
-    learnerMap[r.student].push(score);
-
-  });
+}
 
 
-  // ===== LEARNER ANALYTICS =====
-  let atRiskLearners = 0;
+  
+ Object.entries(learnerSummary).forEach(([student, data]) => {
 
-  Object.entries(learnerMap).forEach(([student, scores]) => {
+  const level = data.overall_level;
 
-    const avgScore = scores.reduce((a,b)=>a+b,0) / scores.length;
+  if (bandCount[level] !== undefined) {
+    bandCount[level]++;
+  }
 
-    const level = getAchievementLabel(avgScore);
+  if (data.overall_average < 1.5) {
+    atRiskLearners++;
+  }
 
-    if (bandCount[level] !== undefined) {
-      bandCount[level]++;
-    }
-
-    if (avgScore < 1.5) {
-      atRiskLearners++;
-    }
-
-  });
-
+});
 
   // ===== AVERAGE FUNCTION =====
   function avg(arr) {
