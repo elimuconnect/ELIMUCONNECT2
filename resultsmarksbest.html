@@ -930,22 +930,25 @@ Object.entries(learnerMap).forEach(([admission, scores]) => {
 
 
   // ===== SUBJECT ALERTS =====
-  const subjectAlerts = Object.entries(subjectMap).map(([sub, scores]) => {
+ // ===== SUBJECT ALERTS =====
+const subjectAlerts = Object.entries(subjectMap).map(([sub, scores]) => {
 
-    const mean = avg(scores);
+  const mean = avg(scores); // average across all learners in this subject
+  const band = getAchievementLabel(mean).toUpperCase();
 
-    const alert = mean < 1.5
-      ? `<span style="color:#c0392b;font-weight:bold;">⚠ Immediate Review Required</span>`
-      : "";
+  // Alert if mean is below AE1 (<1.5)
+  const alert = mean < 1.5
+    ? `<span style="color:#c0392b;font-weight:bold;">⚠ Immediate Review Required</span>`
+    : "";
 
-    return `
-      <tr>
-        <td>${sub}</td>
-        <td>${getAchievementLabel(mean)}</td>
-        <td>${alert}</td>
-      </tr>
-    `;
-  }).join("");
+  return `
+    <tr>
+      <td>${sub}</td>
+      <td>${band}</td>
+      <td>${alert}</td>
+    </tr>
+  `;
+}).join("");
 
 
   // ===== RETURN FULL ANALYTICS PAGE =====
