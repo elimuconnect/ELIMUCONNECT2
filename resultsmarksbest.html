@@ -887,18 +887,11 @@ let atRiskLearners = 0;
 
 // Count each learner's overall average
 Object.entries(learnerMap).forEach(([admission, scores]) => {
-  const mean = avg(scores); // average across all subjects
-
-  // Determine band
+  const mean = avg(scores);
   const band = getAchievementLabel(mean).toUpperCase();
-  if (bandDistribution[band] !== undefined) {
-    bandDistribution[band]++;
-  }
 
-  // At-risk: mean < 1.5
-  if (mean < 1.5) atRiskLearners++;
+  if (band.startsWith('BE')) atRiskLearners++; // Only below expectations
 });
-
 
   
 
