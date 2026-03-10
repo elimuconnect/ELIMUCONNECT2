@@ -856,27 +856,27 @@ let bandCount = {
 
 // ===== PROCESS DATA =====
 
-Object.entries(avgMap).forEach(([student, subjects]) => {
+records.forEach(r => {
 
-  Object.entries(subjects).forEach(([subject, data]) => {
+ const subjectData = avgMap?.[r.student]?.[r.subject];
+ if (!subjectData) return;
 
-    const score = Number(data.average_score);
-    if (!score) return;
+ const score = Number(subjectData.average_score);
+ if (!score) return;
 
-   
+ classMap[className] ??= [];
+ classMap[className].push(score);
 
-    classMap[className] ??= [];
-    classMap[className].push(score);
+ subjectMap[r.subject] ??= [];
+ subjectMap[r.subject].push(score);
 
-    subjectMap[subject] ??= [];
-    subjectMap[subject].push(score);
+ const level = subjectData.achievement_level;
 
-   
-
-  });
+ if (bandCount[level] !== undefined) {
+   bandCount[level]++;
+ }
 
 });
-
 
 
 let atRiskLearners = 0;
