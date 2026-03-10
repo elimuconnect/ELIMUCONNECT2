@@ -882,9 +882,9 @@ for (const r of records) {
 
 
   
- Object.entries(learnerSummary).forEach(([student, data]) => {
+ records.forEach(r => {
 
-  const level = data.overall_level;
+  const level = (r.level || "").trim().toUpperCase();
 
   if (bandCount[level] !== undefined) {
     bandCount[level]++;
