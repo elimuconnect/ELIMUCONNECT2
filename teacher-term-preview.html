@@ -1887,13 +1887,21 @@ clone.querySelectorAll("h3").forEach(h3 => {
       return "Below Expectations";
     }
 
-    function generalComment(score) {
-      if (score >= 3.5) return "Excellent performance. Keep it up.";
-      if (score >= 2.5) return "Good progress. Continue working hard.";
-      if (score >= 1.5) return "Fair work. Aim higher next term.";
-      return "Needs more effort and support.";
-    }
+   
+function generalComment(score) {
+  if (score >= 3.5)
+    return "Excellent performance across most learning areas. Keep up the great work.";
 
+  if (score >= 2.5)
+    return "Good progress. Continue working hard to improve further.";
+
+  if (score >= 1.5)
+    return "Fair performance. More effort and practice will help improve.";
+
+  return "Below expectations. Additional support and effort are required.";
+}
+
+    
     function commentFromScore(score) {
       if (score >= 3.5) return "Excellent work";
       if (score >= 2.5) return "Good progress";
