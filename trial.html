@@ -349,6 +349,11 @@ td {
   </button>
 </div>
 
+<button onclick="downloadCurrentView()" style="flex: 1;">
+  ⬇️ Download Visible View<br>
+  <small>Downloads exactly what you see</small>
+</button>
+  
   
 <div id="schoolAnalytics" style="display:none;"></div>
 <div id="report"></div>
@@ -2168,7 +2173,27 @@ generalBlock.innerHTML = `
 };
 
 
-  
+  function downloadCurrentView() {
+  // Grab the main container currently visible
+  const container = document.querySelector("#report, #schoolAnalytics");
+
+  if (!container || container.innerHTML.trim() === "") {
+    alert("Nothing to download!");
+    return;
+  }
+
+  // Use html2pdf to generate PDF of what's visible
+  html2pdf()
+    .set({
+      margin: [10, 10, 10, 10],
+      filename: `report_${new Date().toISOString().slice(0,10)}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2, scrollY: 0, scrollX: 0 },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+    })
+    .from(container)
+    .save();
+}
 </script>
 </body>
 </html>
