@@ -322,7 +322,7 @@ td {
 
 @page{
   size: A4;
-  margin: 12mm;
+  margin: 16mm 12mm 12mm 12mm;
 }
 
   img{
@@ -342,7 +342,10 @@ td {
   margin-top:0;
   padding-top:0;
 }
-
+.subject-block.no-table{
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
   
 </style>
 
@@ -1241,7 +1244,7 @@ competencyCount = 0;
 const assessmentId = rows?.[0]?.assessment_id;
 const strandOutcomes = assessmentId ? (strandMap?.[assessmentId] || []) : [];
   return `
-<div class="split-block subject-block">
+<div class="split-block subject-block no-table">
 
   <h5 style="margin:6px 0;">
     ${subject}:
@@ -1294,7 +1297,7 @@ const strandOutcomes = assessmentId ? (strandMap?.[assessmentId] || []) : [];
   }
 
 
-  <div class="table-wrapper">
+ <div class="table-wrapper competency-table">
     <table>
       <thead>
         <tr>
