@@ -343,11 +343,10 @@ td {
     <small>Recommended for parents & learners</small>
   </button>
 
-  <button onclick="downloadSchoolAnalyticsPDF()" style="flex: 1;">
-    ⬇️ Download School Analysis Report<br>
-    <small>For school leadership & QA</small>
-  </button>
-</div>
+ <button id="downloadViewBtn" style="flex:1;">
+  ⬇️ Download Visible View<br>
+  <small>Downloads exactly what you see</small>
+</button>
 
 <button onclick="downloadCurrentView()" style="flex: 1;">
   ⬇️ Download Visible View<br>
@@ -2182,7 +2181,14 @@ generalBlock.innerHTML = `
     return;
   }
 
-  // Use html2pdf to generate PDF of what's visible
+document.getElementById("downloadViewBtn").addEventListener("click", () => {
+  const container = document.querySelector("#report, #schoolAnalytics");
+
+  if (!container || container.innerHTML.trim() === "") {
+    alert("Nothing to download!");
+    return;
+  }
+
   html2pdf()
     .set({
       margin: [10, 10, 10, 10],
@@ -2193,7 +2199,7 @@ generalBlock.innerHTML = `
     })
     .from(container)
     .save();
-}
+});
 </script>
 </body>
 </html>
