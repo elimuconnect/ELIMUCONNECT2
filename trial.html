@@ -1370,29 +1370,32 @@ border-left:4px solid ${
 }
 
 
+
 function splitLearnerIntoPages() {
+
   const pages = document.querySelectorAll(".a4-page");
 
   pages.forEach(page => {
+
     const card = page.querySelector(".learner-card");
     if (!card) return;
 
-    const maxHeight = page.clientHeight;
-    let currentPage = page;
+    const maxHeight = page.clientHeight - 40;
+    let currentHeight = 0;
 
-    Array.from(card.children).forEach(block => {
-    if (
-  !block.classList.contains("split-block") ||
-  block.classList.contains("no-split")
-) return;
+    const blocks = Array.from(card.children);
 
+    blocks.forEach(block => {
 
-      const blockBottom =
-        block.getBoundingClientRect().bottom -
-        currentPage.getBoundingClientRect().top;
+      if (
+        !block.classList.contains("split-block") ||
+        block.classList.contains("no-split")
+      ) return;
 
-      if (blockBottom > maxHeight + 20)  {
-        // create new page
+      const blockHeight = block.offsetHeight;
+
+      if (currentHeight + blockHeight > maxHeight) {
+
         const newPage = document.createElement("div");
         newPage.className = "a4-page learner-page";
 
@@ -1400,18 +1403,23 @@ function splitLearnerIntoPages() {
         newCard.className = "learner-card";
 
         newPage.appendChild(newCard);
-        currentPage.after(newPage);
+        page.after(newPage);
 
         newCard.appendChild(block);
-        currentPage = newPage;
+
+        currentHeight = blockHeight;
+
+      } else {
+
+        currentHeight += blockHeight;
+
       }
+
     });
+
   });
+
 }
-
-
-
-
   
 
 function generateInsight(subjects) {
