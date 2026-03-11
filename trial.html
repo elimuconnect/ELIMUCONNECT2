@@ -19,7 +19,7 @@ body {
 }
 
 * {
-  max-width: 100%;
+
   box-sizing: border-box;
 }
 
@@ -101,21 +101,21 @@ button small {
 }
 
 /* ================== REPORT CARD LAYOUT ================== */
-.a4-page {
-  width: 100%;
-  max-width: 600px; /* KEEP THIS EXACT (PDF SAFE) */
-  margin: 25px auto;
-  background: white;
-  box-sizing: border-box;
-  padding: 18px;
-  border-radius: 14px;
-  box-shadow: 0 12px 28px rgba(0,0,0,0.06);
-  transition: all 0.3s ease;
-}
+.a4-page{
+  width: 210mm;
+  min-height: 297mm;
 
-.a4-page:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 18px 36px rgba(0,0,0,0.08);
+  margin: auto;
+  background: white;
+
+  padding: 18mm 15mm 18mm 15mm;
+
+  box-sizing: border-box;
+
+  page-break-after: always;
+  break-after: page;
+
+  overflow: visible;
 }
 
 
@@ -173,7 +173,7 @@ table {
 }
 
 th, td {
-  padding: 8px 10px;
+ padding: 9px 10px;
   border-bottom: 1px solid #e5e7eb;
 }
 
@@ -190,20 +190,22 @@ th {
 tr:last-child td {
   border-bottom: none;
 }
-/* Improve long text wrapping */
-td {
-  vertical-align: top;
-  white-space: normal;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-}
+
 
 /* Allow table to split across PDF pages */
-table {
-  page-break-inside: auto;
+table{
+  page-break-inside:auto;
 }
 
-tr {
+thead{
+  display: table-header-group;
+}
+
+tfoot{
+  display: table-footer-group;
+}
+
+tr{
   page-break-inside: avoid;
 }
 /* ================== SUMMARY BOX ================== */
@@ -257,14 +259,6 @@ tr {
 
 
 
- table {
-  page-break-inside: auto;
-}
-
-tr {
-  page-break-inside: avoid;
-}
-
 
   
 
@@ -307,9 +301,33 @@ td {
 }
 
 
-  .a4-page {
-  height: auto !important;
-  overflow: visible !important;
+.report-overview{
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.learner-header{
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+
+.split-block{
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+
+
+
+@page{
+  size: A4;
+  margin: 12mm;
+}
+
+  img{
+  max-width:100%;
+  height:auto;
 }
 </style>
 
@@ -673,12 +691,14 @@ function renderOverviewHeader({
         <!-- SCHOOL LOGO (LINKED WITH SCHOOL ID) -->
         ${logo ? `
           <div style="flex-shrink:0;">
-            <img src="${logo}"
-                 style="
-                   width:200px !important; height:160px !important; max-width:200px !important;
-                   object-fit:contain;
-                 "
-                 onerror="this.style.display='none';"
+           <img src="${logo}"
+style="
+  width:120px;
+  height:auto;
+  display:block;
+  margin:0 auto 10px auto;
+"
+onerror="this.style.display='none';"
             />
           </div>
         ` : ""}
@@ -2024,7 +2044,7 @@ card.appendChild(tableWrapper);
      EXPORT PDF
   ========================== */
   html2pdf().set({
-    margin: [10, 10, 10, 10],
+  margin: [12,12,12,12] ,
     filename,
     image: { type: "jpeg", quality: 0.98 },
     html2canvas: { scale: 2, scrollY: 0, useCORS: true, letterRendering: true },
@@ -2062,7 +2082,7 @@ card.appendChild(tableWrapper);
   clone.style.margin = "0 auto";
 
   html2pdf().set({
-    margin: [10, 10, 10, 10],
+ margin: [12,12,12,12],
     filename,
     image: { type: "jpeg", quality: 0.98 },
     html2canvas: { scale: 2, scrollY: 0, useCORS: true },
@@ -2092,7 +2112,7 @@ window.downloadDetailedPDF = async function () {
   clone.style.padding = "0";
 
   html2pdf().set({
-    margin: [10,10,10,10],
+   margin: [12,12,12,12],
     filename,
     image: { type: "jpeg", quality: 0.98 },
     html2canvas: {
