@@ -105,10 +105,10 @@ button small {
   width: 210mm;
   min-height: 297mm;
 
-  margin: auto;
+  margin: 0 auto;
   background: white;
 
-  padding: 18mm 15mm 18mm 15mm;
+  padding: 12mm;
 
   box-sizing: border-box;
 
@@ -329,6 +329,21 @@ td {
   max-width:100%;
   height:auto;
 }
+
+
+.report-overview{
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+}
+
+.report-overview{
+  display:block;
+  width:100%;
+  margin-top:0;
+  padding-top:0;
+}
+
+  
 </style>
 
 
@@ -680,26 +695,29 @@ function renderOverviewHeader({
       padding-bottom: 10px;
       margin-bottom: 12px;
     ">
-
-      <div style="
+<div style="
+  width:100%;
   display:flex;
   flex-direction:column;
   align-items:center;
   justify-content:center;
   text-align:center;
+  margin:0 auto;
 ">
         <!-- SCHOOL LOGO (LINKED WITH SCHOOL ID) -->
         ${logo ? `
-          <div style="flex-shrink:0;">
-           <img src="${logo}"
+
+<img src="${logo}"
 style="
-  width:120px;
-  height:auto;
   display:block;
-  margin:0 auto 10px auto;
+  margin:0 auto 8px auto;
+  max-width:120px;
+  height:auto;
 "
 onerror="this.style.display='none';"
-            />
+/>
+
+          
           </div>
         ` : ""}
 
@@ -1832,6 +1850,12 @@ window.downloadPDF = async function () {
   const original = reportDiv;
   const clone = original.cloneNode(true);
 
+
+clone.querySelectorAll(".report-overview").forEach(h=>{
+  h.style.pageBreakBefore = "auto";
+});
+  
+
 /* =========================
    REMOVE CLASS SUMMARY TITLE (e.g., 10A – All Learners)
 ========================= */
@@ -2044,7 +2068,7 @@ card.appendChild(tableWrapper);
      EXPORT PDF
   ========================== */
   html2pdf().set({
-  margin: [12,12,12,12] ,
+  margin: [10,10,10,10],
     filename,
     image: { type: "jpeg", quality: 0.98 },
     html2canvas: { scale: 2, scrollY: 0, useCORS: true, letterRendering: true },
@@ -2082,7 +2106,7 @@ card.appendChild(tableWrapper);
   clone.style.margin = "0 auto";
 
   html2pdf().set({
- margin: [12,12,12,12],
+margin: [10,10,10,10],
     filename,
     image: { type: "jpeg", quality: 0.98 },
     html2canvas: { scale: 2, scrollY: 0, useCORS: true },
@@ -2112,7 +2136,7 @@ window.downloadDetailedPDF = async function () {
   clone.style.padding = "0";
 
   html2pdf().set({
-   margin: [12,12,12,12],
+  margin: [10,10,10,10],
     filename,
     image: { type: "jpeg", quality: 0.98 },
     html2canvas: {
