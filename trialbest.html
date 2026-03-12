@@ -354,16 +354,23 @@ td {
     <small>Recommended for parents & learners</small>
   </button>
 
-  <button onclick="downloadSchoolAnalyticsPDF()" style="flex: 1;">
+
+ <button onclick="downloadSchoolAnalyticsPDF()" style="flex: 1;">
     ⬇️ Download School Analysis Report<br>
     <small>For school leadership & QA</small>
   </button>
 </div>
 
-  
-<div id="schoolAnalytics" style="display:none;"></div>
-<div id="report"></div>
 
+<button id="downloadCurrentViewBtn" style="flex:1; display:none;">
+  ⬇️ Download detailed report<br>
+
+</button>
+
+</div>
+<div id="schoolAnalytics" style="display:none;"></div>
+  
+<div id="report"></div>
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -1776,39 +1783,73 @@ document.getElementById("schoolAnalytics").innerHTML =
 
   }
 
-  /* ===== STUDENT VIEW ===== */
-  if (viewMode.value === "student") {
-    filterBox.innerHTML = `
-      <label>Admission Number</label><br />
-      <input id="admInput" />
-    `;
 
-    document.getElementById("admInput").addEventListener("input", e => {
-      const adm = e.target.value.trim();
-      const filtered = records.filter(r => r.admission === adm);
 
-      if (!filtered.length) {
-        reportDiv.innerHTML = "<p>No student found</p>";
-        return;
+ /* ===== STUDENT VIEW ===== */
+if (viewMode.value === "student") {
+  filterBox.innerHTML = `
+    <label>Admission Number</label><br />
+    <input id="admInput" />
+  `;
+
+  // Grab the download button once, at this scope
+  const downloadVisibleBtn = document.getElementById("downloadCurrentViewBtn");
+
+  // Hide it by default
+  downloadVisibleBtn.style.display = "none";
+
+  // Set up click listener for download
+  downloadVisibleBtn.addEventListener("click", () => {
+    const container = document.querySelector("#report"); // #report holds the single student content
+
+    if (!container || container.innerHTML.trim() === "") {
+      alert("Nothing to download!");
+      return;
+    }
+
+    html2pdf().set({
+      margin: 10,
+      filename: `student_report_${new Date().toISOString().slice(0,10)}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2, scrollY: 0, scrollX: 0, useCORS: true },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+    }).from(container).save();
+  });
+
+  document.getElementById("admInput").addEventListener("input", e => {
+    const adm = e.target.value.trim();
+    const filtered = records.filter(r => r.admission === adm);
+
+    if (!filtered.length) {
+      reportDiv.innerHTML = "<p>No student found</p>";
+      downloadVisibleBtn.style.display = "none"; // hide button
+      return;
+    }
+
+    const grouped = {};
+    filtered.forEach(r => {
+      grouped[r.student] ??= { __admission: r.admission };
+      grouped[r.student][r.subject] ??= [];
+      grouped[r.student][r.subject].push(r);
+    });
+
+    reportDiv.innerHTML = renderGrouped(grouped, avgMap);
+
+    // Show button **after DOM has been updated**
+    requestAnimationFrame(() => {
+      splitLearnerIntoPages();
+
+      // Show download button only if exactly 1 student
+      if (Object.keys(grouped).length === 1) {
+        downloadVisibleBtn.style.display = "flex";
+      } else {
+        downloadVisibleBtn.style.display = "none";
       }
+    });
+  });
+}
 
-      const grouped = {};
-filtered.forEach(r => {
-  grouped[r.student] ??= { __admission: r.admission };
-  grouped[r.student][r.subject] ??= [];
-  grouped[r.student][r.subject].push(r);
-});
-
-
-     reportDiv.innerHTML = renderGrouped(grouped, avgMap);
-    
-requestAnimationFrame(() => {
-  splitLearnerIntoPages();
-});
-   
-      });
-  }
-
+  
   /* ===== SUBJECT VIEW ===== */
   if (viewMode.value === "subject") {
     const subjects = [...new Set(records.map(r => r.subject))];
