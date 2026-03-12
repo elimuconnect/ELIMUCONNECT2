@@ -6,9 +6,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 
-<style>
-
-/* ================== BASE ================== */
 body {
   font-family: "Inter", "Segoe UI", Arial, sans-serif;
   background: #f4f6f9;
@@ -23,14 +20,8 @@ body {
   box-sizing: border-box;
 }
 
-h2, h3 {
-  margin-bottom: 6px;
-}
-
-h4 {
-  margin: 0;
-}
-
+h2, h3 { margin-bottom: 6px; }
+h4 { margin: 0; }
 h5 {
   margin-top: 18px;
   margin-bottom: 6px;
@@ -102,15 +93,18 @@ button small {
 
 /* ================== REPORT CARD LAYOUT ================== */
 .a4-page {
-  width: 100%;
-  max-width: 600px; /* KEEP THIS EXACT (PDF SAFE) */
-  margin: 25px auto;
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto 20px auto;
   background: white;
+  padding: 20mm 15mm;
   box-sizing: border-box;
-  padding: 18px;
-  border-radius: 14px;
-  box-shadow: 0 12px 28px rgba(0,0,0,0.06);
-  transition: all 0.3s ease;
+
+  page-break-after: always;
+  break-after: page;
+
+  height: auto !important;
+  overflow: visible !important;
 }
 
 .a4-page:hover {
@@ -118,15 +112,12 @@ button small {
   box-shadow: 0 18px 36px rgba(0,0,0,0.08);
 }
 
-
-/* learner-page no longer forces breaks */
+/* learner-page */
 .learner-page {
   break-inside: avoid;
   page-break-inside: avoid;
 }
 
-
-  
 /* ================== LEARNER HEADER ================== */
 .learner-header {
   display: flex;
@@ -136,6 +127,9 @@ button small {
   padding-bottom: 10px;
   margin-bottom: 14px;
   flex-wrap: wrap;
+
+  page-break-inside: avoid;
+  break-inside: avoid;
 }
 
 .learner-header h4 {
@@ -154,7 +148,9 @@ button small {
   margin-top: 16px;
   padding-top: 12px;
   border-top: 1px solid #f0f0f0;
+
   page-break-inside: avoid;
+  break-inside: avoid;
 }
 
 /* ================== TABLES ================== */
@@ -173,6 +169,10 @@ table {
   page-break-inside: auto; 
 }
 
+thead {
+  display: table-header-group;
+}
+
 th, td {
   padding: 8px 10px;
   border-bottom: 1px solid #e5e7eb;
@@ -188,25 +188,24 @@ th {
   color: #374151;
 }
 
+tr {
+  page-break-inside: avoid !important; /* Prevents a single row from splitting across two pages */
+  break-inside: avoid !important;
+}
+
 tr:last-child td {
   border-bottom: none;
 }
-/* Improve long text wrapping */
+
+/* prevent word splitting */
 td {
   vertical-align: top;
   white-space: normal;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
+  word-wrap: normal;
+  overflow-wrap: normal;
+  hyphens: none;
 }
 
-/* Allow table to split across PDF pages */
-table {
-  page-break-inside: auto;
-}
-
-tr {
-  page-break-inside: avoid;
-}
 /* ================== SUMMARY BOX ================== */
 .summary-box {
   background: #f0f9ff;
@@ -214,12 +213,18 @@ tr {
   padding: 12px 14px;
   margin: 14px 0;
   border-radius: 8px;
+
+  page-break-inside: avoid;
+  break-inside: avoid;
 }
 
 /* ================== CHART ================== */
 .trend-box {
   height: 180px;
   margin-top: 14px;
+
+  page-break-inside: avoid;
+  break-inside: avoid;
 }
 
 .trend-box canvas {
@@ -231,6 +236,9 @@ tr {
 .report-overview {
   text-align: center;
   margin-bottom: 16px;
+
+  page-break-inside: avoid;
+  break-inside: avoid;
 }
 
 .report-overview h3 {
@@ -239,55 +247,17 @@ tr {
   letter-spacing: 0.4px;
 }
 
-
-
-
-/* ================== PRINT SAFETY (UNCHANGED) ================== */
-@media print {
-  table { page-break-inside:auto }
-  tr { page-break-inside:avoid; page-break-after:auto }
-  thead { display:table-header-group }
-  tfoot { display:table-footer-group }
-}
-
-/* Prevents cut-off look */
-.learner-card {
-  overflow: visible !important;
-  height: auto !important;
-}
-
-
-
- table {
-  page-break-inside: auto;
-}
-
-tr {
-  page-break-inside: avoid;
-}
-
-
-  
-
-/* Allow the main container to split naturally */
+/* ================== SCHOOL ANALYTICS ================== */
 .school-analytics {
   page-break-inside: auto !important;
   break-inside: auto !important;
 }
 
-/* Prevent individual sections from being cut mid-block */
 .school-analytics > * {
   page-break-inside: avoid !important;
   break-inside: avoid !important;
 }
 
-/* Prevent header from splitting */
-.school-analytics .report-overview {
-  page-break-inside: avoid;
-  break-inside: avoid;
-}
-
-/* Prevent lists & paragraphs from splitting */
 .school-analytics p,
 .school-analytics li,
 .school-analytics h3,
@@ -296,24 +266,59 @@ tr {
 .school-analytics ul {
   page-break-inside: avoid !important;
   break-inside: avoid !important;
-  margin: 0 0 6px 0; /* slightly reduce spacing for print safety */
+  margin: 0 0 6px 0;
 }
 
+/* ================== PRINT SAFETY ================== */
+@media print {
 
-td {
-  vertical-align: top;
-  white-space: normal !important;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
+  table { page-break-inside:auto }
+
+  tr {
+    page-break-inside:avoid;
+    page-break-after:auto;
+  }
+
+  thead { display:table-header-group }
+  tfoot { display:table-footer-group }
 }
 
-
-  .a4-page {
-  height: auto !important;
+/* ================== LEARNER CARD ================== */
+.learner-card {
   overflow: visible !important;
-}
-</style>
+  height: auto !important;
 
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+/* ================== DOWNLOAD BUTTON ================== */
+#downloadCurrentViewBtn {
+  display: none;
+  padding: 6px 12px;
+  font-size: 14px;
+  border-radius: 6px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  cursor: pointer;
+  max-width: 200px;
+  text-align: center;
+  margin: 10px 0;
+}
+
+#downloadCurrentViewBtn:hover {
+  background-color: #45a049;
+}
+
+
+.logo-container {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    display: block;
+}
+  
+</style>
 
 </head>
 <body>
@@ -344,16 +349,32 @@ td {
     <small>Recommended for parents & learners</small>
   </button>
 
-  <button onclick="downloadSchoolAnalyticsPDF()" style="flex: 1;">
+
+ <button onclick="downloadSchoolAnalyticsPDF()" style="flex: 1;">
     ⬇️ Download School Analysis Report<br>
     <small>For school leadership & QA</small>
   </button>
 </div>
 
+
+<button id="downloadCurrentViewBtn" style="flex:1; display:none;">
+  ⬇️ Download detailed report<br>
+
+</button>
+
+</div>
+
+
+
+
   
 <div id="schoolAnalytics" style="display:none;"></div>
 <div id="report"></div>
 
+
+
+
+  
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -656,69 +677,69 @@ strandData?.forEach(row => {
 });
   
 
-  
+
+
 function renderOverviewHeader({
-  school,
-  poBox,
-  postal,
-  town,
-  phone,
-  email,
-  className,
-  term,
-  year,
-  logo
+  school, poBox, postal, town, phone, email, className, term, year, logo
 }) {
-  return `
-    <div class="report-overview no-split" style="
-      border-bottom: 2px solid #333;
-      padding-bottom: 10px;
-      margin-bottom: 12px;
-    ">
-
-      <div style="
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  text-align:center;
-">
-        <!-- SCHOOL LOGO (LINKED WITH SCHOOL ID) -->
-        ${logo ? `
-          <div style="flex-shrink:0;">
-            <img src="${logo}"
-                 style="
-                   width:200px !important; height:160px !important; max-width:200px !important;
-                   object-fit:contain;
-                 "
-                 onerror="this.style.display='none';"
-            />
-          </div>
-        ` : ""}
-
-        <!-- SCHOOL DETAILS -->
-        <div style="flex:1; min-width:200px; text-align:center;">
-          <h3 style="margin:0;">${school}</h3>
-
-          <div style="font-size:0.9em;color:#555;">
-            <strong>P.O. Box:</strong> ${poBox} - ${postal} |
-            <strong>Town:</strong> ${town}<br/>
-            <strong>Tel:</strong> ${phone} |
-           
-          </div>
-
-          <div style="font-size:0.9em;color:#555;margin-top:4px;">
-            <strong>Class:</strong> ${className} |
-            <strong>Term:</strong> ${term} – ${year}
-          </div>
-        </div>
-
-      </div>
-    </div>
-  `;
-}
+  return `
+    <div class="report-overview" style="
+      border-bottom: 2px solid #333;
+      padding-bottom: 10px;
+      margin-bottom: 12px;
+      page-break-inside: avoid; 
+      break-inside: avoid;
+      padding-top:10px;
+    ">
+      <div style="
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        text-align:center;
+      ">
+        <!-- SCHOOL LOGO -->
+        ${logo ? `
+          <div class="logo-container" style="
+            page-break-inside: avoid;
+            break-inside: avoid;
+            margin-bottom:6px;
+          ">
+           
+<img src="${logo}"
+     style="
+       width:200px !important; 
+       height:120px !important; 
+       object-fit:contain;
+       margin-top: 10px; /* Add breathing room inside the container */
+       display: block;
+     "
+     onerror="this.style.display='none';"
+/>
 
 
+          </div>
+        ` : ""}
+
+        <!-- SCHOOL DETAILS -->
+        <div style="text-align:center;">
+          <h3 style="margin:0;">${school}</h3>
+          <div style="font-size:0.9em;color:#555;">
+            <strong>P.O. Box:</strong> ${poBox} - ${postal} |
+            <strong>Town:</strong> ${town}<br/>
+            <strong>Tel:</strong> ${phone}
+          </div>
+          <div style="font-size:0.9em;color:#555;margin-top:4px;">
+            <strong>Class:</strong> ${className} |
+            <strong>Term:</strong> ${term} – ${year}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+} 
+
+  
 function calculateTermIntelligence(records, previousRecords, previousTerm) {
 
   if (!previousTerm || !previousRecords?.length) {
@@ -1769,38 +1790,71 @@ document.getElementById("schoolAnalytics").innerHTML =
 
   }
 
-  /* ===== STUDENT VIEW ===== */
-  if (viewMode.value === "student") {
-    filterBox.innerHTML = `
-      <label>Admission Number</label><br />
-      <input id="admInput" />
-    `;
+ 
+ /* ===== STUDENT VIEW ===== */
+if (viewMode.value === "student") {
+  filterBox.innerHTML = `
+    <label>Admission Number</label><br />
+    <input id="admInput" />
+  `;
 
-    document.getElementById("admInput").addEventListener("input", e => {
-      const adm = e.target.value.trim();
-      const filtered = records.filter(r => r.admission === adm);
+  // Grab the download button once, at this scope
+  const downloadVisibleBtn = document.getElementById("downloadCurrentViewBtn");
 
-      if (!filtered.length) {
-        reportDiv.innerHTML = "<p>No student found</p>";
-        return;
+  // Hide it by default
+  downloadVisibleBtn.style.display = "none";
+
+  // Set up click listener for download
+  downloadVisibleBtn.addEventListener("click", () => {
+    const container = document.querySelector("#report"); // #report holds the single student content
+
+    if (!container || container.innerHTML.trim() === "") {
+      alert("Nothing to download!");
+      return;
+    }
+
+    html2pdf().set({
+      margin: 10,
+      filename: `student_report_${new Date().toISOString().slice(0,10)}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2, scrollY: 0, scrollX: 0, useCORS: true },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+    }).from(container).save();
+  });
+
+  document.getElementById("admInput").addEventListener("input", e => {
+    const adm = e.target.value.trim();
+    const filtered = records.filter(r => r.admission === adm);
+
+    if (!filtered.length) {
+      reportDiv.innerHTML = "<p>No student found</p>";
+      downloadVisibleBtn.style.display = "none"; // hide button
+      return;
+    }
+
+    const grouped = {};
+    filtered.forEach(r => {
+      grouped[r.student] ??= { __admission: r.admission };
+      grouped[r.student][r.subject] ??= [];
+      grouped[r.student][r.subject].push(r);
+    });
+
+    reportDiv.innerHTML = renderGrouped(grouped, avgMap);
+
+    // Show button **after DOM has been updated**
+    requestAnimationFrame(() => {
+      splitLearnerIntoPages();
+
+      // Show download button only if exactly 1 student
+      if (Object.keys(grouped).length === 1) {
+        downloadVisibleBtn.style.display = "flex";
+      } else {
+        downloadVisibleBtn.style.display = "none";
       }
-
-      const grouped = {};
-filtered.forEach(r => {
-  grouped[r.student] ??= { __admission: r.admission };
-  grouped[r.student][r.subject] ??= [];
-  grouped[r.student][r.subject].push(r);
-});
-
-
-     reportDiv.innerHTML = renderGrouped(grouped, avgMap);
-    
-requestAnimationFrame(() => {
-  splitLearnerIntoPages();
-});
-   
-      });
-  }
+    });
+  });
+}
+ 
 
   /* ===== SUBJECT VIEW ===== */
   if (viewMode.value === "subject") {
@@ -1905,6 +1959,7 @@ function getTrend(currentAvg, previousAvg) {
 
 
 
+
 window.downloadPDF = async function () {
   if (!reportDiv.innerHTML.trim()) {
     alert("No report to download");
@@ -1917,16 +1972,12 @@ window.downloadPDF = async function () {
   const original = reportDiv;
   const clone = original.cloneNode(true);
 
-  /* =========================
-     REMOVE CLASS SUMMARY TITLE (e.g., 10A – All Learners)
-  ========================== */
+  // Remove class summary titles
   clone.querySelectorAll("h3").forEach(h3 => {
     if (h3.innerText.includes("All Learners")) h3.remove();
   });
 
-  /* =========================
-     REMOVE SCREEN PAGINATION
-  ========================== */
+  // Remove screen pagination divs
   clone.querySelectorAll(".a4-page").forEach(page => {
     const parent = page.parentNode;
     while (page.firstChild) parent.insertBefore(page.firstChild, page);
@@ -1938,23 +1989,26 @@ window.downloadPDF = async function () {
   clone.style.padding = "0";
   clone.style.boxSizing = "border-box";
 
+  // Prevent header/logo from splitting
+  clone.querySelectorAll(".report-overview").forEach(el => {
+    el.style.pageBreakInside = "avoid";
+    el.style.breakInside = "avoid";
+  });
+
   const cards = clone.querySelectorAll(".learner-card");
 
   cards.forEach((card, index) => {
-    if (index !== 0) card.style.pageBreakBefore = "always";
-
     card.style.margin = "0";
     card.style.padding = "0";
     card.style.boxSizing = "border-box";
 
-    /* =========================
-       REMOVE OLD TABLE BLOCKS
-    ========================== */
+   // Instead of index === 0 ? "auto" : "always"
+card.style.pageBreakInside = "avoid"; // Keeps the student card together
+card.style.pageBreakBefore = "auto";  // Allows it to follow the header naturally
+
+    // Remove old table blocks
     card.querySelectorAll(".subject-block, .trend-box").forEach(el => el.remove());
 
-    /* =========================
-       STUDENT NAME
-    ========================== */
     const studentName = card.querySelector("h4")?.innerText
       .replace("👤", "")
       .replace(/\(.*?\)/, "")
@@ -1963,9 +2017,6 @@ window.downloadPDF = async function () {
     const subjectData = avgMap?.[studentName];
     if (!subjectData) return;
 
-    /* =========================
-       CONVERT LEVELS TO NUMERIC SCORES
-    ========================== */
     const numericScoresMap = {};
     const numericScores = [];
 
@@ -1977,37 +2028,23 @@ window.downloadPDF = async function () {
       }
     });
 
-    /* =========================
-       CALCULATE OVERALL AVERAGE
-    ========================== */
     let overallAvg = numericScores.length
       ? numericScores.reduce((a, b) => a + b, 0) / numericScores.length
       : 0;
     overallAvg = Number(overallAvg.toFixed(2));
 
-    /* =========================
-       DETERMINE STRENGTHS
-    ========================== */
     const subjectsArray = Object.entries(numericScoresMap)
       .map(([subject, score]) => ({ subject, score }))
       .sort((a, b) => b.score - a.score);
 
-    let strengthSentence = "";
     let strengths = [];
     if (subjectsArray.length > 1 && subjectsArray[0].score - subjectsArray[1].score >= 0.5) {
-      strengthSentence = `, with stronger performance in <strong>${subjectsArray[0].subject}</strong>`;
       strengths.push(subjectsArray[0].subject);
     } else if (subjectsArray.length >= 1) {
       strengths = subjectsArray.map(s => s.subject);
     }
 
-    /* =========================
-       HELPER FUNCTIONS
-    ========================== */
-    function overallLevel(score) {
-      return getAchievementLabel(score); // converts numeric back to EE1, ME1, etc
-    }
-
+    function overallLevel(score) { return getAchievementLabel(score); }
     function generalComment(score) {
       const level = getAchievementLabel(score);
       if (level === "EE2") return "Outstanding mastery of learning expectations.";
@@ -2020,7 +2057,6 @@ window.downloadPDF = async function () {
       if (level === "BE1") return "Significant support required to meet expectations.";
       return "No performance data available.";
     }
-
     function commentFromScore(score) {
       const level = getAchievementLabel(score);
       if (level === "EE2") return "Outstanding performance. Keep up the excellent work.";
@@ -2034,9 +2070,7 @@ window.downloadPDF = async function () {
       return "";
     }
 
-    /* =========================
-       SUBJECT TABLE
-    ========================== */
+    // Build subject table
     const table = document.createElement("table");
     table.style.width = "100%";
     table.style.borderCollapse = "collapse";
@@ -2066,43 +2100,25 @@ window.downloadPDF = async function () {
       </tbody>
     `;
 
-   /* =========================
-   GENERAL PERFORMANCE BLOCK
-========================= */
-const generalBlock = document.createElement("div");
-generalBlock.style.marginTop = "10px";
-generalBlock.style.fontSize = "14px";
-generalBlock.style.lineHeight = "1.8";
+    const generalBlock = document.createElement("div");
+    generalBlock.style.marginTop = "10px";
+    generalBlock.style.fontSize = "14px";
+    generalBlock.style.lineHeight = "1.8";
 
-generalBlock.innerHTML = `
-  <table style="width:100%;border-collapse:collapse;margin-top:6px;">
-    <tr>
-      <td style="border:1px solid #000;padding:8px;width:40%;"><strong>Learner's General Performance Level</strong></td>
-      <td style="border:1px solid #000;padding:8px;">${overallLevel(overallAvg)}</td>
-    </tr>
-    <tr>
-      <td style="border:1px solid #000;padding:8px;"><strong>Teacher's General Comment</strong></td>
-      <td style="border:1px solid #000;padding:12px;">${generalComment(overallAvg)}</td>
-    </tr>
-  </table>
+    generalBlock.innerHTML = `
+      <table style="width:100%;border-collapse:collapse;margin-top:6px;">
+        <tr>
+          <td style="border:1px solid #000;padding:8px;width:40%;"><strong>Learner's General Performance Level</strong></td>
+          <td style="border:1px solid #000;padding:8px;">${overallLevel(overallAvg)}</td>
+        </tr>
+        <tr>
+          <td style="border:1px solid #000;padding:8px;"><strong>Teacher's General Comment</strong></td>
+          <td style="border:1px solid #000;padding:12px;">${generalComment(overallAvg)}</td>
+        </tr>
+      </table>
+      <p>💪 Strengths: ${strengths.join(", ")}</p>
+    `;
 
-  <p>💪 Strengths: ${strengths.join(", ")}</p>
-
-  <div style="margin-top:20px;">
-    <div style="display:flex;justify-content:space-between;margin-top:14px;">
-      <div>Closing Date: ____________________</div>
-      <div>Opening Date: ____________________</div>
-    </div>
-    <div style="display:flex;justify-content:space-between;margin-top:18px;">
-      <div>Class Teacher Signature: ____________________</div>
-      <div>Head of Institution Signature: ____________________</div>
-    </div>
-  </div>
-`;
-    
-    /* =========================
-       FOOTER
-    ========================== */
     const footer = document.createElement("div");
     footer.style.fontSize = "10px";
     footer.style.textAlign = "center";
@@ -2111,9 +2127,6 @@ generalBlock.innerHTML = `
     footer.style.paddingTop = "6px";
     footer.innerText = "Assessment is competency-based and evidence-driven, guided by KICD CBE curriculum designs.";
 
-    /* =========================
-       COMBINE TABLE, GENERAL PERFORMANCE, FOOTER
-    ========================== */
     const tableWrapper = document.createElement("div");
     tableWrapper.appendChild(table);
     tableWrapper.appendChild(generalBlock);
@@ -2122,22 +2135,33 @@ generalBlock.innerHTML = `
     card.appendChild(tableWrapper);
   });
 
- 
-  /* =========================
-     EXPORT PDF
-  ========================== */
-  html2pdf().set({
-    margin: [10, 10, 10, 10],
-    filename,
+ const batchSize = 8;
+
+for (let i = 0; i < cards.length; i += batchSize) {
+
+  const batchContainer = document.createElement("div");
+  batchContainer.style.width = "190mm";
+  batchContainer.style.margin = "0 auto";
+
+  const batch = Array.from(cards).slice(i, i + batchSize);
+
+  batch.forEach(learnerCard => {
+    const wrapper = document.createElement("div");
+    wrapper.style.pageBreakAfter = "always";
+    wrapper.appendChild(learnerCard.cloneNode(true));
+    batchContainer.appendChild(wrapper);
+  });
+
+  await html2pdf().set({
+    margin: [15, 10, 15, 10],
+    filename: `${filename.replace(".pdf","")}_part${Math.floor(i/batchSize)+1}.pdf`,
     image: { type: "jpeg", quality: 0.98 },
-    html2canvas: { scale: 2, scrollY: 0, useCORS: true, letterRendering: true },
+    html2canvas: { scale: 2, useCORS: true },
     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-    pagebreak: { mode: ['css'] }
-  }).from(clone).save();
+    pagebreak: { mode: ['css','legacy'] }
+  }).from(batchContainer).save();
+}
 };
-
-
-
 
   
 
