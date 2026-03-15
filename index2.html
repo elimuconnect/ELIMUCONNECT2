@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Smart Elimu Connect CBE Assessment & Reporting System</title>
+
+<style>
+  * {
+    box-sizing: border-box;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  body {
+    font-family: Arial, sans-serif;
+    background: #f4f6fb;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .login-container {
+    background: white;
+    padding: 40px;
+    border-radius: 18px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+    width: 92%;
+    max-width: 460px; /* bigger desktop */
+    min-width: 280px;
+
+    text-align: center;
+  }
+
+  h2 {
+    margin-bottom: 26px;
+    font-size: 28px;
+  }
+
+  input {
+    width: 100%;
+    padding: 18px;
+    margin: 12px 0;
+
+    border: 1px solid #ccc;
+    border-radius: 10px;
+
+    font-size: 18px;
+  }
+
+  button {
+    width: 100%;
+    padding: 18px;
+    background: #0066ff;
+    border: none;
+    border-radius: 10px;
+
+    color: white;
+    font-size: 18px;
+
+    margin-top: 14px;
+  }
+
+  .footer-text {
+    margin-top: 18px;
+    font-size: 14px;
+    color: #666;
+  }
+
+  /* Mobile extra boost */
+  @media (max-width: 600px) {
+    .login-container {
+      width: 96%;
+      padding: 36px;
+    }
+
+    h2 {
+      font-size: 30px;
+    }
+
+    input, button {
+      font-size: 19px;
+      padding: 20px;
+    }
+  }
+
+
+
+  .input-group{
+position:relative;
+width:100%;
+margin:12px 0;
+}
+
+.toggle{
+position:absolute;
+right:15px;
+top:50%;
+transform:translateY(-50%);
+cursor:pointer;
+font-size:14px;
+color:#0066ff;
+user-select:none;
+}
+</style>
+<body>
+
+  <div class="login-container">
+    <h2>Login</h2>
+
+    <input id="email" type="email" placeholder="Email">
+  <div class="input-group">
+<input id="password" type="password" placeholder="Password">
+<span class="toggle" onclick="togglePassword('password',this)">Show</span>
+</div>
+    <button id="loginBtn">Login</button>
+
+    <p class="footer-text">Secure login powered by Supabase</p>
+
+    <div class="input-group">
+<input id="newPassword" type="password" placeholder="New Password">
+<span class="toggle" onclick="togglePassword('newPassword',this)">Show</span>
+</div>
+    <button id="updateBtn">Update Password</button>
+  </div>
+
+
+
+<script>
+function togglePassword(id,el){
+
+const input=document.getElementById(id);
+
+if(input.type==="password"){
+input.type="text";
+el.innerText="Hide";
+}else{
+input.type="password";
+el.innerText="Show";
+}
+
+}
+</script>
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    const supabase = createClient(
+      "https://zcmzuetusvpmvubbjlmx.supabase.co",
+      "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
+    );
+
+    document.getElementById("loginBtn").onclick = async () => {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        alert(error.message);
+        return;
+      }
+
+
+
+
+      
+      const { data: { user } } = await supabase.auth.getUser();
+
+     const { data: profile, error: profileError } = await supabase
+  .from("profiles")
+  .select("role")
+  .eq("auth_id", user.id)
+  .single();
+
+if (profileError || !profile) {
+  alert("Profile not found. Contact admin.");
+  return;
+}
+
+if (profile.role === "teacher") {
+  window.location.href = "teacher2.html";
+} else if (profile.role === "parent") {
+  window.location.href = "parent.html";
+} else if (profile.role === "admin") {
+  window.location.href = "admin.html";
+} else {
+  alert("Unknown role");
+}
+
+      
+    };
+
+
+    document.getElementById("updateBtn").onclick = async () => {
+  const newPass = document.getElementById("newPassword").value;
+
+  const { error } = await supabase.auth.updateUser({
+    password: newPass
+  });
+
+  if (error) {
+    alert(error.message);
+  } else {
+    alert("Password updated successfully");
+  }
+};
+  </script>
+
+</body>
+</html>
