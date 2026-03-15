@@ -7,17 +7,21 @@
 
 <style>
 :root {
-  --primary: #0b3c5d;
-  --secondary: #1f7a8c;
-  --accent: #e36414;
+  --primary: #0b3c5d;    /* Navbar background */
   --light: #f5f7fa;
   --dark: #1c1c1c;
+  /* Nav link colors */
+  --home: #f39c12;
+  --ict: #16a085;
+  --extra-ict: #2980b9;
+  --analytics-marks: #8e44ad;
+  --analytics-cbc: #27ae60;
+  --reports-marks: #c0392b;
+  --reports-competency: #d35400;
 }
 
-body {
-  margin: 0;
-  font-family: "Segoe UI", Arial, sans-serif;
-}
+/* Reset */
+body { margin:0; font-family:"Segoe UI", Arial, sans-serif; background: var(--light); color: var(--dark); }
 
 /* Navbar */
 .navbar {
@@ -31,34 +35,54 @@ body {
   top: 0;
   z-index: 1000;
 }
-.navbar h1 { font-size:1.4rem; margin:0; }
-.nav-links { display:flex; gap:12px; }
+.navbar h1 { font-size:1.4rem; margin:0; color:white; }
+
+/* Desktop nav buttons */
+.nav-links { display:flex; gap:10px; }
 .nav-links a {
-  background: var(--accent);
-  padding: 12px 20px;
-  border-radius:10px;
+  padding: 10px 18px;
+  border-radius:8px;
   text-decoration:none;
   color:white;
   font-weight:600;
+  transition: 0.3s;
 }
-.nav-links a:hover { background: var(--secondary); }
+.nav-links a.home { background: var(--home); }
+.nav-links a.ict { background: var(--ict); }
+.nav-links a.extra-ict { background: var(--extra-ict); }
+.nav-links a.analytics-marks { background: var(--analytics-marks); }
+.nav-links a.analytics-cbc { background: var(--analytics-cbc); }
+.nav-links a.reports-marks { background: var(--reports-marks); }
+.nav-links a.reports-competency { background: var(--reports-competency); }
+
+/* Hover */
+.nav-links a:hover { opacity:0.85; }
 
 /* Hamburger */
 .hamburger { display:none; flex-direction:column; cursor:pointer; }
 .hamburger div { width:28px; height:3px; background:white; margin:4px 0; }
+
+/* Mobile menu */
 .mobile-menu {
   display:none;
   flex-direction:column;
   gap:8px;
-  background:var(--primary);
+  background: var(--primary);
   padding:10px 24px;
 }
 .mobile-menu a {
-  color:white; font-weight:600; text-decoration:none; padding:10px 12px;
-  border-radius:6px; background: var(--accent);
+  color:white; font-weight:600; text-decoration:none; padding:10px 12px; border-radius:6px;
 }
-.mobile-menu a:hover { background: var(--secondary); }
+.mobile-menu a.home { background: var(--home); }
+.mobile-menu a.ict { background: var(--ict); }
+.mobile-menu a.extra-ict { background: var(--extra-ict); }
+.mobile-menu a.analytics-marks { background: var(--analytics-marks); }
+.mobile-menu a.analytics-cbc { background: var(--analytics-cbc); }
+.mobile-menu a.reports-marks { background: var(--reports-marks); }
+.mobile-menu a.reports-competency { background: var(--reports-competency); }
+.mobile-menu a:hover { opacity:0.85; }
 
+/* Responsive */
 @media(max-width:768px){
   .nav-links { display:none; }
   .hamburger { display:flex; }
@@ -69,27 +93,33 @@ body {
 
 <nav class="navbar">
   <h1>Smart Elimu Connect</h1>
+
+  <!-- Desktop nav -->
   <div class="nav-links">
-    <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin" target="_blank">ICT Tools</a>
-    <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin2" target="_blank">Extra ICT Tools</a>
-    <a href="https://elimuconnect.github.io/ELIMUCONNECT2/index2" target="_blank">Analytics (Marks → Competencies)</a>
-    <a href="https://elimuconnect.github.io/ELIMUCONNECT2/" target="_blank">Analytics (Direct CBC)</a>
-    <a href="https://elimuconnect.github.io/ELIMUCONNECT2/resultsmarksbest" target="_blank">Reports (Marks)</a>
-    <a href="https://elimuconnect.github.io/ELIMUCONNECT2/reportcompetency" target="_blank">Reports (Competency)</a>
+    <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schoolicttools" class="home">Home</a>
+    <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin" class="ict">ICT Tools</a>
+    <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin2" class="extra-ict">Extra ICT Tools</a>
+    <a href="https://elimuconnect.github.io/ELIMUCONNECT2/index2" class="analytics-marks">Analytics (Marks → Competencies)</a>
+    <a href="https://elimuconnect.github.io/ELIMUCONNECT2/" class="analytics-cbc">Analytics (Direct CBC)</a>
+    <a href="https://elimuconnect.github.io/ELIMUCONNECT2/resultsmarksbest" class="reports-marks">Reports (Marks)</a>
+    <a href="https://elimuconnect.github.io/ELIMUCONNECT2/reportcompetency" class="reports-competency">Reports (Competency)</a>
   </div>
 
+  <!-- Hamburger for mobile -->
   <div class="hamburger" onclick="toggleMenu()">
     <div></div><div></div><div></div>
   </div>
 </nav>
 
+<!-- Mobile menu -->
 <div class="mobile-menu" id="mobileMenu">
-  <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin" target="_blank">ICT Tools</a>
-  <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin2" target="_blank">Extra ICT Tools</a>
-  <a href="https://elimuconnect.github.io/ELIMUCONNECT2/index2" target="_blank">Analytics (Marks → Competencies)</a>
-  <a href="https://elimuconnect.github.io/ELIMUCONNECT2/" target="_blank">Analytics (Direct CBC)</a>
-  <a href="https://elimuconnect.github.io/ELIMUCONNECT2/resultsmarksbest" target="_blank">Reports (Marks)</a>
-  <a href="https://elimuconnect.github.io/ELIMUCONNECT2/reportcompetency" target="_blank">Reports (Competency)</a>
+  <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/elimu" class="home">Home</a>
+  <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin" class="ict">ICT Tools</a>
+  <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin2" class="extra-ict">Extra ICT Tools</a>
+  <a href="https://elimuconnect.github.io/ELIMUCONNECT2/index2" class="analytics-marks">Analytics (Marks → Competencies)</a>
+  <a href="https://elimuconnect.github.io/ELIMUCONNECT2/" class="analytics-cbc">Analytics (Direct CBC)</a>
+  <a href="https://elimuconnect.github.io/ELIMUCONNECT2/resultsmarksbest" class="reports-marks">Reports (Marks)</a>
+  <a href="https://elimuconnect.github.io/ELIMUCONNECT2/reportcompetency" class="reports-competency">Reports (Competency)</a>
 </div>
 
 <script>
@@ -97,7 +127,6 @@ function toggleMenu(){
   const menu = document.getElementById('mobileMenu');
   menu.style.display = menu.style.display==='flex' ? 'none':'flex';
 }
-// Optional: hide mobile menu when resizing to desktop
 window.addEventListener('resize', ()=>{ if(window.innerWidth>768) document.getElementById('mobileMenu').style.display='none'; });
 </script>
 
