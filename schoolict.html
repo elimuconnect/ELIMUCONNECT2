@@ -7,10 +7,11 @@
 
 <style>
 :root {
-  --primary: #0b3c5d;    /* Navbar background */
+  --primary: #0b3c5d;
+  --secondary: #1f7a8c;
+  --accent: #e36414;
   --light: #f5f7fa;
   --dark: #1c1c1c;
-  /* Nav link colors */
   --home: #f39c12;
   --ict: #16a085;
   --extra-ict: #2980b9;
@@ -20,7 +21,6 @@
   --reports-competency: #d35400;
 }
 
-/* Reset */
 body { margin:0; font-family:"Segoe UI", Arial, sans-serif; background: var(--light); color: var(--dark); }
 
 /* Navbar */
@@ -36,8 +36,6 @@ body { margin:0; font-family:"Segoe UI", Arial, sans-serif; background: var(--li
   z-index: 1000;
 }
 .navbar h1 { font-size:1.4rem; margin:0; color:white; }
-
-/* Desktop nav buttons */
 .nav-links { display:flex; gap:10px; }
 .nav-links a {
   padding: 10px 18px;
@@ -54,8 +52,6 @@ body { margin:0; font-family:"Segoe UI", Arial, sans-serif; background: var(--li
 .nav-links a.analytics-cbc { background: var(--analytics-cbc); }
 .nav-links a.reports-marks { background: var(--reports-marks); }
 .nav-links a.reports-competency { background: var(--reports-competency); }
-
-/* Hover */
 .nav-links a:hover { opacity:0.85; }
 
 /* Hamburger */
@@ -82,19 +78,46 @@ body { margin:0; font-family:"Segoe UI", Arial, sans-serif; background: var(--li
 .mobile-menu a.reports-competency { background: var(--reports-competency); }
 .mobile-menu a:hover { opacity:0.85; }
 
+/* Hero Section */
+.hero {
+  position: relative;
+  background: var(--primary);
+  color: white;
+  text-align: left;
+  padding: 80px 20px 90px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+}
+.hero img {
+  width: 120px;
+  margin-bottom: 20px;
+}
+.hero h2 {
+  font-size: 2.8rem;
+  margin-bottom: 20px;
+}
+.hero p {
+  font-size: 1.25rem;
+  max-width: 750px;
+  line-height: 1.7;
+}
+
 /* Responsive */
 @media(max-width:768px){
   .nav-links { display:none; }
   .hamburger { display:flex; }
+  .hero h2 { font-size:2rem; }
+  .hero p { font-size:1.05rem; }
 }
 </style>
 </head>
 <body>
 
+<!-- Navbar -->
 <nav class="navbar">
   <h1>Smart Elimu Connect</h1>
-
-  <!-- Desktop nav -->
   <div class="nav-links">
     <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schoolicttools" class="home">Home</a>
     <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin" class="ict">ICT Tools</a>
@@ -104,16 +127,14 @@ body { margin:0; font-family:"Segoe UI", Arial, sans-serif; background: var(--li
     <a href="https://elimuconnect.github.io/ELIMUCONNECT2/resultsmarksbest" class="reports-marks">Reports (Marks)</a>
     <a href="https://elimuconnect.github.io/ELIMUCONNECT2/reportcompetency" class="reports-competency">Reports (Competency)</a>
   </div>
-
-  <!-- Hamburger for mobile -->
   <div class="hamburger" onclick="toggleMenu()">
     <div></div><div></div><div></div>
   </div>
 </nav>
 
-<!-- Mobile menu -->
+<!-- Mobile Menu -->
 <div class="mobile-menu" id="mobileMenu">
-  <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schoolicttools" class="home">Home</a>
+   <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schoolicttools" class="home">Home</a>
   <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin" class="ict">ICT Tools</a>
   <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin2" class="extra-ict">Extra ICT Tools</a>
   <a href="https://elimuconnect.github.io/ELIMUCONNECT2/index2" class="analytics-marks">Analytics (Marks → Competencies)</a>
@@ -121,6 +142,17 @@ body { margin:0; font-family:"Segoe UI", Arial, sans-serif; background: var(--li
   <a href="https://elimuconnect.github.io/ELIMUCONNECT2/resultsmarksbest" class="reports-marks">Reports (Marks)</a>
   <a href="https://elimuconnect.github.io/ELIMUCONNECT2/reportcompetency" class="reports-competency">Reports (Competency)</a>
 </div>
+
+<!-- Hero Section -->
+<section class="hero">
+  <img src="https://static.wixstatic.com/media/9ba186_61b351de3531446995b426f1c49950ed~mv2.png" alt="Smart Elimu Connect Logo">
+  <h2>Empowering Kenyan Schools with CBC-First Digital Systems</h2>
+  <p>
+    Smart Elimu Connect provides modern ICT tools, digital administration solutions,
+    and competency-based analytics. Our systems simplify school operations, enhance
+    teaching & learning, and support data-driven decisions without an exam-centric focus.
+  </p>
+</section>
 
 <script>
 function toggleMenu(){
