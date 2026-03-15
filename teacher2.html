@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Teacher Dashboard</title>
+
+
+ <head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teacher Dashboard</title>
+
+<style>
+
+body{
+font-family:"Segoe UI", Arial, sans-serif;
+margin:0;
+background:#f4f6fb;
+}
+
+/* HEADER */
+
+.header{
+background:white;
+padding:20px;
+box-shadow:0 2px 10px rgba(0,0,0,0.08);
+display:flex;
+justify-content:space-between;
+align-items:center;
+flex-wrap:wrap;
+}
+
+.header h1{
+margin:0;
+font-size:22px;
+}
+
+.logout{
+background:#ff4d4f;
+border:none;
+color:white;
+padding:10px 16px;
+border-radius:6px;
+font-size:16px;
+cursor:pointer;
+}
+
+/* CONTAINER */
+
+.container{
+padding:20px;
+max-width:1200px;
+margin:auto;
+}
+
+/* TITLE */
+
+.title{
+font-size:24px;
+margin-bottom:20px;
+}
+
+/* GRID */
+
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+gap:20px;
+}
+
+/* CARD */
+
+.card{
+background:white;
+border-radius:12px;
+padding:20px;
+box-shadow:0 4px 14px rgba(0,0,0,0.08);
+transition:0.25s;
+}
+
+.className{
+font-size:20px;
+font-weight:600;
+margin-bottom:10px;
+}
+
+.meta{
+font-size:16px;
+margin-bottom:10px;
+color:#666;
+}
+
+/* BUTTON */
+
+.startBtn{
+background:#0066ff;
+border:none;
+color:white;
+padding:12px 18px;
+border-radius:8px;
+font-size:16px;
+cursor:pointer;
+width:100%;
+}
+
+/* EMPTY */
+
+.empty{
+background:white;
+padding:30px;
+border-radius:10px;
+text-align:center;
+font-size:18px;
+}
+
+/* MOBILE FIX */
+
+@media (max-width:600px){
+
+.container{
+padding:15px;
+}
+
+.grid{
+grid-template-columns:1fr;
+}
+
+.card{
+padding:18px;
+}
+
+.className{
+font-size:22px;
+}
+
+.meta{
+font-size:17px;
+}
+
+.startBtn{
+font-size:18px;
+padding:14px;
+}
+
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="header">
+<h1>Teacher Dashboard</h1>
+
+</div>
+
+<div class="container">
+
+<div class="title">Your Assigned Classes</div>
+
+<div id="classList">Loading classes...</div>
+
+</div>
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabase = createClient(
+  "https://zcmzuetusvpmvubbjlmx.supabase.co",
+  "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
+);
+
+const CURRENT_YEAR = 2026;
+const classListEl = document.getElementById("classList");
+
+async function loadDashboard() {
+  // 1️⃣ Get logged-in user
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) { window.location.href = "index.html"; return; }
+
+  // 2️⃣ Get teacher profile
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("id, role")
+    .eq("auth_id", user.id)
+    .single();
+
+  if (!profile || profile.role !== "teacher") { window.location.href = "index.html"; return; }
+
+  // 3️⃣ Load classes + subjects from the view
+  const { data: assignments } = await supabase
+    .from("teacher_subjects_view")
+    .select("*")
+    .eq("teacher_id", profile.id)
+    .eq("academic_year", CURRENT_YEAR);
+
+  if (!assignments?.length) {
+    classListEl.innerText = `No classes assigned for ${CURRENT_YEAR}`;
+    return;
+  }
+
+  // 4️⃣ Render dashboard cards
+  classListEl.innerHTML = assignments.map(row => `
+    <div class="card" data-year="${row.academic_year}">
+      <strong>${row.class_name} - ${row.subject_name}</strong><br>
+      Academic Year: ${row.academic_year}<br>
+      <button data-class="${row.class_id}" data-subject="${row.subject_id}">Start Assessment</button>
+    </div>
+  `).join("");
+}
+
+// ✅ Handle button click to carry selections forward
+classListEl.addEventListener("click", e => {
+  if (e.target.tagName !== "BUTTON") return;
+
+  const classId = e.target.getAttribute("data-class");
+  const subjectId = e.target.getAttribute("data-subject");
+  const academicYear = e.target.closest(".card")?.getAttribute("data-year");
+
+  if (!classId || !subjectId) return alert("Invalid class or subject selection.");
+
+  localStorage.setItem("class_id", classId);
+  localStorage.setItem("subject_id", subjectId);
+  localStorage.setItem("academic_year", academicYear);
+
+  window.location.href = "asstrial2.html";
+});
+
+loadDashboard();
+
+</script>
+</body>
+</html>
