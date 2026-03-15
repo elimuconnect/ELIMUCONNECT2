@@ -1,0 +1,126 @@
+<!-- NAVIGATION -->
+<style>
+/* Navbar container */
+.navbar {
+  background: var(--primary);
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+/* Logo / title */
+.navbar h1 {
+  font-size: 1.4rem;
+  margin: 0;
+}
+
+/* Desktop nav buttons */
+.nav-links {
+  display: flex;
+  gap: 12px;
+}
+
+.nav-links a {
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: var(--accent);
+  transition: 0.3s;
+}
+
+.nav-links a:hover {
+  background: var(--secondary);
+}
+
+/* Hamburger for mobile */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  cursor: pointer;
+}
+
+.hamburger div {
+  width: 28px;
+  height: 3px;
+  background: white;
+  margin: 4px 0;
+  transition: 0.3s;
+}
+
+/* Mobile menu */
+.mobile-menu {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--primary);
+  padding: 10px 24px;
+}
+
+.mobile-menu a {
+  color: white;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--accent);
+}
+
+.mobile-menu a:hover {
+  background: var(--secondary);
+}
+
+/* Responsive */
+@media(max-width: 768px) {
+  .nav-links {
+    display: none;
+  }
+  .hamburger {
+    display: flex;
+  }
+}
+</style>
+
+<nav class="navbar">
+  <h1>Smart Elimu Connect</h1>
+
+  <!-- Desktop buttons -->
+  <div class="nav-links">
+    <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin" target="_blank">ICT Tools</a>
+    <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin2" target="_blank">Extra ICT Tools</a>
+    <a href="https://elimuconnect.github.io/ELIMUCONNECT2/index2" target="_blank">Analytics (Marks → Competencies)</a>
+    <a href="https://elimuconnect.github.io/ELIMUCONNECT2/" target="_blank">Analytics (Direct CBC)</a>
+    <a href="https://elimuconnect.github.io/ELIMUCONNECT2/resultsmarksbest" target="_blank">Reports (Marks)</a>
+    <a href="https://elimuconnect.github.io/ELIMUCONNECT2/reportcompetency" target="_blank">Reports (Competency)</a>
+  </div>
+
+  <!-- Hamburger for mobile -->
+  <div class="hamburger" onclick="toggleMenu()">
+    <div></div>
+    <div></div>
+    <div></div>
+  </div>
+</nav>
+
+<!-- Mobile menu -->
+<div class="mobile-menu" id="mobileMenu">
+  <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin" target="_blank">ICT Tools</a>
+  <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin2" target="_blank">Extra ICT Tools</a>
+  <a href="https://elimuconnect.github.io/ELIMUCONNECT2/index2" target="_blank">Analytics (Marks → Competencies)</a>
+  <a href="https://elimuconnect.github.io/ELIMUCONNECT2/" target="_blank">Analytics (Direct CBC)</a>
+  <a href="https://elimuconnect.github.io/ELIMUCONNECT2/resultsmarksbest" target="_blank">Reports (Marks)</a>
+  <a href="https://elimuconnect.github.io/ELIMUCONNECT2/reportcompetency" target="_blank">Reports (Competency)</a>
+</div>
+
+<script>
+function toggleMenu() {
+  const menu = document.getElementById('mobileMenu');
+  menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
+}
+</script>
