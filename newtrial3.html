@@ -1631,6 +1631,9 @@ function generateStrengthsAndNeeds(student, subjects) {
   return { strengths, needs };
 }
 
+
+
+ 
 function generateRecommendations(student, subjects, trend, supportFlag) {
   const teacher = [];
   const parent = [];
@@ -1643,9 +1646,11 @@ function generateRecommendations(student, subjects, trend, supportFlag) {
     teacher.push("Provide targeted remediation on core competencies.");
     teacher.push("Apply differentiated instruction for personalized support.");
   }
+
   if (trend === "📉 Declining") {
     teacher.push("Conduct one-on-one reviews to bridge learning gaps.");
   }
+
   if (strengths.length) {
     teacher.push(`Further challenge the learner in ${strengths.slice(0, 2).join(", ")}.`);
   }
@@ -1654,57 +1659,62 @@ function generateRecommendations(student, subjects, trend, supportFlag) {
   if (needs.length) {
     parent.push(`Provide extra practice materials for ${needs.slice(0, 2).join(", ")}.`);
   }
+
   if (trend === "📉 Declining") {
     parent.push("Closely monitor daily study habits and revision.");
   }
+
   parent.push("Regularly consult with the subject teachers on progress.");
 
   /* ===== LEARNER ===== */
   if (strengths.length) {
     learner.push(`Maintain the excellent effort in ${strengths.slice(0, 2).join(", ")}.`);
   }
+
   if (needs.length) {
     learner.push(`Dedicate more time to revising ${needs.slice(0, 2).join(", ")}.`);
   }
+
   learner.push("Seek clarification immediately when a concept is unclear.");
 
-  /* ===== DEFAULTS (now 3) ===== */
+  /* ===== DEFAULTS (2 only) ===== */
   const teacherDefault = [
     "Encourage active participation in all class activities.",
-    "Monitor progress through regular formative assessments.",
-   
+    "Monitor progress through regular formative assessments."
   ];
 
   const parentDefault = [
     "Ensure a quiet and conducive environment for study.",
-    "Encourage consistent daily reading and revision.",
-   
+    "Encourage consistent daily reading and revision."
   ];
 
   const learnerDefault = [
-    "Submit all assignments and projects on time.",
-    "Be proactive in asking questions during lessons.",
-    "Organize study time effectively to cover all areas."
+    "Submit all assignments and projects on time.",<br>
+    "Be proactive in asking questions during lessons."
   ];
 
-  /* ===== ENSURE AT LEAST 3 ===== */
-  const ensureThree = (arr, defaults) => {
+  /* ===== ENSURE EXACTLY 2 ===== */
+  const ensureTwo = (arr, defaults) => {
     const result = [...arr];
-    for (let i = 0; result.length < 3 && i < defaults.length; i++) {
-      if (!result.includes(defaults[i])) result.push(defaults[i]);
+
+    for (let i = 0; result.length < 2 && i < defaults.length; i++) {
+      if (!result.includes(defaults[i])) {
+        result.push(defaults[i]);
+      }
     }
-    return result.slice(0, 3);
+
+    return result.slice(0, 2);
   };
 
   const wrapCards = (arr) => arr.map(text => `<div class="card">${text}</div>`);
 
   return {
-    teacher: wrapCards(ensureThree(teacher, teacherDefault)),
-    parent: wrapCards(ensureThree(parent, parentDefault)),
-    learner: wrapCards(ensureThree(learner, learnerDefault))
+    teacher: wrapCards(ensureTwo(teacher, teacherDefault)),
+    parent: wrapCards(ensureTwo(parent, parentDefault)),
+    learner: wrapCards(ensureTwo(learner, learnerDefault))
   };
 }
-
+ 
 
 
 function getEvidenceStatus(rows) {
