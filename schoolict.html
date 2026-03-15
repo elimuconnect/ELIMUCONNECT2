@@ -4,11 +4,22 @@
 <meta charset="UTF-8">
 <title>Smart Elimu Connect | CBC School Digital Systems</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Smart Elimu Connect delivers CBC-first school ICT systems, competency-based analytics, and digital administration tools for Kenyan schools.">
 
-<!-- NAVIGATION -->
 <style>
-/* Navbar container */
+:root {
+  --primary: #0b3c5d;
+  --secondary: #1f7a8c;
+  --accent: #e36414;
+  --light: #f5f7fa;
+  --dark: #1c1c1c;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+/* Navbar */
 .navbar {
   background: var(--primary);
   color: white;
@@ -20,86 +31,44 @@
   top: 0;
   z-index: 1000;
 }
-
-/* Logo / title */
-.navbar h1 {
-  font-size: 1.4rem;
-  margin: 0;
-}
-
-/* Desktop nav buttons */
-.nav-links {
-  display: flex;
-  gap: 12px;
-}
-
+.navbar h1 { font-size:1.4rem; margin:0; }
+.nav-links { display:flex; gap:12px; }
 .nav-links a {
-  color: white;
-  text-decoration: none;
-  font-weight: 600;
-  padding: 10px 16px;
-  border-radius: 8px;
   background: var(--accent);
-  transition: 0.3s;
+  padding: 12px 20px;
+  border-radius:10px;
+  text-decoration:none;
+  color:white;
+  font-weight:600;
 }
+.nav-links a:hover { background: var(--secondary); }
 
-.nav-links a:hover {
-  background: var(--secondary);
-}
-
-/* Hamburger for mobile */
-.hamburger {
-  display: none;
-  flex-direction: column;
-  cursor: pointer;
-}
-
-.hamburger div {
-  width: 28px;
-  height: 3px;
-  background: white;
-  margin: 4px 0;
-  transition: 0.3s;
-}
-
-/* Mobile menu */
+/* Hamburger */
+.hamburger { display:none; flex-direction:column; cursor:pointer; }
+.hamburger div { width:28px; height:3px; background:white; margin:4px 0; }
 .mobile-menu {
-  display: none;
-  flex-direction: column;
-  gap: 8px;
-  background: var(--primary);
-  padding: 10px 24px;
+  display:none;
+  flex-direction:column;
+  gap:8px;
+  background:var(--primary);
+  padding:10px 24px;
 }
-
 .mobile-menu a {
-  color: white;
-  font-weight: 600;
-  text-decoration: none;
-  padding: 10px 12px;
-  border-radius: 6px;
-  background: var(--accent);
+  color:white; font-weight:600; text-decoration:none; padding:10px 12px;
+  border-radius:6px; background: var(--accent);
 }
+.mobile-menu a:hover { background: var(--secondary); }
 
-.mobile-menu a:hover {
-  background: var(--secondary);
-}
-
-/* Responsive */
-@media(max-width: 768px) {
-  .nav-links {
-    display: none;
-  }
-  .hamburger {
-    display: flex;
-  }
+@media(max-width:768px){
+  .nav-links { display:none; }
+  .hamburger { display:flex; }
 }
 </style>
 </head>
-  <body>
+<body>
+
 <nav class="navbar">
   <h1>Smart Elimu Connect</h1>
-
-  <!-- Desktop buttons -->
   <div class="nav-links">
     <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin" target="_blank">ICT Tools</a>
     <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin2" target="_blank">Extra ICT Tools</a>
@@ -109,15 +78,11 @@
     <a href="https://elimuconnect.github.io/ELIMUCONNECT2/reportcompetency" target="_blank">Reports (Competency)</a>
   </div>
 
-  <!-- Hamburger for mobile -->
   <div class="hamburger" onclick="toggleMenu()">
-    <div></div>
-    <div></div>
-    <div></div>
+    <div></div><div></div><div></div>
   </div>
 </nav>
 
-<!-- Mobile menu -->
 <div class="mobile-menu" id="mobileMenu">
   <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin" target="_blank">ICT Tools</a>
   <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin2" target="_blank">Extra ICT Tools</a>
@@ -128,10 +93,13 @@
 </div>
 
 <script>
-function toggleMenu() {
+function toggleMenu(){
   const menu = document.getElementById('mobileMenu');
-  menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
+  menu.style.display = menu.style.display==='flex' ? 'none':'flex';
 }
+// Optional: hide mobile menu when resizing to desktop
+window.addEventListener('resize', ()=>{ if(window.innerWidth>768) document.getElementById('mobileMenu').style.display='none'; });
 </script>
-  </body>
+
+</body>
 </html>
