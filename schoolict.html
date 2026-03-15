@@ -36,14 +36,40 @@ body { margin:0; font-family:"Segoe UI", Arial, sans-serif; background: var(--li
   z-index: 1000;
 }
 .navbar h1 { font-size:1.4rem; margin:0; color:white; }
-.nav-links { display:flex; gap:10px; }
-.nav-links a {
-  padding: 10px 18px;
+
+/* Hamburger */
+.hamburger {
+  display:flex;
+  flex-direction:column;
+  cursor:pointer;
+}
+.hamburger div {
+  width:28px; height:3px; background:white; margin:4px 0; transition:0.3s;
+}
+
+/* Nav links - hidden by default, shown on click */
+.nav-links {
+  display:none;
+  flex-direction: column;
+  gap:8px;
+  position: absolute;
+  top: 60px; /* below navbar */
+  right: 24px;
+  background: var(--primary);
+  padding:10px 16px;
   border-radius:8px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  z-index: 999;
+}
+.nav-links a {
+  display:inline-block; /* only fit text */
+  padding: 8px 16px;
+  border-radius: 6px;
   text-decoration:none;
+  font-weight: 600;
   color:white;
-  font-weight:600;
-  transition: 0.3s;
+  white-space: nowrap;
+  transition:0.3s;
 }
 .nav-links a.home { background: var(--home); }
 .nav-links a.ict { background: var(--ict); }
@@ -53,30 +79,6 @@ body { margin:0; font-family:"Segoe UI", Arial, sans-serif; background: var(--li
 .nav-links a.reports-marks { background: var(--reports-marks); }
 .nav-links a.reports-competency { background: var(--reports-competency); }
 .nav-links a:hover { opacity:0.85; }
-
-/* Hamburger */
-.hamburger { display:none; flex-direction:column; cursor:pointer; }
-.hamburger div { width:28px; height:3px; background:white; margin:4px 0; }
-
-/* Mobile menu */
-.mobile-menu {
-  display:none;
-  flex-direction:column;
-  gap:8px;
-  background: var(--primary);
-  padding:10px 24px;
-}
-.mobile-menu a {
-  color:white; font-weight:600; text-decoration:none; padding:10px 12px; border-radius:6px;
-}
-.mobile-menu a.home { background: var(--home); }
-.mobile-menu a.ict { background: var(--ict); }
-.mobile-menu a.extra-ict { background: var(--extra-ict); }
-.mobile-menu a.analytics-marks { background: var(--analytics-marks); }
-.mobile-menu a.analytics-cbc { background: var(--analytics-cbc); }
-.mobile-menu a.reports-marks { background: var(--reports-marks); }
-.mobile-menu a.reports-competency { background: var(--reports-competency); }
-.mobile-menu a:hover { opacity:0.85; }
 
 /* Hero Section */
 .hero {
@@ -90,27 +92,9 @@ body { margin:0; font-family:"Segoe UI", Arial, sans-serif; background: var(--li
   align-items: flex-start;
   justify-content: center;
 }
-.hero img {
-  width: 120px;
-  margin-bottom: 20px;
-}
-.hero h2 {
-  font-size: 2.8rem;
-  margin-bottom: 20px;
-}
-.hero p {
-  font-size: 1.25rem;
-  max-width: 750px;
-  line-height: 1.7;
-}
-
-/* Responsive */
-@media(max-width:768px){
-  .nav-links { display:none; }
-  .hamburger { display:flex; }
-  .hero h2 { font-size:2rem; }
-  .hero p { font-size:1.05rem; }
-}
+.hero img { width: 120px; margin-bottom:20px; }
+.hero h2 { font-size:2.8rem; margin-bottom:20px; }
+.hero p { font-size:1.25rem; max-width:750px; line-height:1.7; }
 </style>
 </head>
 <body>
@@ -118,25 +102,16 @@ body { margin:0; font-family:"Segoe UI", Arial, sans-serif; background: var(--li
 <!-- Navbar -->
 <nav class="navbar">
   <h1>Smart Elimu Connect</h1>
-  <div class="nav-links">
-    <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schoolicttools" class="home">Home</a>
-    <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin" class="ict">ICT Tools</a>
-    <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin2" class="extra-ict">ICT Tools)ExtraTeachers)</a>
-    <a href="https://elimuconnect.github.io/ELIMUCONNECT2/index2" class="analytics-marks">Analytics (Marks → Competencies)</a>
-    <a href="https://elimuconnect.github.io/ELIMUCONNECT2/" class="analytics-cbc">Analytics (Direct CBC)</a>
-    <a href="https://elimuconnect.github.io/ELIMUCONNECT2/resultsmarksbest" class="reports-marks">Reports (Marks → Competencies) </a>
-    <a href="https://elimuconnect.github.io/ELIMUCONNECT2/reportcompetency" class="reports-competency">Reports (Competency)</a>
-  </div>
   <div class="hamburger" onclick="toggleMenu()">
     <div></div><div></div><div></div>
   </div>
 </nav>
 
-<!-- Mobile Menu -->
-<div class="mobile-menu" id="mobileMenu">
-   <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schoolicttools" class="home">Home</a>
+<!-- Nav Menu -->
+<div class="nav-links" id="navMenu">
+  <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schoolicttools" class="home">Home</a>
   <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin" class="ict">ICT Tools</a>
-  <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin2" class="extra-ict">ICT Tools(Extra Teachers)</a>
+  <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin2" class="extra-ict">ICT Tools (Extra Teachers)</a>
   <a href="https://elimuconnect.github.io/ELIMUCONNECT2/index2" class="analytics-marks">Analytics (Marks → Competencies)</a>
   <a href="https://elimuconnect.github.io/ELIMUCONNECT2/" class="analytics-cbc">Analytics (Direct CBC)</a>
   <a href="https://elimuconnect.github.io/ELIMUCONNECT2/resultsmarksbest" class="reports-marks">Reports (Marks → Competencies)</a>
@@ -155,11 +130,20 @@ body { margin:0; font-family:"Segoe UI", Arial, sans-serif; background: var(--li
 </section>
 
 <script>
-function toggleMenu(){
-  const menu = document.getElementById('mobileMenu');
-  menu.style.display = menu.style.display==='flex' ? 'none':'flex';
+function toggleMenu() {
+  const menu = document.getElementById('navMenu');
+  menu.style.display = menu.style.display==='flex' ? 'none' : 'flex';
+  menu.style.flexDirection = 'column'; // keep buttons stacked
 }
-window.addEventListener('resize', ()=>{ if(window.innerWidth>768) document.getElementById('mobileMenu').style.display='none'; });
+
+// optional: hide nav if clicked outside
+document.addEventListener('click', function(e){
+  const menu = document.getElementById('navMenu');
+  const hamburger = document.querySelector('.hamburger');
+  if(!menu.contains(e.target) && !hamburger.contains(e.target)){
+    menu.style.display = 'none';
+  }
+});
 </script>
 
 </body>
