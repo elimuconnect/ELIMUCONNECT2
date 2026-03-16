@@ -651,9 +651,7 @@ Object.keys(avgMap).forEach(student => {
 });
   
 
-  /* ===== RAW RESULTS ===== */
-
-const { data, error } = await supabase
+ const { data, error } = await supabase
   .from("results2_report_view")
   .select("*")
   .eq("term", termName)
@@ -665,24 +663,35 @@ if (error) {
   return;
 }
 
-if (!data?.length) {
+if (!data || data.length === 0) {
   status.innerText = "No results found.";
   return;
 }
 
 results = data;
 
-// school and class
-const schoolName = data[0]?.school_name ?? "—";
-const className  = data[0]?.class_name ?? "—";
 
-// DIRECT URL LOGO MAP
-const schoolLogos = {
-  "SHANZU SENIOR SECONDARY SCHOOL":
-    "https://res.cloudinary.com/dwvt4e9o2/image/upload/v1773573305/schoollogo1_rnpce8.jpg"
+
+/* Inside loadReport after: results = data; */
+const firstRow = data[0] || {};
+
+// 1. Dynamic School Details (No hardcoded strings)
+const schoolDetail = {
+  name: firstRow.school_name || "—",
+  po_box: firstRow.po_box || "—",
+  postal_code: firstRow.postal_code || "—",
+  town: firstRow.town || "—",
+  phone: firstRow.phone || "—",
+  email: firstRow.email || "—"
 };
 
-schoolLogo = schoolLogos[schoolName?.trim()] || null;
+// 2. Logo Logic (Kept as before)
+const manualLogos = {
+  "SHANZU SENIOR SECONDARY SCHOOL": "https://res.cloudinary.com/dwvt4e9o2/image/upload/v1773573305/schoollogo1_rnpce8.jpg"
+};
+
+// Uses the DB logo if present, otherwise checks the manual map
+schoolLogo = firstRow.school_logo_from_db || manualLogos[schoolDetail.name.trim()] || null;
 
 
 
@@ -727,6 +736,7 @@ strandData?.forEach(row => {
 });
  
  
+  
  function renderOverviewHeader({
   school, poBox, postal, town, phone, email, className, term, year, logo
 }) {
@@ -767,24 +777,28 @@ strandData?.forEach(row => {
           </div>
         ` : ""}
 
-        <!-- SCHOOL DETAILS -->
         <div style="text-align:center;">
-          <h3 style="margin:0;">${school}</h3>
-          <div style="font-size:0.9em;color:#555;">
-            <strong>P.O. Box:</strong> ${poBox} - ${postal} |
-            <strong>Town:</strong> ${town}<br/>
-            <strong>Tel:</strong> ${phone}
+          <h2 style="margin:0; font-size: 1.4em; color: #000;">${school}</h2>
+          <div style="font-size:0.9em; color:#333; margin-top: 4px; line-height: 1.4;">
+            <strong>P.O. Box:</strong> ${poBox} - ${postal}, ${town}<br/>
+            <strong>Tel:</strong> ${phone} ${email ? `| <strong>Email:</strong> ${email}` : ""}
           </div>
-          <div style="font-size:0.9em;color:#555;margin-top:4px;">
-            <strong>Class:</strong> ${className} |
-            <strong>Term:</strong> ${term} – ${year}
+          <div style="
+            display: inline-block;
+            margin-top: 10px;
+            padding: 5px 15px;
+            background: #f4f4f4;
+            border-radius: 4px;
+            font-size: 0.95em;
+            font-weight: bold;
+          ">
+            CLASS: ${className} | TERM: ${term} – ${year}
           </div>
         </div>
       </div>
     </div>
   `;
 }
- 
  
 
 function calculateTermIntelligence(records, previousRecords, previousTerm) {
@@ -1246,18 +1260,19 @@ const { strengths, needs } = generateStrengthsAndNeeds(student, subjects);
     return `
 <div class="a4-page learner-page">
   <div class="learner-card">
-    ${renderOverviewHeader({
-      school: subjects.__school || results[0]?.school_name || "Demo CBC School",
-      poBox: results[0]?.po_box || "12345",
-      postal: results[0]?.postal_code || "00100",
-      town: results[0]?.town || "Nairobi",
-      phone: results[0]?.phone || "0700123456",
-    
-      className: subjects.__class || className,
-      term: termName,
-      year: SYSTEM_YEAR,
-     logo: schoolLogo
-    })}
+  
+${renderOverviewHeader({
+  school: schoolDetail.name,
+  poBox: schoolDetail.po_box,
+  postal: schoolDetail.postal_code,
+  town: schoolDetail.town,
+  phone: schoolDetail.phone,
+  email: schoolDetail.email,
+  className: firstRow.class_name || "—",
+  term: firstRow.term || "—",
+  year: firstRow.academic_year || "2026",
+  logo: schoolLogo // Passed from the logic above
+})}
 
     <div class="split-block learner-header"
          style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
@@ -1874,16 +1889,24 @@ const intelligence = calculateTermIntelligence(
   previousTerm
 );
 
+/* Inside your loadReport function */
 
-document.getElementById("schoolAnalytics").innerHTML =
-  renderSchoolAnalytics(
-    records,
-    termName,
-    SYSTEM_YEAR,
-    intelligence,
-    schoolName,
-    className
-  );
+// 1. Get the first record to extract school and class names
+const firstRecord = records[0] || {};
+
+// 2. Extract the dynamic names from your SQL View
+const currentSchool = firstRecord.school_name || "Unknown School";
+const currentClass = firstRecord.class_name || "All Classes";
+
+// 3. Update the function call to use these new variables
+document.getElementById("schoolAnalytics").innerHTML = renderSchoolAnalytics(
+  records,
+  termName,
+  SYSTEM_YEAR,
+  intelligence,
+  currentSchool, // Replaces schoolName
+  currentClass   // Replaces className
+);
 
  reportDiv.innerHTML = renderGrouped(grouped, avgMap);
 
