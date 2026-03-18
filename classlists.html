@@ -192,62 +192,26 @@ button { background: #2563eb; color: white; border: none; cursor: pointer; font-
 .class-table th:nth-child(4) { width: 15%; }  /* Score */
 .class-table th:nth-child(5) { width: 25%; }  /* Performance Level */
 
-
-/* ========== MOBILE-FIRST STYLING ========== */
+/* Mobile stacking for controls */
 @media screen and (max-width: 768px) {
-  body {
-    padding: 10px;
-    font-size: 18px;      /* bigger base font for readability */
-  }
-
-  .controls {
-    padding: 15px;
-    margin: 0 10px 20px 10px; 
-    max-width: 100%;       /* allow full width on small screens */
-  }
-
-  .controls h3 {
-    font-size: 24px;       /* larger heading */
+  .controls div {
+    display: flex;
+    flex-direction: column;  /* stack items vertically */
+    gap: 10px;               /* space between items */
   }
 
   select, button {
-    font-size: 20px;       /* larger select/button text */
-    padding: 16px;         /* easier to tap */
-    max-width: 100%;       /* fills container width */
+    width: 100%;             /* full width */
+    max-width: 100%;         /* ignore previous 250px limit */
+    font-size: 18px;         /* larger text */
+    padding: 14px;           /* easier to tap */
   }
 
-  /* Header in report preview */
-  .header .school-name {
-    font-size: 26pt;       /* school name bigger */
-  }
-  .header .school-info {
-    font-size: 14pt;       /* info readable on phones */
-  }
-  .report-title {
-    font-size: 18pt;       /* report title */
-  }
-
-  /* Table adjustments for mobile */
-  .class-table th, .class-table td {
-    font-size: 14pt;       /* larger table text */
-    padding: 8px 6px;      /* more spacing for fingers */
-  }
-
-  .a4-container {
-    width: 98%;             /* container nearly full screen */
-    padding: 12mm;          /* visual padding */
-    margin: 10px auto;
-    overflow-x: auto;       /* allow horizontal scroll if needed */
-  }
-
-  /* Make table scrollable if too wide */
-  .class-table {
-    display: block;
-    overflow-x: auto;
-    white-space: nowrap;
+  .controls h3 {
+    font-size: 22px;         /* heading larger */
+    text-align: center;      /* centered heading */
   }
 }
-  
 </style>
 
 </head>
