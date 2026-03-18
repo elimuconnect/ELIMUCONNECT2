@@ -192,6 +192,48 @@ button { background: #2563eb; color: white; border: none; cursor: pointer; font-
 .class-table th:nth-child(4) { width: 15%; }  /* Score */
 .class-table th:nth-child(5) { width: 25%; }  /* Performance Level */
 
+
+
+
+/* Responsive Fix for Mobile */
+@media screen and (max-width: 600px) {
+  body {
+    padding: 10px;
+    font-size: 14px; /* larger text for mobile readability */
+  }
+
+  .controls {
+    padding: 15px;
+    margin: 0 10px 20px 10px; /* smaller margins for mobile */
+  }
+
+  select, button {
+    font-size: 16px;      /* larger selects/buttons */
+    padding: 12px;        /* more tappable */
+    max-width: 100%;      /* fills screen width */
+  }
+
+  .header .school-name {
+    font-size: 18pt;      /* slightly smaller on small screens */
+  }
+
+  .header .school-info {
+    font-size: 9pt;       /* fit mobile screen */
+  }
+
+  .class-table th, .class-table td {
+    font-size: 10pt;      /* smaller table font on mobile */
+    padding: 4px;         /* tighter rows */
+  }
+}
+
+/* Keep A4 PDF styling unchanged */
+@media print {
+  body { background: white; padding: 0; }
+  .a4-container { width: 180mm; padding: 15mm; margin: 0 auto; box-shadow: none; }
+  .class-table th, .class-table td { font-size: 11pt; padding: 3.5px; }
+}
+  
 </style>
 
 </head>
