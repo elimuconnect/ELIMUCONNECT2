@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Class List</title>
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabase = createClient(
+  "https://zcmzuetusvpmvubbjlmx.supabase.co",
+  "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
+);
+
+const termSelect = document.getElementById("termSelect");
+const classSelect = document.getElementById("classSelect");
+const reportDiv = document.getElementById("report");
+
+let results = [];
+
+async function loadTerms() {
+  const { data, error } = await supabase.from("terms").select("id, name").order("name");
+  if (error) return;
+  termSelect.innerHTML = `<option value="">Select Term</option>` + data.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
+}
+
+async function loadClasses() {
+  const { data, error } = await supabase.from("classes").select("id, name").order("name");
+  if (error) return;
+  classSelect.innerHTML = `<option value="">Select Class</option>` + data.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
+}
+
+window.loadStudents = async function() {
+  const classId = classSelect.value;
+  const termId = termSelect.value;
+  if (!classId || !termId) return;
+
+  const { data, error } = await supabase
+    .from("class_students_with_term")
+    .select("*")
+    .eq("class_id", classId)
+    .eq("term_id", termId)
+    .order("full_name");
+
+  if (error) return alert("Error loading students");
+  results = data || [];
+  render();
+}
+
+function render() {
+  if (!results.length) {
+    reportDiv.innerHTML = "No students found";
+    return;
+  }
+
+  const { school_name, town, logo_url, class_name, term_name, po_box, postal_code, phone, email } = results[0];
+
+  let html = `
+    <div class="a4-container" id="printable-area">
+      <div class="header">
+        ${logo_url ? `<img src="${logo_url}" class="logo" crossorigin="anonymous">` : ""}
+        <h2 class="school-name">${school_name || "SCHOOL NAME"}</h2>
+        <p class="school-info">P.O. BOX ${po_box || ""}-${postal_code || ""}, ${town || ""}</p>
+        <p class="school-info">TEL: ${phone || ""} ${email ? ' | EMAIL: ' + email : ''}</p>
+        <div class="divider"></div>
+        <h3 class="report-title">${class_name} - ${term_name} CLASS LIST</h3>
+      </div>
+
+      <table class="class-table">
+        <thead>
+          <tr>
+            <th style="width:8%;">#</th>
+            <th style="width:42%;">Student Name</th>
+            <th style="width:20%;">Adm No</th>
+            <th style="width:15%;">Score</th>
+            <th style="width:15%;">Level</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+
+  results.forEach((s, i) => {
+    html += `
+      <tr>
+        <td>${i + 1}</td>
+        <td style="text-align:left; padding-left:10px;">${s.full_name}</td>
+        <td>${s.admission_number}</td>
+        <td></td>
+        <td></td>
+      </tr>
+    `;
+  });
+
+  html += `</tbody></table></div>`;
+  reportDiv.innerHTML = html;
+}
+
+window.downloadPDF = function() {
+  const element = document.getElementById('printable-area');
+  if (!element) return alert("No data to download");
+
+  const opt = {
+    margin: [15, 10, 15, 10], // top, left, bottom, right in mm
+    filename: 'Class_List.pdf',
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+  };
+
+  html2pdf().from(element).set(opt).save();
+}
+
+loadTerms();
+loadClasses();
+termSelect.addEventListener("change", window.loadStudents);
+classSelect.addEventListener("change", window.loadStudents);
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<style>
+/* 1. Global Styles */
+body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; background: #525659; }
+
+.controls { 
+  background: white; padding: 20px; border-radius: 8px; 
+  margin: 0 auto 20px auto; max-width: 800px; 
+}
+
+select, button { padding: 10px; margin: 5px 0; width: 100%; max-width: 250px; border: 1px solid #ccc; border-radius: 4px; }
+button { background: #2563eb; color: white; border: none; cursor: pointer; font-weight: bold; }
+
+/* 2. THE CONTAINER - Simplified for PDF engine */
+.a4-container {
+  width: 180mm; /* fits within A4 with 15mm margins left/right */
+  margin: 0 auto;
+  background: #fff;
+  padding: 15mm; /* top/bottom/left/right */
+  box-sizing: border-box;
+}
+
+/* 3. Screen Preview Decoration */
+#report .a4-container {
+  box-shadow: 0 0 15px rgba(0,0,0,0.3);
+  min-height: 297mm;
+  padding: 10mm; /* Visual padding for screen only */
+  margin-top: 20px;
+}
+/* Table Styling */
+.class-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed; /* ensures widths are respected */
+}
+
+/* Repeat header on every page */
+.class-table thead { 
+  display: table-header-group; 
+}
+
+.class-table tr { 
+  page-break-inside: avoid !important; /* Prevents splitting a single student */
+}
+
+
+.class-table th, .class-table td {
+  border: 1px solid #000;
+  padding: 3.5px; /* reduced from 6px to make rows shorter */
+  font-size: 11pt;
+  text-align: center;
+  word-wrap: break-word;
+}
+
+
+
+
+.class-table th { background-color: #f2f2f2; }
+
+/* 5. Header UI */
+.header { text-align: center; margin-bottom: 20px; width: 100%; }
+.logo { width: 80px; height: 80px; object-fit: contain; }
+.school-name { margin: 5px 0; font-size: 20pt; text-transform: uppercase; }
+.school-info { margin: 2px 0; font-size: 10pt; }
+.divider { height: 6px; background: #333; margin: 10px 0; }
+
+
+/* Adjust column widths so table fits within A4 */
+.class-table th:nth-child(1) { width: 5%; }   /* # */
+.class-table th:nth-child(2) { width: 40%; }  /* Student Name */
+.class-table th:nth-child(3) { width: 15%; }  /* Admission No */
+.class-table th:nth-child(4) { width: 15%; }  /* Score */
+.class-table th:nth-child(5) { width: 25%; }  /* Performance Level */
+
+</style>
+
+</head>
+<body>
+<div class="controls">
+  <h3>School Class Lists</h3>
+  <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+    <select id="termSelect"></select>
+    <select id="classSelect"></select>
+    <button onclick="downloadPDF()">Download PDF</button>
+  </div>
+</div>
+<div id="report"></div>
+</body>
+</html>
