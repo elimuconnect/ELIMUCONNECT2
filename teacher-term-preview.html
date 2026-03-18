@@ -1817,8 +1817,19 @@ document.getElementById("schoolAnalytics").innerHTML = renderSchoolAnalytics(
 
 
 
- reportDiv.innerHTML = renderGrouped(grouped, avgMap);
+  // ✅ SORT
+  const sortedGrouped = Object.fromEntries(
+    Object.entries(grouped).sort((a, b) =>
+      a[0].localeCompare(b[0], undefined, { sensitivity: "base" })
+    )
+  );
 
+  // ✅ USE sortedGrouped
+  reportDiv.innerHTML = renderGrouped(sortedGrouped, avgMap);
+
+
+
+    
     if (!window.__EXPORTING_PDF__) {
   requestAnimationFrame(() => {
    
@@ -1879,7 +1890,20 @@ if (viewMode.value === "student") {
       grouped[r.student][r.subject].push(r);
     });
 
-    reportDiv.innerHTML = renderGrouped(grouped, avgMap);
+
+
+
+  // ✅ SORT
+  const sortedGrouped = Object.fromEntries(
+    Object.entries(grouped).sort((a, b) =>
+      a[0].localeCompare(b[0], undefined, { sensitivity: "base" })
+    )
+  );
+
+  // ✅ USE sortedGrouped
+  reportDiv.innerHTML = renderGrouped(sortedGrouped, avgMap);
+
+    
 
     // Show button **after DOM has been updated**
     requestAnimationFrame(() => {
@@ -1926,12 +1950,19 @@ filtered.forEach(r => {
 });
 
 
-      
-      reportDiv.innerHTML = `
-        <h3>${subject} – All Students</h3>
-        ${renderGrouped(grouped, avgMap)}
-      `;
 
+const sortedGrouped = Object.fromEntries(
+  Object.entries(grouped).sort((a, b) =>
+    a[0].localeCompare(b[0], undefined, { sensitivity: "base" })
+  )
+);
+
+reportDiv.innerHTML = `
+  <h3>${selectedClass} – All Learners</h3>
+  ${renderGrouped(sortedGrouped, avgMap)}
+`;
+
+      
 requestAnimationFrame(() => {
   
 });   
@@ -1969,10 +2000,21 @@ if (viewMode.value === "class") {
       grouped[r.student][r.subject].push(r);
     });
 
-    reportDiv.innerHTML = `
-      <h3>${selectedClass} – All Learners</h3>
-      ${renderGrouped(grouped, avgMap)}
-    `;
+
+
+
+const sortedGrouped = Object.fromEntries(
+  Object.entries(grouped).sort((a, b) =>
+    a[0].localeCompare(b[0], undefined, { sensitivity: "base" })
+  )
+);
+
+reportDiv.innerHTML = `
+  <h3>${selectedClass} – All Learners</h3>
+  ${renderGrouped(sortedGrouped, avgMap)}
+`;
+
+    
 
     requestAnimationFrame(() => {
      
