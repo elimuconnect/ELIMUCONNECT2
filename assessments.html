@@ -418,30 +418,37 @@ competencies
     coreContainer.appendChild(label);
   });
 
+
+
 // Load students
 const { data: students } = await supabase
   .from("students")
   .select("id, admission_number, full_name")
   .eq("class_id", classId)
-  .order("full_name");
+  .order("full_name", { ascending: true });
+
 const tbody = document.getElementById("studentsBody");
-if (!students?.length) tbody.innerHTML = `<tr><td colspan="3">No students in this class</td></tr>`;
-else tbody.innerHTML = students.map(s => `
+
+if (!students?.length) {
+  tbody.innerHTML = `<tr><td colspan="3">No students in this class</td></tr>`;
+} else {
+  tbody.innerHTML = students.map(s => `
 <tr data-id="${s.id}">
   <td>${s.admission_number || ""}</td>
   <td>${s.full_name || ""}</td>
   <td>
-
-<select class="performanceLevel">
-  ${levels.map(l => `
-    <option value="${l.id}" ${l.label.includes("X") ? "selected" : ""}>
-      ${l.label}
-    </option>
-  `).join("")}
-</select>
-
+    <select class="performanceLevel">
+      ${levels.map(l => `
+        <option value="${l.id}" ${l.label.includes("X") ? "selected" : ""}>
+          ${l.label}
+        </option>
+      `).join("")}
+    </select>
   </td>
 </tr>`).join("");
+}
+
+  
 
 // Load strands and sub-strands from DB
 // Containers
