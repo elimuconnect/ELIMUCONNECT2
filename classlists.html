@@ -193,58 +193,59 @@ button { background: #2563eb; color: white; border: none; cursor: pointer; font-
 .class-table th:nth-child(5) { width: 25%; }  /* Performance Level */
 
 
-
-/* 1. Global adjustments for mobile */
+/* ========== MOBILE-FIRST STYLING ========== */
 @media screen and (max-width: 768px) {
   body {
     padding: 10px;
-    font-size: 16px; /* base text larger for phones */
+    font-size: 18px;      /* bigger base font for readability */
   }
 
   .controls {
     padding: 15px;
     margin: 0 10px 20px 10px; 
-  }
-
-  select, button {
-    font-size: 18px;       /* bigger text */
-    padding: 14px;         /* easier to tap */
-    max-width: 100%;       /* fills available width */
+    max-width: 100%;       /* allow full width on small screens */
   }
 
   .controls h3 {
-    font-size: 20px;       /* bigger heading */
+    font-size: 24px;       /* larger heading */
+  }
+
+  select, button {
+    font-size: 20px;       /* larger select/button text */
+    padding: 16px;         /* easier to tap */
+    max-width: 100%;       /* fills container width */
   }
 
   /* Header in report preview */
   .header .school-name {
-    font-size: 22pt;
+    font-size: 26pt;       /* school name bigger */
   }
   .header .school-info {
-    font-size: 12pt;
+    font-size: 14pt;       /* info readable on phones */
   }
   .report-title {
-    font-size: 16pt;
+    font-size: 18pt;       /* report title */
   }
 
-  /* Table adjustments */
+  /* Table adjustments for mobile */
   .class-table th, .class-table td {
-    font-size: 12pt;       /* readable table font */
-    padding: 6px 4px;      /* slightly bigger rows */
+    font-size: 14pt;       /* larger table text */
+    padding: 8px 6px;      /* more spacing for fingers */
   }
 
   .a4-container {
-    width: 95%;             /* container nearly full width */
-    padding: 10mm;          /* maintain spacing */
+    width: 98%;             /* container nearly full screen */
+    padding: 12mm;          /* visual padding */
     margin: 10px auto;
+    overflow-x: auto;       /* allow horizontal scroll if needed */
   }
-}
 
-/* Keep PDF export unaffected */
-@media print {
-  body { background: white; padding: 0; }
-  .a4-container { width: 180mm; padding: 15mm; margin: 0 auto; box-shadow: none; }
-  .class-table th, .class-table td { font-size: 11pt; padding: 3.5px; }
+  /* Make table scrollable if too wide */
+  .class-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
 }
   
 </style>
