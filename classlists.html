@@ -194,40 +194,53 @@ button { background: #2563eb; color: white; border: none; cursor: pointer; font-
 
 
 
-
-/* Responsive Fix for Mobile */
-@media screen and (max-width: 600px) {
+/* 1. Global adjustments for mobile */
+@media screen and (max-width: 768px) {
   body {
     padding: 10px;
-    font-size: 14px; /* larger text for mobile readability */
+    font-size: 16px; /* base text larger for phones */
   }
 
   .controls {
     padding: 15px;
-    margin: 0 10px 20px 10px; /* smaller margins for mobile */
+    margin: 0 10px 20px 10px; 
   }
 
   select, button {
-    font-size: 16px;      /* larger selects/buttons */
-    padding: 12px;        /* more tappable */
-    max-width: 100%;      /* fills screen width */
+    font-size: 18px;       /* bigger text */
+    padding: 14px;         /* easier to tap */
+    max-width: 100%;       /* fills available width */
   }
 
+  .controls h3 {
+    font-size: 20px;       /* bigger heading */
+  }
+
+  /* Header in report preview */
   .header .school-name {
-    font-size: 18pt;      /* slightly smaller on small screens */
+    font-size: 22pt;
   }
-
   .header .school-info {
-    font-size: 9pt;       /* fit mobile screen */
+    font-size: 12pt;
+  }
+  .report-title {
+    font-size: 16pt;
   }
 
+  /* Table adjustments */
   .class-table th, .class-table td {
-    font-size: 10pt;      /* smaller table font on mobile */
-    padding: 4px;         /* tighter rows */
+    font-size: 12pt;       /* readable table font */
+    padding: 6px 4px;      /* slightly bigger rows */
+  }
+
+  .a4-container {
+    width: 95%;             /* container nearly full width */
+    padding: 10mm;          /* maintain spacing */
+    margin: 10px auto;
   }
 }
 
-/* Keep A4 PDF styling unchanged */
+/* Keep PDF export unaffected */
 @media print {
   body { background: white; padding: 0; }
   .a4-container { width: 180mm; padding: 15mm; margin: 0 auto; box-shadow: none; }
