@@ -1229,6 +1229,10 @@ function renderGrouped(grouped, avgMap) {
 
     const admission = subjects.__admission || "N/A";
 
+      // get the current student's class
+const studentRecord = Object.values(subjects).flat().find(r => r.className);
+const currentClass = studentRecord?.className || "—";
+
     // ----- trend & support -----
     const currentScores = [];
     Object.entries(subjects).forEach(([subject, rows]) => {
@@ -1268,7 +1272,7 @@ ${renderOverviewHeader({
   town: schoolDetail.town,
   phone: schoolDetail.phone,
  
-  className: firstRow.class_name || "—",
+ className: currentClass,
   term: firstRow.term || "—",
   year: firstRow.academic_year || "2026",
   logo: schoolLogo // Passed from the logic above
