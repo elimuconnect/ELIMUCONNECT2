@@ -441,12 +441,13 @@ competencies
 
 
 
-// Load students
-const { data: students } = await supabase
+
+
+  const { data: students } = await supabase
   .from("students")
   .select("id, admission_number, full_name")
   .eq("class_id", classId)
-  .order("full_name", { ascending: true });
+  .order("full_name", { ascending: true }); // ✅ ADDED THIS ONLY
 
 const tbody = document.getElementById("studentsBody");
 
@@ -457,15 +458,13 @@ if (!students?.length) {
 <tr data-id="${s.id}">
   <td>${s.admission_number || ""}</td>
   <td>${s.full_name || ""}</td>
+
   <td>
-    <select class="performanceLevel">
-      ${levels.map(l => `
-        <option value="${l.id}" ${l.label.includes("X") ? "selected" : ""}>
-          ${l.label}
-        </option>
-      `).join("")}
-    </select>
+    <input type="number" class="marksInput" min="0" max="100" placeholder="0-100">
   </td>
+
+  <td class="levelOutput"></td>
+
 </tr>`).join("");
 }
 
