@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>Term Report Preview</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 
 /* ================== BASE ================== */
@@ -30,7 +31,7 @@ h5 {
 
 /* ================== FORM CONTROLS ================== */
 label {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   color: #6b7280;
   display: block;
@@ -40,10 +41,10 @@ label {
 input, select {
   width: 100%;
   max-width: 400px;
-  padding: 10px 12px;
-  border-radius: 8px;
+  padding: 14px 16px;
+  border-radius: 10px;
   border: 1px solid #d1d5db;
-  font-size: 14px;
+  font-size: 16px;
   background: #ffffff;
   transition: all 0.2s ease;
 }
@@ -68,11 +69,11 @@ input:focus, select:focus {
 button {
   width: 100%;
   max-width: 100%;
-  padding: 12px 14px;
-  border-radius: 8px;
+  padding: 16px 
+  border-radius: 10px;
   border: none;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 16px;
   cursor: pointer;
   background: #2563eb;
   color: white;
@@ -370,6 +371,52 @@ td {
   line-height: 1.6;
 }
 
+
+.controls-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .controls-row {
+    flex-direction: row;
+  }
+}
+
+
+
+@media (max-width: 768px) {
+  body {
+    padding: 15px 10px;
+  }
+
+  h3 {
+    font-size: 18px;
+  }
+
+  input, select, button {
+    font-size: 16px;
+  }
+
+  .actions-box {
+    padding: 15px;
+  }
+}
+
+
+
+@media (max-width: 768px) {
+  table {
+    font-size: 13px;
+  }
+
+  th, td {
+    padding: 6px;
+  }
+}
+
+	
 </style>
 
 </head>
@@ -395,7 +442,7 @@ td {
 <p id="status"></p>
 <hr />
 
-<div class="actions-box" style="display: flex; gap: 12px; flex-wrap: wrap;">
+<div class="actions-box controls-row">
   <button onclick="downloadPDF()" style="flex: 1;">
     ⬇️ Download Report Form(s)<br>
     <small>Recommended for parents & learners</small>
