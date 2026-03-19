@@ -118,17 +118,27 @@ classSelect.addEventListener("change", window.loadStudents);
 </script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 /* 1. Global Styles */
 body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; background: #525659; }
 
 .controls { 
-  background: white; padding: 20px; border-radius: 8px; 
-  margin: 0 auto 20px auto; max-width: 800px; 
+  background: white; 
+  padding: 15px; 
+  border-radius: 8px; 
+  margin: 0 auto 20px auto; 
+  max-width: 800px; 
 }
 
-select, button { padding: 10px; margin: 5px 0; width: 100%; max-width: 250px; border: 1px solid #ccc; border-radius: 4px; }
+select, button {
+  padding: 14px;
+  margin: 6px 0;
+  width: 100%;
+  font-size: 16px; /* prevents zoom on mobile */
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
 button { background: #2563eb; color: white; border: none; cursor: pointer; font-weight: bold; }
 
 /* 2. THE CONTAINER - Simplified for PDF engine */
@@ -212,13 +222,33 @@ button { background: #2563eb; color: white; border: none; cursor: pointer; font-
     text-align: center;      /* centered heading */
   }
 }
+
+
+.controls-row {
+  display: flex;
+  flex-direction: column; /* stack on phone */
+  gap: 10px;
+}
+
+/* On bigger screens, go horizontal */
+@media (min-width: 768px) {
+  .controls-row {
+    flex-direction: row;
+  }
+
+  .controls-row select,
+  .controls-row button {
+    max-width: 250px;
+  }
+}
+  
 </style>
 
 </head>
 <body>
 <div class="controls">
   <h3>School Report System</h3>
-  <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+<div class="controls-row">
     <select id="termSelect"></select>
     <select id="classSelect"></select>
     <button onclick="downloadPDF()">Download PDF</button>
