@@ -1277,8 +1277,17 @@ function renderGrouped(grouped, avgMap) {
     const admission = subjects.__admission || "N/A";
 
 // get the current student's class
-const studentRecord = Object.values(subjects).flat().find(r => r.className);
+const studentRecord = Object.entries(subjects)
+  .filter(([key]) => key !== "__admission")
+  .map(([key, rows]) => rows) // array of arrays
+  .flat()
+  .find(r => r.className);
+
 const currentClass = studentRecord?.className || "—";
+
+
+
+	  
 
     
     // ----- trend & support -----
