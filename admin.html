@@ -582,11 +582,12 @@ await loadManageClasses();
 document.getElementById("loadStudentsBtn").onclick = async () => {
   const class_id = manageClass.value;
 
-  const { data: students, error } = await supabase
-    .from("students")
-    .select("*")
-    .eq("class_id", class_id)
-    .eq("school_id", adminProfile.school_id); // 🔐 extra safety
+ const { data: students, error } = await supabase
+  .from("students")
+  .select("*")
+  .eq("class_id", class_id)
+  .eq("school_id", adminProfile.school_id)
+ .order("full_name", { ascending: true, nullsFirst: false })
 
   if (error) {
     studentsTable.innerHTML = "Error loading students";
