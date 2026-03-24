@@ -1205,8 +1205,8 @@ function getPerformanceBadge(level) {
   `;
 }
 
-  
-function renderGrouped(grouped, avgMap) {
+
+  function renderGrouped(grouped, avgMap) {
 
   return Object.entries(grouped).map(([student, subjects]) => {
 
@@ -1247,7 +1247,8 @@ const currentClass = studentRecord?.className || "—";
     const supportFlag = generateSupportFlag(subjects);
     const insight = generateInsight(subjects);
     const { strengths, needs } = generateStrengthsAndNeeds(subjects);
-    const recommendations = generateRecommendations(subjects, trend, supportFlag);
+	
+	  const recommendations = generateRecommendations(subjects, trend, supportFlag);
 
     return `
 <div class="a4-page learner-page">
@@ -2202,10 +2203,7 @@ card.style.pageBreakBefore = "auto";  // Allows it to follow the header naturall
       return "Below Expectations";
     }
 
-
-
-
-
+  
   // Get first Kiswahili subject for translations
 const firstKiswahiliSubject = Object.keys(avgMap?.[studentName] || {})
   .find(s => ["Kiswahili", "Kiswahili Lugha", "Fasihi ya Kiswahili"].includes(s));
@@ -2258,9 +2256,8 @@ function maybeTranslate(comment, subject) {
 
   return maybeTranslate(comment, subject);
 }
-
-
-	  
+   
+   
     // Build subject table
     const table = document.createElement("table");
     table.style.width = "100%";
@@ -2286,7 +2283,7 @@ function maybeTranslate(comment, subject) {
               <td style="border:1px solid #000;padding:8px;">${subject}</td>
            
               <td style="border:1px solid #000;padding:8px;">${d.achievement_level}</td>
-              <td style="border:1px solid #000;padding:8px;">${commentFromScore(avg)}</td>
+             <td style="border:1px solid #000;padding:8px;">${commentFromScore(avg, subject)}</td>
             </tr>
           `;
         }).join("")}
@@ -2313,7 +2310,7 @@ function maybeTranslate(comment, subject) {
         </tr>
         <tr>
           <td style="border:1px solid #000;padding:8px;"><strong>Teacher's General Comment</strong></td>
-          <td style="border:1px solid #000;padding:12px;">${generalComment(overallAvg)}</td>
+          <td style="border:1px solid #000;padding:12px;">${generalComment(overallAvg, firstKiswahiliSubject)}</td>
         </tr>
       </table>
 
@@ -2461,6 +2458,9 @@ for (let i = 0; i < cards.length; i += batchSize) {
 };
 
 
+
+  
+  
   
 </script>
 </body>
