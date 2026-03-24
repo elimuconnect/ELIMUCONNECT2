@@ -2279,36 +2279,86 @@ function overallLevel(score) {
   return getAchievementLabel(score);
 }
 
-function generalComment(score) {
-  const level = getAchievementLabel(score);
-  switch(level) {
-    case "EE2": return "Outstanding mastery.";
-    case "EE1": return "Very strong performance.";
-    case "ME2": return "Consistently meets expectations.";
-    case "ME1": return "Good progress.";
-    case "AE2": return "Approaching expectations.";
-    case "AE1": return "Developing understanding.";
-    case "BE2": return "Below expectations.";
-    case "BE1": return "Significant support needed.";
-    default: return "No data available.";
+
+
+ 
+  // Get first Kiswahili subject for translations
+const firstKiswahiliSubject = Object.keys(avgMap?.[studentName] || {})
+  .find(s => ["Kiswahili", "Kiswahili Lugha", "Fasihi ya Kiswahili"].includes(s));
+  
+  
+  
+  const swahiliSubjects = ["Kiswahili", "Kiswahili Lugha", "Fasihi ya Kiswahili"];
+
+function maybeTranslate(comment, subject) {
+  if (swahiliSubjects.includes(subject)) {
+    const translations = {
+      "Outstanding mastery.": "Umahiri wa hali ya juu.",
+      "Very strong performance.": "Utendaji bora sana.",
+      "Consistently meets expectations.": "Hufikia matarajio kila mara.",
+      "Good progress.": "Maendeleo mazuri.",
+      "Approaching expectations.": "Anakaribia kufikia matarajio.",
+      "Developing understanding.": "Anaendelea kukuza uelewa.",
+      "Below expectations.": "Chini ya matarajio.",
+      "Significant support needed.": "Anahitaji msaada mkubwa.",
+
+      "Outstanding work.": "Kazi bora sana.",
+      "Very good work.": "Kazi nzuri sana.",
+      "Meets expectations.": "Inafikia matarajio.",
+      "Needs more practice.": "Anahitaji mazoezi zaidi.",
+      "Keep working.": "Endelea kujitahidi.",
+      "Needs support.": "Anahitaji msaada.",
+      "Significant improvement needed.": "Anahitaji kuboresha sana."
+    };
+
+    return translations[comment] || comment;
   }
+  return comment;
 }
 
-function commentFromScore(score) {
+
+function generalComment(score, subject) {
   const level = getAchievementLabel(score);
+
+  let comment;
   switch(level) {
-    case "EE2": return "Outstanding work.";
-    case "EE1": return "Very good work.";
-    case "ME2": return "Meets expectations.";
-    case "ME1": return "Good progress.";
-    case "AE2": return "Needs more practice.";
-    case "AE1": return "Keep working.";
-    case "BE2": return "Needs support.";
-    case "BE1": return "Significant improvement needed.";
-    default: return "";
+    case "EE2": comment = "Outstanding mastery."; break;
+    case "EE1": comment = "Very strong performance."; break;
+    case "ME2": comment = "Consistently meets expectations."; break;
+    case "ME1": comment = "Good progress."; break;
+    case "AE2": comment = "Approaching expectations."; break;
+    case "AE1": comment = "Developing understanding."; break;
+    case "BE2": comment = "Below expectations."; break;
+    case "BE1": comment = "Significant support needed."; break;
+    default: comment = "No data available.";
   }
+
+  return maybeTranslate(comment, subject);
 }
 
+
+
+	  function commentFromScore(score, subject) {
+  const level = getAchievementLabel(score);
+
+  let comment;
+  switch(level) {
+    case "EE2": comment = "Outstanding work."; break;
+    case "EE1": comment = "Very good work."; break;
+    case "ME2": comment = "Meets expectations."; break;
+    case "ME1": comment = "Good progress."; break;
+    case "AE2": comment = "Needs more practice."; break;
+    case "AE1": comment = "Keep working."; break;
+    case "BE2": comment = "Needs support."; break;
+    case "BE1": comment = "Significant improvement needed."; break;
+    default: comment = "";
+  }
+
+  return maybeTranslate(comment, subject);
+}
+
+
+	  
 
     // Build subject table
     const table = document.createElement("table");
@@ -2333,7 +2383,7 @@ function commentFromScore(score) {
             <tr>
               <td style="border:1px solid #000;padding:8px;">${subject}</td>
               <td style="border:1px solid #000;padding:8px;">${d.achievement_level}</td>
-              <td style="border:1px solid #000;padding:8px;">${commentFromScore(avg)}</td>
+              <td style="border:1px solid #000;padding:8px;">${commentFromScore(avg, subject)}</td>
             </tr>
           `;
         }).join("")}
@@ -2353,10 +2403,11 @@ function commentFromScore(score) {
         </tr>
         <tr>
           <td style="border:1px solid #000;padding:8px;"><strong>Teacher's General Comment</strong></td>
-          <td style="border:1px solid #000;padding:12px;">${generalComment(overallAvg)}</td>
+          <td style="border:1px solid #000;padding:12px;">${generalComment(overallAvg, firstKiswahiliSubject)}</td>
         </tr>
       </table>
       <p>💪 Strengths: ${strengths.join(", ")}</p>
+	  
     
 <div style="margin-top:20px;">
   <div style="display:flex; justify-content:space-between; align-items:center; margin-top:18px;">
