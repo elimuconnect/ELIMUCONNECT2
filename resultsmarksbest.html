@@ -2280,8 +2280,14 @@ function overallLevel(score) {
 }
 
 
-
-const swahiliSubjects = ["Kiswahili", "Kiswahili Lugha", "Fasihi ya Kiswahili"];
+ 
+  // Get first Kiswahili subject for translations
+const firstKiswahiliSubject = Object.keys(avgMap?.[studentName] || {})
+  .find(s => ["Kiswahili", "Kiswahili Lugha", "Fasihi ya Kiswahili"].includes(s));
+  
+  
+  
+  const swahiliSubjects = ["Kiswahili", "Kiswahili Lugha", "Fasihi ya Kiswahili"];
 
 function maybeTranslate(comment, subject) {
   if (swahiliSubjects.includes(subject)) {
