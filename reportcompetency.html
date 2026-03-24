@@ -2194,28 +2194,63 @@ card.style.pageBreakBefore = "auto";  // Allows it to follow the header naturall
       return "Below Expectations";
     }
 
-   
-function generalComment(score) {
+
+
+
+  // Get first Kiswahili subject for translations
+const firstKiswahiliSubject = Object.keys(avgMap?.[studentName] || {})
+  .find(s => ["Kiswahili", "Kiswahili Lugha", "Fasihi ya Kiswahili"].includes(s));
+  
+  
+  
+  const swahiliSubjects = ["Kiswahili", "Kiswahili Lugha", "Fasihi ya Kiswahili"];
+
+function maybeTranslate(comment, subject) {
+  if (swahiliSubjects.includes(subject)) {
+    const translations = {
+      "Excellent work and strong understanding shown.": "Kazi nzuri na uelewa imedhihirika.",
+      "Good progress with steady improvement.": "Maendeleo mazuri. Endelea kufanya jitihada zaidi.",
+      "Fair work; continue practicing to improve.": "Utendaji wa wastani. Mazoezi zaidi yatasaidia kuboresha.",
+      "More effort and support required.": "Chini ya matarajio. Msaada zaidi unahitajika."
+    };
+    return translations[comment] || comment;
+  }
+  return comment;
+}
+  
+  
+  
+  
+  
+  
+  function generalComment(score, subject) {
+  let comment;
   if (score >= 3.5)
-    return "Excellent performance across most learning areas. Keep up the great work.";
+    comment = "Excellent performance across most learning areas. Keep up the great work.";
+  else if (score >= 2.5)
+    comment = "Good progress. Continue working hard to improve further.";
+  else if (score >= 1.5)
+    comment = "Fair performance. More effort and practice will help improve.";
+  else
+    comment = "Below expectations. Additional support and effort are required.";
 
-  if (score >= 2.5)
-    return "Good progress. Continue working hard to improve further.";
+  return maybeTranslate(comment, subject);
+}
+  
+  
+  
+  
+  function commentFromScore(score, subject) {
+  let comment;
+  if (score >= 3.5) comment = "Excellent work and strong understanding shown.";
+  else if (score >= 2.5) comment = "Good progress with steady improvement.";
+  else if (score >= 1.5) comment = "Fair work; continue practicing to improve.";
+  else comment = "More effort and support required.";
 
-  if (score >= 1.5)
-    return "Fair performance. More effort and practice will help improve.";
-
-  return "Below expectations. Additional support and effort are required.";
+  return maybeTranslate(comment, subject);
 }
 
-    
-    function commentFromScore(score) {
-  if (score >= 3.5) return "Excellent work and strong understanding shown.";
-  if (score >= 2.5) return "Good progress with steady improvement.";
-  if (score >= 1.5) return "Fair work; continue practicing to improve.";
-  return "More effort and support required.";
-}
-   
+	  
    
     // Build subject table
     const table = document.createElement("table");
