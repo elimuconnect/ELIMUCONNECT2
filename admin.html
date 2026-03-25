@@ -466,10 +466,10 @@ document.getElementById("addStudentBtn").onclick = async () => {
   const admission_year = document.getElementById("admissionYear").value;
   const class_id = studentClass.value;
 
-  if (!full_name || !gender || !admission_number || !class_id) {
-    document.getElementById("studentStatus").innerText = "Fill all required fields";
-    return;
-  }
+  if (!full_name || !admission_number || !class_id) {
+  document.getElementById("studentStatus").innerText = "Fill required fields (Name, Admission No, Class)";
+  return;
+}
 
   const { error } = await supabase.from("students").insert([
     {
