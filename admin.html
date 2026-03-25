@@ -600,49 +600,99 @@ document.getElementById("loadStudentsBtn").onclick = async () => {
   }
 
   studentsTable.innerHTML = `
-    <table>
+  <table>
+    <tr>
+      <th>Name</th>
+      <th>Gender</th>
+      <th>Admission No</th>
+      <th>DOB</th>
+      <th>Year</th>
+      <th>Action</th>
+    </tr>
+    ${students.map(s => `
       <tr>
-        <th>Name</th>
-        <th>Admission No</th>
-        <th>Action</th>
+        <td><input value="${s.full_name || ''}" data-field="full_name"></td>
+        
+        <td>
+          <select data-field="gender">
+            <option value="Male" ${s.gender === 'Male' ? 'selected' : ''}>Male</option>
+            <option value="Female" ${s.gender === 'Female' ? 'selected' : ''}>Female</option>
+          </select>
+        </td>
+        
+        <td><input value="${s.admission_number || ''}" data-field="admission_number"></td>
+        
+        <td><input type="date" value="${s.date_of_birth || ''}" data-field="date_of_birth"></td>
+        
+        <td><input type="number" value="${s.admission_year || ''}" data-field="admission_year"></td>
+
+        <td>
+          <button class="saveStudent" data-id="${s.id}">Save</button>
+          <button class="deleteStudent" data-id="${s.id}">Delete</button>
+        </td>
       </tr>
-      ${students.map(s => `
-        <tr>
-          <td>${s.full_name}</td>
-          <td>${s.admission_number}</td>
-          <td>
-            <button class="deleteStudent" data-id="${s.id}">
-              Delete
-            </button>
-          </td>
-        </tr>
-      `).join('')}
-    </table>
-  `;
+    `).join('')}
+  </table>
+`;
 };
 
 
 studentsTable.addEventListener("click", async (e) => {
-  if (!e.target.classList.contains("deleteStudent")) return;
 
-  const studentId = e.target.dataset.id;
+  // ======================
+  // SAVE STUDENT
+  // ======================
+  if (e.target.classList.contains("saveStudent")) {
 
-  if (!confirm("Are you sure you want to delete this student?")) return;
+    const row = e.target.closest("tr");
+    const studentId = e.target.dataset.id;
 
-  const { error } = await supabase
-    .from("students")
-    .delete()
-    .eq("id", studentId)
-    .eq("school_id", adminProfile.school_id); // 🔐 double protection
+    const inputs = row.querySelectorAll("[data-field]");
+    const updatedData = {};
 
-  if (error) {
-    alert("Error deleting: " + error.message);
-  } else {
-    alert("Student deleted");
-    document.getElementById("loadStudentsBtn").click(); // refresh
+    inputs.forEach(input => {
+      updatedData[input.dataset.field] = input.value;
+    });
+
+    const { error } = await supabase
+      .from("students")
+      .update(updatedData)
+      .eq("id", studentId)
+      .eq("school_id", adminProfile.school_id); // 🔐 safety
+
+    if (error) {
+      alert("Error updating: " + error.message);
+    } else {
+      alert("Student updated successfully");
+    }
   }
+
+  // ======================
+  // DELETE STUDENT
+  // ======================
+  if (e.target.classList.contains("deleteStudent")) {
+
+    const studentId = e.target.dataset.id;
+
+    if (!confirm("Are you sure you want to delete this student?")) return;
+
+    const { error } = await supabase
+      .from("students")
+      .delete()
+      .eq("id", studentId)
+      .eq("school_id", adminProfile.school_id);
+
+    if (error) {
+      alert("Error deleting: " + error.message);
+    } else {
+      alert("Student deleted");
+      document.getElementById("loadStudentsBtn").click(); // refresh
+    }
+  }
+
 });
 
+	
 </script>
 </body>
 </html>
