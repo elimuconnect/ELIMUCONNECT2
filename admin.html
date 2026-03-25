@@ -471,17 +471,17 @@ document.getElementById("addStudentBtn").onclick = async () => {
   return;
 }
 
-  const { error } = await supabase.from("students").insert([
-    {
-      school_id: adminProfile.school_id,
-      class_id,
-      full_name,
-      gender,
-      admission_number,
-      date_of_birth,
-      admission_year
-    }
-  ]);
+const { error } = await supabase.from("students").insert([
+  {
+    school_id: adminProfile.school_id,
+    class_id,
+    full_name,
+    admission_number,
+    gender: gender || null,
+    date_of_birth: date_of_birth || null,
+    admission_year: admission_year ? parseInt(admission_year) : null
+  }
+]);
 
   if (error) {
     document.getElementById("studentStatus").innerText = error.message;
@@ -651,7 +651,22 @@ studentsTable.addEventListener("click", async (e) => {
     const updatedData = {};
 
     inputs.forEach(input => {
-      updatedData[input.dataset.field] = input.value;
+
+
+let value = input.value;
+
+// handle empty values
+if (value === "") value = null;
+
+// convert numbers properly
+if (input.dataset.field === "admission_year" && value !== null) {
+  value = parseInt(value);
+}
+
+updatedData[input.dataset.field] = value;
+
+
+		
     });
 
     const { error } = await supabase
