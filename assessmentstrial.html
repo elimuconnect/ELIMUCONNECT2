@@ -859,11 +859,12 @@ async function loadExistingAssessment() {
 
   const termId = termSelect.value;
   const assessmentTypeId = assessmentTypeSelect.value;
+const category = document.getElementById("assessmentCategorySelect").value;
+if (!termId || !assessmentTypeId || !category) {
+  statusEl.innerText = "";
+  return null;
+}
 
-  if (!termId || !assessmentTypeId) {
-    statusEl.innerText = "";
-    return null;
-  }
 
   // 1️⃣ Get existing assessment
   const { data: existingAssessment } = await supabase
@@ -874,6 +875,7 @@ async function loadExistingAssessment() {
     .eq("term_id", termId)
     .eq("assessment_type_id", assessmentTypeId)
     .eq("academic_year", academicYear)
+	.eq("category", category)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -961,7 +963,7 @@ document.querySelectorAll(".sleCheckbox").forEach(cb => cb.disabled = true);
 }
   document.getElementById("termSelect").onchange = loadExistingAssessment;
 document.getElementById("assessmentTypeSelect").onchange = loadExistingAssessment;
-
+document.getElementById("assessmentCategorySelect").onchange = loadExistingAssessment;
 
 
   // Toggle dropdown
