@@ -1249,19 +1249,21 @@ function getPerformanceBadge(level) {
 };
 
   const style = styles[level] || "background:#e5e7eb;color:#374151;";
-
-  return `
-    <span style="
-      display:inline-block;
-      padding:4px 10px;
-      border-radius:20px;
-      font-size:0.85rem;
-      font-weight:600;
-      ${style}
-    ">
-      ${level}
-    </span>
-  `;
+return `
+  <span style="
+    display:inline-block;
+    padding:8px 18px;
+    border-radius:10px;
+    font-size:22px;
+    font-weight:900;
+    ${style}
+    border:2px solid rgba(0,0,0,0.2);
+    margin-left:6px;
+    letter-spacing:1px;
+  ">
+    ${level}
+  </span>
+`;
 }
 
   
@@ -1679,13 +1681,12 @@ function generateInsight(student, subjects) {
       "</strong>";
   }
 
-  return `
-  <p>
-    Overall, based on current evidence, the learner is 
-    ${getPerformanceBadge(overall)}
-    
-  </p>
-  `;
+ return `
+<p style="font-size:16px;">
+  Overall, based on current evidence, the learner is 
+  ${getPerformanceBadge(overall)}.
+</p>
+`;
 }
  
 
