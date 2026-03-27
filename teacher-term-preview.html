@@ -704,11 +704,12 @@ results = data;
 
 
 
-
 /* Inside loadReport after: results = data; */
 const firstRow = data[0] || {};
 
-// 1. Dynamic School Details (No hardcoded strings)
+// 1. Updated this line to use 'school_logo' (the name in the SQL view)
+const schoolLogoFromDB = firstRow.school_logo; 
+
 const schoolDetail = {
   name: firstRow.school_name || "—",
   po_box: firstRow.po_box || "—",
@@ -718,15 +719,12 @@ const schoolDetail = {
   email: firstRow.email || "—"
 };
 
-// 2. Logo Logic (Kept as before)
 const manualLogos = {
   "SHANZU SENIOR SECONDARY SCHOOL": "https://res.cloudinary.com/dwvt4e9o2/image/upload/v1773573305/schoollogo1_rnpce8.jpg"
 };
 
-// Uses the DB logo if present, otherwise checks the manual map
-schoolLogo = firstRow.school_logo_from_db || manualLogos[schoolDetail.name.trim()] || null;
-
-
+// 2. Updated this line to use the variable defined above
+schoolLogo = schoolLogoFromDB || manualLogos[schoolDetail.name.trim()] || null;
 
  
 // normalized records
