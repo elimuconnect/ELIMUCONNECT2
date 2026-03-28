@@ -498,28 +498,28 @@ let previousAverages = {};
   
 
 const levelColor = {
-  "BE1": "#fee2e2",
-  "BE2": "#f8d7da",
-  "AE1": "#ffedd5",
-  "AE2": "#fff3cd",
-  "ME1": "#d4edda",
-  "ME2": "#cce5ff",
-  "EE1": "#dcfce7",
-  "EE2": "#c6f6d5"
+  "BE2": "#fee2e2",
+  "BE1": "#f8d7da",
+  "AE2": "#ffedd5",
+  "AE1": "#fff3cd",
+  "ME2": "#d4edda",
+  "ME1": "#cce5ff",
+  "EE2": "#dcfce7",
+  "EE1": "#c6f6d5"
 };
 
 
 function getAchievementLabel(score){
 
 
-if (score >= 3.75) return "EE2";
-  if (score >= 3.25) return "EE1";
-  if (score >= 2.75) return "ME2";
-  if (score >= 2.25) return "ME1";
-  if (score >= 1.75) return "AE2";
-  if (score >= 1.25) return "AE1";
-  if (score >= 0.75) return "BE2";
-  return "BE1";
+if (score >= 3.75) return "EE1";
+  if (score >= 3.25) return "EE2";
+  if (score >= 2.75) return "ME1";
+  if (score >= 2.25) return "ME2";
+  if (score >= 1.75) return "AE1";
+  if (score >= 1.25) return "AE2";
+  if (score >= 0.75) return "BE1";
+  return "BE2";
 }
 
 
@@ -531,14 +531,14 @@ function levelToScore(level) {
 
   const clean = level.trim().toUpperCase();
 
-  if (clean === "EE2") return 4;
-  if (clean === "EE1") return 3.5;
-  if (clean === "ME2") return 3;
-  if (clean === "ME1") return 2.5;
-  if (clean === "AE2") return 2;
-  if (clean === "AE1") return 1.5;
-  if (clean === "BE2") return 1;
-  if (clean === "BE1") return 0.5;
+  if (clean === "EE1") return 4;
+  if (clean === "EE2") return 3.5;
+  if (clean === "ME1") return 3;
+  if (clean === "ME2") return 2.5;
+  if (clean === "AE1") return 2;
+  if (clean === "AE2") return 1.5;
+  if (clean === "BE1") return 1;
+  if (clean === "BE2") return 0.5;
 
   return 0;
 }
@@ -1025,7 +1025,7 @@ Object.entries(learnerMap).forEach(([admission, scores]) => {
   }
 
   // Flag at-risk only for BE1 and BE2
-  if (band === 'BE1' || band === 'BE2') {
+  if (band === 'BE1' || band === 'BE1') {
     atRiskLearners++;
   }
 });
@@ -1197,10 +1197,10 @@ ${Object.entries(bandDistribution).map(([band, count]) => {
     ? ((count / Object.keys(learnerMap).length) * 100).toFixed(1)
     : 0;
   const colorMap = {
-    BE1: '#c0392b', BE2: '#e74c3c',
-    AE1: '#f39c12', AE2: '#f1c40f',
-    ME1: '#3498db', ME2: '#2980b9',
-    EE1: '#27ae60', EE2: '#2ecc71'
+    BE2: '#c0392b', BE1: '#e74c3c',
+    AE2: '#f39c12', AE1: '#f1c40f',
+    ME2: '#3498db', ME1: '#2980b9',
+    EE2: '#27ae60', EE1: '#2ecc71'
   };
   return `<span style="color:${colorMap[band]}">${band}: ${count} (${percent}%)</span>`;
 }).join(' | ')}
@@ -1237,14 +1237,14 @@ function getPerformanceBadge(level) {
   if (!level) return "";
 
   const styles = {
-  "BE1": "background:#fee2e2;color:#b91c1c;",
-  "BE2": "background:#f8d7da;color:#b91c1c;",
-  "AE1": "background:#ffedd5;color:#c2410c;",
-  "AE2": "background:#fff3cd;color:#c2410c;",
-  "ME1": "background:#d4edda;color:#166534;",
-  "ME2": "background:#cce5ff;color:#166534;",
-  "EE1": "background:#dcfce7;color:#065f46;",
-  "EE2": "background:#c6f6d5;color:#065f46;",
+  "BE2": "background:#fee2e2;color:#b91c1c;",
+  "BE1": "background:#f8d7da;color:#b91c1c;",
+  "AE2": "background:#ffedd5;color:#c2410c;",
+  "AE1": "background:#fff3cd;color:#c2410c;",
+  "ME2": "background:#d4edda;color:#166534;",
+  "ME1": "background:#cce5ff;color:#166534;",
+  "EE2": "background:#dcfce7;color:#065f46;",
+  "EE1": "background:#c6f6d5;color:#065f46;",
   
 };
 
@@ -1264,6 +1264,7 @@ return `
     ${level}
   </span>
 `;
+
 }
 
   
@@ -1278,8 +1279,7 @@ function renderGrouped(grouped, avgMap) {
 
     const admission = subjects.__admission || "N/A";
 
-      // get the current student's class
-
+// get the current student's class
 const studentRecord = Object.entries(subjects)
   .filter(([key]) => key !== "__admission")
   .map(([key, rows]) => rows) // array of arrays
@@ -1289,8 +1289,10 @@ const studentRecord = Object.entries(subjects)
 const currentClass = studentRecord?.className || "—";
 
 
+
 	  
 
+    
     // ----- trend & support -----
     const currentScores = [];
     Object.entries(subjects).forEach(([subject, rows]) => {
@@ -1330,7 +1332,7 @@ ${renderOverviewHeader({
   town: schoolDetail.town,
   phone: schoolDetail.phone,
  
- className: currentClass,
+   className: currentClass,
   term: firstRow.term || "—",
   year: firstRow.academic_year || "2026",
   logo: schoolLogo // Passed from the logic above
@@ -1411,14 +1413,14 @@ const subjectLevel = subjectAvg
 
      
   function getAvgColor(score) {
-  if (score >= 3.75) return "#2ecc71"; // EE2
-  if (score >= 3.25) return "#27ae60"; // EE1
+  if (score >= 3.75) return "#2ecc71"; // EE1
+  if (score >= 3.25) return "#27ae60"; // EE2
 
-  if (score >= 2.75) return "#3498db"; // ME2
-  if (score >= 2.25) return "#2980b9"; // ME1
+  if (score >= 2.75) return "#3498db"; // ME1
+  if (score >= 2.25) return "#2980b9"; // ME2
 
-  if (score >= 1.75) return "#f1c40f"; // AE2
-  if (score >= 1.25) return "#f39c12"; // AE1
+  if (score >= 1.75) return "#f1c40f"; // AE1
+  if (score >= 1.25) return "#f39c12"; // AE2
 
   return "#e74c3c"; // BE
 }
@@ -1535,14 +1537,14 @@ const strandOutcomes = assessmentId ? (strandMap?.[assessmentId] || []) : [];
 <tr style="
 background:${levelColor[(r.level || "").trim()]}
 border-left:4px solid ${
-  (r.level || "").trim() === "BE1" ? "#e74c3c" :
-  (r.level || "").trim() === "BE2" ? "#f39c12" :
-  (r.level || "").trim() === "AE1" ? "#f1c40f" :
-  (r.level || "").trim() === "AE2" ? "#3498db" :
-  (r.level || "").trim() === "ME1" ? "#2980b9" :
-  (r.level || "").trim() === "ME2" ? "#27ae60" :
-  (r.level || "").trim() === "EE1" ? "#2ecc71" :
-  (r.level || "").trim() === "EE2" ? "#1abc9c" :
+  (r.level || "").trim() === "BE2" ? "#e74c3c" :
+  (r.level || "").trim() === "BE1" ? "#f39c12" :
+  (r.level || "").trim() === "AE2" ? "#f1c40f" :
+  (r.level || "").trim() === "AE1" ? "#3498db" :
+  (r.level || "").trim() === "ME2" ? "#2980b9" :
+  (r.level || "").trim() === "ME1" ? "#27ae60" :
+  (r.level || "").trim() === "EE2" ? "#2ecc71" :
+  (r.level || "").trim() === "EE1" ? "#1abc9c" :
   "#ccc"
 };
 ">
@@ -1616,14 +1618,14 @@ function renderAchievementGuide() {
       background: #fafafa;
     ">
       <strong style="font-size:14px;">Achievement Levels Guide</strong><br><br>
-      <div style="margin-bottom:5px;">EE2 – Exceeding Expectations (90–100%)</div>
-      <div style="margin-bottom:5px;">EE1 – Exceeding Expectations (80–89%)</div>
-      <div style="margin-bottom:5px;">ME2 – Meeting Expectations (70–79%)</div>
-      <div style="margin-bottom:5px;">ME1 – Meeting Expectations (60–69%)</div>
-      <div style="margin-bottom:5px;">AE2 – Approaching Expectations (50–59%)</div>
-      <div style="margin-bottom:5px;">AE1 – Approaching Expectations (40–49%)</div>
-      <div style="margin-bottom:5px;">BE2 – Below Expectations (30–39%)</div>
-      <div>BE1 – Below Expectations (0–29%)</div>
+      <div style="margin-bottom:5px;">EE1 – Exceeding Expectations (90–100%)</div>
+      <div style="margin-bottom:5px;">EE2 – Exceeding Expectations (80–89%)</div>
+      <div style="margin-bottom:5px;">ME1 – Meeting Expectations (70–79%)</div>
+      <div style="margin-bottom:5px;">ME2 – Meeting Expectations (60–69%)</div>
+      <div style="margin-bottom:5px;">AE1 – Approaching Expectations (50–59%)</div>
+      <div style="margin-bottom:5px;">AE2 – Approaching Expectations (40–49%)</div>
+      <div style="margin-bottom:5px;">BE1 – Below Expectations (30–39%)</div>
+      <div>BE2 – Below Expectations (0–29%)</div>
     </div>
   `;
 }
@@ -1970,17 +1972,17 @@ document.getElementById("schoolAnalytics").innerHTML = renderSchoolAnalytics(
 );
 
 
-
- // ✅ SORT HERE
+    
+  // ✅ SORT
   const sortedGrouped = Object.fromEntries(
     Object.entries(grouped).sort((a, b) =>
       a[0].localeCompare(b[0], undefined, { sensitivity: "base" })
     )
   );
 
-  // ✅ USE sortedGrouped (THIS WAS THE ISSUE)
+  // ✅ USE sortedGrouped
   reportDiv.innerHTML = renderGrouped(sortedGrouped, avgMap);
-    
+
 
     if (!window.__EXPORTING_PDF__) {
   requestAnimationFrame(() => {
@@ -2041,16 +2043,16 @@ if (viewMode.value === "student") {
 
 
 
-
- // ✅ SORT HERE
+  // ✅ SORT
   const sortedGrouped = Object.fromEntries(
     Object.entries(grouped).sort((a, b) =>
       a[0].localeCompare(b[0], undefined, { sensitivity: "base" })
     )
   );
 
-  // ✅ USE sortedGrouped (THIS WAS THE ISSUE)
+  // ✅ USE sortedGrouped
   reportDiv.innerHTML = renderGrouped(sortedGrouped, avgMap);
+
     
 
     // Show button **after DOM has been updated**
@@ -2096,7 +2098,7 @@ filtered.forEach(r => {
 });
 
 
-      
+
 
 const sortedGrouped = Object.fromEntries(
   Object.entries(grouped).sort((a, b) =>
@@ -2109,9 +2111,7 @@ reportDiv.innerHTML = `
   ${renderGrouped(sortedGrouped, avgMap)}
 `;
 
-
       
-
 requestAnimationFrame(() => {
  
 });   
@@ -2161,6 +2161,7 @@ reportDiv.innerHTML = `
   <h3>${selectedClass} – All Learners</h3>
   ${renderGrouped(sortedGrouped, avgMap)}
 `;
+
     
 
     requestAnimationFrame(() => {
@@ -2281,7 +2282,6 @@ function overallLevel(score) {
 }
 
 
-
  
   // Get first Kiswahili subject for translations
 const firstKiswahiliSubject = Object.keys(avgMap?.[studentName] || {})
@@ -2323,14 +2323,14 @@ function generalComment(score, subject) {
 
   let comment;
   switch(level) {
-    case "EE2": comment = "Outstanding mastery."; break;
-    case "EE1": comment = "Very strong performance."; break;
-    case "ME2": comment = "Consistently meets expectations."; break;
-    case "ME1": comment = "Good progress."; break;
-    case "AE2": comment = "Approaching expectations."; break;
-    case "AE1": comment = "Developing understanding."; break;
-    case "BE2": comment = "Below expectations."; break;
-    case "BE1": comment = "Significant support needed."; break;
+    case "EE1": comment = "Outstanding mastery."; break;
+    case "EE2": comment = "Very strong performance."; break;
+    case "ME1": comment = "Consistently meets expectations."; break;
+    case "ME2": comment = "Good progress."; break;
+    case "AE1": comment = "Approaching expectations."; break;
+    case "AE2": comment = "Developing understanding."; break;
+    case "BE1": comment = "Below expectations."; break;
+    case "BE2": comment = "Significant support needed."; break;
     default: comment = "No data available.";
   }
 
@@ -2344,14 +2344,14 @@ function generalComment(score, subject) {
 
   let comment;
   switch(level) {
-    case "EE2": comment = "Outstanding work."; break;
-    case "EE1": comment = "Very good work."; break;
-    case "ME2": comment = "Meets expectations."; break;
-    case "ME1": comment = "Good progress."; break;
-    case "AE2": comment = "Needs more practice."; break;
-    case "AE1": comment = "Keep working."; break;
-    case "BE2": comment = "Needs support."; break;
-    case "BE1": comment = "Significant improvement needed."; break;
+    case "EE1": comment = "Outstanding work."; break;
+    case "EE2": comment = "Very good work."; break;
+    case "ME1": comment = "Meets expectations."; break;
+    case "ME2": comment = "Good progress."; break;
+    case "AE1": comment = "Needs more practice."; break;
+    case "AE2": comment = "Keep working."; break;
+    case "BE1": comment = "Needs support."; break;
+    case "BE2": comment = "Significant improvement needed."; break;
     default: comment = "";
   }
 
@@ -2408,7 +2408,6 @@ function generalComment(score, subject) {
         </tr>
       </table>
       <p>💪 Strengths: ${strengths.join(", ")}</p>
-	  
     
 <div style="margin-top:20px;">
   <div style="display:flex; justify-content:space-between; align-items:center; margin-top:18px;">
