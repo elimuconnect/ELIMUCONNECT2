@@ -369,15 +369,15 @@ if (!classId || !subjectId) {
 function convertMarksToLevel(mark){
 
   if(mark >= 90) return "EE1";
-  if(mark >= 80) return "EE2";
+  if(mark >=70 ) return "EE2";
 
-  if(mark >= 70) return "ME1";
-  if(mark >= 60) return "ME2";
+  if(mark >= 50) return "ME1";
+  if(mark >= 40) return "ME2";
 
-  if(mark >= 50) return "AE1";
-  if(mark >= 40) return "AE2";
+  if(mark >= 30) return "AE1";
+  if(mark >= 20) return "AE2";
 
-  if(mark >= 30) return "BE1";
+  if(mark >= 10) return "BE1";
 
   return "BE2";
 }
