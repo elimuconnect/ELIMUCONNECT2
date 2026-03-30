@@ -1737,36 +1737,40 @@ function generateSupportFlag(student, subjects) {
 
 
 
-function generateStrengthsAndNeeds(student, subjects) {
-  const strengths = [];
+
+	function generateStrengthsAndNeeds(student, subjects) {
+  let strengths = [];
   let needs = [];
 
-  // Collect subject averages
   const subjectScores = Object.entries(subjects)
-    .filter(([sub]) => sub !== "__admission")  // skip metadata
+    .filter(([sub]) => sub !== "__admission")
     .map(([sub, rows]) => {
       const scores = rows.map(r => levelToScore(r.level)).filter(s => s > 0);
-      const avg = scores.length ? scores.reduce((a,b) => a+b, 0) / scores.length : 0;
+      const avg = scores.length
+        ? scores.reduce((a,b)=>a+b,0) / scores.length
+        : 0;
       return { sub, avg };
     })
-    .sort((a,b) => b.avg - a.avg); // descending order
+    .sort((a,b)=>b.avg - a.avg);
 
-  // Top subject is a strength if difference >= 0.5
-  if (subjectScores.length > 1 && (subjectScores[0].avg - subjectScores[1].avg >= 0.5)) {
+  // ✅ Strength ONLY if strong AND clearly better
+  if (
+    subjectScores.length > 1 &&
+    subjectScores[0].avg >= 2.75 &&   // must be at least ME1
+    (subjectScores[0].avg - subjectScores[1].avg >= 0.5)
+  ) {
     strengths.push(subjectScores[0].sub);
   }
 
-  // Subjects below 2 (AE2 or lower) are needs
-  needs = subjectScores.filter(s => s.avg < 2)
-                       .sort((a,b) => a.avg - b.avg) // ascending: lowest first
-                       .map(s => s.sub);
-
-  // Limit needs to 3 subjects if more than 3
-  if (needs.length > 3) needs = needs.slice(0,3);
+  // ✅ Needs = worst 2 weak subjects only
+  needs = subjectScores
+    .filter(s => s.avg < 2)
+    .sort((a,b)=>a.avg - b.avg)
+    .slice(0,2)
+    .map(s => s.sub);
 
   return { strengths, needs };
 }
-
 
 
 function generateRecommendations(student, subjects, trend, supportFlag) {
@@ -2272,10 +2276,9 @@ card.style.pageBreakBefore = "auto";  // Allows it to follow the header naturall
     let strengths = [];
     if (subjectsArray.length > 1 && subjectsArray[0].score - subjectsArray[1].score >= 0.5) {
       strengths.push(subjectsArray[0].subject);
-    } else if (subjectsArray.length >= 1) {
-      strengths = subjectsArray.map(s => s.subject);
-    }
-
+  else {
+  strengths = [];
+}
 
 function overallLevel(score) {
   return getAchievementLabel(score);
