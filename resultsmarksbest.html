@@ -738,12 +738,7 @@ previousRecords = prevAll;
 
 
 
-	
-if (error) {
-  console.error("Supabase fetch error:", error);
-  status.innerText = "Error fetching report";
-  return;
-}
+
 
 if (!data || data.length === 0) {
   status.innerText = "No results found.";
