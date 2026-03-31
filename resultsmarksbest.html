@@ -1289,35 +1289,29 @@ return `
   
   
   
+
+
+
 function renderGrouped(grouped, avgMap) {
-
   return Object.entries(grouped).map(([student, subjects]) => {
-
     const admission = subjects.__admission || "N/A";
 
-// get the current student's class
-const studentRecord = Object.entries(subjects)
-  .filter(([key]) => key !== "__admission")
-  .map(([key, rows]) => rows) // array of arrays
-  .flat()
-  .find(r => r.className);
+    const studentRecord = Object.entries(subjects)
+      .filter(([key]) => key !== "__admission")
+      .map(([key, rows]) => rows)
+      .flat()
+      .find(r => r.className);
 
-const currentClass = studentRecord?.className || "—";
+    const currentClass = studentRecord?.className || "—";
 
-
-
-	  
-
-    
-    // ----- trend & support -----
     const currentScores = [];
     Object.entries(subjects).forEach(([subject, rows]) => {
       if (subject === "__admission") return;
       rows.forEach(r => {
-      const score = levelToScore(r.level);
-      if (score !== null && score !== undefined) {
-  currentScores.push(score);
-}
+        const score = levelToScore(r.level);
+        if (score !== null && score !== undefined) {
+          currentScores.push(score);
+        }
       });
     });
 
@@ -1327,45 +1321,34 @@ const currentClass = studentRecord?.className || "—";
 
     const prevData = previousAverages[admission];
     const previousAvg = prevData ? prevData.total / prevData.count : null;
-
     const trend = getTrend(currentAvgScore, previousAvg);
-
     const supportFlag = generateSupportFlag(student, subjects);
-   
     const insight = generateInsight(student, subjects);
-    
-
-const { strengths, needs } = generateStrengthsAndNeeds(student, subjects);
-    
-    const recommendations = generateRecommendations(student, subjects, trend, supportFlag)
+    const { strengths, needs } = generateStrengthsAndNeeds(student, subjects);
+    const recommendations = generateRecommendations(student, subjects, trend, supportFlag);
 
     return `
 <div class="a4-page learner-page">
   <div class="learner-card">
-  
-${renderOverviewHeader({
-  school: schoolDetail.name,
-  poBox: schoolDetail.po_box,
-  postal: schoolDetail.postal_code,
-  town: schoolDetail.town,
-  phone: schoolDetail.phone,
- 
-   className: currentClass,
-  term: firstRow.term || "—",
-  year: firstRow.academic_year || "2026",
-  logo: schoolLogo // Passed from the logic above
-})}
+    ${renderOverviewHeader({
+      school: schoolDetail.name,
+      poBox: schoolDetail.po_box,
+      postal: schoolDetail.postal_code,
+      town: schoolDetail.town,
+      phone: schoolDetail.phone,
+      className: currentClass,
+      term: firstRow.term || "—",
+      year: firstRow.academic_year || "2026",
+      logo: schoolLogo
+    })}
 
-    <div class="split-block learner-header"
-         style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+    <div class="split-block learner-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
       <h4>👤 ${student} <small>(<strong>Adm: ${admission}</strong>)</small></h4>
       <div style="font-weight:bold;">${supportFlag}</div>
     </div>
 
     <div class="split-block">
-      <p style="margin:6px 0 10px 0;font-weight:bold;">
-        📊 Progress Trend: ${trend}
-      </p>
+      <p style="margin:6px 0 10px 0;font-weight:bold;">📊 Progress Trend: ${trend}</p>
       ${insight}
     </div>
 
@@ -1374,250 +1357,108 @@ ${renderOverviewHeader({
       ${needs.length ? `<p><strong>🎯 Areas for Improvement:</strong> ${needs.join(", ")}</p>` : ""}
     </div>
 
-   
-   
- 
- <div style="display:flex; gap:25px; align-items:flex-start; flex-wrap:wrap; margin-top:20px;">
+    <div style="display:flex; gap:25px; align-items:flex-start; flex-wrap:wrap; margin-top:20px;">
+      <div style="flex:2;">
+        ${[
+          recommendations.teacher.length ? `<div class="split-block" style="..."><strong>👩🏽‍🏫 Teacher Actions</strong><ul>${recommendations.teacher.map(r => `<li>${r}</li>`).join('')}</ul></div>` : '',
+          recommendations.parent.length ? `<div class="split-block" style="..."><strong>🏠 Parent Support</strong><ul>${recommendations.parent.map(r => `<li>${r}</li>`).join('')}</ul></div>` : '',
+          recommendations.learner.length ? `<div class="split-block" style="..."><strong>🎯 Learner Focus</strong><ul>${recommendations.learner.map(r => `<li>${r}</li>`).join('')}</ul></div>` : ''
+        ].join('')}
+      </div>
+      ${renderAchievementGuide()}
+    </div>
 
-  <!-- LEFT SIDE: Recommendations -->
-  <div style="flex:2;">
-    ${[ 
-      recommendations.teacher.length ? `
-      <div class="split-block" style="margin:10px 0;padding:10px;border-left:4px solid #3498db;background:#f8fbff;">
-        <strong>👩🏽‍🏫 Teacher Actions</strong>
-        <ul>${recommendations.teacher.map(r => `<li>${r}</li>`).join('')}</ul>
-      </div>` : '',
+    ${Object.entries(subjects).map(([subject, rows]) => {
+      if (subject === "__admission") return "";
 
-      recommendations.parent.length ? `
-      <div class="split-block" style="margin:10px 0;padding:10px;border-left:4px solid #f39c12;background:#fffaf3;">
-        <strong>🏠 Parent Support</strong>
-        <ul>${recommendations.parent.map(r => `<li>${r}</li>`).join('')}</ul>
-      </div>` : '',
+      const evidence = getEvidenceStatus(rows);
+      const scores = rows.map(r => levelToScore(r.level)).filter(s => s !== null);
+      const subjectAvg = scores.length ? scores.reduce((a,b)=>a+b,0) / scores.length : null;
 
-      recommendations.learner.length ? `
-      <div class="split-block" style="margin:10px 0;padding:10px;border-left:4px solid #2ecc71;background:#f6fffa;">
-        <strong>🎯 Learner Focus</strong>
-        <ul>${recommendations.learner.map(r => `<li>${r}</li>`).join('')}</ul>
-      </div>` : ''
-    ].filter(Boolean).join('')}
-  </div>
+      // ✅ FIX 1: MUST USE LET/CONST INSIDE THE MAP TO RESET FOR EVERY SUBJECT
+      let currentCoreSet = new Set();
+      let currentSubjectSet = new Set();
+      let currentCompCount = 0;
 
-  <!-- RIGHT SIDE: Achievement Guide -->
-  ${renderAchievementGuide()}
-
-</div>
- 
-   
-
-    <!-- SUBJECTS -->
-   ${Object.entries(subjects).map(([subject, rows]) => {
-  if (subject === "__admission") return "";
-
- const evidence = getEvidenceStatus(rows);
-
-// ✅ CREATE scores PROPERLY
-const scores = rows
-  .map(r => levelToScore(r.level))
-  .filter(s => s !== null && s !== undefined);
-
-const subjectAvg = scores.length
-  ? scores.reduce((a,b)=>a+b,0) / scores.length
-  : null;
-
-const subjectLevel = (subjectAvg !== null && subjectAvg !== undefined)
-  ? getAchievementLabel(subjectAvg)
-  : null;
-
-     
-  function getAvgColor(score) {
-  if (score >= 3.75) return "#2ecc71"; // EE1
-  if (score >= 3.25) return "#27ae60"; // EE2
-
-  if (score >= 2.75) return "#3498db"; // ME1
-  if (score >= 2.25) return "#2980b9"; // ME2
-
-  if (score >= 1.75) return "#f1c40f"; // AE1
-  if (score >= 1.25) return "#f39c12"; // AE2
-
-  return "#e74c3c"; // BE
-}
- 
-strandSet = new Set();
-learningExpCount = 0;
-coreSet = new Set();
-subjectSet = new Set();
-competencyCount = 0;
-     
-rows.forEach(r => {
-
-    // CORE COMPETENCIES (UUID ARRAY OR STRING)
-    if (r.core_competencies) {
-
-        if (Array.isArray(r.core_competencies)) {
-            r.core_competencies.forEach(c => {
-                if (c) coreSet.add(c);
-            });
+      rows.forEach(r => {
+        if (r.core_competencies) {
+          const comps = Array.isArray(r.core_competencies) ? r.core_competencies : r.core_competencies.split(",");
+          comps.forEach(c => c && currentCoreSet.add(c.trim()));
         }
-        else if (typeof r.core_competencies === "string") {
-            r.core_competencies.split(",").forEach(c => {
-                if (c.trim()) coreSet.add(c.trim());
-            });
+        if (r.subject_competencies) {
+          const comps = Array.isArray(r.subject_competencies) ? r.subject_competencies : r.subject_competencies.split(",");
+          comps.forEach(c => c && currentSubjectSet.add(c.trim()));
         }
-    }
+        currentCompCount++;
+      });
 
-    // SUBJECT COMPETENCIES (ARRAY OR STRING)
-    if (r.subject_competencies) {
+      // ✅ FIX 2: Check all assessment IDs for this subject in case they differ
+      const strandOutcomes = [];
+      rows.forEach(r => {
+          if (r.assessment_id && strandMap[r.assessment_id]) {
+              strandOutcomes.push(...strandMap[r.assessment_id]);
+          }
+      });
 
-        if (Array.isArray(r.subject_competencies)) {
-            r.subject_competencies.forEach(c => {
-                if (c) subjectSet.add(c);
-            });
+      // Deduplicate strands for the header
+      const uniqueStrands = new Set(strandOutcomes.map(o => o.strand));
+      const uniqueExps = new Set(strandOutcomes.map(o => o.outcome));
+
+      return `
+      <div class="split-block subject-block" style="page-break-inside: avoid; margin-top: 15px; border-top: 1px solid #eee;">
+        <h5 style="margin:6px 0;">
+          ${subject}: 
+          <span style="font-weight:normal; font-size:14px; color: #666;">
+            ${currentCompCount} Assessments | ${uniqueStrands.size} Strands | ${currentCoreSet.size} Core Comp.
+          </span>
+        </h5>
+
+        <p style="font-size: 12px; font-weight:bold; color:${evidence.color};">
+          ${evidence.label} — <span style="font-weight:normal">${evidence.note}</span>
+        </p>
+
+        ${strandOutcomes.length > 0 ? `
+          <div style="margin:8px 0;padding:8px;border-left:4px solid #3498db;background:#f8fbff; font-size: 12px;">
+            <strong>Strands Covered:</strong> ${Array.from(uniqueStrands).join(", ")}
+          </div>` : ''
         }
-        else if (typeof r.subject_competencies === "string") {
-            r.subject_competencies.split(",").forEach(c => {
-                if (c.trim()) subjectSet.add(c.trim());
-            });
-        }
-    }
 
-    competencyCount++;
-});
-
-const assessmentId = rows?.[0]?.assessment_id;
-const strandOutcomes = assessmentId ? (strandMap?.[assessmentId] || []) : [];
-  return `
-<div class="split-block subject-block">
-
-  <h5 style="margin:6px 0;">
-    ${subject}:
-    <span style="font-weight:normal; font-size:20px;">
-      Coverage —
-      ${competencyCount} Assessments |
-     ${new Set(strandOutcomes.map(o => o.strand)).size} Strands |
-      ${new Set(strandOutcomes.map(o => o.outcome)).size} Learning Experiences |
-      ${coreSet.size} Core Competencies |
-      ${subjectSet.size} Subject Competencies
-    </span>
-  </h5>
-
-  <p style="font-weight:bold;color:${evidence.color};">
-    ${evidence.label} — <span style="font-weight:normal">${evidence.note}</span>
-  </p>
-
-  ${
-    strandOutcomes.length > 0
-      ? `
-        <div style="margin:8px 0;padding:8px;border-left:4px solid #3498db;background:#f8fbff;">
-          <strong>Strands & Learning Experiences</strong>
-          <ul>
-            ${(() => {
-              const grouped = {};
-
-              strandOutcomes.forEach(o => {
-                const strand = (o.strand || "Unspecified Strand").trim();
-                const outcome = o.outcome || "Learning experience not recorded";
-
-                grouped[strand] ??= new Set();
-                grouped[strand].add(outcome);
-              });
-
-              return Object.entries(grouped).map(([strand, outcomes]) => `
-                <li>
-                  <strong>${strand}</strong>
-                  <ul>
-                    ${Array.from(outcomes).map(o => `<li>${o}</li>`).join("")}
-                  </ul>
-                </li>
-              `).join("");
-            })()}
-          </ul>
+        <div class="table-wrapper">
+          <table style="width:100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background:#f4f4f4;">
+                <th style="width:70%; text-align:left; padding:5px; border:1px solid #ddd;">Competency</th>
+                <th style="width:30%; text-align:center; padding:5px; border:1px solid #ddd;">Level</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map(r => `
+                <tr>
+                  <td style="padding:5px; border:1px solid #ddd; font-size:12px;">
+                    ${r.core_competencies ? `<strong>Core:</strong> ${r.core_competencies}<br>` : ""}
+                    ${r.subject_competencies ? `<strong>Subject:</strong> ${r.subject_competencies}` : ""}
+                  </td>
+                  <td style="text-align:center; padding:5px; border:1px solid #ddd; font-weight:bold;">
+                    ${r.level || "—"}
+                  </td>
+                </tr>`).join("")}
+            </tbody>
+            <tfoot>
+              <tr style="background:#eee; font-weight:bold;">
+                <td style="padding:5px; border:1px solid #ddd;">OVERALL ${subject}</td>
+                <td style="text-align:center; padding:5px; border:1px solid #ddd; background:${getAvgColor(subjectAvg)}; color:white;">
+                  ${getAchievementLabel(subjectAvg)}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
         </div>
-      `
-      : `
-        <p style="color:#999;">No strands or learning outcomes recorded for this subject.</p>
-      `
-  }
-
-
-  <div class="table-wrapper">
-    <table>
-      <thead>
-        <tr>
-          <th style="width:55%">Competency</th>
-<th style="width:20%">Achievement</th>
-
-        </tr>
-      </thead>
-      <tbody>
-        ${rows.map(r => `
-         
-<tr style="
-background:${levelColor[(r.level || "").trim()]}
-border-left:4px solid ${
-  (r.level || "").trim() === "BE2" ? "#e74c3c" :
-  (r.level || "").trim() === "BE1" ? "#f39c12" :
-  (r.level || "").trim() === "AE2" ? "#f1c40f" :
-  (r.level || "").trim() === "AE1" ? "#3498db" :
-  (r.level || "").trim() === "ME2" ? "#2980b9" :
-  (r.level || "").trim() === "ME1" ? "#27ae60" :
-  (r.level || "").trim() === "EE2" ? "#2ecc71" :
-  (r.level || "").trim() === "EE1" ? "#1abc9c" :
-  "#ccc"
-};
-">
-
-
-<td style="
-  border:1px solid #000;
-  padding:8px;
-  word-wrap: break-word;
-  white-space: normal;
-">
-  ${r.core_competencies ? `<div><strong>Core:</strong> ${r.core_competencies}</div>` : ""}
-  ${r.subject_competencies ? `<div><strong>Subject:</strong> ${r.subject_competencies.replace(/,/g, ", ")}</div>` : ""}
-</td>
-           
-          <td>${r.level || "—"}</td> 
-          
-          </tr>`).join("")}
-      </tbody>
-
-      ${
-        subjectAvg !== null
-          ? `
-<tfoot>
-  <tr style="font-weight:bold; background:#f0f0f0;">
-    <td>SUBJECT/LEARNING AREA PERFORMANCE</td>
-    <td colspan="2">
-     <span style="
-  padding: 3px 8px;
-  border-radius: 12px;
-  font-weight:bold;
-  color:white;
-  background:${getAvgColor(subjectAvg)};
-  white-space: nowrap;
-">
-${getAchievementLabel(subjectAvg)}
-</span>
-    </td>
-  </tr>
-</tfoot>`
-          : ""
-      }
-    </table>
-  </div>
-</div>
-`;
+      </div>`;
     }).join("")}
   </div>
-</div>
-`;
+</div>`;
   });
 }
-
-
-
-
   
   
   
