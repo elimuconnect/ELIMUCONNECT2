@@ -1292,33 +1292,30 @@ return `
 
 
 
-function renderGrouped(grouped, avgMap) {
+	
+  function renderGrouped(grouped, avgMap) {
   return Object.entries(grouped).map(([student, subjects]) => {
     const admission = subjects.__admission || "N/A";
 
-    const studentRecord = Object.entries(subjects)
-      .filter(([key]) => key !== "__admission")
-      .map(([key, rows]) => rows)
+    // Get student class safely
+    const studentRecord = Object.values(subjects)
+      .filter(val => Array.isArray(val))
       .flat()
       .find(r => r.className);
 
     const currentClass = studentRecord?.className || "—";
 
+    // Trend and Insight Calculations
     const currentScores = [];
-    Object.entries(subjects).forEach(([subject, rows]) => {
-      if (subject === "__admission") return;
+    Object.entries(subjects).forEach(([subjName, rows]) => {
+      if (subjName === "__admission") return;
       rows.forEach(r => {
         const score = levelToScore(r.level);
-        if (score !== null && score !== undefined) {
-          currentScores.push(score);
-        }
+        if (score !== null) currentScores.push(score);
       });
     });
 
-    const currentAvgScore = currentScores.length
-      ? currentScores.reduce((a, b) => a + b, 0) / currentScores.length
-      : null;
-
+    const currentAvgScore = currentScores.length ? currentScores.reduce((a, b) => a + b, 0) / currentScores.length : null;
     const prevData = previousAverages[admission];
     const previousAvg = prevData ? prevData.total / prevData.count : null;
     const trend = getTrend(currentAvgScore, previousAvg);
@@ -1342,30 +1339,25 @@ function renderGrouped(grouped, avgMap) {
       logo: schoolLogo
     })}
 
-    <div class="split-block learner-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+    <div class="split-block learner-header" style="display:flex;justify-content:space-between;align-items:center;">
       <h4>👤 ${student} <small>(<strong>Adm: ${admission}</strong>)</small></h4>
       <div style="font-weight:bold;">${supportFlag}</div>
     </div>
 
     <div class="split-block">
-      <p style="margin:6px 0 10px 0;font-weight:bold;">📊 Progress Trend: ${trend}</p>
+      <p style="margin:6px 0; font-weight:bold;">📊 Progress Trend: ${trend}</p>
       ${insight}
     </div>
 
-    <div class="split-block" style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:10px;">
-      ${strengths.length ? `<p><strong>💪 Strengths:</strong> ${strengths.join(", ")}</p>` : ""}
-      ${needs.length ? `<p><strong>🎯 Areas for Improvement:</strong> ${needs.join(", ")}</p>` : ""}
-    </div>
-
-    <div style="display:flex; gap:25px; align-items:flex-start; flex-wrap:wrap; margin-top:20px;">
-      <div style="flex:2;">
-        ${[
-          recommendations.teacher.length ? `<div class="split-block" style="..."><strong>👩🏽‍🏫 Teacher Actions</strong><ul>${recommendations.teacher.map(r => `<li>${r}</li>`).join('')}</ul></div>` : '',
-          recommendations.parent.length ? `<div class="split-block" style="..."><strong>🏠 Parent Support</strong><ul>${recommendations.parent.map(r => `<li>${r}</li>`).join('')}</ul></div>` : '',
-          recommendations.learner.length ? `<div class="split-block" style="..."><strong>🎯 Learner Focus</strong><ul>${recommendations.learner.map(r => `<li>${r}</li>`).join('')}</ul></div>` : ''
-        ].join('')}
-      </div>
-      ${renderAchievementGuide()}
+    <div style="display:flex; gap:20px; flex-wrap:wrap;">
+       <div style="flex:2;">
+          ${strengths.length ? `<p><strong>💪 Strengths:</strong> ${strengths.join(", ")}</p>` : ""}
+          ${needs.length ? `<p><strong>🎯 Areas for Improvement:</strong> ${needs.join(", ")}</p>` : ""}
+          <div class="recommendations-box">
+             ${recommendations.teacher.length ? `<div><strong>Teacher:</strong> <ul>${recommendations.teacher.map(r => `<li>${r}</li>`).join('')}</ul></div>` : ''}
+          </div>
+       </div>
+       ${renderAchievementGuide()}
     </div>
 
     ${Object.entries(subjects).map(([subject, rows]) => {
@@ -1375,81 +1367,62 @@ function renderGrouped(grouped, avgMap) {
       const scores = rows.map(r => levelToScore(r.level)).filter(s => s !== null);
       const subjectAvg = scores.length ? scores.reduce((a,b)=>a+b,0) / scores.length : null;
 
-      // ✅ FIX 1: MUST USE LET/CONST INSIDE THE MAP TO RESET FOR EVERY SUBJECT
+      // ✅ FIX: Reset these for EVERY subject inside the loop
       let currentCoreSet = new Set();
-      let currentSubjectSet = new Set();
+      let currentSubjSet = new Set();
       let currentCompCount = 0;
 
       rows.forEach(r => {
         if (r.core_competencies) {
-          const comps = Array.isArray(r.core_competencies) ? r.core_competencies : r.core_competencies.split(",");
-          comps.forEach(c => c && currentCoreSet.add(c.trim()));
+          (Array.isArray(r.core_competencies) ? r.core_competencies : r.core_competencies.split(","))
+          .forEach(c => c && currentCoreSet.add(c.trim()));
         }
         if (r.subject_competencies) {
-          const comps = Array.isArray(r.subject_competencies) ? r.subject_competencies : r.subject_competencies.split(",");
-          comps.forEach(c => c && currentSubjectSet.add(c.trim()));
+          (Array.isArray(r.subject_competencies) ? r.subject_competencies : r.subject_competencies.split(","))
+          .forEach(c => c && currentSubjSet.add(c.trim()));
         }
         currentCompCount++;
       });
 
-      // ✅ FIX 2: Check all assessment IDs for this subject in case they differ
+      // Fetch all strands for all assessments in this subject
       const strandOutcomes = [];
       rows.forEach(r => {
-          if (r.assessment_id && strandMap[r.assessment_id]) {
-              strandOutcomes.push(...strandMap[r.assessment_id]);
-          }
+         if (r.assessment_id && strandMap[r.assessment_id]) {
+            strandOutcomes.push(...strandMap[r.assessment_id]);
+         }
       });
 
-      // Deduplicate strands for the header
-      const uniqueStrands = new Set(strandOutcomes.map(o => o.strand));
-      const uniqueExps = new Set(strandOutcomes.map(o => o.outcome));
-
       return `
-      <div class="split-block subject-block" style="page-break-inside: avoid; margin-top: 15px; border-top: 1px solid #eee;">
-        <h5 style="margin:6px 0;">
-          ${subject}: 
-          <span style="font-weight:normal; font-size:14px; color: #666;">
-            ${currentCompCount} Assessments | ${uniqueStrands.size} Strands | ${currentCoreSet.size} Core Comp.
-          </span>
-        </h5>
-
-        <p style="font-size: 12px; font-weight:bold; color:${evidence.color};">
-          ${evidence.label} — <span style="font-weight:normal">${evidence.note}</span>
-        </p>
-
-        ${strandOutcomes.length > 0 ? `
-          <div style="margin:8px 0;padding:8px;border-left:4px solid #3498db;background:#f8fbff; font-size: 12px;">
-            <strong>Strands Covered:</strong> ${Array.from(uniqueStrands).join(", ")}
-          </div>` : ''
-        }
+      <div class="subject-block" style="page-break-inside: avoid; margin-bottom: 15px; border-top: 1px solid #eee; padding-top: 10px;">
+        <h5 style="margin:5px 0;">${subject}: <span style="font-weight:normal;">${currentCompCount} Assessments | ${currentCoreSet.size} Core Comp.</span></h5>
+        
+        <p style="font-weight:bold; color:${evidence.color}; font-size: 12px;">${evidence.label} — ${evidence.note}</p>
 
         <div class="table-wrapper">
-          <table style="width:100%; border-collapse: collapse;">
+          <table style="width:100%; border: 1px solid #000;">
             <thead>
-              <tr style="background:#f4f4f4;">
-                <th style="width:70%; text-align:left; padding:5px; border:1px solid #ddd;">Competency</th>
-                <th style="width:30%; text-align:center; padding:5px; border:1px solid #ddd;">Level</th>
-              </tr>
+               <tr style="background:#f0f0f0;">
+                  <th style="width:70%; text-align:left; border:1px solid #000; padding:4px;">Competency</th>
+                  <th style="width:30%; text-align:center; border:1px solid #000; padding:4px;">Achievement</th>
+               </tr>
             </thead>
             <tbody>
               ${rows.map(r => `
                 <tr>
-                  <td style="padding:5px; border:1px solid #ddd; font-size:12px;">
+                  <td style="border:1px solid #000; padding:4px; font-size:11px;">
                     ${r.core_competencies ? `<strong>Core:</strong> ${r.core_competencies}<br>` : ""}
-                    ${r.subject_competencies ? `<strong>Subject:</strong> ${r.subject_competencies}` : ""}
+                    ${r.subject_competencies ? `<strong>Subj:</strong> ${r.subject_competencies}` : ""}
                   </td>
-                  <td style="text-align:center; padding:5px; border:1px solid #ddd; font-weight:bold;">
-                    ${r.level || "—"}
-                  </td>
+                  <td style="border:1px solid #000; text-align:center; font-weight:bold;">${r.level || "—"}</td>
                 </tr>`).join("")}
             </tbody>
             <tfoot>
-              <tr style="background:#eee; font-weight:bold;">
-                <td style="padding:5px; border:1px solid #ddd;">OVERALL ${subject}</td>
-                <td style="text-align:center; padding:5px; border:1px solid #ddd; background:${getAvgColor(subjectAvg)}; color:white;">
-                  ${getAchievementLabel(subjectAvg)}
-                </td>
-              </tr>
+               <tr style="background:#ddd; font-weight:bold;">
+                  <td style="border:1px solid #000; padding:4px;">SUBJECT PERFORMANCE</td>
+                  <td style="border:1px solid #000; text-align:center; background:${getAvgColor(subjectAvg)}; color:#fff;">
+                     ${getAchievementLabel(subjectAvg)}
+                  </td>
+               </tr>
             </tfoot>
           </table>
         </div>
@@ -1459,8 +1432,6 @@ function renderGrouped(grouped, avgMap) {
 </div>`;
   });
 }
-  
-  
   
   
   
