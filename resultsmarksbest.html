@@ -615,7 +615,7 @@ const { data: termAverages } = await supabase
     .from("term_subject_report_view2")
    .select("full_name,subject_name,average_score,achievement_level")
     .eq("term", termName)
-  
+    .range(0, 5000)
 
 trendMap = {};
 
