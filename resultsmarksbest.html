@@ -525,9 +525,8 @@ if (score >= 3.75) return "EE1";
 
 
 
-  
-function levelToScore(level) {
-  if (!level) return 0;
+  function levelToScore(level) {
+  if (!level) return null; // ✅ NOT 0
 
   const clean = level.trim().toUpperCase();
 
@@ -540,7 +539,7 @@ function levelToScore(level) {
   if (clean === "BE1") return 1;
   if (clean === "BE2") return 0.5;
 
-  return 0;
+  return null; // ✅ NOT 0
 }
   
 const termSelect = document.getElementById("termSelect");
@@ -658,7 +657,7 @@ avgMap = {};
 
 averages.forEach(a => {
   const student = a.full_name;
-  const subj = a.subject_name;
+  const subj = (a.subject_name || "").trim().toUpperCase();
 
   if (!avgMap[student]) avgMap[student] = {};
 
@@ -751,7 +750,7 @@ const records = data.map(r => ({
   schoolName: r.school_name,
 
   // ✅ FIX 1: normalize subject (prevents missing subjects)
-  subject: (r.subject || r.subject_name || "").trim(),
+subject: (r.subject || r.subject_name || "").trim().toUpperCase(),
 
   core_competencies: r.core_competencies,
   subject_competencies: r.subject_competencies,
@@ -1302,7 +1301,9 @@ const currentClass = studentRecord?.className || "—";
       if (subject === "__admission") return;
       rows.forEach(r => {
       const score = levelToScore(r.level);
-        if (score > 0) currentScores.push(score);
+      if (score !== null && score !== undefined) {
+  currentScores.push(score);
+}
       });
     });
 
@@ -1649,7 +1650,10 @@ function generateInsight(student, subjects) {
       .map(r => levelToScore(r.level))
     .filter(s => s !== null && s !== undefined)
 
-    if (!scores.length) return;
+  if (!scores.length) {
+  subjectScores[subject] = 0; // or skip safely
+  return;
+
 
     const avg = scores.reduce((a,b)=>a+b,0) / scores.length;
 
