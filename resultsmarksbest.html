@@ -2078,7 +2078,9 @@ if (viewMode.value === "student") {
   /* ===== SUBJECT VIEW ===== */
   if (viewMode.value === "subject") {
     const subjects = [...new Set(records.map(r => r.subject))];
-
+const firstRecord = records[0] || {};
+const currentClass = firstRecord.class_name || "All Classes";
+	  
     filterBox.innerHTML = `
       <label>Subject</label><br />
       <select id="subjectSelect">
@@ -2111,7 +2113,7 @@ const sortedGrouped = Object.fromEntries(
 );
 
 reportDiv.innerHTML = `
-  <h3>${selectedClass} – All Learners</h3>
+ <h3>${currentClass} – All Learners</h3>
   ${renderGrouped(sortedGrouped, avgMap)}
 `;
 
@@ -2162,7 +2164,7 @@ const sortedGrouped = Object.fromEntries(
 );
 
 reportDiv.innerHTML = `
-  <h3>${selectedClass} – All Learners</h3>
+<h3>${selectedClass} – All Learners</h3>
   ${renderGrouped(sortedGrouped, avgMap)}
 `;
 
