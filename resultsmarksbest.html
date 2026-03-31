@@ -644,6 +644,10 @@ if (previousTerm) {
     .eq("term", previousTerm)
     .eq("academic_year", SYSTEM_YEAR)
       .range(0, 5000);
+
+	
+console.log("Rows returned:", data.length);
+console.log("Total rows in database:", count);
   
 const schoolId = data[0]?.school_id;
   previousRecords = data || [];
