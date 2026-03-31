@@ -470,6 +470,7 @@ td {
 <div id="schoolAnalytics" style="display:none;"></div>
 <div id="report"></div>
 
+
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -495,17 +496,7 @@ let previousRecords = [];
 let previousAverages = {};
 
 
-  /* --- Place this at the top of your script --- */
-function getAvgColor(score) {
-  if (score === null || score === undefined) return "#ccc";
-  if (score >= 3.75) return "#2ecc71"; // EE1
-  if (score >= 3.25) return "#27ae60"; // EE2
-  if (score >= 2.75) return "#3498db"; // ME1
-  if (score >= 2.25) return "#2980b9"; // ME2
-  if (score >= 1.75) return "#f1c40f"; // AE1
-  if (score >= 1.25) return "#f39c12"; // AE2
-  return "#e74c3c"; // BE
-}
+  
 
 const levelColor = {
   "BE2": "#fee2e2",
@@ -535,8 +526,9 @@ if (score >= 3.75) return "EE1";
 
 
 
-  function levelToScore(level) {
-  if (!level) return null; // ✅ NOT 0
+  
+function levelToScore(level) {
+  if (!level) return 0;
 
   const clean = level.trim().toUpperCase();
 
@@ -549,7 +541,7 @@ if (score >= 3.75) return "EE1";
   if (clean === "BE1") return 1;
   if (clean === "BE2") return 0.5;
 
-  return null; // ✅ NOT 0
+  return 0;
 }
   
 const termSelect = document.getElementById("termSelect");
@@ -586,184 +578,138 @@ termSelect.innerHTML =
 
 
 
- 
 /* ========== MAIN LOAD ========== */
 async function loadReport() {
   reportDiv.innerHTML = "";
   filterBox.innerHTML = "";
-  status.innerText = "";
+  status.innerText = "Loading...";
 
   const term_id = termSelect.value;
   if (!term_id) return;
 
   const termName = terms.find(t => t.id === term_id)?.name;
 
+  /* ===== LEARNER TERM AVERAGES FOR GRAPHS ===== */
+  const { data: termAverages } = await supabase
+    .from("learner_term_levels")
+    .select("admission_number, term, average_score")
+    .eq("academic_year", SYSTEM_YEAR);
 
-/* ===== LEARNER TERM AVERAGES FOR GRAPHS ===== */
-const { data: termAverages } = await supabase
-  .from("learner_term_levels") // ✅ the view you already created
-  .select("admission_number, term, average_score")
-  .eq("academic_year", SYSTEM_YEAR);
-
-
-
-
-
+  // Initialize avgMap globally
+  avgMap = {}; 
   
-  /* ===== AVERAGES ===== */
-  const { data: averages } = await supabase
-    .from("term_subject_report_view2")
-   .select("full_name,subject_name,average_score,achievement_level")
-    .eq("term", termName)
-    .range(0, 5000)
+  /* ===== AVERAGES (BATCHED TO PREVENT MISSING SUBJECTS) ===== */
+  let avgFrom = 0;
+  const avgBatchSize = 1000;
 
-trendMap = {};
+  while (true) {
+    const { data: avgBatch, error: avgErr } = await supabase
+      .from("term_subject_report_view2")
+      .select("full_name, subject_name, average_score, achievement_level")
+      .eq("term", termName)
+      .range(avgFrom, avgFrom + avgBatchSize - 1);
 
-termAverages?.forEach(r => {
-  if (!trendMap[r.admission_number]) {
-    trendMap[r.admission_number] = {};
+    if (avgErr || !avgBatch || avgBatch.length === 0) break;
+
+    avgBatch.forEach(a => {
+      // FIX: Added safety check to prevent crash on null names
+      if (!a.full_name) return; 
+
+      const student = a.full_name.trim(); // Trim to ensure PDF name matching
+      const subj = a.subject_name;
+
+      if (!avgMap[student]) avgMap[student] = {};
+      
+      avgMap[student][subj] = {
+        achievement_level: a.achievement_level,
+        average_score: a.average_score
+      };
+    });
+
+    if (avgBatch.length < avgBatchSize) break;
+    avgFrom += avgBatchSize;
   }
-  trendMap[r.admission_number][r.term] = Number(r.average_score);
-});
 
-
-const previousTerm = terms
-  .map(t => t.name)
-  .sort()
-  .filter(t => t < termName)
-  .slice(-1)[0];
-
-
- 
-
-if (previousTerm) {
-
-  const { data } = await supabase
- .from("results2_report_view")
-    .select("*")
-    .eq("term", previousTerm)
-    .eq("academic_year", SYSTEM_YEAR)
-      .range(0, 5000);
-
-	
-console.log("Rows returned:", data.length);
-console.log("Total rows in database:", count);
-  
-const schoolId = data[0]?.school_id;
-  previousRecords = data || [];
-
-  previousRecords.forEach(r => {
-    const adm = r.admission_number;
-    const score = levelToScore(r.achievement_level);
-
-    if (!previousAverages[adm]) {
-      previousAverages[adm] = { total: 0, count: 0 };
+  trendMap = {};
+  termAverages?.forEach(r => {
+    if (!trendMap[r.admission_number]) {
+      trendMap[r.admission_number] = {};
     }
-
-    previousAverages[adm].total += score;
-    previousAverages[adm].count++;
+    trendMap[r.admission_number][r.term] = Number(r.average_score);
   });
-}
 
+  const previousTerm = terms
+    .map(t => t.name)
+    .sort()
+    .filter(t => t < termName)
+    .slice(-1)[0];
 
-avgMap = {};
+  if (previousTerm) {
+    const { data } = await supabase
+      .from("results2_report_view")
+      .select("*")
+      .eq("term", previousTerm)
+      .eq("academic_year", SYSTEM_YEAR);
 
-averages.forEach(a => {
-  const student = (a.full_name || "").trim(); 
-  // Ensure this matches your records normalization exactly!
-  const subj = (a.subject_name || "").trim().toUpperCase(); 
+    previousRecords = data || [];
+    previousRecords.forEach(r => {
+      const adm = r.admission_number;
+      const score = levelToScore(r.achievement_level);
+      if (!previousAverages[adm]) {
+        previousAverages[adm] = { total: 0, count: 0 };
+      }
+      previousAverages[adm].total += score;
+      previousAverages[adm].count++;
+    });
+  }
 
-  if (!avgMap[student]) avgMap[student] = {};
+  // STEP 2 — BUILD LEARNER SUMMARY
+  learnerSummary = {};
+  Object.keys(avgMap).forEach(student => {
+    const subjectEntries = Object.values(avgMap[student]);
+    if (subjectEntries.length === 0) return;
 
-  avgMap[student][subj] = a;
-});
-
-// ============================
-// STEP 3 — ADD THIS HERE
-// ============================
-
-learnerSummary = {};
-
-Object.keys(avgMap).forEach(student => {
-  const subjects = Object.values(avgMap[student]);
-  
-  if (subjects.length === 1) {
-    // Only one subject: take its actual achievement level
-    learnerSummary[student] = {
-      overall_average: Number(subjects[0].average_score),
-      overall_level: subjects[0].achievement_level // <- use this directly
-    };
-  } else {
-    const validAverages = subjects
+    const validScores = subjectEntries
       .map(s => Number(s.average_score))
-      .filter(n => !isNaN(n));
+      .filter(n => !isNaN(n) && n > 0);
 
-    const overallAvg = validAverages.length
-      ? validAverages.reduce((a,b)=>a+b,0) / validAverages.length
+    const overallAvg = validScores.length
+      ? validScores.reduce((a, b) => a + b, 0) / validScores.length
       : null;
 
     learnerSummary[student] = {
       overall_average: overallAvg,
       overall_level: getAchievementLabel(overallAvg)
     };
+  });
+
+  let allResults = [];
+  let from = 0;
+  const batchSize = 1000;
+
+  while (true) {
+    const response = await supabase
+      .from("results2_report_view")
+      .select("*")
+      .eq("term", termName)
+      .eq("academic_year", SYSTEM_YEAR)
+      .range(from, from + batchSize - 1);
+
+    const batch = response.data;
+    if (response.error || !batch || batch.length === 0) break;
+
+    allResults = allResults.concat(batch);
+    if (batch.length < batchSize) break;
+    from += batchSize;
   }
-});
+
+  data = allResults;
+  results = allResults;
   
+  
+console.log("Total Records Loaded:", data.length);
 
 
-
-let prevAll = [];
-let prevFrom = 0;
-
-while (true) {
-
-  const { data } = await supabase
-    .from("results2_report_view")
-    .select("*")
-    .eq("term", previousTerm)
-    .eq("academic_year", SYSTEM_YEAR)
-    .range(prevFrom, prevFrom + 999);
-
-  if (!data || data.length === 0) break;
-
-  prevAll = prevAll.concat(data);
-
-  if (data.length < 1000) break;
-
-  prevFrom += 1000;
-}
-
-previousRecords = prevAll;
-
-
-
-
-
-
-if (!data || data.length === 0) {
-  status.innerText = "No results found.";
-  return;
-}
-
-results = data;
-
-
-
-	// --- TEMPORARY AUDIT ---
-console.log("Total Records Found:", data.length);
-const uniqueSubjects = [...new Set(data.map(r => r.subject_name || r.subject))];
-console.log("Subjects found in database for this term:", uniqueSubjects);
-
-const missingInAvgMap = [];
-data.forEach(r => {
-   const sName = (r.full_name || "").trim();
-   const subj = (r.subject_name || r.subject || "").trim().toUpperCase();
-   if (!avgMap[sName] || !avgMap[sName][subj]) {
-       missingInAvgMap.push({ student: sName, subject: subj });
-   }
-});
-console.warn("Subjects missing from Averages Map:", missingInAvgMap);
-// --- END AUDIT ---
 
 
 /* Inside loadReport after: results = data; */
@@ -792,22 +738,18 @@ schoolLogo = firstRow.school_logo_from_db || manualLogos[schoolDetail.name.trim(
  
 // normalized records
 const records = data.map(r => ({
-student: (r.full_name || "").trim(), // Ensure student name is clean
+  student: r.full_name,
   admission: r.admission_number,
-className: r.className || r.class_name, // Support both naming conventions
+  className: r.class_name,
   schoolName: r.school_name,
-
-  // ✅ FIX 1: normalize subject (prevents missing subjects)
-subject: (r.subject_name || r.subject || "UNASSIGNED").trim().toUpperCase(),
+  subject: r.subject,
 
   core_competencies: r.core_competencies,
   subject_competencies: r.subject_competencies,
 
-  // ✅ FIX 2: normalize level
-level: (r.achievement_level || "").trim().toUpperCase(), // Normalize level casing
-
+  level: r.achievement_level,
   remarks: r.remarks,
-assessment_id: r.assessment_id
+  assessment_id: r.assessment_id
 }));
 
 
@@ -919,9 +861,9 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
   const prevSubjectMap = {};
 
   // ===== CURRENT TERM PROCESSING =====
-	records.forEach(r => {
-  const score = levelToScore(r.level);
- if (score === null || score === undefined) return;
+  records.forEach(r => {
+    const score = levelToScore(r.level);
+    if (!score) return;
 
     learnerMap[r.admission] ??= [];
     learnerMap[r.admission].push(score);
@@ -933,15 +875,14 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
     subjectMap[r.subject].push(score);
   });
 
- 
-	// ===== PREVIOUS TERM PROCESSING =====
-previousRecords.forEach(r => {
-  const score = levelToScore(r.level);
-if (score === null || score === undefined) return;
+  // ===== PREVIOUS TERM PROCESSING =====
+  previousRecords.forEach(r => {
+   const score = levelToScore(r.level);
+    if (!score) return;
 
-   const adm = r.admission;
-const cls = r.className;
-const sub = r.subject;
+    const adm = r.admission_number;
+    const cls = r.class_name;
+    const sub = r.subject;
 
     prevLearnerMap[adm] ??= [];
     prevLearnerMap[adm].push(score);
@@ -1031,17 +972,19 @@ function renderSchoolAnalytics(records, termName, year, intelligence, schoolName
   let learnerMap = {};
 
  
-
+ 
+  // ===== CURRENT TERM PROCESSING =====
+const countedSubjects = new Set();
 
 for (const r of records) {
 
+  const key = r.admission + "_" + r.subject;
+  if (countedSubjects.has(key)) continue;
+  countedSubjects.add(key);
 
-// Convert level to numeric score
-  const score = levelToScore(r.level);  
+  const score = levelToScore(r.level);
+  if (!score) continue;
 
-	
-if (score === null || score === undefined) continue;
-	
   (learnerMap[r.admission] ??= []).push(score);
   (classMap[r.className] ??= []).push(score);
   (subjectMap[r.subject] ??= []).push(score);
@@ -1075,7 +1018,7 @@ Object.entries(learnerMap).forEach(([admission, scores]) => {
   }
 
   // Flag at-risk only for BE1 and BE2
-  if (band === 'BE1' || band === 'BE2') {
+  if (band === 'BE1' || band === 'BE1') {
     atRiskLearners++;
   }
 });
@@ -1109,7 +1052,7 @@ Object.entries(learnerMap).forEach(([admission, scores]) => {
   }).join("");
 
 
-
+  // ===== SUBJECT ALERTS =====
  // ===== SUBJECT ALERTS =====
 const subjectAlerts = Object.entries(subjectMap).map(([sub, scores]) => {
 
@@ -1323,149 +1266,348 @@ return `
   
   
   
+function renderGrouped(grouped, avgMap) {
 
-
-
-	
-  function renderGrouped(grouped, avgMap) {
   return Object.entries(grouped).map(([student, subjects]) => {
+
     const admission = subjects.__admission || "N/A";
 
-    // Get student class safely
-    const studentRecord = Object.values(subjects)
-      .filter(val => Array.isArray(val))
-      .flat()
-      .find(r => r.className);
+	  
+// get the current student's class
+// --- OLD ---
+const allRows = Object.entries(subjects)
+  .filter(([key]) => key !== "__admission")
+  .flatMap(([key, rows]) => rows);
 
-    const currentClass = studentRecord?.className || "—";
+const studentRecord = allRows.find(r => r.className);
+let currentClass = studentRecord?.className || "—";
 
-    // Trend and Insight Calculations
+
+
+// --- NEW ---
+currentClass = "—"; 
+for (const subjectRows of Object.values(subjects)) {
+  if (subjectRows === subjects.__admission) continue;
+  for (const row of subjectRows) {
+    if (row.className) {
+      currentClass = row.className; // ✅ allowed now
+      break;
+    }
+  }
+  if (currentClass !== "—") break;
+}
+
+    
+    // ----- trend & support -----
     const currentScores = [];
-    Object.entries(subjects).forEach(([subjName, rows]) => {
-      if (subjName === "__admission") return;
+    Object.entries(subjects).forEach(([subject, rows]) => {
+      if (subject === "__admission") return;
       rows.forEach(r => {
-        const score = levelToScore(r.level);
-        if (score !== null) currentScores.push(score);
+      const score = levelToScore(r.level);
+        if (score > 0) currentScores.push(score);
       });
     });
 
-    const currentAvgScore = currentScores.length ? currentScores.reduce((a, b) => a + b, 0) / currentScores.length : null;
+    const currentAvgScore = currentScores.length
+      ? currentScores.reduce((a, b) => a + b, 0) / currentScores.length
+      : null;
+
     const prevData = previousAverages[admission];
     const previousAvg = prevData ? prevData.total / prevData.count : null;
+
     const trend = getTrend(currentAvgScore, previousAvg);
+
     const supportFlag = generateSupportFlag(student, subjects);
+   
     const insight = generateInsight(student, subjects);
-    const { strengths, needs } = generateStrengthsAndNeeds(student, subjects);
-    const recommendations = generateRecommendations(student, subjects, trend, supportFlag);
+    
+
+const { strengths, needs } = generateStrengthsAndNeeds(student, subjects);
+    
+    const recommendations = generateRecommendations(student, subjects, trend, supportFlag)
 
     return `
 <div class="a4-page learner-page">
   <div class="learner-card">
-    ${renderOverviewHeader({
-      school: schoolDetail.name,
-      poBox: schoolDetail.po_box,
-      postal: schoolDetail.postal_code,
-      town: schoolDetail.town,
-      phone: schoolDetail.phone,
-      className: currentClass,
-      term: firstRow.term || "—",
-      year: firstRow.academic_year || "2026",
-      logo: schoolLogo
-    })}
+  
+${renderOverviewHeader({
+  school: schoolDetail.name,
+  poBox: schoolDetail.po_box,
+  postal: schoolDetail.postal_code,
+  town: schoolDetail.town,
+  phone: schoolDetail.phone,
+ 
+   className: currentClass,
+  term: firstRow.term || "—",
+  year: firstRow.academic_year || "2026",
+  logo: schoolLogo // Passed from the logic above
+})}
 
-    <div class="split-block learner-header" style="display:flex;justify-content:space-between;align-items:center;">
+    <div class="split-block learner-header"
+         style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
       <h4>👤 ${student} <small>(<strong>Adm: ${admission}</strong>)</small></h4>
       <div style="font-weight:bold;">${supportFlag}</div>
     </div>
 
     <div class="split-block">
-      <p style="margin:6px 0; font-weight:bold;">📊 Progress Trend: ${trend}</p>
+      <p style="margin:6px 0 10px 0;font-weight:bold;">
+        📊 Progress Trend: ${trend}
+      </p>
       ${insight}
     </div>
 
-    <div style="display:flex; gap:20px; flex-wrap:wrap;">
-       <div style="flex:2;">
-          ${strengths.length ? `<p><strong>💪 Strengths:</strong> ${strengths.join(", ")}</p>` : ""}
-          ${needs.length ? `<p><strong>🎯 Areas for Improvement:</strong> ${needs.join(", ")}</p>` : ""}
-          <div class="recommendations-box">
-             ${recommendations.teacher.length ? `<div><strong>Teacher:</strong> <ul>${recommendations.teacher.map(r => `<li>${r}</li>`).join('')}</ul></div>` : ''}
-          </div>
-       </div>
-       ${renderAchievementGuide()}
+    <div class="split-block" style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:10px;">
+      ${strengths.length ? `<p><strong>💪 Strengths:</strong> ${strengths.join(", ")}</p>` : ""}
+      ${needs.length ? `<p><strong>🎯 Areas for Improvement:</strong> ${needs.join(", ")}</p>` : ""}
     </div>
 
-    ${Object.entries(subjects).map(([subject, rows]) => {
-      if (subject === "__admission") return "";
+   
+   
+ 
+ <div style="display:flex; gap:25px; align-items:flex-start; flex-wrap:wrap; margin-top:20px;">
 
-      const evidence = getEvidenceStatus(rows);
-      const scores = rows.map(r => levelToScore(r.level)).filter(s => s !== null);
-      const subjectAvg = scores.length ? scores.reduce((a,b)=>a+b,0) / scores.length : null;
+  <!-- LEFT SIDE: Recommendations -->
+  <div style="flex:2;">
+    ${[ 
+      recommendations.teacher.length ? `
+      <div class="split-block" style="margin:10px 0;padding:10px;border-left:4px solid #3498db;background:#f8fbff;">
+        <strong>👩🏽‍🏫 Teacher Actions</strong>
+        <ul>${recommendations.teacher.map(r => `<li>${r}</li>`).join('')}</ul>
+      </div>` : '',
 
-      // ✅ FIX: Reset these for EVERY subject inside the loop
-      let currentCoreSet = new Set();
-      let currentSubjSet = new Set();
-      let currentCompCount = 0;
+      recommendations.parent.length ? `
+      <div class="split-block" style="margin:10px 0;padding:10px;border-left:4px solid #f39c12;background:#fffaf3;">
+        <strong>🏠 Parent Support</strong>
+        <ul>${recommendations.parent.map(r => `<li>${r}</li>`).join('')}</ul>
+      </div>` : '',
 
-      rows.forEach(r => {
-        if (r.core_competencies) {
-          (Array.isArray(r.core_competencies) ? r.core_competencies : r.core_competencies.split(","))
-          .forEach(c => c && currentCoreSet.add(c.trim()));
+      recommendations.learner.length ? `
+      <div class="split-block" style="margin:10px 0;padding:10px;border-left:4px solid #2ecc71;background:#f6fffa;">
+        <strong>🎯 Learner Focus</strong>
+        <ul>${recommendations.learner.map(r => `<li>${r}</li>`).join('')}</ul>
+      </div>` : ''
+    ].filter(Boolean).join('')}
+  </div>
+
+  <!-- RIGHT SIDE: Achievement Guide -->
+  ${renderAchievementGuide()}
+
+</div>
+ 
+   
+
+    <!-- SUBJECTS -->
+   ${Object.entries(subjects).map(([subject, rows]) => {
+  if (subject === "__admission") return "";
+
+  const evidence = getEvidenceStatus(rows);
+
+
+const scores = rows
+  .map(r => levelToScore(r.level))
+  .filter(s => s > 0);
+
+const subjectAvg = scores.length
+  ? scores.reduce((a,b)=>a+b,0) / scores.length
+  : null;
+
+const subjectLevel = subjectAvg
+  ? getAchievementLabel(subjectAvg)
+  : null;
+
+
+     
+  function getAvgColor(score) {
+  if (score >= 3.75) return "#2ecc71"; // EE1
+  if (score >= 3.25) return "#27ae60"; // EE2
+
+  if (score >= 2.75) return "#3498db"; // ME1
+  if (score >= 2.25) return "#2980b9"; // ME2
+
+  if (score >= 1.75) return "#f1c40f"; // AE1
+  if (score >= 1.25) return "#f39c12"; // AE2
+
+  return "#e74c3c"; // BE
+}
+ 
+strandSet = new Set();
+learningExpCount = 0;
+coreSet = new Set();
+subjectSet = new Set();
+competencyCount = 0;
+     
+rows.forEach(r => {
+
+    // CORE COMPETENCIES (UUID ARRAY OR STRING)
+    if (r.core_competencies) {
+
+        if (Array.isArray(r.core_competencies)) {
+            r.core_competencies.forEach(c => {
+                if (c) coreSet.add(c);
+            });
         }
-        if (r.subject_competencies) {
-          (Array.isArray(r.subject_competencies) ? r.subject_competencies : r.subject_competencies.split(","))
-          .forEach(c => c && currentSubjSet.add(c.trim()));
+        else if (typeof r.core_competencies === "string") {
+            r.core_competencies.split(",").forEach(c => {
+                if (c.trim()) coreSet.add(c.trim());
+            });
         }
-        currentCompCount++;
-      });
+    }
 
-      // Fetch all strands for all assessments in this subject
-      const strandOutcomes = [];
-      rows.forEach(r => {
-         if (r.assessment_id && strandMap[r.assessment_id]) {
-            strandOutcomes.push(...strandMap[r.assessment_id]);
-         }
-      });
+    // SUBJECT COMPETENCIES (ARRAY OR STRING)
+    if (r.subject_competencies) {
 
-      return `
-      <div class="subject-block" style="page-break-inside: avoid; margin-bottom: 15px; border-top: 1px solid #eee; padding-top: 10px;">
-        <h5 style="margin:5px 0;">${subject}: <span style="font-weight:normal;">${currentCompCount} Assessments | ${currentCoreSet.size} Core Comp.</span></h5>
-        
-        <p style="font-weight:bold; color:${evidence.color}; font-size: 12px;">${evidence.label} — ${evidence.note}</p>
+        if (Array.isArray(r.subject_competencies)) {
+            r.subject_competencies.forEach(c => {
+                if (c) subjectSet.add(c);
+            });
+        }
+        else if (typeof r.subject_competencies === "string") {
+            r.subject_competencies.split(",").forEach(c => {
+                if (c.trim()) subjectSet.add(c.trim());
+            });
+        }
+    }
 
-        <div class="table-wrapper">
-          <table style="width:100%; border: 1px solid #000;">
-            <thead>
-               <tr style="background:#f0f0f0;">
-                  <th style="width:70%; text-align:left; border:1px solid #000; padding:4px;">Competency</th>
-                  <th style="width:30%; text-align:center; border:1px solid #000; padding:4px;">Achievement</th>
-               </tr>
-            </thead>
-            <tbody>
-              ${rows.map(r => `
-                <tr>
-                  <td style="border:1px solid #000; padding:4px; font-size:11px;">
-                    ${r.core_competencies ? `<strong>Core:</strong> ${r.core_competencies}<br>` : ""}
-                    ${r.subject_competencies ? `<strong>Subj:</strong> ${r.subject_competencies}` : ""}
-                  </td>
-                  <td style="border:1px solid #000; text-align:center; font-weight:bold;">${r.level || "—"}</td>
-                </tr>`).join("")}
-            </tbody>
-            <tfoot>
-               <tr style="background:#ddd; font-weight:bold;">
-                  <td style="border:1px solid #000; padding:4px;">SUBJECT PERFORMANCE</td>
-                  <td style="border:1px solid #000; text-align:center; background:${getAvgColor(subjectAvg)}; color:#fff;">
-                     ${getAchievementLabel(subjectAvg)}
-                  </td>
-               </tr>
-            </tfoot>
-          </table>
+    competencyCount++;
+});
+
+const assessmentId = rows?.[0]?.assessment_id;
+const strandOutcomes = assessmentId ? (strandMap?.[assessmentId] || []) : [];
+  return `
+<div class="split-block subject-block">
+
+  <h5 style="margin:6px 0;">
+    ${subject}:
+    <span style="font-weight:normal; font-size:20px;">
+      Coverage —
+      ${competencyCount} Assessments |
+     ${new Set(strandOutcomes.map(o => o.strand)).size} Strands |
+      ${new Set(strandOutcomes.map(o => o.outcome)).size} Learning Experiences |
+      ${coreSet.size} Core Competencies |
+      ${subjectSet.size} Subject Competencies
+    </span>
+  </h5>
+
+  <p style="font-weight:bold;color:${evidence.color};">
+    ${evidence.label} — <span style="font-weight:normal">${evidence.note}</span>
+  </p>
+
+  ${
+    strandOutcomes.length > 0
+      ? `
+        <div style="margin:8px 0;padding:8px;border-left:4px solid #3498db;background:#f8fbff;">
+          <strong>Strands & Learning Experiences</strong>
+          <ul>
+            ${(() => {
+              const grouped = {};
+
+              strandOutcomes.forEach(o => {
+                const strand = (o.strand || "Unspecified Strand").trim();
+                const outcome = o.outcome || "Learning experience not recorded";
+
+                grouped[strand] ??= new Set();
+                grouped[strand].add(outcome);
+              });
+
+              return Object.entries(grouped).map(([strand, outcomes]) => `
+                <li>
+                  <strong>${strand}</strong>
+                  <ul>
+                    ${Array.from(outcomes).map(o => `<li>${o}</li>`).join("")}
+                  </ul>
+                </li>
+              `).join("");
+            })()}
+          </ul>
         </div>
-      </div>`;
+      `
+      : `
+        <p style="color:#999;">No strands or learning outcomes recorded for this subject.</p>
+      `
+  }
+
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:55%">Competency</th>
+<th style="width:20%">Achievement</th>
+
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(r => `
+         
+<tr style="
+background:${levelColor[(r.level || "").trim()]}
+border-left:4px solid ${
+  (r.level || "").trim() === "BE2" ? "#e74c3c" :
+  (r.level || "").trim() === "BE1" ? "#f39c12" :
+  (r.level || "").trim() === "AE2" ? "#f1c40f" :
+  (r.level || "").trim() === "AE1" ? "#3498db" :
+  (r.level || "").trim() === "ME2" ? "#2980b9" :
+  (r.level || "").trim() === "ME1" ? "#27ae60" :
+  (r.level || "").trim() === "EE2" ? "#2ecc71" :
+  (r.level || "").trim() === "EE1" ? "#1abc9c" :
+  "#ccc"
+};
+">
+
+
+<td style="
+  border:1px solid #000;
+  padding:8px;
+  word-wrap: break-word;
+  white-space: normal;
+">
+  ${r.core_competencies ? `<div><strong>Core:</strong> ${r.core_competencies}</div>` : ""}
+  ${r.subject_competencies ? `<div><strong>Subject:</strong> ${r.subject_competencies.replace(/,/g, ", ")}</div>` : ""}
+</td>
+           
+          <td>${r.level || "—"}</td> 
+          
+          </tr>`).join("")}
+      </tbody>
+
+      ${
+        subjectAvg !== null
+          ? `
+<tfoot>
+  <tr style="font-weight:bold; background:#f0f0f0;">
+    <td>SUBJECT/LEARNING AREA PERFORMANCE</td>
+    <td colspan="2">
+     <span style="
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-weight:bold;
+  color:white;
+  background:${getAvgColor(subjectAvg)};
+  white-space: nowrap;
+">
+${getAchievementLabel(subjectAvg)}
+</span>
+    </td>
+  </tr>
+</tfoot>`
+          : ""
+      }
+    </table>
+  </div>
+</div>
+`;
     }).join("")}
   </div>
-</div>`;
+</div>
+`;
   });
 }
+
+
+
+
+  
+  
   
   
   
@@ -1497,7 +1639,7 @@ function renderAchievementGuide() {
   
   
   
- function generateInsight(student, subjects) {
+function generateInsight(student, subjects) {
 
   const subjectScores = {};
   const allScores = [];
@@ -1507,11 +1649,9 @@ function renderAchievementGuide() {
 
     const scores = rows
       .map(r => levelToScore(r.level))
-      .filter(s => s !== null && s !== undefined);
+      .filter(s => s > 0);
 
-    if (!scores.length) {
-      return;
-    }
+    if (!scores.length) return;
 
     const avg = scores.reduce((a,b)=>a+b,0) / scores.length;
 
@@ -1525,7 +1665,7 @@ function renderAchievementGuide() {
     ? allScores.reduce((a,b)=>a+b,0) / allScores.length
     : null;
 
-  const overall = (overallAvg !== null && overallAvg !== undefined)
+  const overall = overallAvg
     ? getAchievementLabel(overallAvg)
     : null;
 
@@ -1548,14 +1688,14 @@ function renderAchievementGuide() {
       "</strong>";
   }
 
-  return `
+ return `
 <p style="font-size:16px;">
   Overall, based on current evidence, the learner is 
-  ${getPerformanceBadge(overall)}
-
+  ${getPerformanceBadge(overall)}.
 </p>
 `;
 }
+ 
 
 function generateSupportFlag(student, subjects) {
 
@@ -1610,9 +1750,7 @@ function generateSupportFlag(student, subjects) {
   const subjectScores = Object.entries(subjects)
     .filter(([sub]) => sub !== "__admission")
     .map(([sub, rows]) => {
-    const scores = rows
-  .map(r => levelToScore(r.level))  // produces numbers
-  .filter(s => s !== null && s !== undefined); // now safe
+      const scores = rows.map(r => levelToScore(r.level)).filter(s => s > 0);
       const avg = scores.length
         ? scores.reduce((a,b)=>a+b,0) / scores.length
         : 0;
@@ -1808,29 +1946,13 @@ const chartOptions = {
 
   
   /* ===== TERM VIEW ===== */
- if (viewMode.value === "term") {
- /* Inside if (viewMode.value === "term") */
-const grouped = {};
-records.forEach(r => {
-  // 1. Double check the subject exists
-  const subjKey = (r.subject || "").trim().toUpperCase();
-  if (!subjKey || subjKey === "UNASSIGNED") return; 
-
-  const studentKey = (r.student || "").trim();
-
-  // 2. Initialize student object if new
-  if (!grouped[studentKey]) {
-    grouped[studentKey] = { __admission: r.admission };
-  }
-  
-  // 3. Initialize subject array if new
-  if (!grouped[studentKey][subjKey]) {
-    grouped[studentKey][subjKey] = [];
-  }
-  
-  // 4. Push the record
-  grouped[studentKey][subjKey].push(r);
-});
+  if (viewMode.value === "term") {
+  const grouped = {};
+  records.forEach(r => {
+    grouped[r.student] ??= { __admission: r.admission };
+    grouped[r.student][r.subject] ??= [];
+    grouped[r.student][r.subject].push(r);
+  });
 
 
 const intelligence = calculateTermIntelligence(
@@ -1960,16 +2082,7 @@ if (viewMode.value === "student") {
  
   /* ===== SUBJECT VIEW ===== */
   if (viewMode.value === "subject") {
-
-const subjects = [
-  ...new Set(
-    records
-      .map(r => (r.subject || "").trim())
-      .filter(Boolean) // ✅ removes empty subjects
-  )
-];
-
-	  
+    const subjects = [...new Set(records.map(r => r.subject))];
 const firstRecord = records[0] || {};
 const currentClass = firstRecord.class_name || "All Classes";
 	  
@@ -1981,13 +2094,11 @@ const currentClass = firstRecord.class_name || "All Classes";
       </select>
     `;
 
-   ocument.getElementById("subjectSelect").addEventListener("change", e => {
-  const selectedSubject = e.target.value.trim().toUpperCase(); // Force UpperCase
-  if (!selectedSubject) return;
+    document.getElementById("subjectSelect").addEventListener("change", e => {
+      const subject = e.target.value;
+      if (!subject) return;
 
-  const filtered = records.filter(r => 
-    (r.subject || "").trim().toUpperCase() === selectedSubject
-  );
+      const filtered = records.filter(r => r.subject === subject);
 
 const grouped = {};
 
@@ -2152,16 +2263,11 @@ card.style.pageBreakBefore = "auto";  // Allows it to follow the header naturall
     const numericScoresMap = {};
     const numericScores = [];
 
-    Object.entries(subjectData).forEach(([subject, d]) => {
-
-const score = levelToScore(d.achievement_level);
-
-if (score !== null && score !== undefined) {
-  numericScores.push(score);
-  numericScoresMap[subject] = score;
-}
-		
-    });
+   Object.entries(subjectData).forEach(([subject, d]) => {
+  const score = levelToScore(d.achievement_level) || 0; // fallback to 0
+  numericScoresMap[subject] = score; // include all subjects
+  if (!isNaN(score) && score > 0) numericScores.push(score); // only >0 for overallAvg
+});
 
     let overallAvg = numericScores.length
       ? numericScores.reduce((a, b) => a + b, 0) / numericScores.length
@@ -2333,10 +2439,6 @@ function generalComment(score, subject) {
 </div>
 
 `;
-
-
-
-
 
 
     const footer = document.createElement("div");
