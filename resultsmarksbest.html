@@ -1754,7 +1754,9 @@ function generateSupportFlag(student, subjects) {
   const subjectScores = Object.entries(subjects)
     .filter(([sub]) => sub !== "__admission")
     .map(([sub, rows]) => {
-      const scores = rows.map(r => levelToScore(r.level).filter(s => s !== null && s !== undefined));
+    const scores = rows
+  .map(r => levelToScore(r.level))  // produces numbers
+  .filter(s => s !== null && s !== undefined); // now safe
       const avg = scores.length
         ? scores.reduce((a,b)=>a+b,0) / scores.length
         : 0;
