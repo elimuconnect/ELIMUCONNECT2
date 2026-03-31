@@ -995,6 +995,10 @@ for (const r of records) {
   countedSubjects.add(key);
 
 
+// Convert level to numeric score
+  const score = levelToScore(r.level);  // <-- THIS WAS MISSING
+
+	
 if (score === null || score === undefined) continue;
 	
   (learnerMap[r.admission] ??= []).push(score);
@@ -1064,7 +1068,7 @@ Object.entries(learnerMap).forEach(([admission, scores]) => {
   }).join("");
 
 
-  // ===== SUBJECT ALERTS =====
+
  // ===== SUBJECT ALERTS =====
 const subjectAlerts = Object.entries(subjectMap).map(([sub, scores]) => {
 
