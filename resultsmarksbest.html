@@ -749,12 +749,16 @@ const records = data.map(r => ({
   admission: r.admission_number,
   className: r.class_name,
   schoolName: r.school_name,
-  subject: r.subject,
+
+  // ✅ FIX 1: normalize subject (prevents missing subjects)
+  subject: (r.subject || r.subject_name || "").trim(),
 
   core_competencies: r.core_competencies,
   subject_competencies: r.subject_competencies,
 
-  level: r.achievement_level,
+  // ✅ FIX 2: normalize level
+  level: (r.achievement_level || "").trim(),
+
   remarks: r.remarks,
   assessment_id: r.assessment_id
 }));
@@ -868,9 +872,7 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
   const prevSubjectMap = {};
 
   // ===== CURRENT TERM PROCESSING =====
-  records.forEach(r => {
-    const score = levelToScore(r.level);
-    if (!score) return;
+ if (score === null || score === undefined) return;
 
     learnerMap[r.admission] ??= [];
     learnerMap[r.admission].push(score);
@@ -883,9 +885,7 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
   });
 
   // ===== PREVIOUS TERM PROCESSING =====
-  previousRecords.forEach(r => {
-   const score = levelToScore(r.level);
-    if (!score) return;
+if (score === null || score === undefined) return;
 
     const adm = r.admission_number;
     const cls = r.class_name;
@@ -989,9 +989,9 @@ for (const r of records) {
   if (countedSubjects.has(key)) continue;
   countedSubjects.add(key);
 
-  const score = levelToScore(r.level);
-  if (!score) continue;
 
+if (score === null || score === undefined) continue;
+	
   (learnerMap[r.admission] ??= []).push(score);
   (classMap[r.className] ??= []).push(score);
   (subjectMap[r.subject] ??= []).push(score);
@@ -1397,10 +1397,7 @@ ${renderOverviewHeader({
 
   const evidence = getEvidenceStatus(rows);
 
-
-const scores = rows
-  .map(r => levelToScore(r.level))
-  .filter(s => s > 0);
+.filter(s => s !== null && s !== undefined)
 
 const subjectAvg = scores.length
   ? scores.reduce((a,b)=>a+b,0) / scores.length
@@ -1644,7 +1641,7 @@ function generateInsight(student, subjects) {
 
     const scores = rows
       .map(r => levelToScore(r.level))
-      .filter(s => s > 0);
+    .filter(s => s !== null && s !== undefined)
 
     if (!scores.length) return;
 
@@ -1745,7 +1742,7 @@ function generateSupportFlag(student, subjects) {
   const subjectScores = Object.entries(subjects)
     .filter(([sub]) => sub !== "__admission")
     .map(([sub, rows]) => {
-      const scores = rows.map(r => levelToScore(r.level)).filter(s => s > 0);
+      const scores = rows.map(r => levelToScore(r.level).filter(s => s !== null && s !== undefined));
       const avg = scores.length
         ? scores.reduce((a,b)=>a+b,0) / scores.length
         : 0;
@@ -2077,7 +2074,16 @@ if (viewMode.value === "student") {
  
   /* ===== SUBJECT VIEW ===== */
   if (viewMode.value === "subject") {
-    const subjects = [...new Set(records.map(r => r.subject))];
+
+const subjects = [
+  ...new Set(
+    records
+      .map(r => (r.subject || "").trim())
+      .filter(Boolean) // ✅ removes empty subjects
+  )
+];
+
+	  
 const firstRecord = records[0] || {};
 const currentClass = firstRecord.class_name || "All Classes";
 	  
@@ -2093,7 +2099,9 @@ const currentClass = firstRecord.class_name || "All Classes";
       const subject = e.target.value;
       if (!subject) return;
 
-      const filtered = records.filter(r => r.subject === subject);
+      const filtered = records.filter(
+  r => (r.subject || "").trim() === subject.trim()
+);
 
 const grouped = {};
 
@@ -2260,7 +2268,7 @@ card.style.pageBreakBefore = "auto";  // Allows it to follow the header naturall
 
     Object.entries(subjectData).forEach(([subject, d]) => {
       const score = levelToScore(d.achievement_level);
-      if (score > 0) {
+    .filter(s => s !== null && s !== undefined) {
         numericScores.push(score);
         numericScoresMap[subject] = score;
       }
