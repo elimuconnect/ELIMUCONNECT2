@@ -2275,11 +2275,14 @@ card.style.pageBreakBefore = "auto";  // Allows it to follow the header naturall
     const numericScores = [];
 
     Object.entries(subjectData).forEach(([subject, d]) => {
-      const score = levelToScore(d.achievement_level);
-    .filter(s => s !== null && s !== undefined) {
-        numericScores.push(score);
-        numericScoresMap[subject] = score;
-      }
+
+const score = levelToScore(d.achievement_level);
+
+if (score !== null && score !== undefined) {
+  numericScores.push(score);
+  numericScoresMap[subject] = score;
+}
+		
     });
 
     let overallAvg = numericScores.length
