@@ -984,19 +984,13 @@ function renderSchoolAnalytics(records, termName, year, intelligence, schoolName
   let learnerMap = {};
 
  
- 
-  // ===== CURRENT TERM PROCESSING =====
-const countedSubjects = new Set();
+
 
 for (const r of records) {
 
-  const key = r.admission + "_" + r.subject;
-  if (countedSubjects.has(key)) continue;
-  countedSubjects.add(key);
-
 
 // Convert level to numeric score
-  const score = levelToScore(r.level);  // <-- THIS WAS MISSING
+  const score = levelToScore(r.level);  
 
 	
 if (score === null || score === undefined) continue;
