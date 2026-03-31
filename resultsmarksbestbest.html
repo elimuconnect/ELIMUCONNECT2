@@ -470,6 +470,7 @@ td {
 <div id="schoolAnalytics" style="display:none;"></div>
 <div id="report"></div>
 
+
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -577,145 +578,137 @@ termSelect.innerHTML =
 
 
 
- 
 /* ========== MAIN LOAD ========== */
 async function loadReport() {
   reportDiv.innerHTML = "";
   filterBox.innerHTML = "";
-  status.innerText = "";
+  status.innerText = "Loading...";
 
   const term_id = termSelect.value;
   if (!term_id) return;
 
   const termName = terms.find(t => t.id === term_id)?.name;
 
-
-/* ===== LEARNER TERM AVERAGES FOR GRAPHS ===== */
-const { data: termAverages } = await supabase
-  .from("learner_term_levels") // ✅ the view you already created
-  .select("admission_number, term, average_score")
-  .eq("academic_year", SYSTEM_YEAR);
-
-
-
-
-
-  
-  /* ===== AVERAGES ===== */
-  const { data: averages } = await supabase
-    .from("term_subject_report_view2")
-   .select("full_name,subject_name,average_score,achievement_level")
-    .eq("term", termName)
-  
-
-trendMap = {};
-
-termAverages?.forEach(r => {
-  if (!trendMap[r.admission_number]) {
-    trendMap[r.admission_number] = {};
-  }
-  trendMap[r.admission_number][r.term] = Number(r.average_score);
-});
-
-
-const previousTerm = terms
-  .map(t => t.name)
-  .sort()
-  .filter(t => t < termName)
-  .slice(-1)[0];
-
-
- 
-
-if (previousTerm) {
-
-  const { data } = await supabase
- .from("results2_report_view")
-    .select("*")
-    .eq("term", previousTerm)
+  /* ===== LEARNER TERM AVERAGES FOR GRAPHS ===== */
+  const { data: termAverages } = await supabase
+    .from("learner_term_levels")
+    .select("admission_number, term, average_score")
     .eq("academic_year", SYSTEM_YEAR);
 
+  // Initialize avgMap globally
+  avgMap = {}; 
   
-const schoolId = data[0]?.school_id;
-  previousRecords = data || [];
+  /* ===== AVERAGES (BATCHED TO PREVENT MISSING SUBJECTS) ===== */
+  let avgFrom = 0;
+  const avgBatchSize = 1000;
 
-  previousRecords.forEach(r => {
-    const adm = r.admission_number;
-    const score = levelToScore(r.achievement_level);
+  while (true) {
+    const { data: avgBatch, error: avgErr } = await supabase
+      .from("term_subject_report_view2")
+      .select("full_name, subject_name, average_score, achievement_level")
+      .eq("term", termName)
+      .range(avgFrom, avgFrom + avgBatchSize - 1);
 
-    if (!previousAverages[adm]) {
-      previousAverages[adm] = { total: 0, count: 0 };
+    if (avgErr || !avgBatch || avgBatch.length === 0) break;
+
+    avgBatch.forEach(a => {
+      // FIX: Added safety check to prevent crash on null names
+      if (!a.full_name) return; 
+
+      const student = a.full_name.trim(); // Trim to ensure PDF name matching
+      const subj = a.subject_name;
+
+      if (!avgMap[student]) avgMap[student] = {};
+      
+      avgMap[student][subj] = {
+        achievement_level: a.achievement_level,
+        average_score: a.average_score
+      };
+    });
+
+    if (avgBatch.length < avgBatchSize) break;
+    avgFrom += avgBatchSize;
+  }
+
+  trendMap = {};
+  termAverages?.forEach(r => {
+    if (!trendMap[r.admission_number]) {
+      trendMap[r.admission_number] = {};
     }
-
-    previousAverages[adm].total += score;
-    previousAverages[adm].count++;
+    trendMap[r.admission_number][r.term] = Number(r.average_score);
   });
-}
 
+  const previousTerm = terms
+    .map(t => t.name)
+    .sort()
+    .filter(t => t < termName)
+    .slice(-1)[0];
 
+  if (previousTerm) {
+    const { data } = await supabase
+      .from("results2_report_view")
+      .select("*")
+      .eq("term", previousTerm)
+      .eq("academic_year", SYSTEM_YEAR);
 
-avgMap = {};
+    previousRecords = data || [];
+    previousRecords.forEach(r => {
+      const adm = r.admission_number;
+      const score = levelToScore(r.achievement_level);
+      if (!previousAverages[adm]) {
+        previousAverages[adm] = { total: 0, count: 0 };
+      }
+      previousAverages[adm].total += score;
+      previousAverages[adm].count++;
+    });
+  }
 
-averages.forEach(a => {
-  const student = a.full_name;
-  const subj = a.subject_name;
+  // STEP 2 — BUILD LEARNER SUMMARY
+  learnerSummary = {};
+  Object.keys(avgMap).forEach(student => {
+    const subjectEntries = Object.values(avgMap[student]);
+    if (subjectEntries.length === 0) return;
 
-  if (!avgMap[student]) avgMap[student] = {};
-
-  avgMap[student][subj] = a;
-});
-
-
-// ============================
-// STEP 3 — ADD THIS HERE
-// ============================
-
-learnerSummary = {};
-
-Object.keys(avgMap).forEach(student => {
-  const subjects = Object.values(avgMap[student]);
-  
-  if (subjects.length === 1) {
-    // Only one subject: take its actual achievement level
-    learnerSummary[student] = {
-      overall_average: Number(subjects[0].average_score),
-      overall_level: subjects[0].achievement_level // <- use this directly
-    };
-  } else {
-    const validAverages = subjects
+    const validScores = subjectEntries
       .map(s => Number(s.average_score))
-      .filter(n => !isNaN(n));
+      .filter(n => !isNaN(n) && n > 0);
 
-    const overallAvg = validAverages.length
-      ? validAverages.reduce((a,b)=>a+b,0) / validAverages.length
+    const overallAvg = validScores.length
+      ? validScores.reduce((a, b) => a + b, 0) / validScores.length
       : null;
 
     learnerSummary[student] = {
       overall_average: overallAvg,
       overall_level: getAchievementLabel(overallAvg)
     };
+  });
+
+  let allResults = [];
+  let from = 0;
+  const batchSize = 1000;
+
+  while (true) {
+    const response = await supabase
+      .from("results2_report_view")
+      .select("*")
+      .eq("term", termName)
+      .eq("academic_year", SYSTEM_YEAR)
+      .range(from, from + batchSize - 1);
+
+    const batch = response.data;
+    if (response.error || !batch || batch.length === 0) break;
+
+    allResults = allResults.concat(batch);
+    if (batch.length < batchSize) break;
+    from += batchSize;
   }
-});
+
+  data = allResults;
+  results = allResults;
   
+  
+console.log("Total Records Loaded:", data.length);
 
- const { data, error } = await supabase
-  .from("results2_report_view")
-  .select("*")
-  .eq("term", termName)
-  .eq("academic_year", SYSTEM_YEAR);
-
-if (error) {
-  console.error("Supabase fetch error:", error);
-  status.innerText = "Error fetching report";
-  return;
-}
-
-if (!data || data.length === 0) {
-  status.innerText = "No results found.";
-  return;
-}
-
-results = data;
 
 
 
@@ -1279,18 +1272,30 @@ function renderGrouped(grouped, avgMap) {
 
     const admission = subjects.__admission || "N/A";
 
-// get the current student's class
-const studentRecord = Object.entries(subjects)
-  .filter(([key]) => key !== "__admission")
-  .map(([key, rows]) => rows) // array of arrays
-  .flat()
-  .find(r => r.className);
-
-const currentClass = studentRecord?.className || "—";
-
-
-
 	  
+// get the current student's class
+// --- OLD ---
+const allRows = Object.entries(subjects)
+  .filter(([key]) => key !== "__admission")
+  .flatMap(([key, rows]) => rows);
+
+const studentRecord = allRows.find(r => r.className);
+let currentClass = studentRecord?.className || "—";
+
+
+
+// --- NEW ---
+currentClass = "—"; 
+for (const subjectRows of Object.values(subjects)) {
+  if (subjectRows === subjects.__admission) continue;
+  for (const row of subjectRows) {
+    if (row.className) {
+      currentClass = row.className; // ✅ allowed now
+      break;
+    }
+  }
+  if (currentClass !== "—") break;
+}
 
     
     // ----- trend & support -----
@@ -1618,14 +1623,14 @@ function renderAchievementGuide() {
       background: #fafafa;
     ">
       <strong style="font-size:14px;">Achievement Levels Guide</strong><br><br>
-      <div style="margin-bottom:5px;">EE1 – Exceeding Expectations (90–100%)</div>
-      <div style="margin-bottom:5px;">EE2 – Exceeding Expectations (80–89%)</div>
-      <div style="margin-bottom:5px;">ME1 – Meeting Expectations (70–79%)</div>
-      <div style="margin-bottom:5px;">ME2 – Meeting Expectations (60–69%)</div>
-      <div style="margin-bottom:5px;">AE1 – Approaching Expectations (50–59%)</div>
-      <div style="margin-bottom:5px;">AE2 – Approaching Expectations (40–49%)</div>
-      <div style="margin-bottom:5px;">BE1 – Below Expectations (30–39%)</div>
-      <div>BE2 – Below Expectations (0–29%)</div>
+      <div style="margin-bottom:5px;">EE1 – Exceeding Expectations (90-100%)</div>
+      <div style="margin-bottom:5px;">EE2 – Exceeding Expectations (80-89%)</div>
+      <div style="margin-bottom:5px;">ME1 – Meeting Expectations (70-79)</div>
+      <div style="margin-bottom:5px;">ME2 – Meeting Expectations (60-69)</div>
+      <div style="margin-bottom:5px;">AE1 – Approaching Expectations (50-59%)</div>
+      <div style="margin-bottom:5px;">AE2 – Approaching Expectations (40-49%)</div>
+      <div style="margin-bottom:5px;">BE1 – Below Expectations (20-39%)</div>
+      <div>BE2 – Below Expectations (1-19%)</div>
     </div>
   `;
 }
@@ -1737,36 +1742,40 @@ function generateSupportFlag(student, subjects) {
 
 
 
-function generateStrengthsAndNeeds(student, subjects) {
-  const strengths = [];
+
+	function generateStrengthsAndNeeds(student, subjects) {
+  let strengths = [];
   let needs = [];
 
-  // Collect subject averages
   const subjectScores = Object.entries(subjects)
-    .filter(([sub]) => sub !== "__admission")  // skip metadata
+    .filter(([sub]) => sub !== "__admission")
     .map(([sub, rows]) => {
       const scores = rows.map(r => levelToScore(r.level)).filter(s => s > 0);
-      const avg = scores.length ? scores.reduce((a,b) => a+b, 0) / scores.length : 0;
+      const avg = scores.length
+        ? scores.reduce((a,b)=>a+b,0) / scores.length
+        : 0;
       return { sub, avg };
     })
-    .sort((a,b) => b.avg - a.avg); // descending order
+    .sort((a,b)=>b.avg - a.avg);
 
-  // Top subject is a strength if difference >= 0.5
-  if (subjectScores.length > 1 && (subjectScores[0].avg - subjectScores[1].avg >= 0.5)) {
+  // ✅ Strength ONLY if strong AND clearly better
+  if (
+    subjectScores.length > 1 &&
+    subjectScores[0].avg >= 2.75 &&   // must be at least ME1
+    (subjectScores[0].avg - subjectScores[1].avg >= 0.5)
+  ) {
     strengths.push(subjectScores[0].sub);
   }
 
-  // Subjects below 2 (AE2 or lower) are needs
-  needs = subjectScores.filter(s => s.avg < 2)
-                       .sort((a,b) => a.avg - b.avg) // ascending: lowest first
-                       .map(s => s.sub);
-
-  // Limit needs to 3 subjects if more than 3
-  if (needs.length > 3) needs = needs.slice(0,3);
+  // ✅ Needs = worst 2 weak subjects only
+  needs = subjectScores
+    .filter(s => s.avg < 2)
+    .sort((a,b)=>a.avg - b.avg)
+    .slice(0,2)
+    .map(s => s.sub);
 
   return { strengths, needs };
 }
-
 
 
 function generateRecommendations(student, subjects, trend, supportFlag) {
@@ -1958,7 +1967,7 @@ const intelligence = calculateTermIntelligence(
 const firstRecord = records[0] || {};
 
 // 2. Extract the dynamic names from your SQL View
-const currentSchool = firstRecord.school_name || "Unknown School";
+const currentSchool = firstRecord.school_name || "SHANZU SENIOR SCHOOL";
 const currentClass = firstRecord.class_name || "All Classes";
 
 // 3. Update the function call to use these new variables
@@ -2074,7 +2083,9 @@ if (viewMode.value === "student") {
   /* ===== SUBJECT VIEW ===== */
   if (viewMode.value === "subject") {
     const subjects = [...new Set(records.map(r => r.subject))];
-
+const firstRecord = records[0] || {};
+const currentClass = firstRecord.class_name || "All Classes";
+	  
     filterBox.innerHTML = `
       <label>Subject</label><br />
       <select id="subjectSelect">
@@ -2107,7 +2118,7 @@ const sortedGrouped = Object.fromEntries(
 );
 
 reportDiv.innerHTML = `
-  <h3>${selectedClass} – All Learners</h3>
+ <h3>${currentClass} – All Learners</h3>
   ${renderGrouped(sortedGrouped, avgMap)}
 `;
 
@@ -2158,7 +2169,7 @@ const sortedGrouped = Object.fromEntries(
 );
 
 reportDiv.innerHTML = `
-  <h3>${selectedClass} – All Learners</h3>
+<h3>${selectedClass} – All Learners</h3>
   ${renderGrouped(sortedGrouped, avgMap)}
 `;
 
@@ -2252,13 +2263,11 @@ card.style.pageBreakBefore = "auto";  // Allows it to follow the header naturall
     const numericScoresMap = {};
     const numericScores = [];
 
-    Object.entries(subjectData).forEach(([subject, d]) => {
-      const score = levelToScore(d.achievement_level);
-      if (score > 0) {
-        numericScores.push(score);
-        numericScoresMap[subject] = score;
-      }
-    });
+   Object.entries(subjectData).forEach(([subject, d]) => {
+  const score = levelToScore(d.achievement_level) || 0; // fallback to 0
+  numericScoresMap[subject] = score; // include all subjects
+  if (!isNaN(score) && score > 0) numericScores.push(score); // only >0 for overallAvg
+});
 
     let overallAvg = numericScores.length
       ? numericScores.reduce((a, b) => a + b, 0) / numericScores.length
@@ -2272,10 +2281,9 @@ card.style.pageBreakBefore = "auto";  // Allows it to follow the header naturall
     let strengths = [];
     if (subjectsArray.length > 1 && subjectsArray[0].score - subjectsArray[1].score >= 0.5) {
       strengths.push(subjectsArray[0].subject);
-    } else if (subjectsArray.length >= 1) {
-      strengths = subjectsArray.map(s => s.subject);
-    }
-
+	} else {
+  strengths = [];
+}
 
 function overallLevel(score) {
   return getAchievementLabel(score);
@@ -2404,7 +2412,7 @@ function generalComment(score, subject) {
         </tr>
         <tr>
           <td style="border:1px solid #000;padding:8px;"><strong>Teacher's General Comment</strong></td>
-          <td style="border:1px solid #000;padding:12px;">${generalComment(overallAvg, firstKiswahiliSubject)}</td>
+          <td style="border:1px solid #000;padding:12px;">${generalComment(overallAvg)}</td>
         </tr>
       </table>
       <p>💪 Strengths: ${strengths.join(", ")}</p>
@@ -2431,10 +2439,6 @@ function generalComment(score, subject) {
 </div>
 
 `;
-
-
-
-
 
 
     const footer = document.createElement("div");
