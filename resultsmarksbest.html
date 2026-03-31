@@ -642,7 +642,7 @@ if (previousTerm) {
  .from("results2_report_view")
     .select("*")
     .eq("term", previousTerm)
-    .eq("academic_year", SYSTEM_YEAR);
+    .eq("academic_year", SYSTEM_YEAR)
       .range(0, 5000);
   
 const schoolId = data[0]?.school_id;
@@ -710,8 +710,8 @@ Object.keys(avgMap).forEach(student => {
   .from("results2_report_view")
   .select("*")
   .eq("term", termName)
-  .eq("academic_year", SYSTEM_YEAR);
-
+  .eq("academic_year", SYSTEM_YEAR)
+ .range(0, 5000);
 if (error) {
   console.error("Supabase fetch error:", error);
   status.innerText = "Error fetching report";
