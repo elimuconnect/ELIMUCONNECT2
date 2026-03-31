@@ -652,18 +652,15 @@ const schoolId = data[0]?.school_id;
 }
 
 
-
+// Change this:
 avgMap = {};
-
 averages.forEach(a => {
-  const student = a.full_name;
+  const student = (a.full_name || "").trim(); // Add .trim() here
   const subj = (a.subject_name || "").trim().toUpperCase();
 
   if (!avgMap[student]) avgMap[student] = {};
-
   avgMap[student][subj] = a;
 });
-
 
 // ============================
 // STEP 3 — ADD THIS HERE
@@ -744,22 +741,22 @@ schoolLogo = firstRow.school_logo_from_db || manualLogos[schoolDetail.name.trim(
  
 // normalized records
 const records = data.map(r => ({
-  student: r.full_name,
+student: (r.full_name || "").trim(), // Ensure student name is clean
   admission: r.admission_number,
-  className: r.class_name,
+className: r.className || r.class_name, // Support both naming conventions
   schoolName: r.school_name,
 
   // ✅ FIX 1: normalize subject (prevents missing subjects)
-subject: (r.subject || r.subject_name || "").trim().toUpperCase(),
+subject: (r.subject_name || r.subject || "UNASSIGNED").trim().toUpperCase(),
 
   core_competencies: r.core_competencies,
   subject_competencies: r.subject_competencies,
 
   // ✅ FIX 2: normalize level
-  level: (r.achievement_level || "").trim(),
+level: (r.achievement_level || "").trim().toUpperCase(), // Normalize level casing
 
   remarks: r.remarks,
-  assessment_id: r.assessment_id
+assessment_id: r.assessment_id
 }));
 
 
@@ -1948,9 +1945,11 @@ const chartOptions = {
 
   
   /* ===== TERM VIEW ===== */
-  if (viewMode.value === "term") {
+ if (viewMode.value === "term") {
   const grouped = {};
   records.forEach(r => {
+    if (!r.subject || r.subject === "UNASSIGNED") return; // Skip empty rows
+
     grouped[r.student] ??= { __admission: r.admission };
     grouped[r.student][r.subject] ??= [];
     grouped[r.student][r.subject].push(r);
@@ -2105,13 +2104,13 @@ const currentClass = firstRecord.class_name || "All Classes";
       </select>
     `;
 
-    document.getElementById("subjectSelect").addEventListener("change", e => {
-      const subject = e.target.value;
-      if (!subject) return;
+   ocument.getElementById("subjectSelect").addEventListener("change", e => {
+  const selectedSubject = e.target.value.trim().toUpperCase(); // Force UpperCase
+  if (!selectedSubject) return;
 
-      const filtered = records.filter(
-  r => (r.subject || "").trim() === subject.trim()
-);
+  const filtered = records.filter(r => 
+    (r.subject || "").trim().toUpperCase() === selectedSubject
+  );
 
 const grouped = {};
 
