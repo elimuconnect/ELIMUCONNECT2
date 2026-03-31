@@ -710,12 +710,35 @@ Object.keys(avgMap).forEach(student => {
 });
   
 
- const { data, error } = await supabase
-  .from("results2_report_view")
-  .select("*")
-  .eq("term", termName)
-  .eq("academic_year", SYSTEM_YEAR)
- .range(0, 5000);
+
+
+let prevAll = [];
+let prevFrom = 0;
+
+while (true) {
+
+  const { data } = await supabase
+    .from("results2_report_view")
+    .select("*")
+    .eq("term", previousTerm)
+    .eq("academic_year", SYSTEM_YEAR)
+    .range(prevFrom, prevFrom + 999);
+
+  if (!data || data.length === 0) break;
+
+  prevAll = prevAll.concat(data);
+
+  if (data.length < 1000) break;
+
+  prevFrom += 1000;
+}
+
+previousRecords = prevAll;
+
+
+
+
+	
 if (error) {
   console.error("Supabase fetch error:", error);
   status.innerText = "Error fetching report";
