@@ -886,14 +886,15 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
     subjectMap[r.subject].push(score);
   });
 
-  // ===== PREVIOUS TERM PROCESSING =====
-	records.forEach(r => {
+ 
+	// ===== PREVIOUS TERM PROCESSING =====
+previousRecords.forEach(r => {
   const score = levelToScore(r.level);
 if (score === null || score === undefined) return;
 
-    const adm = r.admission_number;
-    const cls = r.class_name;
-    const sub = r.subject;
+   const adm = r.admission;
+const cls = r.className;
+const sub = r.subject;
 
     prevLearnerMap[adm] ??= [];
     prevLearnerMap[adm].push(score);
