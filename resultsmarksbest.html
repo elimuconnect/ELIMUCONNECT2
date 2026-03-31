@@ -712,7 +712,7 @@ if (!data || data.length === 0) {
 }
 
 results = data;
-
+console.table(data.map(r => ({ Name: r.full_name, Subj: r.subject_name || r.subject })));
 
 
 /* Inside loadReport after: results = data; */
