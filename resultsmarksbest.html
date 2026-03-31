@@ -1400,9 +1400,12 @@ ${renderOverviewHeader({
    ${Object.entries(subjects).map(([subject, rows]) => {
   if (subject === "__admission") return "";
 
-  const evidence = getEvidenceStatus(rows);
+ const evidence = getEvidenceStatus(rows);
 
-.filter(s => s !== null && s !== undefined)
+// ✅ CREATE scores PROPERLY
+const scores = rows
+  .map(r => levelToScore(r.level))
+  .filter(s => s !== null && s !== undefined);
 
 const subjectAvg = scores.length
   ? scores.reduce((a,b)=>a+b,0) / scores.length
