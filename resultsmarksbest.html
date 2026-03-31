@@ -872,6 +872,8 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
   const prevSubjectMap = {};
 
   // ===== CURRENT TERM PROCESSING =====
+	records.forEach(r => {
+  const score = levelToScore(r.level);
  if (score === null || score === undefined) return;
 
     learnerMap[r.admission] ??= [];
@@ -885,6 +887,8 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
   });
 
   // ===== PREVIOUS TERM PROCESSING =====
+	records.forEach(r => {
+  const score = levelToScore(r.level);
 if (score === null || score === undefined) return;
 
     const adm = r.admission_number;
