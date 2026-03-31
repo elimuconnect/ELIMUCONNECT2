@@ -662,13 +662,15 @@ const schoolId = data[0]?.school_id;
 }
 
 
-// Change this:
 avgMap = {};
+
 averages.forEach(a => {
-  const student = (a.full_name || "").trim(); // Add .trim() here
-  const subj = (a.subject_name || "").trim().toUpperCase();
+  const student = (a.full_name || "").trim(); 
+  // Ensure this matches your records normalization exactly!
+  const subj = (a.subject_name || "").trim().toUpperCase(); 
 
   if (!avgMap[student]) avgMap[student] = {};
+
   avgMap[student][subj] = a;
 });
 
@@ -1785,14 +1787,28 @@ const chartOptions = {
   
   /* ===== TERM VIEW ===== */
  if (viewMode.value === "term") {
-  const grouped = {};
-  records.forEach(r => {
-    if (!r.subject || r.subject === "UNASSIGNED") return; // Skip empty rows
+ /* Inside if (viewMode.value === "term") */
+const grouped = {};
+records.forEach(r => {
+  // 1. Double check the subject exists
+  const subjKey = (r.subject || "").trim().toUpperCase();
+  if (!subjKey || subjKey === "UNASSIGNED") return; 
 
-    grouped[r.student] ??= { __admission: r.admission };
-    grouped[r.student][r.subject] ??= [];
-    grouped[r.student][r.subject].push(r);
-  });
+  const studentKey = (r.student || "").trim();
+
+  // 2. Initialize student object if new
+  if (!grouped[studentKey]) {
+    grouped[studentKey] = { __admission: r.admission };
+  }
+  
+  // 3. Initialize subject array if new
+  if (!grouped[studentKey][subjKey]) {
+    grouped[studentKey][subjKey] = [];
+  }
+  
+  // 4. Push the record
+  grouped[studentKey][subjKey].push(r);
+});
 
 
 const intelligence = calculateTermIntelligence(
