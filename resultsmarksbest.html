@@ -643,7 +643,7 @@ if (previousTerm) {
     .select("*")
     .eq("term", previousTerm)
     .eq("academic_year", SYSTEM_YEAR);
-
+      .range(0, 5000);
   
 const schoolId = data[0]?.school_id;
   previousRecords = data || [];
