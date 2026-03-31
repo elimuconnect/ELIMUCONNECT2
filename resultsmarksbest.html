@@ -712,7 +712,24 @@ if (!data || data.length === 0) {
 }
 
 results = data;
-console.table(data.map(r => ({ Name: r.full_name, Subj: r.subject_name || r.subject })));
+
+
+
+	// --- TEMPORARY AUDIT ---
+console.log("Total Records Found:", data.length);
+const uniqueSubjects = [...new Set(data.map(r => r.subject_name || r.subject))];
+console.log("Subjects found in database for this term:", uniqueSubjects);
+
+const missingInAvgMap = [];
+data.forEach(r => {
+   const sName = (r.full_name || "").trim();
+   const subj = (r.subject_name || r.subject || "").trim().toUpperCase();
+   if (!avgMap[sName] || !avgMap[sName][subj]) {
+       missingInAvgMap.push({ student: sName, subject: subj });
+   }
+});
+console.warn("Subjects missing from Averages Map:", missingInAvgMap);
+// --- END AUDIT ---
 
 
 /* Inside loadReport after: results = data; */
