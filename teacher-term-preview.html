@@ -554,6 +554,17 @@ const status = document.getElementById("status");
 const { data: { user } } = await supabase.auth.getUser();
 if (!user) location.href = "index.html";
 
+
+/* ===== Get teacher's school ID ===== */
+const { data: profile } = await supabase
+  .from("profiles")
+  .select("school_id")
+  .eq("auth_id", user.id)
+  .single();
+
+const teacherSchoolId = profile?.school_id;
+
+	
 /* ========== LOAD TERMS ========== */
 const { data: terms } = await supabase
   .from("terms")
@@ -592,9 +603,10 @@ const { data: termAverages } = await supabase
   
   /* ===== AVERAGES ===== */
   const { data: averages } = await supabase
-    .from("term_subject_report_view")
-   .select("full_name,subject_name,average_score,achievement_level")
-    .eq("term", termName)
+  .from("term_subject_report_view")
+  .select("full_name,subject_name,average_score,achievement_level")
+  .eq("term", termName)
+  .eq("school_id", teacherSchoolId); // ✅ ADD THIS
   
 
 trendMap = {};
@@ -618,11 +630,12 @@ const previousTerm = terms
 
 if (previousTerm) {
 
-  const { data } = await supabase
-    .from("assessment_results_view")
-    .select("*")
-    .eq("term", previousTerm)
-    .eq("academic_year", SYSTEM_YEAR);
+ const { data: prevData } = await supabase
+  .from("assessment_results_view")
+  .select("*")
+  .eq("term", previousTerm)
+  .eq("academic_year", SYSTEM_YEAR)
+  .eq("school_id", teacherSchoolId); // ✅ ADD THIS
 
   
 const schoolId = data[0]?.school_id;
@@ -687,7 +700,8 @@ const { data, error } = await supabase
   .from("assessment_results_view")
   .select("*")
   .eq("term", termName)
-  .eq("academic_year", SYSTEM_YEAR);
+  .eq("academic_year", SYSTEM_YEAR)
+  .eq("school_id", teacherSchoolId);  // ✅ ADD THIS
 
 if (error) {
   console.error("Supabase fetch error:", error);
