@@ -2217,13 +2217,13 @@ card.style.pageBreakBefore = "auto";  // Allows it to follow the header naturall
     }
     overallAvg = Number(overallAvg.toFixed(2));
 
-   function overallLevel(score) {
-  if (!score || score < 1) return "No Data";
-
+  function overallLevel(score) {
+  
   if (score >= 3.25) return "Exceeding Expectations";
   if (score >= 2.25) return "Meeting Expectations";
   if (score >= 1.25) return "Approaching Expectations";
 
+  
   return "Below Expectations";
 }
 
