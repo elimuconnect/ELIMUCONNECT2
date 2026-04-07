@@ -1570,10 +1570,10 @@ function generateInsight(subjects) {
   const overallAvg = total / count;
 
   const overall =
-    overallAvg >= 3.5 ? "exceeding expectations(4)" :
-    overallAvg >= 2.5 ? "meeting expectations(3)" :
-    overallAvg >= 1.5 ? "approaching expectations(2)" :
-    "below expectations(1)";
+    overallAvg >= 3.5 ? "Exceeding expectations(4)" :
+    overallAvg >= 2.5 ? "Meeting expectations(3)" :
+    overallAvg >= 1.5 ? "Approaching expectations(2)" :
+    "Below expectations(1)";
 
   const subjectsArray = Object.entries(subjectScores)
     .map(([s, scores]) => ({
