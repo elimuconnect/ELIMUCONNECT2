@@ -667,7 +667,7 @@ if (previousTerm) {
   .eq("school_id", teacherSchoolId); // ✅ ADD THIS
 
   
-const schoolId = data[0]?.school_id;
+
   previousRecords = data || [];
 
   previousRecords.forEach(r => {
@@ -683,18 +683,6 @@ const schoolId = data[0]?.school_id;
   });
 }
 
-
-
-avgMap = {};
-
-averages.forEach(a => {
-  const student = a.full_name;
-  const subj = a.subject_name;
-
-  if (!avgMap[student]) avgMap[student] = {};
-
-  avgMap[student][subj] = a;
-});
 
 
 // ============================
