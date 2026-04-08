@@ -660,7 +660,7 @@ const previousTerm = terms
 if (previousTerm) {
 
  const { data: prevData } = await supabase
-  .from("results2_report_view")
+  .from("assessment_results_view")
   .select("*")
   .eq("term", previousTerm)
   .eq("academic_year", SYSTEM_YEAR)
@@ -720,7 +720,7 @@ const batchSize = 1000;
 while (true) {
 
   const response = await supabase
-    .from("results2_report_view")
+    .from("assessment_results_view")
     .select("*")
     .eq("term", termName)
     .eq("academic_year", SYSTEM_YEAR)
