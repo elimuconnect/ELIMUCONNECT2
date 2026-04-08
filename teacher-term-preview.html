@@ -600,13 +600,42 @@ const { data: termAverages } = await supabase
 
 
 
-  
-  /* ===== AVERAGES ===== */
-  const { data: averages } = await supabase
-  .from("term_subject_report_view")
-  .select("full_name,subject_name,average_score,achievement_level")
-  .eq("term", termName)
-  .eq("school_id", teacherSchoolId); // ✅ ADD THIS
+  avgMap = {};
+
+let avgFrom = 0;
+const avgBatchSize = 1000;
+
+while (true) {
+
+  const { data: avgBatch, error: avgErr } = await supabase
+    .from("term_subject_report_view")
+    .select("full_name,subject_name,average_score,achievement_level")
+    .eq("term", termName)
+    .eq("school_id", teacherSchoolId)
+    .range(avgFrom, avgFrom + avgBatchSize - 1);
+
+  if (avgErr || !avgBatch || avgBatch.length === 0) break;
+
+  avgBatch.forEach(a => {
+
+    if (!a.full_name) return;
+
+    const student = a.full_name.trim();
+    const subj = a.subject_name;
+
+    if (!avgMap[student]) avgMap[student] = {};
+
+    avgMap[student][subj] = {
+      achievement_level: a.achievement_level,
+      average_score: a.average_score
+    };
+
+  });
+
+  if (avgBatch.length < avgBatchSize) break;
+
+  avgFrom += avgBatchSize;
+}
   
 
 trendMap = {};
@@ -631,7 +660,7 @@ const previousTerm = terms
 if (previousTerm) {
 
  const { data: prevData } = await supabase
-  .from("assessment_results_view")
+  .from("results2_report_view")
   .select("*")
   .eq("term", previousTerm)
   .eq("academic_year", SYSTEM_YEAR)
@@ -696,27 +725,35 @@ Object.keys(avgMap).forEach(student => {
 
   /* ===== RAW RESULTS ===== */
 
-const { data, error } = await supabase
-  .from("assessment_results_view")
-  .select("*")
-  .eq("term", termName)
-  .eq("academic_year", SYSTEM_YEAR)
-  .eq("school_id", teacherSchoolId);  // ✅ ADD THIS
+let allResults = [];
+let from = 0;
+const batchSize = 1000;
 
-if (error) {
-  console.error("Supabase fetch error:", error);
-  status.innerText = "Error fetching report";
-  return;
+while (true) {
+
+  const response = await supabase
+    .from("results2_report_view")
+    .select("*")
+    .eq("term", termName)
+    .eq("academic_year", SYSTEM_YEAR)
+    .eq("school_id", teacherSchoolId)
+    .range(from, from + batchSize - 1);
+
+  const batch = response.data;
+
+  if (response.error || !batch || batch.length === 0) break;
+
+  allResults = allResults.concat(batch);
+
+  if (batch.length < batchSize) break;
+
+  from += batchSize;
 }
 
-if (!data?.length) {
-  status.innerText = "No results found.";
-  return;
-}
-
-results = data;
-
-
+data = allResults;
+results = allResults;
+	
+console.log("Total Records Loaded:", data.length);
 
 /* Inside loadReport after: results = data; */
 const firstRow = data[0] || {};
