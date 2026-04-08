@@ -562,9 +562,22 @@ const status = document.getElementById("status");
   let competencyCount = 0;
 
   
+
 /* ========== AUTH ========== */
 const { data: { user } } = await supabase.auth.getUser();
 if (!user) location.href = "index.html";
+
+
+const { data: profile } = await supabase
+  .from("profiles")
+  .select("school_id, role")
+  .eq("auth_id", user.id)
+  .single();
+
+const teacherSchoolId = profile.school_id;
+
+
+
 
 /* ========== LOAD TERMS ========== */
 const { data: terms } = await supabase
@@ -606,7 +619,8 @@ async function loadReport() {
       .from("term_subject_report_view2")
       .select("full_name, subject_name, average_score, achievement_level")
       .eq("term", termName)
-      .range(avgFrom, avgFrom + avgBatchSize - 1);
+      .range(avgFrom, avgFrom + avgBatchSize - 1)
+	  .eq("school_id", teacherSchoolId); 
 
     if (avgErr || !avgBatch || avgBatch.length === 0) break;
 
@@ -648,7 +662,8 @@ async function loadReport() {
       .from("results2_report_view")
       .select("*")
       .eq("term", previousTerm)
-      .eq("academic_year", SYSTEM_YEAR);
+      .eq("academic_year", SYSTEM_YEAR)
+	  .eq("school_id", teacherSchoolId);
 
     previousRecords = data || [];
     previousRecords.forEach(r => {
@@ -692,7 +707,8 @@ async function loadReport() {
       .select("*")
       .eq("term", termName)
       .eq("academic_year", SYSTEM_YEAR)
-      .range(from, from + batchSize - 1);
+      .range(from, from + batchSize - 1)
+	  .eq("school_id", teacherSchoolId); 
 
     const batch = response.data;
     if (response.error || !batch || batch.length === 0) break;
@@ -707,6 +723,7 @@ async function loadReport() {
   
   
 console.log("Total Records Loaded:", data.length);
+
 
 
 
