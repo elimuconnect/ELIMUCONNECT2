@@ -360,7 +360,7 @@ const academicYear = localStorage.getItem("academic_year") || SYSTEM_YEAR;
 
 if (!classId || !subjectId) {
   alert("Please select a class and subject first.");
-  window.location.href="teacher2.html";
+  window.location.href="teacher4.html";
 }
 
 
@@ -898,7 +898,7 @@ document.getElementById("sleContainer").innerHTML = "";
 
   // 6️⃣ Load student results
 const { data: results } = await supabase
-  .from("results2")
+  .from("results3")
   .select("*")
   .eq("class_id", classId)
   .eq("subject_id", subjectId)
