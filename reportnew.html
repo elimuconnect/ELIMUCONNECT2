@@ -1580,7 +1580,7 @@ function generateInsight(subjects) {
     subjectScores[subject] = [];
 
     rows.forEach(r => {
-     const score = levelToScore(r.achievement_level);
+      const score = levelToScore(r.level);
       if (score > 0) {
         subjectScores[subject].push(score);
         total += score;
