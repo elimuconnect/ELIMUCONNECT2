@@ -2148,7 +2148,6 @@ function getTrend(currentAvg, previousAvg) {
 
 
 window.downloadPDF = async function () {
-
   if (!reportDiv.innerHTML.trim()) {
     alert("No report to download");
     return;
@@ -2160,24 +2159,15 @@ window.downloadPDF = async function () {
   const original = reportDiv;
   const clone = original.cloneNode(true);
 
-/* =========================
-   REMOVE CLASS SUMMARY TITLE (e.g., 10A – All Learners)
-========================= */
-clone.querySelectorAll("h3").forEach(h3 => {
-  if (h3.innerText.includes("All Learners")) {
-    h3.remove();
-  }
-});
+  // Remove class summary titles
+  clone.querySelectorAll("h3").forEach(h3 => {
+    if (h3.innerText.includes("All Learners")) h3.remove();
+  });
 
-  
-  /* =========================
-     REMOVE SCREEN PAGINATION
-  ========================== */
+  // Remove screen pagination divs
   clone.querySelectorAll(".a4-page").forEach(page => {
     const parent = page.parentNode;
-    while (page.firstChild) {
-      parent.insertBefore(page.firstChild, page);
-    }
+    while (page.firstChild) parent.insertBefore(page.firstChild, page);
     parent.removeChild(page);
   });
 
@@ -2186,8 +2176,6 @@ clone.querySelectorAll("h3").forEach(h3 => {
   clone.style.padding = "0";
   clone.style.boxSizing = "border-box";
 
-  
-  
   // Prevent header/logo from splitting
   clone.querySelectorAll(".report-overview").forEach(el => {
     el.style.pageBreakInside = "avoid";
@@ -2207,13 +2195,9 @@ card.style.pageBreakInside = "avoid"; // Keeps the student card together
 card.style.pageBreakBefore = "auto";  // Allows it to follow the header naturally
 
 
-  
-  
-  
-    
+
     // Remove old table blocks
     card.querySelectorAll(".subject-block, .trend-box").forEach(el => el.remove());
-
 
     const studentName = card.querySelector("h4")?.innerText
       .replace("👤", "")
@@ -2223,33 +2207,44 @@ card.style.pageBreakBefore = "auto";  // Allows it to follow the header naturall
     const subjectData = avgMap?.[studentName];
     if (!subjectData) return;
 
+    const numericScoresMap = {};
+    const numericScores = [];
 
-    /* =========================
-       CALCULATE OVERALL AVERAGE
-    ========================== */
-   const subjectScores = Object.values(subjectData)
-  .map(d => parseFloat(d.average_score))
-  .filter(score => !isNaN(score));
+   Object.entries(subjectData).forEach(([subject, d]) => {
+  const score = levelToScore(d.achievement_level) || 0; // fallback to 0
+  numericScoresMap[subject] = score; // include all subjects
+  if (!isNaN(score) && score > 0) numericScores.push(score); // only >0 for overallAvg
+});
 
-    let overallAvg = 0;
-    if (subjectScores.length) {
-      const total = subjectScores.reduce((sum, score) => sum + score, 0);
-      overallAvg = total / subjectScores.length;
-    }
+    let overallAvg = numericScores.length
+      ? numericScores.reduce((a, b) => a + b, 0) / numericScores.length
+      : 0;
     overallAvg = Number(overallAvg.toFixed(2));
 	
 	
-	 function overallLevel(score) {
-   
-      if (score >= 3.5) return "Exceeding Expectations";
-      if (score >= 2.5) return "Meeting Expectations";
-      if (score >= 1.5) return "Approaching Expectations";
-      return "Below Expectations";
-    }
+	
+	const totalSubjects = numericScores.length;
+const totalScore = numericScores.reduce((a, b) => a + b, 0);
+const maxTotal = totalSubjects * 8;
+	
+
+    const subjectsArray = Object.entries(numericScoresMap)
+      .map(([subject, score]) => ({ subject, score }))
+      .sort((a, b) => b.score - a.score);
+
+    let strengths = [];
+    if (subjectsArray.length > 1 && subjectsArray[0].score - subjectsArray[1].score >= 0.5) {
+      strengths.push(subjectsArray[0].subject);
+	} else {
+  strengths = [];
+}
+
+function overallLevel(score) {
+  return getAchievementLabel(score);
+}
 
 
-
-
+ 
   // Get first Kiswahili subject for translations
 const firstKiswahiliSubject = Object.keys(avgMap?.[studentName] || {})
   .find(s => ["Kiswahili", "Kiswahili Lugha", "Fasihi ya Kiswahili"].includes(s));
@@ -2261,50 +2256,73 @@ const firstKiswahiliSubject = Object.keys(avgMap?.[studentName] || {})
 function maybeTranslate(comment, subject) {
   if (swahiliSubjects.includes(subject)) {
     const translations = {
-      "Excellent work and strong understanding shown.": "Kazi nzuri na uelewa imedhihirika.",
-      "Good progress with steady improvement.": "Maendeleo mazuri. Endelea kufanya jitihada zaidi.",
-      "Fair work; continue practicing to improve.": "Utendaji wa wastani. Mazoezi zaidi yatasaidia kuboresha.",
-      "More effort and support required.": "Chini ya matarajio. Msaada zaidi unahitajika."
+      "Outstanding mastery.": "Umahiri wa hali ya juu.",
+      "Very strong performance.": "Utendaji bora sana.",
+      "Consistently meets expectations.": "Hufikia matarajio kila mara.",
+      "Good progress.": "Maendeleo mazuri.",
+      "Approaching expectations.": "Anakaribia kufikia matarajio.",
+      "Developing understanding.": "Anaendelea kukuza uelewa.",
+      "Below expectations.": "Chini ya matarajio.",
+      "Significant support needed.": "Anahitaji msaada mkubwa.",
+
+      "Outstanding work.": "Kazi bora sana.",
+      "Very good work.": "Kazi nzuri sana.",
+      "Meets expectations.": "Inafikia matarajio.",
+      "Needs more practice.": "Anahitaji mazoezi zaidi.",
+      "Keep working.": "Endelea kujitahidi.",
+      "Needs support.": "Anahitaji msaada.",
+      "Significant improvement needed.": "Anahitaji kuboresha sana."
     };
+
     return translations[comment] || comment;
   }
   return comment;
 }
-  
-  
-  
-  
-  
-  
-  function generalComment(score, subject) {
+
+
+function generalComment(score, subject) {
+  const level = getAchievementLabel(score);
+
   let comment;
-  if (score >= 3.5)
-    comment = "Excellent performance across most learning areas. Keep up the great work.";
-  else if (score >= 2.5)
-    comment = "Good progress. Continue working hard to improve further.";
-  else if (score >= 1.5)
-    comment = "Fair performance. More effort and practice will help improve.";
-  else
-    comment = "Below expectations. Additional support and effort are required.";
+  switch(level) {
+    case "EE1": comment = "Outstanding mastery."; break;
+    case "EE2": comment = "Very strong performance."; break;
+    case "ME1": comment = "Consistently meets expectations."; break;
+    case "ME2": comment = "Good progress."; break;
+    case "AE1": comment = "Approaching expectations."; break;
+    case "AE2": comment = "Developing understanding."; break;
+    case "BE1": comment = "Below expectations."; break;
+    case "BE2": comment = "Significant support needed."; break;
+    default: comment = "No data available.";
+  }
 
   return maybeTranslate(comment, subject);
 }
-  
-  
-  
-  
-  function commentFromScore(score, subject) {
+
+
+
+	  function commentFromScore(score, subject) {
+  const level = getAchievementLabel(score);
+
   let comment;
-  if (score >= 3.5) comment = "Excellent work and strong understanding shown.";
-  else if (score >= 2.5) comment = "Good progress with steady improvement.";
-  else if (score >= 1.5) comment = "Fair work; continue practicing to improve.";
-  else comment = "More effort and support required.";
+  switch(level) {
+    case "EE1": comment = "Outstanding work."; break;
+    case "EE2": comment = "Very good work."; break;
+    case "ME1": comment = "Meets expectations."; break;
+    case "ME2": comment = "Good progress."; break;
+    case "AE1": comment = "Needs more practice."; break;
+    case "AE2": comment = "Keep working."; break;
+    case "BE1": comment = "Needs support."; break;
+    case "BE2": comment = "Significant improvement needed."; break;
+    default: comment = "";
+  }
 
   return maybeTranslate(comment, subject);
 }
+
 
 	  
-   
+
     // Build subject table
     const table = document.createElement("table");
     table.style.width = "100%";
@@ -2313,46 +2331,42 @@ function maybeTranslate(comment, subject) {
     table.style.fontSize = "14px";
     table.style.tableLayout = "fixed";
 
-    table.innerHTML = `
-      <thead>
+    
+	
+	table.innerHTML = `
+  <thead>
+    <tr>
+      <th style="border:1px solid #000;padding:8px;width:20%;">Learning Area/Subject</th>
+      <th style="border:1px solid #000;padding:8px;width:35%;">Score / Performance Level</th>
+      <th style="border:1px solid #000;padding:8px;width:30%;">Teacher Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${Object.entries(subjectData).map(([subject, d]) => {
+      const avg = numericScoresMap[subject] || 0;
+      return `
         <tr>
-          <th style="border:1px solid #000;padding:8px;width:30%;">Learning Area/Subject</th>
-          <th style="border:1px solid #000;padding:8px;width:25%;">Performance Level</th>
-          <th style="border:1px solid #000;padding:8px;width:30%;">Teacher Comment</th>
+          <td style="border:1px solid #000;padding:8px;">${subject}</td>
+          <td style="border:1px solid #000;padding:8px;">${avg} / 8 (${d.achievement_level})</td>
+          <td style="border:1px solid #000;padding:8px;">${commentFromScore(avg, subject)}</td>
         </tr>
-      </thead>
-      <tbody>
-   
-        ${Object.entries(subjectData).map(([subject, d]) => {
-          const avg = Number(d.average_score);
-          return `
-            <tr>
-              <td style="border:1px solid #000;padding:8px;">${subject}</td>
-           
-              <td style="border:1px solid #000;padding:8px;">${d.achievement_level}</td>
-              <td style="border:1px solid #000;padding:8px;">${commentFromScore(avg)}</td>
-            </tr>
-          `;
-        }).join("")}
-      </tbody>
-    `;
-
-    /* =========================
-       GENERAL PERFORMANCE BLOCK
-    ========================== */
+      `;
+    }).join("")}
+  </tbody>
+`;
+	
+	
     const generalBlock = document.createElement("div");
     generalBlock.style.marginTop = "10px";
     generalBlock.style.fontSize = "14px";
     generalBlock.style.lineHeight = "1.8";
 
     generalBlock.innerHTML = `
-
-    
       <table style="width:100%;border-collapse:collapse;margin-top:6px;">
         <tr>
           <td style="border:1px solid #000;padding:8px;width:40%;"><strong>Learner's General Performance Level</strong></td>
          <td style="border:1px solid #000;padding:8px;">
-  ${overallLevel(overallAvg)}
+  ${overallLevel(overallAvg)} (${totalScore} / ${maxTotal})
 </td>
         </tr>
         <tr>
@@ -2360,7 +2374,7 @@ function maybeTranslate(comment, subject) {
           <td style="border:1px solid #000;padding:12px;">${generalComment(overallAvg)}</td>
         </tr>
       </table>
-
+      <p>💪 Strengths: ${strengths.join(", ")}</p>
 
 
        
