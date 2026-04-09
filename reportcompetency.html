@@ -2097,6 +2097,8 @@ function getTrend(currentAvg, previousAvg) {
 
 
 
+
+
 window.downloadPDF = async function () {
 
   if (!reportDiv.innerHTML.trim()) {
@@ -2177,9 +2179,9 @@ card.style.pageBreakBefore = "auto";  // Allows it to follow the header naturall
     /* =========================
        CALCULATE OVERALL AVERAGE
     ========================== */
-    const subjectScores = Object.values(subjectData)
-      .map(d => parseFloat(d.average_score))
-      .filter(score => !isNaN(score) && score > 0);
+   const subjectScores = Object.values(subjectData)
+  .map(d => parseFloat(d.average_score))
+  .filter(score => !isNaN(score));
 
     let overallAvg = 0;
     if (subjectScores.length) {
@@ -2187,9 +2189,29 @@ card.style.pageBreakBefore = "auto";  // Allows it to follow the header naturall
       overallAvg = total / subjectScores.length;
     }
     overallAvg = Number(overallAvg.toFixed(2));
+	
+	
+	
+	// Map each subject to numeric score (1–4) and build numericScores array
+const numericScoresMap = {};
+const numericScores = [];
 
-    function overallLevel(score) {
-      if (!score || score < 1) return "No Data";
+Object.entries(subjectData).forEach(([subject, d]) => {
+  const score = levelToScore(d.achievement_level) || 0; // use 1–4
+  numericScoresMap[subject] = score;
+  if (score > 0) numericScores.push(score);
+});
+	
+	
+	
+	
+	const totalSubjects = numericScores.length;
+const totalScore = numericScores.reduce((a, b) => a + b, 0);
+const maxTotal = totalSubjects * 4
+	
+	
+	 function overallLevel(score) {
+   
       if (score >= 3.5) return "Exceeding Expectations";
       if (score >= 2.5) return "Meeting Expectations";
       if (score >= 1.5) return "Approaching Expectations";
@@ -2265,8 +2287,8 @@ function maybeTranslate(comment, subject) {
     table.innerHTML = `
       <thead>
         <tr>
-          <th style="border:1px solid #000;padding:8px;width:30%;">Learning Area/Subject</th>
-          <th style="border:1px solid #000;padding:8px;width:25%;">Performance Level</th>
+          <th style="border:1px solid #000;padding:8px;width:25%;">Learning Area/Subject</th>
+          <th style="border:1px solid #000;padding:8px;width:30%;">Score / Performance Level</th>
           <th style="border:1px solid #000;padding:8px;width:30%;">Teacher Comment</th>
         </tr>
       </thead>
@@ -2278,7 +2300,11 @@ function maybeTranslate(comment, subject) {
             <tr>
               <td style="border:1px solid #000;padding:8px;">${subject}</td>
            
-              <td style="border:1px solid #000;padding:8px;">${d.achievement_level}</td>
+             <td style="border:1px solid #000;padding:8px;">
+ ${avg} / 4 <br>${d.achievement_level})
+</td>
+			 
+			 
               <td style="border:1px solid #000;padding:8px;">${commentFromScore(avg)}</td>
             </tr>
           `;
@@ -2300,8 +2326,8 @@ function maybeTranslate(comment, subject) {
       <table style="width:100%;border-collapse:collapse;margin-top:6px;">
         <tr>
           <td style="border:1px solid #000;padding:8px;width:40%;"><strong>Learner's General Performance Level</strong></td>
-         <td style="border:1px solid #000;padding:8px;">
-  ${overallLevel(overallAvg)}
+        <td style="border:1px solid #000;padding:8px;">
+  ${overallLevel(overallAvg)} (${totalScore} / ${maxTotal})
 </td>
         </tr>
         <tr>
@@ -2309,8 +2335,6 @@ function maybeTranslate(comment, subject) {
           <td style="border:1px solid #000;padding:12px;">${generalComment(overallAvg)}</td>
         </tr>
       </table>
-
-
 
        
 <div style="margin-top:20px;">
