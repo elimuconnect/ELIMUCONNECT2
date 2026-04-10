@@ -2050,7 +2050,9 @@ if (viewMode.value === "student") {
   
   
 
-  
+
+
+
   /* ===== TERM VIEW ===== */
   if (viewMode.value === "term") {
   const grouped = {};
@@ -2090,6 +2092,28 @@ document.getElementById("schoolAnalytics").innerHTML = renderSchoolAnalytics(
   schoolLogo
 );
 
+
+    
+  // ✅ SORT
+  const sortedGrouped = Object.fromEntries(
+    Object.entries(grouped).sort((a, b) =>
+      a[0].localeCompare(b[0], undefined, { sensitivity: "base" })
+    )
+  );
+
+  // ✅ USE sortedGrouped
+  reportDiv.innerHTML = renderGrouped(sortedGrouped, avgMap);
+
+
+    if (!window.__EXPORTING_PDF__) {
+  requestAnimationFrame(() => {
+   
+  });
+}
+
+  }
+
+	
 
 	
 /* ===== CLASS VIEW ===== */
