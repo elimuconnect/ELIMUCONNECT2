@@ -573,6 +573,22 @@ const teacherSchoolId = profile.school_id;
 
 
 
+
+
+/* ========== SCHOOL DETAILS FROM SUPABASE ========== */
+const { data: school, error: schoolError } = await supabase
+  .from("schools")
+  .select("name, po_box, postal_code, town, phone, email, logo_url")
+  .eq("id", teacherSchoolId)
+  .single();
+
+if (schoolError) {
+  console.error("School fetch error:", schoolError.message);
+}
+
+
+	
+
 /* ========== LOAD TERMS ========== */
 const { data: terms } = await supabase
   .from("terms")
@@ -720,29 +736,26 @@ console.log("Total Records Loaded:", data.length);
 
 
 
-/* Inside loadReport after: results = data; */
-const firstRow = data[0] || {};
 
-// 1. Dynamic School Details (No hardcoded strings)
 const schoolDetail = {
-  name: firstRow.school_name || "—",
-  po_box: firstRow.po_box || "—",
-  postal_code: firstRow.postal_code || "—",
-  town: firstRow.town || "—",
-  phone: firstRow.phone || "—",
-  email: firstRow.email || "—"
+  name: school?.name || "—",
+  po_box: school?.po_box || "—",
+  postal_code: school?.postal_code || "—",
+  town: school?.town || "—",
+  phone: school?.phone || "—",
+  email: school?.email || "—"
 };
+
+
 
 // 2. Logo Logic (Kept as before)
 const manualLogos = {
   "SHANZU SENIOR SECONDARY SCHOOL": "https://res.cloudinary.com/dwvt4e9o2/image/upload/v1773573305/schoollogo1_rnpce8.jpg"
 };
-
-// Uses the DB logo if present, otherwise checks the manual map
-schoolLogo = firstRow.school_logo_from_db || manualLogos[schoolDetail.name.trim()] || null;
-
-
-
+schoolLogo =
+  school?.logo_url ||
+  manualLogos[schoolDetail.name?.trim()] ||
+  null;
  
 // normalized records
 const records = data.map(r => ({
@@ -973,7 +986,16 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
 
 
 
-function renderSchoolAnalytics(records, termName, year, intelligence, schoolName, className) {
+
+
+function renderSchoolAnalytics(
+  records,
+  termName,
+  year,
+  intelligence,
+  schoolName,
+  className,
+  schoolLogo) {
 
   let classMap = {};
   let subjectMap = {};
@@ -1274,6 +1296,13 @@ return `
   
   
 function renderGrouped(grouped, avgMap) {
+
+
+	
+const firstRow = (typeof records !== "undefined" && records.length)
+  ? records[0]
+  : {};
+
 
   return Object.entries(grouped).map(([student, subjects]) => {
 
@@ -1953,7 +1982,9 @@ const chartOptions = {
 
 
 
-  
+
+
+
   /* ===== TERM VIEW ===== */
   if (viewMode.value === "term") {
   const grouped = {};
@@ -1970,14 +2001,17 @@ const intelligence = calculateTermIntelligence(
   previousTerm
 );
 
-/* Inside your loadReport function */
 
-// 1. Get the first record to extract school and class names
-const firstRecord = records[0] || {};
 
-// 2. Extract the dynamic names from your SQL View
-const currentSchool = firstRecord.school_name || "SHANZU SENIOR SCHOOL";
-const currentClass = firstRecord.class_name || "All Classes";
+
+  // Get school + class safely
+  const currentSchool = school?.name || "UNKNOWN SCHOOL";
+
+  const currentClass =
+    [...new Set(records.map(r => r.class_name))]
+      .join(", ") || "All Classes";
+
+
 
 // 3. Update the function call to use these new variables
 document.getElementById("schoolAnalytics").innerHTML = renderSchoolAnalytics(
@@ -1985,8 +2019,9 @@ document.getElementById("schoolAnalytics").innerHTML = renderSchoolAnalytics(
   termName,
   SYSTEM_YEAR,
   intelligence,
-  currentSchool, // Replaces schoolName
-  currentClass   // Replaces className
+  currentSchool,
+  currentClass,
+  schoolLogo
 );
 
 
@@ -2009,6 +2044,7 @@ document.getElementById("schoolAnalytics").innerHTML = renderSchoolAnalytics(
 }
 
   }
+	
 
  
  /* ===== STUDENT VIEW ===== */
