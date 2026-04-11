@@ -82,24 +82,30 @@
 const SUPABASE_URL = "https://hhtplinfcdwgahlhurhx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_cOXipkG4wSKIkIHwkP04JA_KunvG7T5";
 
-const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// IMPORTANT: persistent auth client
+const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
 
 let marketer = null;
 
 /* ---------------- INIT ---------------- */
-
-
-
 async function init() {
 
-  const { data: sessionData } = await client.auth.getSession();
-  const user = sessionData?.session?.user;
+  // safer session fetch (fixes auth.uid null issues)
+  const { data } = await client.auth.getSession();
+  const user = data?.session?.user;
 
   if (!user) {
     window.location.href = "index.html";
     return;
   }
 
+  // fetch marketer profile
   const { data: marketerData, error } = await client
     .from("marketers")
     .select("*")
@@ -122,16 +128,17 @@ async function init() {
   loadEarnings();
 }
 
-
-  
-  
 /* ---------------- ADD SCHOOL ---------------- */
 async function addSchool() {
+
+  if (!marketer) return;
+
   const { error } = await client.from("schools").insert({
-    school_name: document.getElementById("school").value,
-    contact_person: document.getElementById("contact").value,
-    phone: document.getElementById("phone").value,
-    county: document.getElementById("county").value,
+    school_name: document.getElementById("school").value.trim(),
+    contact_person: document.getElementById("contact").value.trim(),
+    phone: document.getElementById("phone").value.trim(),
+    county: document.getElementById("county").value.trim(),
+    marketer_id: marketer.id, // IMPORTANT FIX (better than code)
     marketer_code: marketer.code
   });
 
@@ -147,6 +154,7 @@ async function addSchool() {
 async function loadSchools() {
 
   if (!marketer) return;
+
   const { data } = await client
     .from("schools")
     .select("*")
@@ -174,6 +182,7 @@ async function loadSchools() {
 async function loadEarnings() {
 
   if (!marketer) return;
+
   const { data } = await client
     .from("commissions")
     .select("*")
@@ -200,6 +209,5 @@ async function logout() {
 /* ---------------- START ---------------- */
 window.onload = init;
 </script>
-
 </body>
 </html>
