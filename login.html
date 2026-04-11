@@ -55,23 +55,43 @@
 const SUPABASE_URL = "https://hhtplinfcdwgahlhurhx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_cOXipkG4wSKIkIHwkP04JA_KunvG7T5";
 
-// IMPORTANT FIX: use a different variable name
-const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// IMPORTANT: create client WITH session persistence
+const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
 
 async function login() {
-  const email = document.getElementById("email").value;
+  const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
 
-  const { error } = await client.auth.signInWithPassword({
+  if (!email || !password) {
+    alert("Please enter email and password");
+    return;
+  }
+
+  const { data, error } = await client.auth.signInWithPassword({
     email,
     password
   });
 
   if (error) {
     alert(error.message);
-  } else {
-    window.location.href = "dashboard.html";
+    return;
   }
+
+  // confirm session is created BEFORE redirect
+  const { data: sessionData } = await client.auth.getSession();
+
+  if (!sessionData?.session) {
+    alert("Login failed: session not created");
+    return;
+  }
+
+  window.location.href = "dashboard.html";
 }
 </script>
 
