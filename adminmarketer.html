@@ -1,3 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ELIMU CONNECT Admin</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+  <style>
+    body {
+      font-family: Arial;
+      background: #f4f4f4;
+      padding: 20px;
+    }
+
+    h2 { margin-bottom: 10px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      margin-bottom: 25px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+
+    th { background: #eee; }
+
+    input {
+      padding: 8px;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+
+    button {
+      padding: 6px 10px;
+      background: green;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    .clickable {
+      cursor: pointer;
+      color: blue;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>Admin Dashboard</h2>
+
+<div class="grid" id="stats"></div>
+
+<input id="search" placeholder="Search marketers..." oninput="renderMarketers()">
+
+<div id="detail"></div>
+
+<div id="tables">
+  <div id="marketers"></div>
+  <div id="schools"></div>
+  <div id="payments"></div>
+</div>
+
 <script>
 const SUPABASE_URL = "https://hhtplinfcdwgahlhurhx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_cOXipkG4wSKIkIHwkP04JA_KunvG7T5";
@@ -168,3 +250,5 @@ function renderPayments() {
 /* ---------------- START ---------------- */
 init();
 </script>
+</body>
+</html>
