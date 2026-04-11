@@ -1,75 +1,170 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Admin Panel</title>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-
-  <style>
-    body { font-family: Arial; padding: 20px; }
-
-    .card {
-      padding: 10px;
-      margin: 10px 0;
-      border: 1px solid #ccc;
-    }
-
-    button {
-      background: green;
-      color: white;
-      border: none;
-      padding: 5px;
-      cursor: pointer;
-    }
-  </style>
-</head>
-
-<body>
-
-<h2>Admin Panel</h2>
-
-<div id="schools"></div>
-
 <script>
 const SUPABASE_URL = "https://hhtplinfcdwgahlhurhx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_cOXipkG4wSKIkIHwkP04JA_KunvG7T5";
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-async function load() {
-  const { data } = await supabase.from("schools").select("*");
+const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  let html = "";
+let marketers = [];
+let schools = [];
+let payments = [];
+let selectedMarketer = null;
 
-  data.forEach(s => {
+/* ---------------- INIT WITH SESSION CHECK ---------------- */
+async function init() {
+
+  const { data: sessionData } = await client.auth.getSession();
+  const user = sessionData?.session?.user;
+
+  // 1. CHECK LOGIN
+  if (!user) {
+    alert("Not logged in");
+    window.location.href = "login.html";
+    return;
+  }
+
+  // 2. CHECK IF ADMIN
+  const { data: profile } = await client
+    .from("marketers")
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!profile || profile.role !== "admin") {
+    alert("Access denied: Admin only");
+    window.location.href = "dashboard.html";
+    return;
+  }
+
+  // 3. LOAD DATA
+  await loadAll();
+  loadStats();
+}
+
+/* ---------------- LOAD ALL DATA ---------------- */
+async function loadAll() {
+  const m = await client.from("marketers").select("*");
+  const s = await client.from("schools").select("*");
+  const p = await client.from("payments").select("*");
+
+  marketers = m.data || [];
+  schools = s.data || [];
+  payments = p.data || [];
+
+  renderMarketers();
+  renderSchools();
+  renderPayments();
+}
+
+/* ---------------- STATS ---------------- */
+function loadStats() {
+  const totalRevenue = payments.reduce((a,b)=>a + Number(b.amount||0),0);
+
+  document.getElementById("stats").innerHTML = `
+    <div class="card"><b>💰 Revenue</b><br>${totalRevenue}</div>
+    <div class="card"><b>🏫 Schools</b><br>${schools.length}</div>
+    <div class="card"><b>👥 Marketers</b><br>${marketers.length}</div>
+  `;
+}
+
+/* ---------------- MARKETERS ---------------- */
+function renderMarketers() {
+  const q = document.getElementById("search").value?.toLowerCase() || "";
+
+  let filtered = marketers.filter(m =>
+    (m.name||"").toLowerCase().includes(q) ||
+    (m.email||"").toLowerCase().includes(q) ||
+    (m.code||"").toLowerCase().includes(q)
+  );
+
+  let html = `<h3>👥 Marketers</h3>
+  <table>
+  <tr>
+    <th>Name</th><th>Email</th><th>Phone</th><th>Code</th><th>Status</th>
+  </tr>`;
+
+  filtered.forEach(m => {
     html += `
-      <div class="card">
-        <b>${s.school_name}</b><br>
-        Status: ${s.payment_status || "pending"}<br><br>
-
-        <button onclick="markPaid('${s.id}')">
-          Mark Paid
-        </button>
-      </div>
+      <tr>
+        <td class="clickable" onclick="viewMarketer('${m.id}')">${m.name}</td>
+        <td>${m.email}</td>
+        <td>${m.phone}</td>
+        <td>${m.code}</td>
+        <td>${m.status}</td>
+      </tr>
     `;
   });
 
+  html += "</table>";
+  document.getElementById("marketers").innerHTML = html;
+}
+
+/* ---------------- VIEW MARKETER ---------------- */
+function viewMarketer(id) {
+  selectedMarketer = marketers.find(m => m.id === id);
+
+  const mySchools = schools.filter(s => s.marketer_id === id);
+  const myPayments = payments.filter(p => p.marketer_id === id);
+
+  let total = myPayments.reduce((a,b)=>a + Number(b.amount||0),0);
+
+  document.getElementById("detail").innerHTML = `
+    <div class="card">
+      <h3>${selectedMarketer.name}</h3>
+      <p><b>Code:</b> ${selectedMarketer.code}</p>
+      <p><b>County:</b> ${selectedMarketer.county}</p>
+      <p><b>Total Earnings:</b> ${total}</p>
+      <p><b>Schools:</b> ${mySchools.length}</p>
+    </div>
+  `;
+}
+
+/* ---------------- SCHOOLS ---------------- */
+function renderSchools() {
+  let html = `<h3>🏫 Schools</h3>
+  <table>
+  <tr>
+    <th>Name</th><th>Contact</th><th>Phone</th><th>County</th><th>Status</th>
+  </tr>`;
+
+  schools.forEach(s => {
+    html += `
+      <tr>
+        <td>${s.school_name}</td>
+        <td>${s.contact_person}</td>
+        <td>${s.phone}</td>
+        <td>${s.county}</td>
+        <td>${s.payment_status}</td>
+      </tr>
+    `;
+  });
+
+  html += "</table>";
   document.getElementById("schools").innerHTML = html;
 }
 
-async function markPaid(id) {
-  await supabase.from("payments").insert({
-    school_id: id,
-    amount: 10000,
-    term: "Term 1",
-    year: 2026
+/* ---------------- PAYMENTS ---------------- */
+function renderPayments() {
+  let html = `<h3>💰 Payments</h3>
+  <table>
+  <tr>
+    <th>School</th><th>Amount</th><th>Term</th><th>Year</th>
+  </tr>`;
+
+  payments.forEach(p => {
+    html += `
+      <tr>
+        <td>${p.school_id}</td>
+        <td>${p.amount}</td>
+        <td>${p.term}</td>
+        <td>${p.year}</td>
+      </tr>
+    `;
   });
 
-  alert("Payment recorded!");
-  load();
+  html += "</table>";
+  document.getElementById("payments").innerHTML = html;
 }
 
-load();
+/* ---------------- START ---------------- */
+init();
 </script>
-
-</body>
-</html>
