@@ -223,19 +223,40 @@ function renderSchools() {
   html += "</table>";
   document.getElementById("schools").innerHTML = html;
 }
+async function loadPayments() {
+  const { data, error } = await client
+    .from("payments")
+    .select(`
+      id,
+      amount,
+      term,
+      year,
+      created_at,
+      schools:school_id (
+        school_name
+      )
+    `);
 
-/* ---------------- PAYMENTS ---------------- */
-function renderPayments() {
-  let html = `<h3>💰 Payments</h3>
-  <table>
-  <tr>
-    <th>School</th><th>Amount</th><th>Term</th><th>Year</th>
-  </tr>`;
+  if (error) {
+    console.log(error);
+    return;
+  }
 
-  payments.forEach(p => {
+  let html = `
+    <h3>💰 Payments</h3>
+    <table border="1" width="100%">
+      <tr>
+        <th>School</th>
+        <th>Amount</th>
+        <th>Term</th>
+        <th>Year</th>
+      </tr>
+  `;
+
+  data.forEach(p => {
     html += `
       <tr>
-        <td>${p.schools?.school_name || "Unknown"}</td>
+        <td>${p.schools?.school_name || "Unknown school"}</td>
         <td>${p.amount}</td>
         <td>${p.term}</td>
         <td>${p.year}</td>
@@ -244,9 +265,9 @@ function renderPayments() {
   });
 
   html += "</table>";
+
   document.getElementById("payments").innerHTML = html;
 }
-
 /* ---------------- START ---------------- */
 init();
 </script>
