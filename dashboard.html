@@ -95,11 +95,17 @@ async function init() {
     return;
   }
 
-  const { data } = await client
+  const { data, error } = await client
     .from("marketers")
     .select("*")
     .eq("user_id", user.id)
-    .single();
+    .maybeSingle(); // IMPORTANT FIX
+
+  if (error || !data) {
+    alert("Marketer profile not found or blocked by RLS");
+    console.log(error);
+    return;
+  }
 
   marketer = data;
 
@@ -109,7 +115,6 @@ async function init() {
   loadSchools();
   loadEarnings();
 }
-
 /* ---------------- ADD SCHOOL ---------------- */
 async function addSchool() {
   const { error } = await client.from("schools").insert({
