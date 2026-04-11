@@ -129,7 +129,9 @@ async function loadAll() {
 
 
 
-const p = await client
+
+
+ const p = await client
   .from("payments")
   .select(`
     id,
@@ -138,15 +140,12 @@ const p = await client
     year,
     marketer_id,
     school_id,
-    schools:school_id (
+    schools (
       school_name
     )
   `);
 
-
-
-
-  
+payments = p.error ? [] : p.data; 
 
   marketers = m.data || [];
   schools = s.data || [];
