@@ -89,30 +89,31 @@ let marketer = null;
 /* ---------------- INIT ---------------- */
 
 
+
 async function init() {
 
-const { data } = await client.auth.getSession();
-const user = data?.session?.user;
+  const { data: sessionData } = await client.auth.getSession();
+  const user = sessionData?.session?.user;
 
   if (!user) {
     window.location.href = "index.html";
     return;
   }
 
-  const { data, error } = await client
+  const { data: marketerData, error } = await client
     .from("marketers")
     .select("*")
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (error || !data) {
+  if (error || !marketerData) {
     console.log("USER:", user.id);
     console.log("ERROR:", error);
     alert("Marketer profile not found");
     return;
   }
 
-  marketer = data;
+  marketer = marketerData;
 
   document.getElementById("code").innerText =
     "Your Code: " + marketer.code;
@@ -122,6 +123,7 @@ const user = data?.session?.user;
 }
 
 
+  
   
 /* ---------------- ADD SCHOOL ---------------- */
 async function addSchool() {
