@@ -1061,41 +1061,72 @@ function renderSchoolAnalytics(
       : 0;
   }
 
-  // ===== CLASS SUMMARY =====
-  const classSummary = Object.entries(classMap).map(([cls, scores]) => {
 
+const classSummary = Object.entries(classMap)
+  .map(([cls, scores]) => {
     const mean = avg(scores);
-    const risk = mean < 2.5
-      ? `<span style="color:#c0392b;font-weight:bold;">🔴 Needs Intervention</span>`
-      : `<span style="color:#1e8449;font-weight:bold;">🟢 Stable</span>`;
+    return { cls, mean };
+  })
+  .sort((a, b) => b.mean - a.mean) // BEST → WORST
+  .map(({ cls, mean }) => {
+
+    let level, risk;
+
+    if (mean >= 3.5) {
+      level = "Exceeding";
+      risk = `<span style="color:#1e8449;font-weight:bold;">🟢 Strong</span>`;
+    } else if (mean >= 2.5) {
+      level = "Meeting";
+      risk = `<span style="color:#27ae60;font-weight:bold;">🟢 Stable</span>`;
+    } else if (mean >= 1.5) {
+      level = "Approaching";
+      risk = `<span style="color:#f39c12;font-weight:bold;">🟡 Monitor</span>`;
+    } else {
+      level = "Below";
+      risk = `<span style="color:#c0392b;font-weight:bold;">🔴 Needs Intervention</span>`;
+    }
 
     return `
       <tr>
         <td>${cls}</td>
-        <td>${getAchievementLabel(mean)}</td>
+        <td>${mean.toFixed(2)} / 4 (${level})</td>
         <td>${risk}</td>
       </tr>
     `;
   }).join("");
 
-  // ===== SUBJECT ALERTS =====
-  const subjectAlerts = Object.entries(subjectMap).map(([sub, scores]) => {
+	
 
+const subjectAlerts = Object.entries(subjectMap)
+  .map(([sub, scores]) => {
     const mean = avg(scores);
+    return { sub, mean };
+  })
+  .sort((a, b) => b.mean - a.mean) // BEST → WORST
+  .map(({ sub, mean }) => {
 
-    const alert = mean < 2.3
-      ? `<span style="color:#c0392b;font-weight:bold;">⚠ Immediate Review Required</span>`
-      : "";
+    let level, alert = "";
+
+    if (mean >= 3.5) level = "Exceeding";
+    else if (mean >= 2.5) level = "Meeting";
+    else if (mean >= 1.5) {
+      level = "Approaching";
+      alert = `<span style="color:#f39c12;font-weight:bold;">⚠ Monitor Closely</span>`;
+    } else {
+      level = "Below";
+      alert = `<span style="color:#c0392b;font-weight:bold;">⚠ Immediate Review Required</span>`;
+    }
 
     return `
       <tr>
         <td>${sub}</td>
-       <td>${getAchievementLabel(mean)}</td>
+        <td>${mean.toFixed(2)} / 4 (${level})</td>
         <td>${alert}</td>
       </tr>
     `;
   }).join("");
 
+	
   // ===== RETURN FULL ANALYTICS PAGE =====
   return `
  <div class="a4-page school-analytics">
