@@ -987,6 +987,9 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
 
 
 
+
+
+
 function renderSchoolAnalytics(
   records,
   termName,
@@ -995,9 +998,6 @@ function renderSchoolAnalytics(
   schoolName,
   className,
   schoolLogo) {
-
- 
- 
 
   let classMap = {};
   let subjectMap = {};
@@ -1065,45 +1065,67 @@ Object.entries(learnerMap).forEach(([admission, scores]) => {
   }
 
 
-  // ===== CLASS SUMMARY =====
-  const classSummary = Object.entries(classMap).map(([cls, scores]) => {
-
+  const classSummary = Object.entries(classMap)
+  .map(([cls, scores]) => {
     const mean = avg(scores);
+    return { cls, scores, mean };
+  })
+  .sort((a, b) => b.mean - a.mean) // 🔥 SORT DESCENDING
+  .map(({ cls, scores, mean }) => {
 
-    const risk = mean < 2
-      ? `<span style="color:#c0392b;font-weight:bold;">🔴 Needs Intervention</span>`
-      : `<span style="color:#1e8449;font-weight:bold;">🟢 Stable</span>`;
+   const level = getAchievementLabel(mean);
+
+let risk;
+
+if (["EE1", "EE2", "ME1", "ME2"].includes(level)) {
+  risk = `<span style="color:#1e8449;font-weight:bold;">🟢 Stable</span>`;
+} else if (level === "AE1") {
+  risk = `<span style="color:#f39c12;font-weight:bold;">🟡 Monitor</span>`;
+} else if (level === "AE2") {
+  risk = `<span style="color:#e67e22;font-weight:bold;">🟠 Needs Support</span>`;
+} else {
+  risk = `<span style="color:#c0392b;font-weight:bold;">🔴 Needs Intervention</span>`;
+}
 
     return `
       <tr>
         <td>${cls}</td>
-        <td>${getAchievementLabel(mean)}</td>
+        <td>${mean.toFixed(2)} / 8 (${getAchievementLabel(mean)})</td>
         <td>${risk}</td>
       </tr>
     `;
   }).join("");
 
+const subjectAlerts = Object.entries(subjectMap)
+  .map(([sub, scores]) => {
+    const mean = avg(scores);
+    return { sub, scores, mean };
+  })
+  .sort((a, b) => b.mean - a.mean) // 🔥 SORT DESCENDING
+  .map(({ sub, scores, mean }) => {
 
-  // ===== SUBJECT ALERTS =====
- // ===== SUBJECT ALERTS =====
-const subjectAlerts = Object.entries(subjectMap).map(([sub, scores]) => {
+    const band = getAchievementLabel(mean).toUpperCase();
 
-  const mean = avg(scores); // average across all learners in this subject
-  const band = getAchievementLabel(mean).toUpperCase();
+   
+   
+   
+   let alert = "";
 
-  // Alert if mean is below AE1 (<1.5)
-  const alert = mean < 1.5
-    ? `<span style="color:#c0392b;font-weight:bold;">⚠ Immediate Review Required</span>`
-    : "";
+if (["AE2", "BE1", "BE2"].includes(band)) {
+  alert = `<span style="color:#c0392b;font-weight:bold;">⚠ Immediate Review Required</span>`;
+} else if (band === "AE1") {
+  alert = `<span style="color:#f39c12;font-weight:bold;">⚠ Monitor Closely</span>`;
+}
+   
 
-  return `
-    <tr>
-      <td>${sub}</td>
-      <td>${band}</td>
-      <td>${alert}</td>
-    </tr>
-  `;
-}).join("");
+    return `
+      <tr>
+        <td>${sub}</td>
+        <td>${mean.toFixed(2)} / 8 (${band})</td>
+        <td>${alert}</td>
+      </tr>
+    `;
+  }).join("");
 
 
   // ===== RETURN FULL ANALYTICS PAGE =====
@@ -1254,7 +1276,7 @@ ${atRiskLearners} learners (${Object.keys(learnerMap).length ? ((atRiskLearners 
 </div>
 `;
 }
-
+	
   
 
 function getPerformanceBadge(level) {
