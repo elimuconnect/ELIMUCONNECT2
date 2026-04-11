@@ -87,8 +87,15 @@ const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let marketer = null;
 
 /* ---------------- INIT ---------------- */
+
+
 async function init() {
-  const { data: { user } } = await client.auth.getUser();
+
+ 
+
+
+  const { data: { session } } = await client.auth.getSession();
+const user = session?.user;
 
   if (!user) {
     window.location.href = "index.html";
@@ -99,11 +106,12 @@ async function init() {
     .from("marketers")
     .select("*")
     .eq("user_id", user.id)
-    .maybeSingle(); // IMPORTANT FIX
+    .maybeSingle();
 
   if (error || !data) {
-    alert("Marketer profile not found or blocked by RLS");
-    console.log(error);
+    console.log("USER:", user.id);
+    console.log("ERROR:", error);
+    alert("Marketer profile not found");
     return;
   }
 
@@ -115,6 +123,9 @@ async function init() {
   loadSchools();
   loadEarnings();
 }
+
+
+  
 /* ---------------- ADD SCHOOL ---------------- */
 async function addSchool() {
   const { error } = await client.from("schools").insert({
@@ -135,6 +146,8 @@ async function addSchool() {
 
 /* ---------------- LOAD SCHOOLS ---------------- */
 async function loadSchools() {
+
+  if (!marketer) return;
   const { data } = await client
     .from("schools")
     .select("*")
@@ -160,6 +173,8 @@ async function loadSchools() {
 
 /* ---------------- LOAD EARNINGS ---------------- */
 async function loadEarnings() {
+
+  if (!marketer) return;
   const { data } = await client
     .from("commissions")
     .select("*")
