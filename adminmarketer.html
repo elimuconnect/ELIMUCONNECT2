@@ -235,7 +235,7 @@ function renderPayments() {
   payments.forEach(p => {
     html += `
       <tr>
-        <td>${p.school_id}</td>
+        <td>${p.schools?.school_name || "Unknown"}</td>
         <td>${p.amount}</td>
         <td>${p.term}</td>
         <td>${p.year}</td>
