@@ -126,7 +126,27 @@ async function init() {
 async function loadAll() {
   const m = await client.from("marketers").select("*");
   const s = await client.from("schools").select("*");
-  const p = await client.from("payments").select("*");
+
+
+
+const p = await client
+  .from("payments")
+  .select(`
+    id,
+    amount,
+    term,
+    year,
+    marketer_id,
+    school_id,
+    schools:school_id (
+      school_name
+    )
+  `);
+
+
+
+
+  
 
   marketers = m.data || [];
   schools = s.data || [];
@@ -223,40 +243,20 @@ function renderSchools() {
   html += "</table>";
   document.getElementById("schools").innerHTML = html;
 }
-async function loadPayments() {
-  const { data, error } = await client
-    .from("payments")
-    .select(`
-      id,
-      amount,
-      term,
-      year,
-      created_at,
-      schools:school_id (
-        school_name
-      )
-    `);
 
-  if (error) {
-    console.log(error);
-    return;
-  }
 
-  let html = `
-    <h3>💰 Payments</h3>
-    <table border="1" width="100%">
-      <tr>
-        <th>School</th>
-        <th>Amount</th>
-        <th>Term</th>
-        <th>Year</th>
-      </tr>
-  `;
 
-  data.forEach(p => {
+function renderPayments() {
+  let html = `<h3>💰 Payments</h3>
+  <table>
+  <tr>
+    <th>School</th><th>Amount</th><th>Term</th><th>Year</th>
+  </tr>`;
+
+  payments.forEach(p => {
     html += `
       <tr>
-        <td>${p.schools?.school_name || "Unknown school"}</td>
+        <td>${p.schools?.school_name || "Unknown"}</td>
         <td>${p.amount}</td>
         <td>${p.term}</td>
         <td>${p.year}</td>
@@ -265,9 +265,10 @@ async function loadPayments() {
   });
 
   html += "</table>";
-
   document.getElementById("payments").innerHTML = html;
 }
+
+  
 /* ---------------- START ---------------- */
 init();
 </script>
