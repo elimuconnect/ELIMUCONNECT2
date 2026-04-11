@@ -256,7 +256,7 @@ function renderPayments() {
     html += `
       <tr>
       <td>${p.schools?.school_name || "Unknown"}</td>
-       <td>${p.amount}</td>
+        <td>${p.amount || 0}</td>
         <td>${p.term}</td>
         <td>${p.year}</td>
       </tr>
