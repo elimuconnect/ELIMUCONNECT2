@@ -54,13 +54,15 @@
 <script>
 const SUPABASE_URL = "https://hhtplinfcdwgahlhurhx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_cOXipkG4wSKIkIHwkP04JA_KunvG7T5";
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// IMPORTANT FIX: use a different variable name
+const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 async function login() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { error } = await client.auth.signInWithPassword({
     email,
     password
   });
