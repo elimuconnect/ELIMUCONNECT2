@@ -55,12 +55,9 @@
 const SUPABASE_URL = "https://hhtplinfcdwgahlhurhx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_cOXipkG4wSKIkIHwkP04JA_KunvG7T5";
 
-// IMPORTANT: create client WITH session persistence
 const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true
+    persistSession: true
   }
 });
 
@@ -69,10 +66,11 @@ async function login() {
   const password = document.getElementById("password").value;
 
   if (!email || !password) {
-    alert("Please enter email and password");
+    alert("Enter email and password");
     return;
   }
 
+  // 1. Login
   const { data, error } = await client.auth.signInWithPassword({
     email,
     password
@@ -83,17 +81,27 @@ async function login() {
     return;
   }
 
-  // confirm session is created BEFORE redirect
-  const { data: sessionData } = await client.auth.getSession();
+  const user = data.user;
 
-  if (!sessionData?.session) {
-    alert("Login failed: session not created");
+  // 2. Find role in marketers table
+  const { data: profile, error: profileError } = await client
+    .from("marketers")
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (profileError || !profile) {
+    alert("No profile found");
     return;
   }
 
-  window.location.href = "dashboard.html";
+  // 3. Redirect based on role
+  if (profile.role === "admin") {
+    window.location.href = "adminmarketer.html";
+  } else {
+    window.location.href = "dashboard.html";
+  }
 }
 </script>
-
 </body>
 </html>
