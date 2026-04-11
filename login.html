@@ -55,8 +55,8 @@
 const SUPABASE_URL = "https://hhtplinfcdwgahlhurhx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_cOXipkG4wSKIkIHwkP04JA_KunvG7T5";
 
-// IMPORTANT FIX: use a different variable name
-const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// SAFE INITIALIZATION
+const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 async function login() {
   const email = document.getElementById("email").value;
@@ -74,6 +74,5 @@ async function login() {
   }
 }
 </script>
-
 </body>
 </html>
