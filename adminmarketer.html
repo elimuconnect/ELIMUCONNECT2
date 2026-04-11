@@ -131,19 +131,13 @@ async function loadAll() {
 
 
 
- const p = await client
-  .from("payments")
-  .select(`
-    id,
-    amount,
-    term,
-    year,
-    marketer_id,
-    school_id,
-    schools (
-      school_name
-    )
-  `);
+ const p = await client.from("payments").insert({
+  school_id: school.id,
+  school_name: school.school_name,  // ✅ add this
+  amount: 10000,
+  term: "Term 1",
+  year: 2026
+});
 
 payments = p.error ? [] : p.data; 
 
@@ -255,7 +249,7 @@ function renderPayments() {
   payments.forEach(p => {
     html += `
       <tr>
-        <td>${p.schools?.school_name || "Unknown"}</td>
+       <td>${p.school_name || "Unknown"}</td>
         <td>${p.amount}</td>
         <td>${p.term}</td>
         <td>${p.year}</td>
