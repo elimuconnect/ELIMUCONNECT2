@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Panel</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+  <style>
+    body { font-family: Arial; padding: 20px; }
+
+    .card {
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background: green;
+      color: white;
+      border: none;
+      padding: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>Admin Panel</h2>
+
+<div id="schools"></div>
+
+<script>
+const SUPABASE_URL = "https://YOUR_PROJECT.supabase.co";
+const SUPABASE_KEY = "YOUR_ANON_KEY";
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function load() {
+  const { data } = await supabase.from("schools").select("*");
+
+  let html = "";
+
+  data.forEach(s => {
+    html += `
+      <div class="card">
+        <b>${s.school_name}</b><br>
+        Status: ${s.payment_status || "pending"}<br><br>
+
+        <button onclick="markPaid('${s.id}')">
+          Mark Paid
+        </button>
+      </div>
+    `;
+  });
+
+  document.getElementById("schools").innerHTML = html;
+}
+
+async function markPaid(id) {
+  await supabase.from("payments").insert({
+    school_id: id,
+    amount: 10000,
+    term: "Term 1",
+    year: 2026
+  });
+
+  alert("Payment recorded!");
+  load();
+}
+
+load();
+</script>
+
+</body>
+</html>
