@@ -1,50 +1,74 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Dashboard</title>
+  <title>Marketer Dashboard</title>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
   <style>
-    body { font-family: Arial; padding: 20px; background: #f9f9f9; }
+    body {
+      font-family: Arial;
+      padding: 20px;
+      background: #f4f4f4;
+    }
 
     .card {
       background: white;
       padding: 15px;
       margin-bottom: 10px;
-      border-radius: 8px;
+      border-radius: 10px;
     }
 
     input {
       padding: 8px;
-      margin: 5px;
+      margin: 5px 0;
+      width: 100%;
     }
 
     button {
-      padding: 8px;
+      padding: 10px;
+      margin-top: 5px;
       background: blue;
       color: white;
       border: none;
       cursor: pointer;
+      width: 100%;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .logout {
+      background: red;
+      width: auto;
+      padding: 8px 15px;
     }
   </style>
 </head>
 
 <body>
 
-<h2>Marketer Dashboard</h2>
+<div class="topbar">
+  <h2>Marketer Dashboard</h2>
+  <button class="logout" onclick="logout()">Logout</button>
+</div>
 
 <div class="card">
   <h3 id="code">Loading...</h3>
+  <h4 id="earnings">Earnings: 0</h4>
 </div>
 
 <div class="card">
   <h3>Add School</h3>
 
-  <input id="school" placeholder="School Name"><br>
-  <input id="contact" placeholder="Contact Person"><br>
-  <input id="phone" placeholder="Phone"><br>
-  <input id="county" placeholder="County"><br>
+  <input id="school" placeholder="School Name">
+  <input id="contact" placeholder="Contact Person">
+  <input id="phone" placeholder="Phone">
+  <input id="county" placeholder="County">
 
   <button onclick="addSchool()">Add School</button>
 </div>
@@ -57,17 +81,24 @@
 <script>
 const SUPABASE_URL = "https://hhtplinfcdwgahlhurhx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_cOXipkG4wSKIkIHwkP04JA_KunvG7T5";
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let marketer = null;
 
+/* ---------------- INIT ---------------- */
 async function init() {
-  const { data: user } = await supabase.auth.getUser();
+  const { data: { user } } = await client.auth.getUser();
 
-  const { data } = await supabase
+  if (!user) {
+    window.location.href = "index.html";
+    return;
+  }
+
+  const { data } = await client
     .from("marketers")
     .select("*")
-    .eq("user_id", user.user.id)
+    .eq("user_id", user.id)
     .single();
 
   marketer = data;
@@ -76,10 +107,12 @@ async function init() {
     "Your Code: " + marketer.code;
 
   loadSchools();
+  loadEarnings();
 }
 
+/* ---------------- ADD SCHOOL ---------------- */
 async function addSchool() {
-  await supabase.from("schools").insert({
+  const { error } = await client.from("schools").insert({
     school_name: document.getElementById("school").value,
     contact_person: document.getElementById("contact").value,
     phone: document.getElementById("phone").value,
@@ -87,28 +120,65 @@ async function addSchool() {
     marketer_code: marketer.code
   });
 
-  alert("School added!");
-  loadSchools();
+  if (error) {
+    alert(error.message);
+  } else {
+    alert("School added!");
+    loadSchools();
+  }
 }
 
+/* ---------------- LOAD SCHOOLS ---------------- */
 async function loadSchools() {
-  const { data } = await supabase
+  const { data } = await client
     .from("schools")
     .select("*")
     .eq("marketer_id", marketer.id);
 
   let html = "";
 
-  data.forEach(s => {
-    html += `<div class="card">
-      <b>${s.school_name}</b><br>
-      Status: ${s.status}
-    </div>`;
-  });
+  if (!data || data.length === 0) {
+    html = "<p>No schools yet</p>";
+  } else {
+    data.forEach(s => {
+      html += `
+        <div class="card">
+          <b>${s.school_name}</b><br>
+          Status: ${s.status || "contacted"}
+        </div>
+      `;
+    });
+  }
 
   document.getElementById("schools").innerHTML = html;
 }
 
+/* ---------------- LOAD EARNINGS ---------------- */
+async function loadEarnings() {
+  const { data } = await client
+    .from("commissions")
+    .select("*")
+    .eq("marketer_id", marketer.id);
+
+  let total = 0;
+
+  if (data) {
+    data.forEach(c => {
+      total += Number(c.amount || 0);
+    });
+  }
+
+  document.getElementById("earnings").innerText =
+    "Earnings: " + total;
+}
+
+/* ---------------- LOGOUT ---------------- */
+async function logout() {
+  await client.auth.signOut();
+  window.location.href = "index.html";
+}
+
+/* ---------------- START ---------------- */
 init();
 </script>
 
