@@ -82,6 +82,10 @@
 const SUPABASE_URL = "https://hhtplinfcdwgahlhurhx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_cOXipkG4wSKIkIHwkP04JA_KunvG7T5";
 
+const ref = new URLSearchParams(location.search).get("reference");
+
+const PAID_KEY = "elimu_paid_ref_" + marketer?.id;
+  
 // IMPORTANT: persistent auth client
 const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
@@ -122,7 +126,7 @@ async function init() {
   }
 
   marketer = marketerData;
-
+handlePaymentReturn();
 
 
 
@@ -263,46 +267,28 @@ function paySchool(schoolId, schoolName, amount = 10000) {
 
 
 
-async function checkPaymentReturn() {
+async function handlePaymentReturn() {
 
-  const pendingRaw = localStorage.getItem("pending_payment");
+  const ref = new URLSearchParams(location.search).get("reference");
 
-  if (!pendingRaw) {
-    console.log("No pending payment found");
-    return;
-  }
+  if (!ref) return;
 
-  const pending = JSON.parse(pendingRaw);
+  const savedRef = localStorage.getItem(PAID_KEY);
 
-  console.log("Pending payment found:", pending);
+  if (savedRef === ref) return; // prevent double insert
 
-  // ❗ safety check
-  if (!pending.school_id || !pending.amount) {
-    console.log("Invalid pending payment");
-    return;
-  }
+  const pending = JSON.parse(localStorage.getItem("pending_payment"));
 
-  // 1. CHECK IF ALREADY SAVED (avoid duplicates)
-  const { data: existing } = await client
-    .from("payments")
-    .select("id")
-    .eq("school_id", pending.school_id)
-    .eq("amount", pending.amount)
-    .maybeSingle();
+  if (!pending) return;
 
-  if (existing) {
-    console.log("Payment already exists");
-    localStorage.removeItem("pending_payment");
-    return;
-  }
-
-  // 2. INSERT PAYMENT
+  // SAVE PAYMENT
   const { data: payment, error } = await client
     .from("payments")
     .insert({
       school_id: pending.school_id,
       marketer_id: pending.marketer_id,
       amount: pending.amount,
+      reference: ref,
       term: "Term 1",
       year: new Date().getFullYear(),
       paid_at: new Date().toISOString()
@@ -311,31 +297,28 @@ async function checkPaymentReturn() {
     .single();
 
   if (error) {
-    console.error("Payment insert error:", error);
-    alert("Payment save failed");
+    console.log(error);
     return;
   }
 
-  console.log("Payment saved:", payment);
-
-  // 3. CREATE COMMISSION (20%)
-  const commission = pending.amount * 0.2;
-
-  const { error: cError } = await client.from("commissions").insert({
+  // CREATE COMMISSION
+  await client.from("commissions").insert({
     school_id: pending.school_id,
     marketer_id: pending.marketer_id,
-    amount: commission,
+    amount: pending.amount * 0.2,
     payment_id: payment.id
   });
 
-  if (cError) {
-    console.error("Commission error:", cError);
-  }
+  // SAVE REF SO IT NEVER RE-RUNS
+  localStorage.setItem(PAID_KEY, ref);
 
-  // 4. CLEANUP
+  // CLEAN TEMP DATA
   localStorage.removeItem("pending_payment");
 
-  alert("Payment recorded successfully!");
+  // CLEAN URL (IMPORTANT — like your system)
+  window.history.replaceState({}, document.title, window.location.pathname);
+
+  alert("Payment successful!");
 
   loadSchools();
   loadEarnings();
