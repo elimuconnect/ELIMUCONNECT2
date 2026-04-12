@@ -160,13 +160,12 @@ const p = await client
     )
   `);
 
-payments = p.data || [];
 
 payments = p.error ? [] : p.data; 
 
   marketers = m.data || [];
   schools = s.data || [];
-  payments = p.data || [];
+ 
 
   renderMarketers();
   renderSchools();
@@ -253,6 +252,10 @@ function renderSchools() {
   </tr>`;
 
   schools.forEach(s => {
+
+// ✅ THIS IS THE FIX
+    const paid = payments.find(p => p.school_id === s.id);
+    
     html += `
       <tr>
         <td>${s.school_name}</td>
@@ -261,7 +264,7 @@ function renderSchools() {
         <td>${s.county}</td>
         <td>${s.marketers?.name || "Unknown"}</td>
         <td>${s.marketers?.code || "-"}</td>
-        <td>${s.payment_status || "pending"}</td>
+      <td>${paid ? "✅ Paid" : "❌ Pending"}</td>
       </tr>
     `;
   });
