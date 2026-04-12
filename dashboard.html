@@ -177,7 +177,7 @@ async function addSchool() {
   }
 }
 
-/* ---------------- LOAD SCHOOLS ---------------- */
+
 async function loadSchools() {
 
   const { data: schoolsData } = await client
@@ -189,13 +189,18 @@ async function loadSchools() {
     .from("commissions")
     .select("school_id, amount");
 
+  // build map (FAST + RELIABLE)
+  const map = {};
+
+  commissions?.forEach(c => {
+    map[c.school_id] = (map[c.school_id] || 0) + Number(c.amount || 0);
+  });
+
   let html = "";
 
   schoolsData.forEach(s => {
 
-    const schoolTotal = commissions
-      ?.filter(c => c.school_id === s.id)
-      .reduce((a, b) => a + Number(b.amount || 0), 0);
+    const schoolTotal = map[s.id] || 0;
 
     html += `
       <div class="card">
@@ -203,7 +208,7 @@ async function loadSchools() {
         Contact: ${s.contact_person}<br>
         Phone: ${s.phone}<br><br>
 
-        💰 Commission: Ksh ${schoolTotal || 0}
+        💰 Commission: Ksh ${schoolTotal}
       </div>
     `;
   });
@@ -211,7 +216,8 @@ async function loadSchools() {
   document.getElementById("schools").innerHTML = html;
 }
 
-/* ---------------- LOAD EARNINGS ---------------- */
+  
+LOAD EARNINGS ---------------- */
 async function loadEarnings() {
 
   const { data } = await client
