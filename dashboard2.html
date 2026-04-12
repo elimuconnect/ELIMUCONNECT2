@@ -262,7 +262,6 @@ function paySchool(schoolId, schoolName, amount = 10000) {
 }
 
 
-
 async function handlePaymentReturn(PAID_KEY) {
 
   const ref = new URLSearchParams(location.search).get("reference");
@@ -274,15 +273,33 @@ async function handlePaymentReturn(PAID_KEY) {
   const pending = JSON.parse(localStorage.getItem("pending_payment"));
   if (!pending) return;
 
+  const term = "Term 1";
+  const year = new Date().getFullYear();
+
+  // 1. CHECK DUPLICATE PAYMENT
+  const { data: existing } = await client
+    .from("payments")
+    .select("id")
+    .eq("school_id", pending.school_id)
+    .eq("term", term)
+    .eq("year", year)
+    .maybeSingle();
+
+  if (existing) {
+    alert("Already paid for this term!");
+    localStorage.removeItem("pending_payment");
+    return;
+  }
+
+  // 2. INSERT PAYMENT
   const { data: payment, error } = await client
     .from("payments")
     .insert({
       school_id: pending.school_id,
-      marketer_id: pending.marketer_id,
       amount: pending.amount,
       reference: ref,
-      term: "Term 1",
-      year: new Date().getFullYear(),
+      term,
+      year,
       paid_at: new Date().toISOString()
     })
     .select()
@@ -293,16 +310,32 @@ async function handlePaymentReturn(PAID_KEY) {
     return;
   }
 
-  await client.from("commissions").insert({
-    school_id: pending.school_id,
-    marketer_id: pending.marketer_id,
-    amount: pending.amount * 0.2,
-    payment_id: payment.id
-  });
+  // 3. GET MARKETER FROM SCHOOL
+  const { data: school } = await client
+    .from("schools")
+    .select("marketer_id")
+    .eq("id", pending.school_id)
+    .single();
 
+  const marketer_id = school?.marketer_id;
+
+  // 4. CREATE COMMISSION
+  if (marketer_id) {
+    await client.from("commissions").insert({
+      school_id: pending.school_id,
+      marketer_id,
+      amount: pending.amount * 0.2,
+      payment_id: payment.id
+    });
+  }
+
+  // 5. SAVE REF
   localStorage.setItem(PAID_KEY, ref);
+
+  // 6. CLEANUP
   localStorage.removeItem("pending_payment");
 
+  // 7. CLEAN URL
   window.history.replaceState({}, document.title, window.location.pathname);
 
   loadSchools();
