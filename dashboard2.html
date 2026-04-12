@@ -248,56 +248,94 @@ async function logout() {
 
 function paySchool(schoolId, schoolName, amount = 10000) {
 
-  if (!marketer) return;
-
-  localStorage.setItem("pending_payment", JSON.stringify({
+  const pending = {
     school_id: schoolId,
     marketer_id: marketer.id,
     amount: amount
-  }));
+  };
 
-  // OPEN PAYSTACK LINK
-  window.location.href = "https://paystack.shop/pay/dqt-e-uc8j";
+  localStorage.setItem("pending_payment", JSON.stringify(pending));
+
+  console.log("Saving pending payment:", pending);
+
+  window.location.href = "https://paystack.com/pay/YOUR_LINK";
 }
-
 
 
 
 async function checkPaymentReturn() {
 
-  const pending = JSON.parse(localStorage.getItem("pending_payment"));
+  const pendingRaw = localStorage.getItem("pending_payment");
 
-  if (!pending) return;
+  if (!pendingRaw) {
+    console.log("No pending payment found");
+    return;
+  }
 
-  // 1. SAVE PAYMENT
+  const pending = JSON.parse(pendingRaw);
+
+  console.log("Pending payment found:", pending);
+
+  // ❗ safety check
+  if (!pending.school_id || !pending.amount) {
+    console.log("Invalid pending payment");
+    return;
+  }
+
+  // 1. CHECK IF ALREADY SAVED (avoid duplicates)
+  const { data: existing } = await client
+    .from("payments")
+    .select("id")
+    .eq("school_id", pending.school_id)
+    .eq("amount", pending.amount)
+    .maybeSingle();
+
+  if (existing) {
+    console.log("Payment already exists");
+    localStorage.removeItem("pending_payment");
+    return;
+  }
+
+  // 2. INSERT PAYMENT
   const { data: payment, error } = await client
     .from("payments")
     .insert({
       school_id: pending.school_id,
       marketer_id: pending.marketer_id,
       amount: pending.amount,
-      reference: "PAYSTACK-" + Date.now(),
-      status: "paid"
+      term: "Term 1",
+      year: new Date().getFullYear(),
+      paid_at: new Date().toISOString()
     })
     .select()
     .single();
 
   if (error) {
-    console.log(error);
+    console.error("Payment insert error:", error);
+    alert("Payment save failed");
     return;
   }
 
-  // 2. CREATE COMMISSION (20%)
-  await client.from("commissions").insert({
+  console.log("Payment saved:", payment);
+
+  // 3. CREATE COMMISSION (20%)
+  const commission = pending.amount * 0.2;
+
+  const { error: cError } = await client.from("commissions").insert({
     school_id: pending.school_id,
     marketer_id: pending.marketer_id,
-    amount: pending.amount * 0.2,
+    amount: commission,
     payment_id: payment.id
   });
 
+  if (cError) {
+    console.error("Commission error:", cError);
+  }
+
+  // 4. CLEANUP
   localStorage.removeItem("pending_payment");
 
-  alert("Payment recorded!");
+  alert("Payment recorded successfully!");
 
   loadSchools();
   loadEarnings();
@@ -305,7 +343,9 @@ async function checkPaymentReturn() {
 
 window.onload = async function () {
   await init();
-  await checkPaymentReturn();
+  await loadSchools();
+  await loadEarnings();
+  await checkPaymentReturn(); // MUST be last
 };
 
 </script>
