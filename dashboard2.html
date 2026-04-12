@@ -247,27 +247,18 @@ async function logout() {
 }
 
 
-
-
-
-
-  function paySchool(schoolId, schoolName) {
-
-  const AMOUNT = 10000; // FIXED SYSTEM PRICE
+function paySchool(schoolId) {
 
   const pending = {
     school_id: schoolId,
-    amount: AMOUNT
+    amount: 10000
   };
-
-  console.log("PAY SCHOOL CLICKED:", pending);
 
   localStorage.setItem("pending_payment", JSON.stringify(pending));
 
   window.location.href = "https://paystack.shop/pay/dqt-e-uc8j";
 }
 
-  
 
 async function handlePaymentReturn(PAID_KEY) {
 
@@ -277,17 +268,33 @@ async function handlePaymentReturn(PAID_KEY) {
   const savedRef = localStorage.getItem(PAID_KEY);
   if (savedRef === ref) return;
 
- const pending = JSON.parse(localStorage.getItem("pending_payment"));
-
-const amount = parseFloat(pending?.amount);
 
 
+const pendingRaw = localStorage.getItem("pending_payment");
 
-if (isNaN(amount) || amount <= 0) {
-  alert("Invalid payment amount (check pending data)");
-  console.log("Pending data:", pending);
+if (!pendingRaw) {
+  console.log("No pending payment found");
   return;
 }
+
+let pending;
+
+try {
+  pending = JSON.parse(pendingRaw);
+} catch (e) {
+  console.log("Corrupt pending data");
+  localStorage.removeItem("pending_payment");
+  return;
+}
+
+const amount = Number(pending.amount);
+
+if (!Number.isFinite(amount) || amount <= 0) {
+  console.log("Invalid amount:", pending);
+  localStorage.removeItem("pending_payment");
+  return;
+}
+  
 
   const term = "Term 1";
   const year = new Date().getFullYear();
