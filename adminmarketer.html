@@ -160,13 +160,13 @@ const p = await client
     )
   `);
 
-
+payments = p.data || [];
 payments = p.error ? [] : p.data; 
 
   marketers = m.data || [];
   schools = s.data || [];
  
-
+payments = p.data || [];
   renderMarketers();
   renderSchools();
   renderPayments();
