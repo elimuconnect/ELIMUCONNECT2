@@ -246,21 +246,24 @@ async function logout() {
   window.location.href = "login.html";
 }
 
-function paySchool(schoolId, schoolName, amount = 10000) {
+
+
+
+function paySchool(schoolId, schoolName, amount) {
+
+  const cleanAmount = Number(amount || 10000);
 
   const pending = {
     school_id: schoolId,
-    marketer_id: marketer.id,
-    amount: amount
+    amount: cleanAmount
   };
 
   localStorage.setItem("pending_payment", JSON.stringify(pending));
 
-  console.log("Saving pending payment:", pending);
-
   window.location.href = "https://paystack.shop/pay/dqt-e-uc8j";
 }
 
+  
 
 async function handlePaymentReturn(PAID_KEY) {
 
@@ -270,8 +273,14 @@ async function handlePaymentReturn(PAID_KEY) {
   const savedRef = localStorage.getItem(PAID_KEY);
   if (savedRef === ref) return;
 
-  const pending = JSON.parse(localStorage.getItem("pending_payment"));
-  if (!pending) return;
+ const pending = JSON.parse(localStorage.getItem("pending_payment"));
+
+const amount = Number(pending.amount || 0);
+
+if (!amount || amount <= 0) {
+  alert("Invalid payment amount");
+  return;
+}
 
   const term = "Term 1";
   const year = new Date().getFullYear();
