@@ -97,7 +97,7 @@ let marketer = null;
 
 /* ---------------- INIT ---------------- */
 async function init() {
-
+let PAID_KEY = "";
   // safer session fetch (fixes auth.uid null issues)
   const { data } = await client.auth.getSession();
   const user = data?.session?.user;
@@ -127,7 +127,7 @@ async function init() {
 handlePaymentReturn();
 
 
-
+const PAID_KEY = "elimu_paid_ref_" + marketer?.id;
 
 if (marketer.status !== "approved") {
 
@@ -160,7 +160,7 @@ if (marketer.status !== "approved") {
 
 const ref = new URLSearchParams(location.search).get("reference");
 
-const PAID_KEY = "elimu_paid_ref_" + marketer?.id;
+
   
 /* ---------------- ADD SCHOOL ---------------- */
 async function addSchool() {
@@ -265,23 +265,19 @@ function paySchool(schoolId, schoolName, amount = 10000) {
 
   console.log("Saving pending payment:", pending);
 
-  window.location.href = "https://paystack.com/pay/YOUR_LINK";
+  window.location.href = "https://paystack.shop/pay/dqt-e-uc8j";
 }
-
 
 
 async function handlePaymentReturn() {
 
   const ref = new URLSearchParams(location.search).get("reference");
-
-  if (!ref) return;
+  if (!ref || !marketer) return;
 
   const savedRef = localStorage.getItem(PAID_KEY);
-
-  if (savedRef === ref) return; // prevent double insert
+  if (savedRef === ref) return;
 
   const pending = JSON.parse(localStorage.getItem("pending_payment"));
-
   if (!pending) return;
 
   // SAVE PAYMENT
@@ -304,7 +300,7 @@ async function handlePaymentReturn() {
     return;
   }
 
-  // CREATE COMMISSION
+  // COMMISSION (20%)
   await client.from("commissions").insert({
     school_id: pending.school_id,
     marketer_id: pending.marketer_id,
@@ -312,13 +308,13 @@ async function handlePaymentReturn() {
     payment_id: payment.id
   });
 
-  // SAVE REF SO IT NEVER RE-RUNS
+  // SAVE REF
   localStorage.setItem(PAID_KEY, ref);
 
-  // CLEAN TEMP DATA
+  // CLEAN UP
   localStorage.removeItem("pending_payment");
 
-  // CLEAN URL (IMPORTANT — like your system)
+  // REMOVE URL ?reference=xxx
   window.history.replaceState({}, document.title, window.location.pathname);
 
   alert("Payment successful!");
@@ -326,12 +322,9 @@ async function handlePaymentReturn() {
   loadSchools();
   loadEarnings();
 }
-
 window.onload = async function () {
-  await init();
-  await loadSchools();
-  await loadEarnings();
-  await checkPaymentReturn(); // MUST be last
+  await init();              // loads marketer FIRST
+  await handlePaymentReturn(); // process Paystack return AFTER login is ready
 };
 
 </script>
