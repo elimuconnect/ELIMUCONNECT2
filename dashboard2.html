@@ -210,7 +210,7 @@ async function loadSchools() {
 
     💰 Commission: Ksh ${schoolTotal}<br><br>
 
-    <button onclick="paySchool('${s.id}', '${s.school_name}', '${s.email || ""}')">
+    <button onclick="paySchool('${s.id}', '${s.school_name}')">
       Pay for this School
     </button>
   </div>
@@ -248,14 +248,17 @@ async function logout() {
 
 
 
-
 function paySchool(schoolId, schoolName, amount) {
 
-  const cleanAmount = Number(amount || 10000);
+  const cleanAmount = Number(amount);
+
+  const finalAmount = (cleanAmount && cleanAmount > 0)
+    ? cleanAmount
+    : 10000;
 
   const pending = {
     school_id: schoolId,
-    amount: cleanAmount
+    amount: finalAmount
   };
 
   localStorage.setItem("pending_payment", JSON.stringify(pending));
@@ -275,10 +278,11 @@ async function handlePaymentReturn(PAID_KEY) {
 
  const pending = JSON.parse(localStorage.getItem("pending_payment"));
 
-const amount = Number(pending.amount || 0);
+const amount = parseFloat(pending?.amount);
 
-if (!amount || amount <= 0) {
-  alert("Invalid payment amount");
+if (isNaN(amount) || amount <= 0) {
+  alert("Invalid payment amount (check pending data)");
+  console.log("Pending data:", pending);
   return;
 }
 
