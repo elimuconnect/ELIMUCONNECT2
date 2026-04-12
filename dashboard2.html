@@ -281,6 +281,8 @@ async function handlePaymentReturn(PAID_KEY) {
 
 const amount = parseFloat(pending?.amount);
 
+
+
 if (isNaN(amount) || amount <= 0) {
   alert("Invalid payment amount (check pending data)");
   console.log("Pending data:", pending);
