@@ -125,7 +125,24 @@ async function init() {
 /* ---------------- LOAD ALL DATA ---------------- */
 async function loadAll() {
   const m = await client.from("marketers").select("*");
-  const s = await client.from("schools").select("*");
+
+
+
+  const s = await client
+  .from("schools")
+  .select(`
+    id,
+    school_name,
+    contact_person,
+    phone,
+    county,
+    payment_status,
+    marketer_id,
+    marketers (
+      name,
+      code
+    )
+  `);
 
 
 
@@ -220,11 +237,19 @@ function viewMarketer(id) {
 }
 
 /* ---------------- SCHOOLS ---------------- */
+
+
 function renderSchools() {
-  let html = `<h3>🏫 Schools</h3>
+  let html = `<h3>🏫 Schools (with Marketers)</h3>
   <table>
   <tr>
-    <th>Name</th><th>Contact</th><th>Phone</th><th>County</th><th>Status</th>
+    <th>School</th>
+    <th>Contact</th>
+    <th>Phone</th>
+    <th>County</th>
+    <th>Marketer</th>
+    <th>Code</th>
+    <th>Status</th>
   </tr>`;
 
   schools.forEach(s => {
@@ -234,7 +259,9 @@ function renderSchools() {
         <td>${s.contact_person}</td>
         <td>${s.phone}</td>
         <td>${s.county}</td>
-        <td>${s.payment_status}</td>
+        <td>${s.marketers?.name || "Unknown"}</td>
+        <td>${s.marketers?.code || "-"}</td>
+        <td>${s.payment_status || "pending"}</td>
       </tr>
     `;
   });
@@ -242,8 +269,7 @@ function renderSchools() {
   html += "</table>";
   document.getElementById("schools").innerHTML = html;
 }
-
-
+  
 
 function renderPayments() {
   let html = `<h3>💰 Payments</h3>
