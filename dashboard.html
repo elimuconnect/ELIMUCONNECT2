@@ -101,7 +101,7 @@ async function init() {
   const user = data?.session?.user;
 
   if (!user) {
-    window.location.href = "index.html";
+    window.location.href = "login.html";
     return;
   }
 
@@ -112,6 +112,29 @@ async function init() {
     .eq("user_id", user.id)
     .maybeSingle();
 
+
+
+
+if (marketer.status !== "approved") {
+
+  let message = "";
+
+  if (marketer.status === "pending") {
+    message = "⏳ Your account is awaiting admin approval";
+  } else if (marketer.status === "suspended") {
+    message = "⏸️ Your account is suspended";
+  } else if (marketer.status === "blocked") {
+    message = "🚫 Your account is blocked";
+  }
+
+  alert(message);
+
+  await client.auth.signOut();
+  window.location.href = "index.html";
+  return;
+}
+
+  
   if (error || !marketerData) {
     console.log("USER:", user.id);
     console.log("ERROR:", error);
@@ -155,25 +178,34 @@ async function loadSchools() {
 
   if (!marketer) return;
 
-  const { data } = await client
+  const { data: schoolsData } = await client
     .from("schools")
     .select("*")
     .eq("marketer_id", marketer.id);
 
+  const { data: commissionsData } = await client
+    .from("commissions")
+    .select("school_id, amount");
+
   let html = "";
 
-  if (!data || data.length === 0) {
-    html = "<p>No schools yet</p>";
-  } else {
-    data.forEach(s => {
-      html += `
-        <div class="card">
-          <b>${s.school_name}</b><br>
-          Status: ${s.status || "contacted"}
-        </div>
-      `;
-    });
-  }
+  schoolsData.forEach(s => {
+
+    // sum commission per school
+    const schoolCommissions = commissionsData
+      ?.filter(c => c.school_id === s.id)
+      .reduce((a, b) => a + Number(b.amount || 0), 0);
+
+    html += `
+      <div class="card">
+        <b>${s.school_name}</b><br>
+        Contact: ${s.contact_person}<br>
+        Phone: ${s.phone}<br><br>
+
+        💰 Commission: Ksh ${schoolCommissions || 0}
+      </div>
+    `;
+  });
 
   document.getElementById("schools").innerHTML = html;
 }
@@ -185,7 +217,7 @@ async function loadEarnings() {
 
   const { data } = await client
     .from("commissions")
-    .select("*")
+    .select("amount, school_id")
     .eq("marketer_id", marketer.id);
 
   let total = 0;
@@ -197,9 +229,8 @@ async function loadEarnings() {
   }
 
   document.getElementById("earnings").innerText =
-    "Earnings: " + total;
+    "Earnings: Ksh " + total;
 }
-
 /* ---------------- LOGOUT ---------------- */
 async function logout() {
   await client.auth.signOut();
