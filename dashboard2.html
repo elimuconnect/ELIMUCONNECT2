@@ -81,7 +81,7 @@
 <script>
 const SUPABASE_URL = "https://hhtplinfcdwgahlhurhx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_cOXipkG4wSKIkIHwkP04JA_KunvG7T5";
-
+const PAID_KEY = "elimu_paid_ref";
 
   
 // IMPORTANT: persistent auth client
@@ -97,7 +97,7 @@ let marketer = null;
 
 /* ---------------- INIT ---------------- */
 async function init() {
-let PAID_KEY = "";
+const key = PAID_KEY + "_" + marketer.id;
   // safer session fetch (fixes auth.uid null issues)
   const { data } = await client.auth.getSession();
   const user = data?.session?.user;
