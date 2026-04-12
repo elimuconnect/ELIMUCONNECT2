@@ -184,6 +184,7 @@ function loadStats() {
 }
 
 /* ---------------- MARKETERS ---------------- */
+
 function renderMarketers() {
   const q = document.getElementById("search").value?.toLowerCase() || "";
 
@@ -196,7 +197,12 @@ function renderMarketers() {
   let html = `<h3>👥 Marketers</h3>
   <table>
   <tr>
-    <th>Name</th><th>Email</th><th>Phone</th><th>Code</th><th>Status</th>
+    <th>Name</th>
+    <th>Email</th>
+    <th>Phone</th>
+    <th>Code</th>
+    <th>Status</th>
+    <th>Actions</th>
   </tr>`;
 
   filtered.forEach(m => {
@@ -207,6 +213,12 @@ function renderMarketers() {
         <td>${m.phone}</td>
         <td>${m.code}</td>
         <td>${m.status}</td>
+        <td>
+          <button onclick="updateStatus('${m.id}','approved')">Approve</button>
+          <button onclick="updateStatus('${m.id}','suspended')">Suspend</button>
+          <button onclick="updateStatus('${m.id}','blocked')">Block</button>
+          <button onclick="deleteMarketer('${m.id}')">Remove</button>
+        </td>
       </tr>
     `;
   });
@@ -215,6 +227,45 @@ function renderMarketers() {
   document.getElementById("marketers").innerHTML = html;
 }
 
+
+async function deleteMarketer(id) {
+
+  const confirmDelete = confirm("Delete this marketer permanently?");
+  if (!confirmDelete) return;
+
+  const { error } = await client
+    .from("marketers")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    alert(error.message);
+  } else {
+    alert("Marketer removed");
+    loadAll();
+  }
+}
+async function updateStatus(id, status) {
+
+  const confirmAction = confirm("Are you sure?");
+  if (!confirmAction) return;
+
+  const { error } = await client
+    .from("marketers")
+    .update({ status: status })
+    .eq("id", id);
+
+  if (error) {
+    alert(error.message);
+  } else {
+    alert("Status updated to " + status);
+    loadAll(); // refresh data
+  }
+}
+
+
+
+  
 /* ---------------- VIEW MARKETER ---------------- */
 function viewMarketer(id) {
   selectedMarketer = marketers.find(m => m.id === id);
