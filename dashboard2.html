@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Marketer Dashboard</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+  <style>
+    body {
+      font-family: Arial;
+      padding: 20px;
+      background: #f4f4f4;
+    }
+
+    .card {
+      background: white;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 10px;
+    }
+
+    input {
+      padding: 8px;
+      margin: 5px 0;
+      width: 100%;
+    }
+
+    button {
+      padding: 10px;
+      margin-top: 5px;
+      background: blue;
+      color: white;
+      border: none;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .logout {
+      background: red;
+      width: auto;
+      padding: 8px 15px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="topbar">
+  <h2>Marketer Dashboard</h2>
+  <button class="logout" onclick="logout()">Logout</button>
+</div>
+
+<div class="card">
+  <h3 id="code">Loading...</h3>
+  <h4 id="earnings">Earnings: 0</h4>
+</div>
+
+<div class="card">
+  <h3>Add School</h3>
+
+  <input id="school" placeholder="School Name">
+  <input id="contact" placeholder="Contact Person">
+  <input id="phone" placeholder="Phone">
+  <input id="county" placeholder="County">
+
+  <button onclick="addSchool()">Add School</button>
+</div>
+
+<div class="card">
+  <h3>My Schools</h3>
+  <div id="schools"></div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://hhtplinfcdwgahlhurhx.supabase.co";
+const SUPABASE_KEY = "sb_publishable_cOXipkG4wSKIkIHwkP04JA_KunvG7T5";
+
+// IMPORTANT: persistent auth client
+const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
+
+let marketer = null;
+
+/* ---------------- INIT ---------------- */
+async function init() {
+
+  // safer session fetch (fixes auth.uid null issues)
+  const { data } = await client.auth.getSession();
+  const user = data?.session?.user;
+
+  if (!user) {
+    window.location.href = "login.html";
+    return;
+  }
+
+  // fetch marketer profile
+  const { data: marketerData, error } = await client
+    .from("marketers")
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+
+  
+  if (error || !marketerData) {
+    console.log("USER:", user.id);
+    console.log("ERROR:", error);
+    alert("Marketer profile not found");
+    return;
+  }
+
+  marketer = marketerData;
+
+
+
+
+
+if (marketer.status !== "approved") {
+
+  let message = "";
+
+  if (marketer.status === "pending") {
+    message = "⏳ Your account is awaiting admin approval";
+  } else if (marketer.status === "suspended") {
+    message = "⏸️ Your account is suspended";
+  } else if (marketer.status === "blocked") {
+    message = "🚫 Your account is blocked";
+  }
+
+  alert(message);
+
+  await client.auth.signOut();
+  window.location.href = "login.html";
+  return;
+}
+
+
+  
+  document.getElementById("code").innerText =
+    "Your Code: " + marketer.code;
+
+  loadSchools();
+  loadEarnings();
+}
+
+/* ---------------- ADD SCHOOL ---------------- */
+async function addSchool() {
+
+  if (!marketer) return;
+
+  const { error } = await client.from("schools").insert({
+    school_name: document.getElementById("school").value.trim(),
+    contact_person: document.getElementById("contact").value.trim(),
+    phone: document.getElementById("phone").value.trim(),
+    county: document.getElementById("county").value.trim(),
+    marketer_id: marketer.id, // IMPORTANT FIX (better than code)
+    marketer_code: marketer.code
+  });
+
+  if (error) {
+    alert(error.message);
+  } else {
+    alert("School added!");
+    loadSchools();
+  }
+}
+
+
+async function loadSchools() {
+
+  const { data: schoolsData } = await client
+    .from("schools")
+    .select("*")
+    .eq("marketer_id", marketer.id);
+
+  const { data: commissions } = await client
+    .from("commissions")
+    .select("school_id, amount");
+
+  // build map (FAST + RELIABLE)
+  const map = {};
+
+  commissions?.forEach(c => {
+    map[c.school_id] = (map[c.school_id] || 0) + Number(c.amount || 0);
+  });
+
+  let html = "";
+
+  schoolsData.forEach(s => {
+
+    const schoolTotal = map[s.id] || 0;
+
+  html += `
+  <div class="card">
+    <b>${s.school_name}</b><br>
+    Contact: ${s.contact_person}<br>
+    Phone: ${s.phone}<br><br>
+
+    💰 Commission: Ksh ${schoolTotal}<br><br>
+
+    <button onclick="paySchool('${s.id}', '${s.school_name}', '${s.email || ""}')">
+      Pay for this School
+    </button>
+  </div>
+`;
+  });
+
+  document.getElementById("schools").innerHTML = html;
+}
+
+  
+
+async function loadEarnings() {
+
+  const { data } = await client
+    .from("commissions")
+    .select("amount")
+    .eq("marketer_id", marketer.id);
+
+  let total = 0;
+
+  if (data) {
+    data.forEach(c => {
+      total += Number(c.amount || 0);
+    });
+  }
+
+  document.getElementById("earnings").innerText =
+    "Earnings: Ksh " + total;
+}
+/* ---------------- LOGOUT ---------------- */
+async function logout() {
+  await client.auth.signOut();
+  window.location.href = "login.html";
+}
+
+function paySchool(schoolId, schoolName, amount = 10000) {
+
+  if (!marketer) return;
+
+  localStorage.setItem("pending_payment", JSON.stringify({
+    school_id: schoolId,
+    marketer_id: marketer.id,
+    amount: amount
+  }));
+
+  // OPEN PAYSTACK LINK
+  window.location.href = "https://paystack.com/pay/YOUR_LINK";
+}
+
+
+
+
+async function checkPaymentReturn() {
+
+  const pending = JSON.parse(localStorage.getItem("pending_payment"));
+
+  if (!pending) return;
+
+  // 1. SAVE PAYMENT
+  const { data: payment, error } = await client
+    .from("payments")
+    .insert({
+      school_id: pending.school_id,
+      marketer_id: pending.marketer_id,
+      amount: pending.amount,
+      reference: "PAYSTACK-" + Date.now(),
+      status: "paid"
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.log(error);
+    return;
+  }
+
+  // 2. CREATE COMMISSION (20%)
+  await client.from("commissions").insert({
+    school_id: pending.school_id,
+    marketer_id: pending.marketer_id,
+    amount: pending.amount * 0.2,
+    payment_id: payment.id
+  });
+
+  localStorage.removeItem("pending_payment");
+
+  alert("Payment recorded!");
+
+  loadSchools();
+  loadEarnings();
+}
+
+window.onload = async function () {
+  await init();
+  await checkPaymentReturn();
+};
+
+</script>
+</body>
+</html>
