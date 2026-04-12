@@ -176,14 +176,12 @@ async function addSchool() {
 /* ---------------- LOAD SCHOOLS ---------------- */
 async function loadSchools() {
 
-  if (!marketer) return;
-
   const { data: schoolsData } = await client
     .from("schools")
     .select("*")
     .eq("marketer_id", marketer.id);
 
-  const { data: commissionsData } = await client
+  const { data: commissions } = await client
     .from("commissions")
     .select("school_id, amount");
 
@@ -191,8 +189,7 @@ async function loadSchools() {
 
   schoolsData.forEach(s => {
 
-    // sum commission per school
-    const schoolCommissions = commissionsData
+    const schoolTotal = commissions
       ?.filter(c => c.school_id === s.id)
       .reduce((a, b) => a + Number(b.amount || 0), 0);
 
@@ -202,7 +199,7 @@ async function loadSchools() {
         Contact: ${s.contact_person}<br>
         Phone: ${s.phone}<br><br>
 
-        💰 Commission: Ksh ${schoolCommissions || 0}
+        💰 Commission: Ksh ${schoolTotal || 0}
       </div>
     `;
   });
@@ -213,11 +210,9 @@ async function loadSchools() {
 /* ---------------- LOAD EARNINGS ---------------- */
 async function loadEarnings() {
 
-  if (!marketer) return;
-
   const { data } = await client
     .from("commissions")
-    .select("amount, school_id")
+    .select("amount")
     .eq("marketer_id", marketer.id);
 
   let total = 0;
