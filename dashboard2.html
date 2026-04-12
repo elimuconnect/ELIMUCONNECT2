@@ -248,18 +248,19 @@ async function logout() {
 
 
 
-function paySchool(schoolId, schoolName, amount) {
 
-  const cleanAmount = Number(amount);
 
-  const finalAmount = (cleanAmount && cleanAmount > 0)
-    ? cleanAmount
-    : 10000;
+
+  function paySchool(schoolId, schoolName) {
+
+  const AMOUNT = 10000; // FIXED SYSTEM PRICE
 
   const pending = {
     school_id: schoolId,
-    amount: finalAmount
+    amount: AMOUNT
   };
+
+  console.log("PAY SCHOOL CLICKED:", pending);
 
   localStorage.setItem("pending_payment", JSON.stringify(pending));
 
