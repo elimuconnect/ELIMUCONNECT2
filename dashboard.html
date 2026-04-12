@@ -113,6 +113,18 @@ async function init() {
     .maybeSingle();
 
 
+  
+  if (error || !marketerData) {
+    console.log("USER:", user.id);
+    console.log("ERROR:", error);
+    alert("Marketer profile not found");
+    return;
+  }
+
+  marketer = marketerData;
+
+
+
 
 
 if (marketer.status !== "approved") {
@@ -134,16 +146,8 @@ if (marketer.status !== "approved") {
   return;
 }
 
+
   
-  if (error || !marketerData) {
-    console.log("USER:", user.id);
-    console.log("ERROR:", error);
-    alert("Marketer profile not found");
-    return;
-  }
-
-  marketer = marketerData;
-
   document.getElementById("code").innerText =
     "Your Code: " + marketer.code;
 
