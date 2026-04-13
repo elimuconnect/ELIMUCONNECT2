@@ -57,6 +57,12 @@
   <button class="logout" onclick="logout()">Logout</button>
 </div>
 
+
+<h3>📚 Training Materials</h3>
+<div id="materials"></div>
+
+
+  
 <div class="card">
   <h3 id="code">Loading...</h3>
   <h4 id="earnings">Earnings: 0</h4>
@@ -387,6 +393,53 @@ function paySchool(schoolId) {
   alert("Payment successful!");
 }
 
+
+
+
+async function loadMaterials() {
+
+  const { data, error } = await client
+    .from("training_materials")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.log(error);
+    return;
+  }
+
+  let html = "";
+
+  data.forEach(m => {
+
+    let preview = "";
+
+    if (m.file_type.includes("pdf")) {
+      preview = `<a href="${m.file_url}" target="_blank">📄 Open PDF</a>`;
+    }
+    else if (m.file_type.includes("video")) {
+      preview = `
+        <video width="100%" controls>
+          <source src="${m.file_url}">
+        </video>
+      `;
+    }
+    else {
+      preview = `<a href="${m.file_url}" target="_blank">📁 Download File</a>`;
+    }
+
+    html += `
+      <div class="card">
+        <h4>${m.title}</h4>
+        <p>${m.description}</p>
+        ${preview}
+      </div>
+    `;
+  });
+
+  document.getElementById("materials").innerHTML = html;
+}
+  
   
 window.onload = async function () {
   await init();              // loads marketer FIRST
