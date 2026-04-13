@@ -396,7 +396,6 @@ function paySchool(schoolId) {
 
 
 
-
 async function loadMaterials() {
 
   const { data, error } = await client
@@ -413,26 +412,50 @@ async function loadMaterials() {
 
   data.forEach(m => {
 
+    const fileUrl = m.file_url;
+    const type = (m.file_type || "").toLowerCase();
+
     let preview = "";
 
-    if (m.file_type.includes("pdf")) {
-      preview = `<a href="${m.file_url}" target="_blank">📄 Open PDF</a>`;
-    }
-    else if (m.file_type.includes("video")) {
+    // 📄 PDF
+    if (type.includes("pdf")) {
       preview = `
-        <video width="100%" controls>
-          <source src="${m.file_url}">
-        </video>
+        <a href="${fileUrl}" target="_blank">
+          📄 Open PDF
+        </a>
+        <br>
+        <a href="${fileUrl}" download>
+          ⬇️ Download PDF
+        </a>
       `;
     }
+
+    // 🎥 Video
+    else if (type.includes("video")) {
+      preview = `
+        <video width="100%" controls>
+          <source src="${fileUrl}">
+        </video>
+        <br>
+        <a href="${fileUrl}" download>
+          ⬇️ Download Video
+        </a>
+      `;
+    }
+
+    // 📁 Other files (docx, images, etc)
     else {
-      preview = `<a href="${m.file_url}" target="_blank">📁 Download File</a>`;
+      preview = `
+        <a href="${fileUrl}" download>
+          📁 Download File
+        </a>
+      `;
     }
 
     html += `
       <div class="card">
         <h4>${m.title}</h4>
-        <p>${m.description}</p>
+        <p>${m.description || ""}</p>
         ${preview}
       </div>
     `;
@@ -440,7 +463,6 @@ async function loadMaterials() {
 
   document.getElementById("materials").innerHTML = html;
 }
-  
   
 window.onload = async function () {
   await init();              // loads marketer FIRST
