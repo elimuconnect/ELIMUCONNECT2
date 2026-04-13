@@ -300,19 +300,21 @@ if (!Number.isFinite(amount) || amount <= 0) {
   const year = new Date().getFullYear();
 
   // 1. CHECK DUPLICATE PAYMENT
-  const { data: existing } = await client
-    .from("payments")
-    .select("id")
-    .eq("school_id", pending.school_id)
-    .eq("term", term)
-    .eq("year", year)
-    .maybeSingle();
 
-  if (existing) {
-    alert("Already paid for this term!");
-    localStorage.removeItem("pending_payment");
-    return;
-  }
+const { data: existing } = await client
+  .from("payments")
+  .select("id")
+  .eq("school_id", pending.school_id)
+  .eq("term", term)
+  .eq("year", year);
+
+if (existing && existing.length > 0) {
+  alert("Already paid for this term!");
+  localStorage.removeItem("pending_payment");
+  return;
+}
+
+  
 
   // 2. INSERT PAYMENT
   const { data: payment, error } = await client
@@ -369,7 +371,7 @@ if (!Number.isFinite(amount) || amount <= 0) {
   
 window.onload = async function () {
   await init();              // loads marketer FIRST
-  await handlePaymentReturn(); // process Paystack return AFTER login is ready
+  
 };
 
 </script>
