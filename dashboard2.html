@@ -395,7 +395,6 @@ function paySchool(schoolId) {
 }
 
 
-
 async function loadMaterials() {
 
   const { data, error } = await client
@@ -412,57 +411,83 @@ async function loadMaterials() {
 
   data.forEach(m => {
 
-    const fileUrl = m.file_url;
     const type = (m.file_type || "").toLowerCase();
-
-    let preview = "";
-
-    // 📄 PDF
-    if (type.includes("pdf")) {
-      preview = `
-        <a href="${fileUrl}" target="_blank">
-          📄 Open PDF
-        </a>
-        <br>
-        <a href="${fileUrl}" download>
-          ⬇️ Download PDF
-        </a>
-      `;
-    }
-
-    // 🎥 Video
-    else if (type.includes("video")) {
-      preview = `
-        <video width="100%" controls>
-          <source src="${fileUrl}">
-        </video>
-        <br>
-        <a href="${fileUrl}" download>
-          ⬇️ Download Video
-        </a>
-      `;
-    }
-
-    // 📁 Other files (docx, images, etc)
-    else {
-      preview = `
-        <a href="${fileUrl}" download>
-          📁 Download File
-        </a>
-      `;
-    }
 
     html += `
       <div class="card">
         <h4>${m.title}</h4>
         <p>${m.description || ""}</p>
-        ${preview}
+
+        ${type.includes("pdf") ? `
+          <button onclick="downloadFile('${m.file_url}', '${m.title}.pdf')">
+            ⬇️ Download PDF
+          </button>
+        ` : ""}
+
+        ${type.includes("video") ? `
+          <video width="100%" controls>
+            <source src="${m.file_url}">
+          </video>
+          <br>
+          <button onclick="downloadFile('${m.file_url}', '${m.title}.mp4')">
+            ⬇️ Download Video
+          </button>
+        ` : ""}
+
+        ${!type.includes("pdf") && !type.includes("video") ? `
+          <button onclick="downloadFile('${m.file_url}', '${m.title}')">
+            📁 Download File
+          </button>
+        ` : ""}
+
       </div>
     `;
   });
 
   document.getElementById("materials").innerHTML = html;
 }
+
+
+
+
+async function downloadFile(fileUrl, filename) {
+
+  try {
+
+    // 1. convert public URL to storage path
+    const path = fileUrl.split("/training-files/")[1];
+
+    const { data, error } = await client.storage
+      .from("training-files")
+      .download(path);
+
+    if (error) {
+      console.log(error);
+      alert("Download failed");
+      return;
+    }
+
+    // 2. create blob download
+    const blob = new Blob([data]);
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename || "file";
+    document.body.appendChild(a);
+    a.click();
+
+    a.remove();
+    window.URL.revokeObjectURL(url);
+
+  } catch (err) {
+    console.log(err);
+    alert("Download error");
+  }
+}
+
+
+  
   
 window.onload = async function () {
   await init();              // loads marketer FIRST
