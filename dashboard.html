@@ -78,10 +78,13 @@
   <div id="schools"></div>
 </div>
 
+
+
 <script>
 const SUPABASE_URL = "https://hhtplinfcdwgahlhurhx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_cOXipkG4wSKIkIHwkP04JA_KunvG7T5";
-
+const PAID_KEY_BASE = "elimu_paid_ref";
+  
 // IMPORTANT: persistent auth client
 const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
@@ -94,9 +97,9 @@ const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 let marketer = null;
 
 /* ---------------- INIT ---------------- */
+
 async function init() {
 
-  // safer session fetch (fixes auth.uid null issues)
   const { data } = await client.auth.getSession();
   const user = data?.session?.user;
 
@@ -105,55 +108,52 @@ async function init() {
     return;
   }
 
-  // fetch marketer profile
   const { data: marketerData, error } = await client
     .from("marketers")
     .select("*")
     .eq("user_id", user.id)
     .maybeSingle();
 
-
-  
   if (error || !marketerData) {
-    console.log("USER:", user.id);
-    console.log("ERROR:", error);
     alert("Marketer profile not found");
     return;
   }
 
   marketer = marketerData;
 
+  // NOW safe to build key
+  const PAID_KEY = PAID_KEY_BASE + "_" + marketer.id;
 
+  // NOW safe to handle payment return
+  await handlePaymentReturn(PAID_KEY);
 
+  // status check
+  if (marketer.status !== "approved") {
 
+    let message = "";
 
-if (marketer.status !== "approved") {
+    if (marketer.status === "pending") message = "⏳ Awaiting approval";
+    if (marketer.status === "suspended") message = "⏸️ Suspended";
+    if (marketer.status === "blocked") message = "🚫 Blocked";
 
-  let message = "";
+    alert(message);
 
-  if (marketer.status === "pending") {
-    message = "⏳ Your account is awaiting admin approval";
-  } else if (marketer.status === "suspended") {
-    message = "⏸️ Your account is suspended";
-  } else if (marketer.status === "blocked") {
-    message = "🚫 Your account is blocked";
+    await client.auth.signOut();
+    window.location.href = "login.html";
+    return;
   }
 
-  alert(message);
-
-  await client.auth.signOut();
-  window.location.href = "login.html";
-  return;
-}
-
-
-  
   document.getElementById("code").innerText =
     "Your Code: " + marketer.code;
 
   loadSchools();
   loadEarnings();
 }
+
+const ref = new URLSearchParams(location.search).get("reference");
+
+
+  
 
 /* ---------------- ADD SCHOOL ---------------- */
 async function addSchool() {
@@ -202,15 +202,19 @@ async function loadSchools() {
 
     const schoolTotal = map[s.id] || 0;
 
-    html += `
-      <div class="card">
-        <b>${s.school_name}</b><br>
-        Contact: ${s.contact_person}<br>
-        Phone: ${s.phone}<br><br>
+  html += `
+  <div class="card">
+    <b>${s.school_name}</b><br>
+    Contact: ${s.contact_person}<br>
+    Phone: ${s.phone}<br><br>
 
-        💰 Commission: Ksh ${schoolTotal}
-      </div>
-    `;
+    💰 Commission: Ksh ${schoolTotal}<br><br>
+
+    <button onclick="paySchool('${s.id}', '${s.school_name}')">
+      Pay for this School
+    </button>
+  </div>
+`;
   });
 
   document.getElementById("schools").innerHTML = html;
@@ -242,8 +246,148 @@ async function logout() {
   window.location.href = "login.html";
 }
 
-/* ---------------- START ---------------- */
-window.onload = init;
+function paySchool(schoolId) {
+
+  const pending = {
+    school_id: schoolId,
+    amount: 10000
+  };
+
+  localStorage.setItem("pending_payment", JSON.stringify(pending));
+
+  console.log("NEW PAYMENT:", pending);
+
+  window.location.href = "https://paystack.shop/pay/dqt-e-uc8j";
+}
+
+async function handlePaymentReturn(PAID_KEY) {
+
+  const ref = new URLSearchParams(location.search).get("reference");
+  if (!ref) return;
+
+  const savedRef = localStorage.getItem(PAID_KEY);
+  if (savedRef === ref) return;
+
+
+
+const pendingRaw = localStorage.getItem("pending_payment");
+
+if (!pendingRaw) {
+  console.log("No pending payment found");
+  return;
+}
+
+let pending;
+
+try {
+  pending = JSON.parse(pendingRaw);
+} catch (e) {
+  console.log("Corrupt pending data");
+  localStorage.removeItem("pending_payment");
+  return;
+}
+
+const amount = Number(pending.amount);
+
+if (!Number.isFinite(amount) || amount <= 0) {
+  console.log("Invalid amount:", pending);
+  localStorage.removeItem("pending_payment");
+  return;
+}
+  
+
+  const term = "Term 1";
+  const year = new Date().getFullYear();
+
+  // 1. CHECK DUPLICATE PAYMENT
+
+
+const { data: existing } = await client
+  .from("payments")
+  .select("id")
+  .eq("school_id", pending.school_id)
+  .eq("term", term)
+  .eq("year", year)
+  .maybeSingle();
+
+if (existing) {
+  alert("Already paid for this term!");
+  localStorage.removeItem("pending_payment");
+  return;
+}
+
+  
+
+  // 2. INSERT PAYMENT
+  const { data: payment, error } = await client
+    .from("payments")
+    .insert({
+      school_id: pending.school_id,
+      amount: pending.amount,
+      reference: ref,
+      term,
+      year,
+      paid_at: new Date().toISOString()
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.log(error);
+    return;
+  }
+
+  // 3. GET MARKETER FROM SCHOOL
+  const { data: school } = await client
+    .from("schools")
+    .select("marketer_id")
+    .eq("id", pending.school_id)
+    .single();
+
+  const marketer_id = school?.marketer_id;
+
+  // 4. CREATE COMMISSION
+
+
+const { data: commissionData, error: commissionError } = await client
+  .from("commissions")
+  .insert({
+    school_id: pending.school_id,
+    marketer_id,
+    amount: pending.amount * 0.2,
+    
+  })
+  .select();
+
+console.log("COMMISSION RESULT:", commissionData);
+console.log("COMMISSION ERROR:", commissionError);
+
+if (commissionError) {
+  alert("Commission failed: " + commissionError.message);
+  return;
+}
+  
+
+  // 5. SAVE REF
+  localStorage.setItem(PAID_KEY, ref);
+
+  // 6. CLEANUP
+  localStorage.removeItem("pending_payment");
+
+  // 7. CLEAN URL
+  window.history.replaceState({}, document.title, window.location.pathname);
+
+  loadSchools();
+  loadEarnings();
+}
+
+
+  
+window.onload = async function () {
+  await init();              // loads marketer FIRST
+  
+};
+
 </script>
 </body>
 </html>
