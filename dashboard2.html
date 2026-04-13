@@ -260,7 +260,10 @@ function paySchool(schoolId) {
   window.location.href = "https://paystack.shop/pay/dqt-e-uc8j";
 }
 
-async function handlePaymentReturn(PAID_KEY) {
+
+
+
+  async function handlePaymentReturn(PAID_KEY) {
 
   const ref = new URLSearchParams(location.search).get("reference");
   if (!ref) return;
@@ -268,58 +271,51 @@ async function handlePaymentReturn(PAID_KEY) {
   const savedRef = localStorage.getItem(PAID_KEY);
   if (savedRef === ref) return;
 
+  const pendingRaw = localStorage.getItem("pending_payment");
 
+  if (!pendingRaw) {
+    console.log("No pending payment found");
+    return;
+  }
 
-const pendingRaw = localStorage.getItem("pending_payment");
+  let pending;
 
-if (!pendingRaw) {
-  console.log("No pending payment found");
-  return;
-}
+  try {
+    pending = JSON.parse(pendingRaw);
+  } catch (e) {
+    console.log("Corrupt pending data");
+    localStorage.removeItem("pending_payment");
+    return;
+  }
 
-let pending;
+  const amount = Number(pending.amount);
 
-try {
-  pending = JSON.parse(pendingRaw);
-} catch (e) {
-  console.log("Corrupt pending data");
-  localStorage.removeItem("pending_payment");
-  return;
-}
-
-const amount = Number(pending.amount);
-
-if (!Number.isFinite(amount) || amount <= 0) {
-  console.log("Invalid amount:", pending);
-  localStorage.removeItem("pending_payment");
-  return;
-}
-  
+  if (!Number.isFinite(amount) || amount <= 0) {
+    console.log("Invalid amount:", pending);
+    localStorage.removeItem("pending_payment");
+    return;
+  }
 
   const term = "Term 1";
   const year = new Date().getFullYear();
 
   // 1. CHECK DUPLICATE PAYMENT
+  const { data: existing } = await client
+    .from("payments")
+    .select("id")
+    .eq("school_id", pending.school_id)
+    .eq("term", term)
+    .eq("year", year)
+    .maybeSingle();
 
-
-const { data: existing } = await client
-  .from("payments")
-  .select("id")
-  .eq("school_id", pending.school_id)
-  .eq("term", term)
-  .eq("year", year)
-  .maybeSingle();
-
-if (existing) {
-  alert("Already paid for this term!");
-  localStorage.removeItem("pending_payment");
-  return;
-}
-
-  
+  if (existing) {
+    alert("Already paid for this term!");
+    localStorage.removeItem("pending_payment");
+    return;
+  }
 
   // 2. INSERT PAYMENT
-  const { data: payment, error } = await client
+  const { data: payment, error: paymentError } = await client
     .from("payments")
     .insert({
       school_id: pending.school_id,
@@ -332,8 +328,8 @@ if (existing) {
     .select()
     .single();
 
-  if (error) {
-    console.log(error);
+  if (paymentError) {
+    console.log("PAYMENT ERROR:", paymentError);
     return;
   }
 
@@ -346,41 +342,35 @@ if (existing) {
 
   const marketer_id = school?.marketer_id;
 
-  // 4. CREATE COMMISSION
+  // 4. INSERT COMMISSION
+  const { error: commissionError } = await client
+    .from("commissions")
+    .insert({
+      school_id: pending.school_id,
+      marketer_id,
+      amount: pending.amount * 0.2
+    });
 
+  if (commissionError) {
+    console.log("COMMISSION ERROR:", commissionError);
+    return;
+  }
 
-const { data: commissionData, error: commissionError } = await client
-  .from("commissions")
-  .insert({
-    school_id: pending.school_id,
-    marketer_id,
-    amount: pending.amount * 0.2,
-    
-  })
-  .select();
-
-console.log("COMMISSION RESULT:", commissionData);
-console.log("COMMISSION ERROR:", commissionError);
-
-if (commissionError) {
-  alert("Commission failed: " + commissionError.message);
-  return;
-}
-  
-
-  // 5. SAVE REF
+  // 5. SAVE REF (ONLY AFTER EVERYTHING SUCCESSFUL)
   localStorage.setItem(PAID_KEY, ref);
 
-  // 6. CLEANUP
+  // 6. CLEAN LOCAL STORAGE
   localStorage.removeItem("pending_payment");
 
-  // 7. CLEAN URL
+  // 7. CLEAN URL (ONLY NOW SAFE)
   window.history.replaceState({}, document.title, window.location.pathname);
 
-  loadSchools();
-  loadEarnings();
-}
+  // 8. REFRESH UI
+  await loadSchools();
+  await loadEarnings();
 
+  alert("Payment successful!");
+}
 
   
 window.onload = async function () {
