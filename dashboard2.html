@@ -246,7 +246,6 @@ async function logout() {
   window.location.href = "login.html";
 }
 
-
 function paySchool(schoolId) {
 
   const pending = {
@@ -256,9 +255,10 @@ function paySchool(schoolId) {
 
   localStorage.setItem("pending_payment", JSON.stringify(pending));
 
+  console.log("NEW PAYMENT:", pending);
+
   window.location.href = "https://paystack.shop/pay/dqt-e-uc8j";
 }
-
 
 async function handlePaymentReturn(PAID_KEY) {
 
@@ -301,14 +301,16 @@ if (!Number.isFinite(amount) || amount <= 0) {
 
   // 1. CHECK DUPLICATE PAYMENT
 
+
 const { data: existing } = await client
   .from("payments")
   .select("id")
   .eq("school_id", pending.school_id)
   .eq("term", term)
-  .eq("year", year);
+  .eq("year", year)
+  .maybeSingle();
 
-if (existing && existing.length > 0) {
+if (existing) {
   alert("Already paid for this term!");
   localStorage.removeItem("pending_payment");
   return;
@@ -345,14 +347,26 @@ if (existing && existing.length > 0) {
   const marketer_id = school?.marketer_id;
 
   // 4. CREATE COMMISSION
-  if (marketer_id) {
-    await client.from("commissions").insert({
-      school_id: pending.school_id,
-      marketer_id,
-      amount: pending.amount * 0.2,
-      payment_id: payment.id
-    });
-  }
+
+
+const { data: commissionData, error: commissionError } = await client
+  .from("commissions")
+  .insert({
+    school_id: pending.school_id,
+    marketer_id,
+    amount: pending.amount * 0.2,
+    payment_id: payment.id
+  })
+  .select();
+
+console.log("COMMISSION RESULT:", commissionData);
+console.log("COMMISSION ERROR:", commissionError);
+
+if (commissionError) {
+  alert("Commission failed: " + commissionError.message);
+  return;
+}
+  
 
   // 5. SAVE REF
   localStorage.setItem(PAID_KEY, ref);
