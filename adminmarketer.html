@@ -380,7 +380,8 @@ async function uploadMaterial() {
 
   if (!file) return alert("Select file first");
 
-  const filePath = `training/${Date.now()}_${file.name}`;
+  const safeName = file.name.replace(/\s/g, "_");
+const filePath = `training/${Date.now()}_${safeName}`;
 
   // 1. upload file to storage
   const { data, error } = await client
