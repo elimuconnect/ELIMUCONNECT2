@@ -68,6 +68,19 @@
 
 <h2>Admin Dashboard</h2>
 
+
+<h3>Upload Training Material</h3>
+
+<input id="title" placeholder="Title">
+<input id="description" placeholder="Description">
+<input type="file" id="file">
+
+<button onclick="uploadMaterial()">Upload</button>
+
+
+
+
+  
 <div class="grid" id="stats"></div>
 
 <input id="search" placeholder="Search marketers..." oninput="renderMarketers()">
@@ -80,6 +93,9 @@
   <div id="payments"></div>
 </div>
 
+
+
+  
 <script>
 const SUPABASE_URL = "https://hhtplinfcdwgahlhurhx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_cOXipkG4wSKIkIHwkP04JA_KunvG7T5";
@@ -120,6 +136,7 @@ async function init() {
   // 3. LOAD DATA
   await loadAll();
   loadStats();
+  loadMaterials();
 }
 
 /* ---------------- LOAD ALL DATA ---------------- */
@@ -351,6 +368,57 @@ function renderPayments() {
   html += "</table>";
   document.getElementById("payments").innerHTML = html;
 }
+
+
+
+
+async function uploadMaterial() {
+
+  const title = document.getElementById("title").value;
+  const description = document.getElementById("description").value;
+  const file = document.getElementById("file").files[0];
+
+  if (!file) return alert("Select file first");
+
+  const filePath = `training/${Date.now()}_${file.name}`;
+
+  // 1. upload file to storage
+  const { data, error } = await client
+    .storage
+    .from("training-files")
+    .upload(filePath, file);
+
+  if (error) {
+    console.log(error);
+    return alert("Upload failed");
+  }
+
+  // 2. get public URL
+  const { data: urlData } = client
+    .storage
+    .from("training-files")
+    .getPublicUrl(filePath);
+
+  const file_url = urlData.publicUrl;
+
+  // 3. save to database
+  const { error: dbError } = await client
+    .from("training_materials")
+    .insert({
+      title,
+      description,
+      file_url,
+      file_type: file.type
+    });
+
+  if (dbError) {
+    console.log(dbError);
+    return alert("DB save failed");
+  }
+
+  alert("Training uploaded successfully!");
+}
+
 
   
 /* ---------------- START ---------------- */
