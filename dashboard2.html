@@ -195,9 +195,8 @@ const SUPABASE_KEY = "sb_publishable_cOXipkG4wSKIkIHwkP04JA_KunvG7T5";
 const PAID_KEY_BASE = "elimu_paid_ref";
 
 
-  // 🌍 GLOBAL TERM & YEAR
-const TERM = "Term 2";
-const YEAR = new Date().getFullYear();
+ const term = "Term 2";
+const year = new Date().getFullYear();
   
 // IMPORTANT: persistent auth client
 const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
