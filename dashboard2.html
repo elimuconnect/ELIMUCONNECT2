@@ -193,6 +193,11 @@ color:#3730a3;
 const SUPABASE_URL = "https://hhtplinfcdwgahlhurhx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_cOXipkG4wSKIkIHwkP04JA_KunvG7T5";
 const PAID_KEY_BASE = "elimu_paid_ref";
+
+
+  // 🌍 GLOBAL TERM & YEAR
+const TERM = "Term 2";
+const YEAR = new Date().getFullYear();
   
 // IMPORTANT: persistent auth client
 const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
@@ -300,8 +305,6 @@ async function loadSchools() {
     .from("commissions")
     .select("school_id, amount")
    
-const term = "Term 2";
-const year = new Date().getFullYear();
 
 const { data: payments } = await client
   .from("payments")
@@ -367,9 +370,6 @@ const { data: payments } = await client
 
 async function loadEarnings() {
 
-
-const term = "Term 2";
-const year = new Date().getFullYear();
 
 const { data } = await client
   .from("commissions")
@@ -446,9 +446,8 @@ function paySchool(schoolId) {
     return;
   }
 
-  const term = "Term 2";
-  const year = new Date().getFullYear();
-
+  const term = TERM;
+const year = YEAR;
   // 1. CHECK DUPLICATE PAYMENT
   const { data: existing } = await client
     .from("payments")
@@ -498,7 +497,7 @@ function paySchool(schoolId) {
     .insert({
       school_id: pending.school_id,
       marketer_id,
-      amount: pending.amount * 0.2
+      amount: pending.amount * 0.2,
       term,
     year
     });
