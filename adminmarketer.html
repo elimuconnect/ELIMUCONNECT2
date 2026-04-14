@@ -61,6 +61,22 @@
       cursor: pointer;
       color: blue;
     }
+
+
+    .loader {
+  border: 3px solid #e5e7eb;
+  border-top: 3px solid #2563eb;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  animation: spin 1s linear infinite;
+  margin-right: 5px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
   </style>
 </head>
 
@@ -76,6 +92,7 @@
 <input type="file" id="file">
 
 <button onclick="uploadMaterial()">Upload</button>
+  <p id="uploadStatus" style="font-size:14px; color:#64748b;"></p>
 
 
 
@@ -94,7 +111,8 @@
 </div>
 
 
-
+<h3>📚 Training Materials</h3>
+<div id="materials"></div>
   
 <script>
 const SUPABASE_URL = "https://hhtplinfcdwgahlhurhx.supabase.co";
@@ -136,7 +154,7 @@ async function init() {
   // 3. LOAD DATA
   await loadAll();
   loadStats();
- 
+ loadMaterials();
 }
 
 /* ---------------- LOAD ALL DATA ---------------- */
@@ -377,49 +395,151 @@ async function uploadMaterial() {
   const title = document.getElementById("title").value;
   const description = document.getElementById("description").value;
   const file = document.getElementById("file").files[0];
+  const statusEl = document.getElementById("uploadStatus");
+  const btn = event.target;
 
   if (!file) return alert("Select file first");
 
-  const safeName = file.name.replace(/\s/g, "_");
-const filePath = `training/${Date.now()}_${safeName}`;
+  // 🔵 START LOADING
+statusEl.innerHTML = '<span class="loader"></span> Uploading document...';
+  statusEl.style.color = "#2563eb";
+  btn.disabled = true;
+  btn.innerText = "Uploading...";
 
-  // 1. upload file to storage
+  try {
+
+    const safeName = file.name.replace(/\s/g, "_");
+    const filePath = `training/${Date.now()}_${safeName}`;
+
+    // 1. upload file
+    const { error } = await client
+      .storage
+      .from("training-files")
+      .upload(filePath, file);
+
+    if (error) throw error;
+
+    // 2. get public URL
+    const { data: urlData } = client
+      .storage
+      .from("training-files")
+      .getPublicUrl(filePath);
+
+    const file_url = urlData.publicUrl;
+
+    // 3. save to DB
+    const { error: dbError } = await client
+      .from("training_materials")
+      .insert({
+        title,
+        description,
+        file_url,
+        file_type: file.type
+      });
+
+    if (dbError) throw dbError;
+
+    // 🟢 SUCCESS
+    statusEl.innerHTML = "✅ Upload successful!";
+    statusEl.style.color = "#16a34a";
+
+    // reset form
+    document.getElementById("title").value = "";
+    document.getElementById("description").value = "";
+    document.getElementById("file").value = "";
+
+  } catch (err) {
+    console.log(err);
+
+    // 🔴 ERROR
+    statusEl.innerHTML = "❌ Upload failed. Try again.";
+    statusEl.style.color = "#dc2626";
+  }
+
+  // 🔁 RESET BUTTON
+  btn.disabled = false;
+  btn.innerText = "Upload";
+}
+loadMaterials();  
+
+
+
+
+async function loadMaterials() {
+
   const { data, error } = await client
-    .storage
-    .from("training-files")
-    .upload(filePath, file);
+    .from("training_materials")
+    .select("*")
+    .order("created_at", { ascending: false });
 
   if (error) {
     console.log(error);
-    return alert("Upload failed");
+    return;
   }
 
-  // 2. get public URL
-  const { data: urlData } = client
-    .storage
-    .from("training-files")
-    .getPublicUrl(filePath);
+  let html = "";
 
-  const file_url = urlData.publicUrl;
+  data.forEach(m => {
 
-  // 3. save to database
-  const { error: dbError } = await client
-    .from("training_materials")
-    .insert({
-      title,
-      description,
-      file_url,
-      file_type: file.type
-    });
+    html += `
+      <div class="card">
 
-  if (dbError) {
-    console.log(dbError);
-    return alert("DB save failed");
-  }
+        <h4>📘 ${m.title}</h4>
+        <p>${m.description || "No description"}</p>
 
-  alert("Training uploaded successfully!");
+        <div style="display:flex; gap:10px; margin-top:10px;">
+
+          <a href="${m.file_url}" target="_blank" style="color:#2563eb;">
+            📂 Open
+          </a>
+
+          <button 
+            style="background:#ef4444; width:auto; padding:6px 12px;"
+            onclick="deleteMaterial('${m.id}', '${m.file_url}')">
+            🗑 Delete
+          </button>
+
+        </div>
+
+      </div>
+    `;
+  });
+
+  document.getElementById("materials").innerHTML = html;
 }
 
+
+async function deleteMaterial(id, fileUrl) {
+
+  const confirmDelete = confirm("Delete this material?");
+  if (!confirmDelete) return;
+
+  try {
+
+    // remove from storage
+    const path = fileUrl.split("/training-files/")[1];
+
+    await client.storage
+      .from("training-files")
+      .remove([path]);
+
+    // remove from database
+    const { error } = await client
+      .from("training_materials")
+      .delete()
+      .eq("id", id);
+
+    if (error) throw error;
+
+    alert("✅ Deleted successfully");
+
+    loadMaterials();
+
+  } catch (err) {
+    console.log(err);
+    alert("❌ Delete failed");
+  }
+}
 
   
 /* ---------------- START ---------------- */
