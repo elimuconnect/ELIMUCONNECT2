@@ -6,61 +6,143 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
   <style>
-    body {
-      font-family: Arial;
-      padding: 20px;
-      background: #f4f4f4;
-    }
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    background: #0f172a;
+    color: #1e293b;
+  }
 
-    .card {
-      background: white;
-      padding: 15px;
-      margin-bottom: 10px;
-      border-radius: 10px;
-    }
+  /* ===== TOPBAR ===== */
+  .topbar {
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    color: white;
+    padding: 15px 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  }
 
-    input {
-      padding: 8px;
-      margin: 5px 0;
-      width: 100%;
-    }
+  .topbar h2 {
+    margin: 0;
+    font-weight: 600;
+  }
 
-    button {
-      padding: 10px;
-      margin-top: 5px;
-      background: blue;
-      color: white;
-      border: none;
-      cursor: pointer;
-      width: 100%;
-    }
+  .logout {
+    background: #ef4444;
+    border-radius: 8px;
+    padding: 8px 15px;
+    font-weight: 500;
+    transition: 0.3s;
+  }
 
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 15px;
-    }
+  .logout:hover {
+    background: #dc2626;
+  }
 
-    .logout {
-      background: red;
-      width: auto;
-      padding: 8px 15px;
-    }
-  </style>
+  /* ===== LAYOUT ===== */
+  .container {
+    padding: 20px;
+    max-width: 1100px;
+    margin: auto;
+  }
+
+  /* ===== CARDS ===== */
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 15px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+    transition: 0.3s;
+  }
+
+  .card:hover {
+    transform: translateY(-3px);
+  }
+
+  /* ===== INPUTS ===== */
+  input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    margin-bottom: 10px;
+    outline: none;
+    transition: 0.2s;
+  }
+
+  input:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 2px rgba(79,70,229,0.2);
+  }
+
+  /* ===== BUTTONS ===== */
+  button {
+    width: 100%;
+    padding: 10px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+
+  button:hover {
+    opacity: 0.9;
+    transform: scale(1.02);
+  }
+
+  /* ===== GRID ===== */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+  }
+
+  /* ===== BADGES ===== */
+  .status {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+  }
+
+  .paid {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  .not-paid {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  /* ===== MATERIAL SECTION ===== */
+  #materials .card {
+    border-left: 5px solid #4f46e5;
+  }
+
+  video {
+    border-radius: 10px;
+    margin-top: 10px;
+  }
+</style>
 </head>
+
+
 
 <body>
 
 <div class="topbar">
-  <h2>Marketer Dashboard</h2>
+  <h2>📊 Marketer Dashboard</h2>
   <button class="logout" onclick="logout()">Logout</button>
 </div>
 
-
-<h3>📚 Training Materials</h3>
-<div id="materials"></div>
-
+<div class="container">
 
   
 <div class="card">
@@ -85,6 +167,9 @@
 </div>
 
 
+<h3>📚 Training Materials</h3>
+<div id="materials"></div>
+</div>
 
 <script>
 const SUPABASE_URL = "https://hhtplinfcdwgahlhurhx.supabase.co";
@@ -223,20 +308,25 @@ async function loadSchools() {
 
     const schoolTotal = commissionMap[s.id] || 0;
 
-    html += `
-      <div class="card">
-        <b>${s.school_name}</b> — ${status}<br>
-        ${refText}<br><br>
+   html += `
+  <div class="card">
+    <h3>${s.school_name}</h3>
 
-        Contact Person: ${s.contact_person}<br>
-        Phone: ${s.phone}<br><br>
+    <span class="status ${ref ? "paid" : "not-paid"}">
+      ${status}
+    </span>
 
-        💰 Commission: Ksh ${schoolTotal}<br><br>
+    <p>${refText}</p>
 
-        <button onclick="paySchool('${s.id}', '${s.school_name}')">
-          Pay for this School
-        </button>
-      </div>
+    <p><b>👤 Contact:</b> ${s.contact_person}</p>
+    <p><b>📞 Phone:</b> ${s.phone}</p>
+
+    <p><b>💰 Commission:</b> Ksh ${schoolTotal}</p>
+
+    <button onclick="paySchool('${s.id}')">
+      💳 Pay School Fee
+    </button>
+  </div>
     `;
   });
 
@@ -413,35 +503,58 @@ async function loadMaterials() {
 
     const type = (m.file_type || "").toLowerCase();
 
-    html += `
-      <div class="card">
-        <h4>${m.title}</h4>
-        <p>${m.description || ""}</p>
+   
+   html += `
+  <div class="card">
 
-        ${type.includes("pdf") ? `
-          <button onclick="downloadFile('${m.file_url}', '${m.title}.pdf')">
-            ⬇️ Download PDF
-          </button>
-        ` : ""}
+    <h4>📘 ${m.title}</h4>
+    <p>${m.description || "No description provided"}</p>
 
-        ${type.includes("video") ? `
-          <video width="100%" controls>
-            <source src="${m.file_url}">
-          </video>
-          <br>
-          <button onclick="downloadFile('${m.file_url}', '${m.title}.mp4')">
-            ⬇️ Download Video
-          </button>
-        ` : ""}
+    <!-- FILE TYPE BADGE -->
+    <div style="margin-bottom:10px;">
+      <span style="
+        background:#e0e7ff;
+        color:#3730a3;
+        padding:4px 10px;
+        border-radius:20px;
+        font-size:12px;
+        font-weight:bold;
+      ">
+        ${type.includes("pdf") ? "PDF Document" :
+          type.includes("video") ? "Video Training" :
+          type.includes("image") ? "Image File" :
+          "File"}
+      </span>
+    </div>
 
-        ${!type.includes("pdf") && !type.includes("video") ? `
-          <button onclick="downloadFile('${m.file_url}', '${m.title}')">
-            📁 Download File
-          </button>
-        ` : ""}
+    ${type.includes("pdf") ? `
+      <a href="${m.file_url}" target="_blank" style="color:#2563eb; display:block; margin-bottom:8px;">
+        📄 Open PDF
+      </a>
 
-      </div>
-    `;
+      <button onclick="downloadFile('${m.file_url}', '${m.title}.pdf')">
+        ⬇️ Download PDF
+      </button>
+    ` : ""}
+
+    ${type.includes("video") ? `
+      <a href="${m.file_url}" target="_blank" style="color:#2563eb; display:block; margin-bottom:8px;">
+        🎥 Watch / Open Video
+      </a>
+
+      <button onclick="downloadFile('${m.file_url}', '${m.title}.mp4')">
+        ⬇️ Download Video
+      </button>
+    ` : ""}
+
+    ${!type.includes("pdf") && !type.includes("video") ? `
+      <button onclick="downloadFile('${m.file_url}', '${m.title}')">
+        📁 Download File
+      </button>
+    ` : ""}
+
+  </div>
+`;
   });
 
   document.getElementById("materials").innerHTML = html;
