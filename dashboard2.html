@@ -299,10 +299,11 @@ async function loadSchools() {
     .eq("marketer_id", marketer.id);
 
  
-  
   const { data: commissions } = await client
-    .from("commissions")
-    .select("school_id, amount")
+  .from("commissions")
+  .select("school_id, amount")
+  .eq("term", term)
+  .eq("year", year);
    
 
 const { data: payments } = await client
@@ -441,8 +442,6 @@ function paySchool(schoolId) {
     return;
   }
 
-  const term = TERM;
-const year = YEAR;
   // 1. CHECK DUPLICATE PAYMENT
   const { data: existing } = await client
     .from("payments")
