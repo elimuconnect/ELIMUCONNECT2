@@ -312,11 +312,7 @@ const { data: payments } = await client
   .eq("term", term)
   .eq("year", year);
 
-const { data: payments } = await client
-  .from("payments")
-  .select("school_id, reference")
-  .eq("term", term)
-  .eq("year", year);
+
 
   // COMMISSION MAP
   const commissionMap = {};
