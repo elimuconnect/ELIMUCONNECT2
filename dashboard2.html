@@ -294,13 +294,26 @@ async function loadSchools() {
     .select("*")
     .eq("marketer_id", marketer.id);
 
+ 
+  
   const { data: commissions } = await client
     .from("commissions")
-    .select("school_id, amount");
+    .select("school_id, amount")
+   
+const term = "Term 2";
+const year = new Date().getFullYear();
 
-  const { data: payments } = await client
-    .from("payments")
-    .select("school_id, reference");
+const { data: payments } = await client
+  .from("payments")
+  .select("school_id, reference")
+  .eq("term", term)
+  .eq("year", year);
+
+const { data: payments } = await client
+  .from("payments")
+  .select("school_id, reference")
+  .eq("term", term)
+  .eq("year", year);
 
   // COMMISSION MAP
   const commissionMap = {};
@@ -354,11 +367,18 @@ async function loadSchools() {
 
 async function loadEarnings() {
 
-  const { data } = await client
-    .from("commissions")
-    .select("amount")
-    .eq("marketer_id", marketer.id);
 
+const term = "Term 2";
+const year = new Date().getFullYear();
+
+const { data } = await client
+  .from("commissions")
+  .select("amount")
+  .eq("marketer_id", marketer.id)
+  .eq("term", term)
+  .eq("year", year);
+
+  
   let total = 0;
 
   if (data) {
@@ -479,6 +499,8 @@ function paySchool(schoolId) {
       school_id: pending.school_id,
       marketer_id,
       amount: pending.amount * 0.2
+      term,
+    year
     });
 
   if (commissionError) {
