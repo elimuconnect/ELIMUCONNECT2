@@ -427,25 +427,38 @@ async function updateStatus(id, status) {
 
   
 /* ---------------- VIEW MARKETER ---------------- */
-function viewMarketer(id) {
+
+async function viewMarketer(id) {
   selectedMarketer = marketers.find(m => m.id === id);
 
   const mySchools = schools.filter(s => s.marketer_id === id);
-  const myPayments = payments.filter(p => p.marketer_id === id);
 
-  let total = myPayments.reduce((a,b)=>a + Number(b.amount||0),0);
+  // 🔥 GET COMMISSIONS (correct source)
+  const { data } = await client
+    .from("commissions")
+    .select("amount")
+    .eq("marketer_id", id);
+
+  let total = 0;
+
+  if (data) {
+    data.forEach(c => {
+      total += Number(c.amount || 0);
+    });
+  }
 
   document.getElementById("detail").innerHTML = `
     <div class="card">
       <h3>${selectedMarketer.name}</h3>
       <p><b>Code:</b> ${selectedMarketer.code}</p>
       <p><b>County:</b> ${selectedMarketer.county}</p>
-      <p><b>Total Earnings:</b> ${total}</p>
+      <p><b>Total Earnings:</b> Ksh ${total}</p>
       <p><b>Schools:</b> ${mySchools.length}</p>
     </div>
   `;
 }
 
+  
 /* ---------------- SCHOOLS ---------------- */
 
 
