@@ -289,6 +289,16 @@
 
     <label>Assessment Type:</label>
     <select id="assessmentTypeSelect"></select>
+
+	
+<label>Assessment Category:</label>
+<select id="assessmentCategorySelect">
+  <option value="" disabled selected>-- Select Category --</option>
+  <option value="continuous">Continuous Assessment</option>
+  <option value="midterm">Mid-Term</option>
+  <option value="endterm">End-Term</option>
+</select>
+    
   </div>
 
   <div class="card right-card">
@@ -571,7 +581,8 @@ document.getElementById("saveAssessment").onclick = async () => {
     // -------------------------
   const selectedStrands = Array.from(document.querySelectorAll(".strandCheckbox:checked")).map(cb => cb.value);
   const selectedSLEs = Array.from(document.querySelectorAll(".sleCheckbox:checked")).map(cb => cb.value);
-
+const category = document.getElementById("assessmentCategorySelect").value;
+ 
  
 
     
@@ -580,7 +591,10 @@ document.getElementById("saveAssessment").onclick = async () => {
   const selectedCoreCompetencies = Array.from(document.querySelectorAll(".coreCompetency:checked")).map(cb => cb.value);
   const subjectCompetency = document.getElementById("subjectCompetency").value.trim();
 
-  if (!termId || !assessmentTypeId) { alert("Select Term and Assessment Type."); return; }
+ if (!termId || !assessmentTypeId || !category) {
+  alert("Select Term, Assessment Type and Category.");
+  return;
+}
   if (!selectedCoreCompetencies.length) { alert("Select at least one core competency."); return; }
 
  
@@ -642,7 +656,8 @@ if (existingAssessment) {
     await supabase.from("assessments")
       .update({
         core_competencies: selectedCoreCompetencies,
-        subject_competencies: subjectCompetency
+        subject_competencies: subjectCompetency,
+         category: category
       })
       .eq("id", assessmentId);
 
@@ -660,6 +675,7 @@ if (existingAssessment) {
         term_id: termId,
         academic_year: academicYear,
         assessment_type_id: assessmentTypeId,
+        category: category,
         assessment_date: today,
         created_by: user.id,
         core_competencies: selectedCoreCompetencies,
@@ -690,6 +706,7 @@ if (existingAssessment) {
       term_id: termId,
       academic_year: academicYear,
       assessment_type_id: assessmentTypeId,
+      category: category,
       assessment_date: today,
       created_by: user.id,
       core_competencies: selectedCoreCompetencies,
@@ -856,10 +873,12 @@ async function loadExistingAssessment() {
   const termId = termSelect.value;
   const assessmentTypeId = assessmentTypeSelect.value;
 
-  if (!termId || !assessmentTypeId) {
-    statusEl.innerText = "";
-    return null;
-  }
+  const category = document.getElementById("assessmentCategorySelect").value;
+if (!termId || !assessmentTypeId || !category) {
+  statusEl.innerText = "";
+  return null;
+}
+
 
   // 1️⃣ Get existing assessment
   const { data: existingAssessment } = await supabase
@@ -870,6 +889,7 @@ async function loadExistingAssessment() {
     .eq("term_id", termId)
     .eq("assessment_type_id", assessmentTypeId)
     .eq("academic_year", academicYear)
+    .eq("category", category)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
