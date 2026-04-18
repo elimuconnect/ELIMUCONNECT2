@@ -428,6 +428,13 @@ td {
 <label>Academic Year</label><br />
 <input value="2026" disabled /><br /><br />
 
+
+	
+
+<label>Category</label><br />
+<select id="categorySelect"></select><br /><br />
+
+
 <label>Term</label><br />
 <select id="termSelect"></select><br /><br />
 
@@ -600,7 +607,19 @@ termSelect.innerHTML =
   `<option value="">Select term</option>` +
   terms.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
 
+const categorySelect = document.getElementById("categorySelect");
 
+const { data: categories } = await supabase
+  .from("assessments")
+  .select("category")
+  .not("category", "is", null);
+
+// remove duplicates
+const uniqueCategories = [...new Set(categories.map(c => c.category))];
+
+categorySelect.innerHTML =
+  `<option value="">Select category</option>` +
+  uniqueCategories.map(c => `<option value="${c}">${c}</option>`).join("");
 
 /* ========== MAIN LOAD ========== */
 async function loadReport() {
@@ -608,7 +627,12 @@ async function loadReport() {
   filterBox.innerHTML = "";
   
   const term_id = termSelect.value;
-  if (!term_id) return;
+  const selectedCategory = categorySelect.value;
+  
+  if (!term_id || !selectedCategory) {
+  status.innerText = "Please select both Term and Category.";
+  return;
+}
 
   const termName = terms.find(t => t.id === term_id)?.name;
 
@@ -630,6 +654,7 @@ async function loadReport() {
       .from("term_subject_report_view2")
       .select("full_name, subject_name, average_score, achievement_level")
       .eq("term", termName)
+		 .eq("assessment_category", selectedCategory)
       .range(avgFrom, avgFrom + avgBatchSize - 1);
 
     if (avgErr || !avgBatch || avgBatch.length === 0) break;
@@ -716,6 +741,7 @@ async function loadReport() {
       .from("results2_report_view")
       .select("*")
       .eq("term", termName)
+		 .eq("assessment_category", selectedCategory)
       .eq("academic_year", SYSTEM_YEAR)
       .range(from, from + batchSize - 1)
 	  .eq("school_id", teacherSchoolId);
