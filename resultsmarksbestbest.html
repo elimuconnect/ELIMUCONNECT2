@@ -428,6 +428,13 @@ td {
 <label>Academic Year</label><br />
 <input value="2026" disabled /><br /><br />
 
+
+	
+
+<label>Category</label><br />
+<select id="categorySelect"></select><br /><br />
+
+
 <label>Term</label><br />
 <select id="termSelect"></select><br /><br />
 
@@ -436,6 +443,7 @@ td {
   <option value="student">Student (Admission No/UPI No)</option>
   <option value="subject">Subject</option>
   <option value="class">Class</option>   <!-- ✅ NEW -->
+	 <option value="category">Category</option> 
 </select><br /><br />
 
 <div id="filterBox"></div>
@@ -574,6 +582,7 @@ const teacherSchoolId = profile.school_id;
 
 
 
+
 /* ========== SCHOOL DETAILS FROM SUPABASE ========== */
 const { data: school, error: schoolError } = await supabase
   .from("schools")
@@ -584,8 +593,9 @@ const { data: school, error: schoolError } = await supabase
 if (schoolError) {
   console.error("School fetch error:", schoolError.message);
 }
-	
 
+
+	
 
 /* ========== LOAD TERMS ========== */
 const { data: terms } = await supabase
@@ -597,7 +607,19 @@ termSelect.innerHTML =
   `<option value="">Select term</option>` +
   terms.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
 
+const categorySelect = document.getElementById("categorySelect");
 
+const { data: categories } = await supabase
+  .from("assessments")
+  .select("category")
+  .not("category", "is", null);
+
+// remove duplicates
+const uniqueCategories = [...new Set(categories.map(c => c.category))];
+
+categorySelect.innerHTML =
+  `<option value="">Select category</option>` +
+  uniqueCategories.map(c => `<option value="${c}">${c}</option>`).join("");
 
 /* ========== MAIN LOAD ========== */
 async function loadReport() {
@@ -605,7 +627,12 @@ async function loadReport() {
   filterBox.innerHTML = "";
   
   const term_id = termSelect.value;
-  if (!term_id) return;
+  const selectedCategory = categorySelect.value;
+  
+  if (!term_id || !selectedCategory) {
+  status.innerText = "Please select both Term and Category.";
+  return;
+}
 
   const termName = terms.find(t => t.id === term_id)?.name;
 
@@ -627,6 +654,7 @@ async function loadReport() {
       .from("term_subject_report_view2")
       .select("full_name, subject_name, average_score, achievement_level")
       .eq("term", termName)
+		 .eq("assessment_category", selectedCategory)
       .range(avgFrom, avgFrom + avgBatchSize - 1);
 
     if (avgErr || !avgBatch || avgBatch.length === 0) break;
@@ -713,6 +741,7 @@ async function loadReport() {
       .from("results2_report_view")
       .select("*")
       .eq("term", termName)
+		 .eq("assessment_category", selectedCategory)
       .eq("academic_year", SYSTEM_YEAR)
       .range(from, from + batchSize - 1)
 	  .eq("school_id", teacherSchoolId);
@@ -754,8 +783,6 @@ schoolLogo =
   school?.logo_url ||
   manualLogos[schoolDetail.name?.trim()] ||
   null;
-
-
  
 // normalized records
 const records = data.map(r => ({
@@ -770,7 +797,9 @@ const records = data.map(r => ({
 
   level: r.achievement_level,
   remarks: r.remarks,
-  assessment_id: r.assessment_id
+  assessment_id: r.assessment_id,
+	 assessment_type: r.assessment_type,       // ✅ add this
+	  assessment_category: r.assessment_category // ✅ add this
 }));
 
 
@@ -979,9 +1008,6 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
     improvingLearners
   };
 }
-
-
-
 
 
 
@@ -1276,8 +1302,11 @@ ${atRiskLearners} learners (${Object.keys(learnerMap).length ? ((atRiskLearners 
 </div>
 `;
 }
+
+
+
+
 	
-  
 
 function getPerformanceBadge(level) {
   if (!level) return "";
@@ -1320,6 +1349,8 @@ return `
   
   
 function renderGrouped(grouped, avgMap) {
+
+
 	
 const firstRow = (typeof records !== "undefined" && records.length)
   ? records[0]
@@ -1396,7 +1427,7 @@ ${renderOverviewHeader({
   phone: schoolDetail.phone,
  
    className: currentClass,
- term: termName,
+  term: termName,
 year: SYSTEM_YEAR,
   logo: schoolLogo // Passed from the logic above
 })}
@@ -1591,6 +1622,8 @@ const strandOutcomes = assessmentId ? (strandMap?.[assessmentId] || []) : [];
         <tr>
           <th style="width:55%">Competency</th>
 <th style="width:20%">Achievement</th>
+ <th style="width:20%">Assessment Type</th> <!-- NEW -->
+        <th style="width:25%">Category</th>        <!-- NEW -->
 
         </tr>
       </thead>
@@ -1624,7 +1657,9 @@ border-left:4px solid ${
 </td>
            
           <td>${r.level || "—"}</td> 
-          
+           <td>${r.assessment_type || "—"}</td> <!-- NEW -->
+          <td>${r.assessment_category || "—"}</td> <!-- NEW -->
+		  
           </tr>`).join("")}
       </tbody>
 
@@ -2004,6 +2039,9 @@ const chartOptions = {
 
 
 
+
+
+
   /* ===== TERM VIEW ===== */
   if (viewMode.value === "term") {
   const grouped = {};
@@ -2141,7 +2179,8 @@ if (viewMode.value === "student") {
   });
 }
  
- 
+
+
  
   /* ===== SUBJECT VIEW ===== */
   if (viewMode.value === "subject") {
@@ -2192,6 +2231,75 @@ requestAnimationFrame(() => {
     });
   }
 
+
+
+
+
+
+
+/* ===== CATEGORY VIEW ===== */
+if (viewMode.value === "category") {
+
+  const categories = [...new Set(records.map(r => r.assessment_category).filter(Boolean))];
+
+  if (!categories.length) {
+    filterBox.innerHTML = "<p>No categories found for this term.</p>";
+    reportDiv.innerHTML = "";
+    return;
+  }
+
+  filterBox.innerHTML = `
+    <label>Assessment Category</label><br />
+    <select id="categorySelect">
+      <option value="">Select category</option>
+      ${categories.map(c => `<option value="${c}">${c}</option>`).join("")}
+    </select>
+  `;
+
+  const select = document.getElementById("categorySelect");
+
+  select.addEventListener("change", e => {
+    const selectedCategory = e.target.value;
+    if (!selectedCategory) return;
+
+    const filtered = records.filter(r =>
+      r.assessment_category === selectedCategory
+    );
+
+    const grouped = {};
+    filtered.forEach(r => {
+      grouped[r.student] ??= { __admission: r.admission };
+      grouped[r.student][r.subject] ??= [];
+      grouped[r.student][r.subject].push(r);
+    });
+
+    const sortedGrouped = Object.fromEntries(
+      Object.entries(grouped).sort((a, b) =>
+        a[0].localeCompare(b[0], undefined, { sensitivity: "base" })
+      )
+    );
+
+    reportDiv.innerHTML = `
+      <h3>${selectedCategory} Results</h3>
+      ${renderGrouped(sortedGrouped, avgMap)}
+    `;
+  });
+
+  // ✅ IMPORTANT: auto-trigger first category (like class does)
+  requestAnimationFrame(() => {
+    if (select.value) select.dispatchEvent(new Event("change"));
+  });
+
+  return;
+}
+
+
+	
+
+
+
+
+	
 /* ===== CLASS VIEW ===== */
 if (viewMode.value === "class") {
 
