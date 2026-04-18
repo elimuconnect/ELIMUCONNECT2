@@ -2689,7 +2689,7 @@ window.downloadSchoolAnalyticsPDF = async function () {
   clone.style.boxSizing = "border-box";
 
   html2pdf().set({
-    margin: [15, 10, 10, 10],   // slightly increase top margin too
+    margin: [23, 10, 10, 10],   // slightly increase top margin too
     filename,
     image: { type: "jpeg", quality: 0.98 },
     html2canvas: { scale: 2, scrollY: 0, useCORS: true },
