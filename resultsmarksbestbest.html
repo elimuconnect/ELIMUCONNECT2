@@ -443,7 +443,7 @@ td {
   <option value="student">Student (Admission No/UPI No)</option>
   <option value="subject">Subject</option>
   <option value="class">Class</option>   <!-- ✅ NEW -->
-	 <option value="category">Category</option> 
+	 
 </select><br /><br />
 
 <div id="filterBox"></div>
@@ -2237,68 +2237,6 @@ requestAnimationFrame(() => {
 
 
 
-/* ===== CATEGORY VIEW ===== */
-if (viewMode.value === "category") {
-
-  const categories = [...new Set(records.map(r => r.assessment_category).filter(Boolean))];
-
-  if (!categories.length) {
-    filterBox.innerHTML = "<p>No categories found for this term.</p>";
-    reportDiv.innerHTML = "";
-    return;
-  }
-
-  filterBox.innerHTML = `
-    <label>Assessment Category</label><br />
-    <select id="categorySelect">
-      <option value="">Select category</option>
-      ${categories.map(c => `<option value="${c}">${c}</option>`).join("")}
-    </select>
-  `;
-
-  const select = document.getElementById("categorySelect");
-
-  select.addEventListener("change", e => {
-    const selectedCategory = e.target.value;
-    if (!selectedCategory) return;
-
-    const filtered = records.filter(r =>
-      r.assessment_category === selectedCategory
-    );
-
-    const grouped = {};
-    filtered.forEach(r => {
-      grouped[r.student] ??= { __admission: r.admission };
-      grouped[r.student][r.subject] ??= [];
-      grouped[r.student][r.subject].push(r);
-    });
-
-    const sortedGrouped = Object.fromEntries(
-      Object.entries(grouped).sort((a, b) =>
-        a[0].localeCompare(b[0], undefined, { sensitivity: "base" })
-      )
-    );
-
-    reportDiv.innerHTML = `
-      <h3>${selectedCategory} Results</h3>
-      ${renderGrouped(sortedGrouped, avgMap)}
-    `;
-  });
-
-  // ✅ IMPORTANT: auto-trigger first category (like class does)
-  requestAnimationFrame(() => {
-    if (select.value) select.dispatchEvent(new Event("change"));
-  });
-
-  return;
-}
-
-
-	
-
-
-
-
 	
 /* ===== CLASS VIEW ===== */
 if (viewMode.value === "class") {
@@ -2354,7 +2292,7 @@ reportDiv.innerHTML = `
 }
 termSelect.addEventListener("change", loadReport);
 viewMode.addEventListener("change", loadReport);
-
+categorySelect.addEventListener("change", loadReport);
   
   
   
