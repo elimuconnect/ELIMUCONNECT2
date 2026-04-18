@@ -2666,11 +2666,7 @@ for (let i = 0; i < cards.length; i += batchSize) {
 
   
 
-
-
-  
-
-  window.downloadSchoolAnalyticsPDF = async function () {
+window.downloadSchoolAnalyticsPDF = async function () {
 
   const analyticsDiv = document.getElementById("schoolAnalytics");
 
@@ -2688,8 +2684,12 @@ for (let i = 0; i < cards.length; i += batchSize) {
   clone.style.width = "190mm";
   clone.style.margin = "0 auto";
 
+  // ✅ FIX: prevent logo/header cut
+  clone.style.paddingTop = "15mm";
+  clone.style.boxSizing = "border-box";
+
   html2pdf().set({
-    margin: [10, 10, 10, 10],
+    margin: [15, 10, 10, 10],   // slightly increase top margin too
     filename,
     image: { type: "jpeg", quality: 0.98 },
     html2canvas: { scale: 2, scrollY: 0, useCORS: true },
@@ -2697,7 +2697,7 @@ for (let i = 0; i < cards.length; i += batchSize) {
   }).from(clone).save();
 };
 
-
+  
 
   
   
