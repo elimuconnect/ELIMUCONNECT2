@@ -2614,7 +2614,7 @@ for (let i = 0; i < cards.length; i += batchSize) {
   clone.style.margin = "0 auto";
 
   html2pdf().set({
-    margin: [10, 10, 10, 10],
+    margin: [12, 10, 10, 10],
     filename,
     image: { type: "jpeg", quality: 0.98 },
     html2canvas: { scale: 2, scrollY: 0, useCORS: true },
