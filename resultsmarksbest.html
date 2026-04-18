@@ -797,7 +797,8 @@ const records = data.map(r => ({
 
   level: r.achievement_level,
   remarks: r.remarks,
-  assessment_id: r.assessment_id
+  assessment_id: r.assessment_id,
+	  assessment_category: r.assessment_category // ✅ add this
 }));
 
 
@@ -1620,6 +1621,8 @@ const strandOutcomes = assessmentId ? (strandMap?.[assessmentId] || []) : [];
         <tr>
           <th style="width:55%">Competency</th>
 <th style="width:20%">Achievement</th>
+ <th style="width:20%">Assessment Type</th> <!-- NEW -->
+        <th style="width:25%">Category</th>        <!-- NEW -->
 
         </tr>
       </thead>
@@ -1653,7 +1656,9 @@ border-left:4px solid ${
 </td>
            
           <td>${r.level || "—"}</td> 
-          
+           <td>${r.assessment_type || "—"}</td> <!-- NEW -->
+          <td>${r.assessment_category || "—"}</td> <!-- NEW -->
+		  
           </tr>`).join("")}
       </tbody>
 
