@@ -800,14 +800,16 @@ const schoolDetail = {
   phone: school?.phone || "—",
   email: school?.email || "—"
 };
+
 const manualLogos = {
   "SHANZU SENIOR SECONDARY SCHOOL": "https://res.cloudinary.com/dwvt4e9o2/image/upload/v1773573305/schoollogo1_rnpce8.jpg"
 };
-
- schoolLogo =
+schoolLogo =
   school?.logo_url ||
   manualLogos[schoolDetail.name?.trim()] ||
   null;
+
+ 
 // normalized records
 const records = data.map(r => ({
   student: r.full_name,
@@ -1041,7 +1043,9 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
 
 
 
- 
+  
+
+
 function renderSchoolAnalytics(
   records,
   termName,
@@ -1331,13 +1335,11 @@ return `
   function renderGrouped(grouped, avgMap) {
 
 
-	  
 const firstRow = (typeof records !== "undefined" && records.length)
   ? records[0]
   : {};
 
-
-
+	  
   return Object.entries(grouped).map(([student, subjects]) => {
 
     const admission = subjects.__admission || "N/A";
@@ -1973,6 +1975,7 @@ const chartOptions = {
 
 
 
+
   /* ===== TERM VIEW ===== */
   if (viewMode.value === "term") {
   const grouped = {};
@@ -2035,8 +2038,6 @@ document.getElementById("schoolAnalytics").innerHTML = renderSchoolAnalytics(
 
 
 	
-  
-  
   
  /* ===== STUDENT VIEW ===== */
 if (viewMode.value === "student") {
@@ -2165,6 +2166,7 @@ requestAnimationFrame(() => {
     });
   }
 
+	  
 /* ===== CLASS VIEW ===== */
 if (viewMode.value === "class") {
 
