@@ -652,7 +652,7 @@ while (true) {
     .from("term_subject_report_view")
     .select("full_name,subject_name,average_score,achievement_level")
     .eq("term", termName)
-	  .eq("category", selectedCategory)
+	 .eq("assessment_category", selectedCategory)
     .eq("school_id", teacherSchoolId)
     .range(avgFrom, avgFrom + avgBatchSize - 1);
 
@@ -765,7 +765,7 @@ while (true) {
     .from("assessment_results_view")
     .select("*")
     .eq("term", termName)
-	  .eq("category", selectedCategory)
+	  .eq("assessment_category", selectedCategory)
     .eq("academic_year", SYSTEM_YEAR)
     .eq("school_id", teacherSchoolId)
     .range(from, from + batchSize - 1);
