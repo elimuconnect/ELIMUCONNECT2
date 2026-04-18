@@ -2664,13 +2664,13 @@ for (let i = 0; i < cards.length; i += batchSize) {
 
 
 
-  
+
+
 
 window.downloadSchoolAnalyticsPDF = async function () {
-
   const analyticsDiv = document.getElementById("schoolAnalytics");
 
-  if (!analyticsDiv.innerHTML.trim()) {
+  if (!analyticsDiv || !analyticsDiv.innerHTML.trim()) {
     alert("No school analysis available");
     return;
   }
@@ -2678,24 +2678,52 @@ window.downloadSchoolAnalyticsPDF = async function () {
   const term = termSelect.options[termSelect.selectedIndex]?.text || "Term";
   const filename = `School_Analysis_${term}_${SYSTEM_YEAR}.pdf`;
 
+  // Wait for images
+  const images = analyticsDiv.querySelectorAll("img");
+  await Promise.all([...images].map(img => {
+    if (img.complete) return Promise.resolve();
+    return new Promise(resolve => { img.onload = img.onerror = resolve; });
+  }));
+
   const clone = analyticsDiv.cloneNode(true);
 
+  const wrapper = document.createElement("div");
+  wrapper.style.position = "absolute";
+  wrapper.style.left = "-9999px";
+  wrapper.style.top = "0";
+  wrapper.style.width = "190mm";
+  wrapper.style.background = "white"; // Ensure no transparency issues
+
+  wrapper.appendChild(clone);
+  document.body.appendChild(wrapper);
+
+  // --- THE FIX IS HERE ---
   clone.style.display = "block";
   clone.style.width = "190mm";
-  clone.style.margin = "0 auto";
-
-  // ✅ FIX: prevent logo/header cut
-  clone.style.paddingTop = "15mm";
+  clone.style.margin = "0";       // Remove auto margin
+  clone.style.paddingTop = "2mm"; // Tiny buffer just to prevent edge-clipping
   clone.style.boxSizing = "border-box";
 
-  html2pdf().set({
-    margin: [22, 10, 10, 10],   // slightly increase top margin too
-    filename,
-    image: { type: "jpeg", quality: 0.98 },
-    html2canvas: { scale: 2, scrollY: 0, useCORS: true },
-    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
-  }).from(clone).save();
+  await new Promise(r => setTimeout(r, 500));
+
+  const opt = {
+    margin: [10, 10, 10, 10], // Standard 10mm margin (balanced)
+    filename: filename,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { 
+      scale: 2, 
+      useCORS: true, 
+      scrollY: 0,
+      y: 0 // Force the canvas to start exactly at the top of the element
+    },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+
+  await html2pdf().set(opt).from(clone).save();
+
+  document.body.removeChild(wrapper);
 };
+	
 
   
 
