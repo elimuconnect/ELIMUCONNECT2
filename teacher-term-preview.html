@@ -816,7 +816,7 @@ const records = data.map(r => ({
   admission: r.admission_number,
   className: r.class_name,
   schoolName: r.school_name,
-grade_id: r.grade_id,
+class_id: r.class_id, 
   subject: r.subject,
 
   core_competencies: r.core_competencies,
@@ -1043,7 +1043,14 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
 }
 
 
+const { data: classData } = await supabase
+  .from("classes")
+  .select("id, grade_id");
 
+const classGradeMap = {};
+classData?.forEach(c => {
+  classGradeMap[c.id] = c.grade_id;
+});
   
 
 
@@ -1069,8 +1076,7 @@ let gradeSubjectMap = {};
   const score = subjectData.average_score;
   if (!score) return;
 
-  const grade = r.grade_id || "Unknown";
-
+const grade = classGradeMap[r.class_id] || "Unknown"; 
   // ===== CLASS PER GRADE =====
   gradeClassMap[grade] ??= {};
   gradeClassMap[grade][r.className] ??= [];
