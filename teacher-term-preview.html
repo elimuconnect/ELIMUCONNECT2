@@ -1041,18 +1041,18 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
   };
 }
 
-const { data: gradeData } = await supabase
+
+	const { data: gradeData } = await supabase
   .from("grades")
   .select("id, name")
   .eq("school_id", teacherSchoolId);
 
 
-const gradeMap = {};
+const gradeNameMap = {};
 
 (gradeData || []).forEach(g => {
-  gradeMap[g.id] = g.name;
+  gradeNameMap[g.id] = g.name;
 });
-
 	
 const { data: classData } = await supabase
   .from("classes")
@@ -1093,11 +1093,8 @@ let atRiskLearners = {};
   if (!score) return;
 
  const classId = String(r.class_id || "");
-const gradeId = classGradeMap[classId];
-
-const grade = gradeId && gradeMap[gradeId]
-  ? gradeMap[gradeId]
-  : "Unassigned Grade";
+const gradeId = classGradeMap[r.class_id];
+const grade = gradeNameMap[gradeId] || "Unknown";
 
   // ===== CLASS PER GRADE =====
   gradeClassMap[grade] ??= {};
