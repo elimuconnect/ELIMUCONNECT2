@@ -1043,15 +1043,6 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
 }
 
 
-const { data: classData } = await supabase
-  .from("classes")
-  .select("id, grade_id");
-
-const classGradeMap = {};
-classData?.forEach(c => {
-  classGradeMap[c.id] = c.grade_id;
-});
-  
 
 
 function renderSchoolAnalytics(
