@@ -1092,9 +1092,12 @@ let atRiskLearners = {};
   const score = subjectData.average_score;
   if (!score) return;
 
-  const classId = r.class_id;
-  const gradeId = classGradeMap[classId];
-  const grade = gradeMap[gradeId] || "Unassigned Grade";
+ const classId = String(r.class_id || "");
+const gradeId = classGradeMap[classId];
+
+const grade = gradeId && gradeMap[gradeId]
+  ? gradeMap[gradeId]
+  : "Unassigned Grade";
 
   // ===== CLASS PER GRADE =====
   gradeClassMap[grade] ??= {};
@@ -1115,11 +1118,11 @@ let atRiskLearners = {};
   else bandCount[grade].below++;
 
   // ===== AT RISK PER GRADE =====
-  atRiskLearners[grade] ??= 0;
+ atRiskLearners[grade] ??= new Set();
 
-  if (score < 1.5) {
-    atRiskLearners[grade]++;
-  }
+if (score < 1.5) {
+  atRiskLearners[grade].add(r.student);
+}
 });
  
   // ===== AVERAGE FUNCTION =====
@@ -1329,12 +1332,11 @@ ${Object.entries(bandCount).map(([grade, b]) => `
 <!-- 4️⃣ RISK SUMMARY -->
 <h4 style="margin-top:20px;">4️⃣ Learner Risk Overview (Per Grade)</h4>
 
-${Object.entries(atRiskLearners).map(([grade, count]) => `
+${Object.entries(atRiskLearners).map(([grade, set]) => `
   <p>
-    <strong>${gradeMap[grade] || grade}:</strong> ${count} learners at risk
+    <strong>${gradeMap[grade] || grade}:</strong> ${set.size} learners at risk
   </p>
 `).join("")}
-
 <p>
   Learners currently below expectations require structured intervention.
 </p>
