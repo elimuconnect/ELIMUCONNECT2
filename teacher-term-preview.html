@@ -816,6 +816,7 @@ const records = data.map(r => ({
   admission: r.admission_number,
   className: r.class_name,
   schoolName: r.school_name,
+grade_id: r.grade_id,
   subject: r.subject,
 
   core_competencies: r.core_competencies,
@@ -1055,8 +1056,8 @@ function renderSchoolAnalytics(
   className,
   schoolLogo) {
 
-  let classMap = {};
-  let subjectMap = {};
+ let gradeClassMap = {};
+let gradeSubjectMap = {};
   let bandCount = { below: 0, approaching: 0, meeting: 0, exceeding: 0 };
 
   // ===== PROCESS DATA =====
@@ -1068,12 +1069,18 @@ function renderSchoolAnalytics(
   const score = subjectData.average_score;
   if (!score) return;
 
-  classMap[r.className] ??= [];
-  classMap[r.className].push(score);
+  const grade = r.grade_id || "Unknown";
 
-  subjectMap[r.subject] ??= [];
-  subjectMap[r.subject].push(score);
+  // ===== CLASS PER GRADE =====
+  gradeClassMap[grade] ??= {};
+  gradeClassMap[grade][r.className] ??= [];
+  gradeClassMap[grade][r.className].push(score);
 
+  // ===== SUBJECT PER GRADE =====
+  gradeSubjectMap[grade] ??= {};
+  gradeSubjectMap[grade][r.subject] ??= [];
+  gradeSubjectMap[grade][r.subject].push(score);
+});
   if (score >= 3.5) bandCount.exceeding++;
   else if (score >= 2.5) bandCount.meeting++;
   else if (score >= 1.5) bandCount.approaching++;
@@ -1093,70 +1100,109 @@ function renderSchoolAnalytics(
   }
 
 
-const classSummary = Object.entries(classMap)
-  .map(([cls, scores]) => {
-    const mean = avg(scores);
-    return { cls, mean };
-  })
-  .sort((a, b) => b.mean - a.mean) // BEST → WORST
-  .map(({ cls, mean }) => {
+let classSummaryHTML = "";
 
-    let level, risk;
+Object.entries(gradeClassMap).forEach(([grade, classes]) => {
 
-    if (mean >= 3.5) {
-      level = "Exceeding";
-      risk = `<span style="color:#1e8449;font-weight:bold;">🟢 Strong</span>`;
-    } else if (mean >= 2.5) {
-      level = "Meeting";
-      risk = `<span style="color:#27ae60;font-weight:bold;">🟢 Stable</span>`;
-    } else if (mean >= 1.5) {
-      level = "Approaching";
-      risk = `<span style="color:#f39c12;font-weight:bold;">🟡 Monitor</span>`;
-    } else {
-      level = "Below";
-      risk = `<span style="color:#c0392b;font-weight:bold;">🔴 Needs Intervention</span>`;
-    }
+  const rows = Object.entries(classes)
+    .map(([cls, scores]) => {
+      const mean = avg(scores);
 
-    return `
-      <tr>
-        <td>${cls}</td>
-        <td>${mean.toFixed(2)} / 4 (${level})</td>
-        <td>${risk}</td>
-      </tr>
-    `;
-  }).join("");
+      let level, risk;
 
+      if (mean >= 3.5) {
+        level = "Exceeding";
+        risk = `<span style="color:#1e8449;font-weight:bold;">🟢 Strong</span>`;
+      } else if (mean >= 2.5) {
+        level = "Meeting";
+        risk = `<span style="color:#27ae60;font-weight:bold;">🟢 Stable</span>`;
+      } else if (mean >= 1.5) {
+        level = "Approaching";
+        risk = `<span style="color:#f39c12;font-weight:bold;">🟡 Monitor</span>`;
+      } else {
+        level = "Below";
+        risk = `<span style="color:#c0392b;font-weight:bold;">🔴 Needs Intervention</span>`;
+      }
+
+      return { cls, mean, html: `
+        <tr>
+          <td>${cls}</td>
+          <td>${mean.toFixed(2)} / 4 (${level})</td>
+          <td>${risk}</td>
+        </tr>
+      `};
+    })
+    .sort((a, b) => b.mean - a.mean)
+    .map(r => r.html)
+    .join("");
+
+  classSummaryHTML += `
+    <h5 style="margin-top:15px;">📘 Grade ${grade}</h5>
+    <table>
+      <thead>
+        <tr>
+          <th>Class</th>
+          <th>Performance Level</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows}
+      </tbody>
+    </table>
+  `;
+});
 	
 
-const subjectAlerts = Object.entries(subjectMap)
-  .map(([sub, scores]) => {
-    const mean = avg(scores);
-    return { sub, mean };
-  })
-  .sort((a, b) => b.mean - a.mean) // BEST → WORST
-  .map(({ sub, mean }) => {
+let subjectSummaryHTML = "";
 
-    let level, alert = "";
+Object.entries(gradeSubjectMap).forEach(([grade, subjects]) => {
 
-    if (mean >= 3.5) level = "Exceeding";
-    else if (mean >= 2.5) level = "Meeting";
-    else if (mean >= 1.5) {
-      level = "Approaching";
-      alert = `<span style="color:#f39c12;font-weight:bold;">⚠ Monitor Closely</span>`;
-    } else {
-      level = "Below";
-      alert = `<span style="color:#c0392b;font-weight:bold;">⚠ Immediate Review Required</span>`;
-    }
+  const rows = Object.entries(subjects)
+    .map(([sub, scores]) => {
+      const mean = avg(scores);
 
-    return `
-      <tr>
-        <td>${sub}</td>
-        <td>${mean.toFixed(2)} / 4 (${level})</td>
-        <td>${alert}</td>
-      </tr>
-    `;
-  }).join("");
+      let level, alert = "";
 
+      if (mean >= 3.5) level = "Exceeding";
+      else if (mean >= 2.5) level = "Meeting";
+      else if (mean >= 1.5) {
+        level = "Approaching";
+        alert = `<span style="color:#f39c12;font-weight:bold;">⚠ Monitor Closely</span>`;
+      } else {
+        level = "Below";
+        alert = `<span style="color:#c0392b;font-weight:bold;">⚠ Immediate Review Required</span>`;
+      }
+
+      return { sub, mean, html: `
+        <tr>
+          <td>${sub}</td>
+          <td>${mean.toFixed(2)} / 4 (${level})</td>
+          <td>${alert}</td>
+        </tr>
+      `};
+    })
+    .sort((a, b) => b.mean - a.mean)
+    .map(r => r.html)
+    .join("");
+
+  subjectSummaryHTML += `
+    <h5 style="margin-top:15px;">📘 Grade ${grade}</h5>
+    <table>
+      <thead>
+        <tr>
+          <th>Subject</th>
+          <th>Performance Level</th>
+          <th>Alert</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows}
+      </tbody>
+    </table>
+  `;
+});
+	
 	
   // ===== RETURN FULL ANALYTICS PAGE =====
   return `
@@ -1236,37 +1282,11 @@ ${intelligence.schoolImprovement !== null ? `
 
 
 
+<h4>1️⃣ Class Mean Overview (Per Grade)</h4>
+${classSummaryHTML}
 
-      <!-- 1️⃣ CLASS MEAN -->
-      <h4>1️⃣ Class Mean Overview</h4>
-      <table>
-        <thead>
-          <tr>
-            <th>Class</th>
-           <th>Performance Level</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${classSummary}
-        </tbody>
-      </table>
-
-      <!-- 2️⃣ SUBJECT ANALYSIS -->
-      <h4 style="margin-top:20px;">2️⃣ Subject/Learning Area Mean Analysis</h4>
-      <table>
-        <thead>
-          <tr>
-            <th>Subject</th>
-            <th>Performance Level</th>
-            <th>Alert</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${subjectAlerts}
-        </tbody>
-      </table>
-
+    <h4 style="margin-top:20px;">2️⃣ Subject Analysis (Per Grade)</h4>
+${subjectSummaryHTML} 
       <!-- 3️⃣ BAND DISTRIBUTION -->
       <h4 style="margin-top:20px;">3️⃣ Performance Band Distribution</h4>
       <p>
