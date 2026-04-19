@@ -645,7 +645,6 @@ const { data: termAverages } = await supabase
 
 
 
-
   avgMap = {};
 
 let avgFrom = 0;
@@ -729,7 +728,6 @@ if (previousTerm) {
     previousAverages[adm].count++;
   });
 }
-
 
 
 // ============================
@@ -1043,7 +1041,16 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
   };
 }
 
-const classGradeMap = {};
+
+
+
+const { data: classData } = await supabase
+  .from("classes")
+  .select("id, grade_id")
+  .eq("school_id", teacherSchoolId);
+
+	const classGradeMap = {};
+
 classData?.forEach(c => {
   classGradeMap[c.id] = c.grade_id;
 });
