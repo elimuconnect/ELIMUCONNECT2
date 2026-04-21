@@ -1041,19 +1041,9 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
   };
 }
 
-const { data: gradeData } = await supabase
-  .from("grades")
-  .select("id, name");
-
-const gradeNameMap = {};
-gradeData?.forEach(g => {
-  gradeNameMap[g.id] = g.name;
-});
 
 
 
-
-	
 const { data: classData } = await supabase
   .from("classes")
   .select("id, grade_id")
@@ -1061,12 +1051,11 @@ const { data: classData } = await supabase
 
 	const classGradeMap = {};
 
-
 classData?.forEach(c => {
-  classGradeMap[String(c.id)] = c.grade_id;
+  classGradeMap[c.id] = c.grade_id;
 });
 
-	
+
 function renderSchoolAnalytics(
   records,
   termName,
@@ -1078,11 +1067,10 @@ function renderSchoolAnalytics(
 
  let gradeClassMap = {};
 let gradeSubjectMap = {};
- let bandCount = {};
-let atRiskLearners = {};
-  // ===== PROCESS DATA =====
+  let bandCount = { below: 0, approaching: 0, meeting: 0, exceeding: 0 };
 
-	 records.forEach(r => {
+  // ===== PROCESS DATA =====
+ records.forEach(r => {
 
   const subjectData = avgMap?.[r.student]?.[r.subject];
   if (!subjectData) return;
@@ -1090,9 +1078,7 @@ let atRiskLearners = {};
   const score = subjectData.average_score;
   if (!score) return;
 
- const classId = String(r.class_id || "");
-const gradeId = classGradeMap[String(r.class_id)];
-const grade = gradeNameMap[gradeId] || "Unknown";
+const grade = classGradeMap[r.class_id] || "Unknown";
   // ===== CLASS PER GRADE =====
   gradeClassMap[grade] ??= {};
   gradeClassMap[grade][r.className] ??= [];
@@ -1103,22 +1089,17 @@ const grade = gradeNameMap[gradeId] || "Unknown";
   gradeSubjectMap[grade][r.subject] ??= [];
   gradeSubjectMap[grade][r.subject].push(score);
 
-  // ===== BAND PER GRADE =====
-  bandCount[grade] ??= { below: 0, approaching: 0, meeting: 0, exceeding: 0 };
-
-  if (score >= 3.5) bandCount[grade].exceeding++;
-  else if (score >= 2.5) bandCount[grade].meeting++;
-  else if (score >= 1.5) bandCount[grade].approaching++;
-  else bandCount[grade].below++;
-
-  // ===== AT RISK PER GRADE =====
- atRiskLearners[grade] ??= new Set();
-
-if (score < 1.5) {
-  atRiskLearners[grade].add(r.student);
-}
+  if (score >= 3.5) bandCount.exceeding++;
+  else if (score >= 2.5) bandCount.meeting++;
+  else if (score >= 1.5) bandCount.approaching++;
+  else bandCount.below++;
 });
- 
+
+  const atRiskLearners = records.filter(r => {
+  const subjectData = avgMap?.[r.student]?.[r.subject];
+  return subjectData && subjectData.average_score < 1.5;
+}).length;
+
   // ===== AVERAGE FUNCTION =====
   function avg(arr) {
     return arr.length
@@ -1229,112 +1210,108 @@ Object.entries(gradeSubjectMap).forEach(([grade, subjects]) => {
     </table>
   `;
 });
-	// ===== RETURN FULL ANALYTICS PAGE =====
+	
+	
+  // ===== RETURN FULL ANALYTICS PAGE =====
   return `
  <div class="a4-page school-analytics">
+
 
 <div class="learner-card">
 
   <!-- SCHOOL & CLASS HEADER -->
-  <div class="report-overview no-split" style="
-    border-bottom: 2px solid #333;
-    padding-bottom: 10px;
-    margin-bottom: 12px;
+<div class="report-overview no-split" style="
+  border-bottom: 2px solid #333;
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+">
+
+  <div style="
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
   ">
 
-    <div style="
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      text-align:center;
-    ">
-
-      ${schoolLogo ? `
-        <div style="flex-shrink:0;">
-          <img src="${schoolLogo}"
-               style="
-                 width:200px !important;
-                 height:160px !important;
-                 max-width:200px !important;
-                 object-fit:contain;
-               "
-               onerror="this.style.display='none';"
-          />
-        </div>
-      ` : ""}
-
-      <h3 style="margin:6px 0 0 0;">${schoolName}</h3>
-
-      <div style="font-size:0.9em;color:#555;margin-top:4px;">
-        <strong>Class:</strong> ${className} |
-        <strong>Term:</strong> ${termName} – ${year}
+    ${schoolLogo ? `
+      <div style="flex-shrink:0;">
+        <img src="${schoolLogo}"
+             style="
+               width:200px !important;
+               height:160px !important;
+               max-width:200px !important;
+               object-fit:contain;
+             "
+             onerror="this.style.display='none';"
+        />
       </div>
+    ` : ""}
 
+    <h3 style="margin:6px 0 0 0;">${schoolName}</h3>
+
+    <div style="font-size:0.9em;color:#555;margin-top:4px;">
+      <strong>Class:</strong> ${className} |
+      <strong>Term:</strong> ${termName} – ${year}
     </div>
   </div>
+</div>
 
   <h3>📊 School Performance Analytics</h3>
 
-  <!-- 🧠 TERM INTELLIGENCE -->
-  <h4 style="margin-top:20px;">🧠 Term Intelligence Summary</h4>
-
-  ${intelligence.schoolImprovement !== null ? `
-    <p>
-      📊 School Performance Change: 
-      <strong style="color:${intelligence.schoolImprovement >= 0 ? '#1e8449' : '#c0392b'};">
-        ${intelligence.schoolImprovement.toFixed(2)}%
-      </strong>
-    </p>
-
-    <p>📈 Improving Learners: <strong>${intelligence.improvingLearners}</strong></p>
-
-    <p>🏫 Improved Classes: 
-      ${intelligence.improvedClasses.length
-        ? intelligence.improvedClasses.join(", ")
-        : "None"}
-    </p>
-
-    <p>📉 Subjects Requiring Attention: 
-      ${intelligence.decliningSubjects.length
-        ? intelligence.decliningSubjects.join(", ")
-        : "None"}
-    </p>
-  ` : `
-    <p>🆕 No previous term data available for comparison.</p>
-  `}
-
-
-     <h4>1️⃣ Class Mean Overview (Per Grade)</h4>
-${classSummaryHTML}
-
-<h4 style="margin-top:20px;">2️⃣ Subject Analysis (Per Grade)</h4>
-${subjectSummaryHTML}
-
-<!-- 3️⃣ BAND DISTRIBUTION -->
-<h4 style="margin-top:20px;">3️⃣ Performance Band Distribution (Per Grade)</h4>
-
-${Object.entries(bandCount).map(([grade, b]) => `
-  <div style="margin-bottom:10px;">
-    <strong>${grade}</strong><br/>
-    🔴 Below: ${b.below} |
-    🟡 Approaching: ${b.approaching} |
-    🔵 Meeting: ${b.meeting} |
-    🟢 Exceeding: ${b.exceeding}
-  </div>
-`).join("")}
-<!-- 4️⃣ RISK SUMMARY -->
-<h4 style="margin-top:20px;">4️⃣ Learner Risk Overview (Per Grade)</h4>
-
-${Object.entries(atRiskLearners).map(([grade, set]) => `
-  <p>
-    <strong>${grade}:</strong> ${set.size} learners at risk
-  </p>
-`).join("")}
+    
+<!-- 🧠 TERM INTELLIGENCE -->
+<h4 style="margin-top:20px;">🧠 Term Intelligence Summary</h4>
+${intelligence.schoolImprovement !== null ? `
 <p>
-  Learners currently below expectations require structured intervention.
+  📊 School Performance Change: 
+  <strong style="color:${intelligence.schoolImprovement >= 0 ? '#1e8449' : '#c0392b'};">
+    ${intelligence.schoolImprovement.toFixed(2)}%
+  </strong>
 </p>
 
+<p>📈 Improving Learners: <strong>${intelligence.improvingLearners}</strong></p>
+
+<p>🏫 Improved Classes: 
+  ${intelligence.improvedClasses.length
+    ? intelligence.improvedClasses.join(", ")
+    : "None"}
+</p>
+
+<p>📉 Subjects Requiring Attention: 
+  ${intelligence.decliningSubjects.length
+    ? intelligence.decliningSubjects.join(", ")
+    : "None"}
+</p>
+` : `
+<p>🆕 No previous term data available for comparison.</p>
+`}
+
+
+
+
+<h4>1️⃣ Class Mean Overview (Per Grade)</h4>
+${classSummaryHTML}
+
+    <h4 style="margin-top:20px;">2️⃣ Subject Analysis (Per Grade)</h4>
+${subjectSummaryHTML} 
+      <!-- 3️⃣ BAND DISTRIBUTION -->
+      <h4 style="margin-top:20px;">3️⃣ Performance Band Distribution</h4>
+      <p>
+        🔴 Below: ${bandCount.below} |
+        🟡 Approaching: ${bandCount.approaching} |
+        🔵 Meeting: ${bandCount.meeting} |
+        🟢 Exceeding: ${bandCount.exceeding}
+      </p>
+
+      <!-- 4️⃣ RISK SUMMARY -->
+      <h4 style="margin-top:20px;">4️⃣ Learner Risk Overview</h4>
+      <p>
+        ${atRiskLearners} learners currently below expectations require structured intervention.
+      </p>
+
+
+	
       <!-- 5️⃣ STRATEGIC ACTION -->
       <h4 style="margin-top:20px;">5️⃣ Strategic Recommendations</h4>
       <ul>
