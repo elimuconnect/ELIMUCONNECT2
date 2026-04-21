@@ -1053,9 +1053,6 @@ gradeData?.forEach(g => {
 
 
 
-(gradeData || []).forEach(g => {
-  gradeNameMap[g.id] = g.name;
-});
 	
 const { data: classData } = await supabase
   .from("classes")
@@ -1064,12 +1061,10 @@ const { data: classData } = await supabase
 
 	const classGradeMap = {};
 
+
 classData?.forEach(c => {
-  classGradeMap[c.id] = c.grade_id;
+  classGradeMap[String(c.id)] = c.grade_id;
 });
-
-
-
 
 	
 function renderSchoolAnalytics(
@@ -1096,7 +1091,7 @@ let atRiskLearners = {};
   if (!score) return;
 
  const classId = String(r.class_id || "");
-const gradeId = classGradeMap[r.class_id];
+const gradeId = classGradeMap[String(r.class_id)];
 const grade = gradeNameMap[gradeId] || "Unknown";
   // ===== CLASS PER GRADE =====
   gradeClassMap[grade] ??= {};
