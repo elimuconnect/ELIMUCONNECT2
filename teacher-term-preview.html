@@ -1041,14 +1041,17 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
   };
 }
 
-
-	const { data: gradeData } = await supabase
+const { data: gradeData } = await supabase
   .from("grades")
-  .select("id, name")
-  .eq("school_id", teacherSchoolId);
-
+  .select("id, name");
 
 const gradeNameMap = {};
+gradeData?.forEach(g => {
+  gradeNameMap[g.id] = g.name;
+});
+
+
+
 
 (gradeData || []).forEach(g => {
   gradeNameMap[g.id] = g.name;
@@ -1095,7 +1098,6 @@ let atRiskLearners = {};
  const classId = String(r.class_id || "");
 const gradeId = classGradeMap[r.class_id];
 const grade = gradeNameMap[gradeId] || "Unknown";
-
   // ===== CLASS PER GRADE =====
   gradeClassMap[grade] ??= {};
   gradeClassMap[grade][r.className] ??= [];
@@ -1319,7 +1321,7 @@ ${subjectSummaryHTML}
 
 ${Object.entries(bandCount).map(([grade, b]) => `
   <div style="margin-bottom:10px;">
-    <strong>${gradeMap[grade] || grade}</strong><br/>
+    <strong>${grade}</strong><br/>
     🔴 Below: ${b.below} |
     🟡 Approaching: ${b.approaching} |
     🔵 Meeting: ${b.meeting} |
@@ -1331,7 +1333,7 @@ ${Object.entries(bandCount).map(([grade, b]) => `
 
 ${Object.entries(atRiskLearners).map(([grade, set]) => `
   <p>
-    <strong>${gradeMap[grade] || grade}:</strong> ${set.size} learners at risk
+    <strong>${grade}:</strong> ${set.size} learners at risk
   </p>
 `).join("")}
 <p>
