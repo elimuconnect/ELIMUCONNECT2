@@ -790,6 +790,9 @@ const records = data.map(r => ({
   admission: r.admission_number,
   className: r.class_name,
   schoolName: r.school_name,
+grade_name: r.grade_name,
+grade_id: r.grade_id,
+	class_id: r.class_id,
   subject: r.subject,
 
   core_competencies: r.core_competencies,
@@ -1016,6 +1019,7 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
 
 
 
+
 function renderSchoolAnalytics(
   records,
   termName,
@@ -1023,65 +1027,41 @@ function renderSchoolAnalytics(
   intelligence,
   schoolName,
   className,
-  schoolLogo) {
+  schoolLogo
+) {
 
-  let classMap = {};
-  let subjectMap = {};
-  let learnerMap = {};
+  let gradeClassMap = {};
+  let gradeSubjectMap = {};
+  let gradeLearnerMap = {};
 
- 
- 
-  // ===== CURRENT TERM PROCESSING =====
-const countedSubjects = new Set();
+  // ===== PROCESS DATA =====
+  const countedSubjects = new Set();
 
-for (const r of records) {
+  for (const r of records) {
 
-  const key = r.admission + "_" + r.subject;
-  if (countedSubjects.has(key)) continue;
-  countedSubjects.add(key);
+    const key = r.admission + "_" + r.subject;
+    if (countedSubjects.has(key)) continue;
+    countedSubjects.add(key);
 
-  const score = levelToScore(r.level);
-  if (!score) continue;
+    const score = levelToScore(r.level);
+    if (!score && score !== 0) continue;
 
-  (learnerMap[r.admission] ??= []).push(score);
-  (classMap[r.className] ??= []).push(score);
-  (subjectMap[r.subject] ??= []).push(score);
+    const grade = r.grade_name ? `Grade ${r.grade_name}` : "Unknown";
 
-}
+    // INIT
+    gradeClassMap[grade] ??= {};
+    gradeSubjectMap[grade] ??= {};
+    gradeLearnerMap[grade] ??= {};
 
+    // CLASS
+    (gradeClassMap[grade][r.className] ??= []).push(score);
 
-  
+    // SUBJECT
+    (gradeSubjectMap[grade][r.subject] ??= []).push(score);
 
-// ===== PERFORMANCE BAND DISTRIBUTION & AT-RISK CALCULATION =====
-const bandDistribution = {
-  BE1: 0,
-  BE2: 0,
-  AE1: 0,
-  AE2: 0,
-  ME1: 0,
-  ME2: 0,
-  EE1: 0,
-  EE2: 0
-};
-
-let atRiskLearners = 0;
-
-Object.entries(learnerMap).forEach(([admission, scores]) => {
-  const mean = avg(scores); // average across all subjects
-  const band = getAchievementLabel(mean).toUpperCase();
-
-  // Count band
-  if (bandDistribution[band] !== undefined) {
-    bandDistribution[band]++;
+    // LEARNER
+    (gradeLearnerMap[grade][r.admission] ??= []).push(score);
   }
-
-  // Flag at-risk only for BE1 and BE2
-  if (band === 'BE1' || band === 'BE2') {
-    atRiskLearners++;
-  }
-});
-
-  
 
   // ===== AVERAGE FUNCTION =====
   function avg(arr) {
@@ -1090,218 +1070,179 @@ Object.entries(learnerMap).forEach(([admission, scores]) => {
       : 0;
   }
 
+  // ===== CLASS SUMMARY =====
+  let classSummaryHTML = "";
 
-  const classSummary = Object.entries(classMap)
-  .map(([cls, scores]) => {
-    const mean = avg(scores);
-    return { cls, scores, mean };
-  })
-  .sort((a, b) => b.mean - a.mean) // 🔥 SORT DESCENDING
-  .map(({ cls, scores, mean }) => {
+  Object.entries(gradeClassMap).forEach(([grade, classes]) => {
 
-   const level = getAchievementLabel(mean);
+    const rows = Object.entries(classes)
+      .map(([cls, scores]) => {
+        const mean = avg(scores);
+        const level = getAchievementLabel(mean);
 
-let risk;
+        let risk;
 
-if (["EE1", "EE2", "ME1", "ME2"].includes(level)) {
-  risk = `<span style="color:#1e8449;font-weight:bold;">🟢 Stable</span>`;
-} else if (level === "AE1") {
-  risk = `<span style="color:#f39c12;font-weight:bold;">🟡 Monitor</span>`;
-} else if (level === "AE2") {
-  risk = `<span style="color:#e67e22;font-weight:bold;">🟠 Needs Support</span>`;
-} else {
-  risk = `<span style="color:#c0392b;font-weight:bold;">🔴 Needs Intervention</span>`;
-}
+        if (["EE1","EE2","ME1","ME2"].includes(level)) {
+          risk = `<span style="color:#1e8449;font-weight:bold;">🟢 Stable</span>`;
+        } else if (level === "AE1") {
+          risk = `<span style="color:#f39c12;font-weight:bold;">🟡 Monitor</span>`;
+        } else if (level === "AE2") {
+          risk = `<span style="color:#e67e22;font-weight:bold;">🟠 Needs Support</span>`;
+        } else {
+          risk = `<span style="color:#c0392b;font-weight:bold;">🔴 Needs Intervention</span>`;
+        }
 
-    return `
-      <tr>
-        <td>${cls}</td>
-        <td>${mean.toFixed(2)} / 8 (${getAchievementLabel(mean)})</td>
-        <td>${risk}</td>
-      </tr>
+        return { cls, mean, html: `
+          <tr>
+            <td>${cls}</td>
+            <td>${mean.toFixed(2)} / 8 (${level})</td>
+            <td>${risk}</td>
+          </tr>
+        `};
+      })
+      .sort((a, b) => b.mean - a.mean)
+      .map(r => r.html)
+      .join("");
+
+    classSummaryHTML += `
+      <h5 style="margin-top:15px;">📘 ${grade}</h5>
+      <table>
+        <thead>
+          <tr>
+            <th>Class</th>
+            <th>Performance Level</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
     `;
-  }).join("");
+  });
 
-const subjectAlerts = Object.entries(subjectMap)
-  .map(([sub, scores]) => {
-    const mean = avg(scores);
-    return { sub, scores, mean };
-  })
-  .sort((a, b) => b.mean - a.mean) // 🔥 SORT DESCENDING
-  .map(({ sub, scores, mean }) => {
+  // ===== SUBJECT SUMMARY =====
+  let subjectSummaryHTML = "";
 
-    const band = getAchievementLabel(mean).toUpperCase();
+  Object.entries(gradeSubjectMap).forEach(([grade, subjects]) => {
 
-   
-   
-   
-   let alert = "";
+    const rows = Object.entries(subjects)
+      .map(([sub, scores]) => {
+        const mean = avg(scores);
+        const band = getAchievementLabel(mean);
 
-if (["AE2", "BE1", "BE2"].includes(band)) {
-  alert = `<span style="color:#c0392b;font-weight:bold;">⚠ Immediate Review Required</span>`;
-} else if (band === "AE1") {
-  alert = `<span style="color:#f39c12;font-weight:bold;">⚠ Monitor Closely</span>`;
-}
-   
+        let alert = "";
 
-    return `
-      <tr>
-        <td>${sub}</td>
-        <td>${mean.toFixed(2)} / 8 (${band})</td>
-        <td>${alert}</td>
-      </tr>
+        if (["AE2","BE1","BE2"].includes(band)) {
+          alert = `<span style="color:#c0392b;font-weight:bold;">⚠ Immediate Review Required</span>`;
+        } else if (band === "AE1") {
+          alert = `<span style="color:#f39c12;font-weight:bold;">⚠ Monitor Closely</span>`;
+        }
+
+        return { sub, mean, html: `
+          <tr>
+            <td>${sub}</td>
+            <td>${mean.toFixed(2)} / 8 (${band})</td>
+            <td>${alert}</td>
+          </tr>
+        `};
+      })
+      .sort((a, b) => b.mean - a.mean)
+      .map(r => r.html)
+      .join("");
+
+    subjectSummaryHTML += `
+      <h5 style="margin-top:15px;">📘 ${grade}</h5>
+      <table>
+        <thead>
+          <tr>
+            <th>Subject</th>
+            <th>Performance Level</th>
+            <th>Alert</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
     `;
-  }).join("");
+  });
 
+  // ===== BAND + RISK =====
+  let bandHTML = "";
+  let riskHTML = "";
 
-  // ===== RETURN FULL ANALYTICS PAGE =====
+  Object.entries(gradeLearnerMap).forEach(([grade, learners]) => {
+
+    const bandDistribution = {
+      BE1:0, BE2:0, AE1:0, AE2:0,
+      ME1:0, ME2:0, EE1:0, EE2:0
+    };
+
+    let atRisk = 0;
+
+    Object.values(learners).forEach(scores => {
+      const mean = avg(scores);
+      const band = getAchievementLabel(mean);
+
+      if (bandDistribution[band] !== undefined) {
+        bandDistribution[band]++;
+      }
+
+      if (band === "BE1" || band === "BE2") {
+        atRisk++;
+      }
+    });
+
+    const total = Object.keys(learners).length;
+
+    bandHTML += `
+      <h5 style="margin-top:15px;">📘 ${grade}</h5>
+      <p>
+        ${Object.entries(bandDistribution).map(([b,c]) => {
+          const pct = total ? ((c/total)*100).toFixed(1) : 0;
+          return `${b}: ${c} (${pct}%)`;
+        }).join(" | ")}
+      </p>
+    `;
+
+    riskHTML += `
+      <h5 style="margin-top:15px;">📘 ${grade}</h5>
+      <p>
+        ${atRisk} learners (${total ? ((atRisk/total)*100).toFixed(1) : 0}%)
+        require intervention.
+      </p>
+    `;
+  });
+
+  // ===== RETURN =====
   return `
- <div class="a4-page school-analytics">
-
+<div class="a4-page school-analytics">
 <div class="learner-card">
 
-<div class="report-overview no-split" style="
-  border-bottom: 2px solid #333;
-  padding-bottom: 10px;
-  margin-bottom: 12px;
-">
-
-  <div style="
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    text-align:center;
-  ">
-
-    ${schoolLogo ? `
-      <div style="flex-shrink:0;">
-        <img src="${schoolLogo}"
-             style="
-               width:200px !important;
-               height:160px !important;
-               max-width:200px !important;
-               object-fit:contain;
-             "
-             onerror="this.style.display='none';"
-        />
-      </div>
-    ` : ""}
-
-    <h3 style="margin:6px 0 0 0;">${schoolName}</h3>
-
-    <div style="font-size:0.9em;color:#555;margin-top:4px;">
-      <strong>Class:</strong> ${className} |
-      <strong>Term:</strong> ${termName} – ${year}
-    </div>
-  </div>
+<div style="text-align:center;">
+  ${schoolLogo ? `<img src="${schoolLogo}" style="width:200px;height:160px;object-fit:contain;" />` : ""}
+  <h3>${schoolName}</h3>
+  <div>Class: ${className} | Term: ${termName} – ${year}</div>
 </div>
 
 <h3>📊 School Performance Analytics</h3>
 
-
-<h4 style="margin-top:20px;">🧠 Term Intelligence Summary</h4>
-
-${intelligence.schoolImprovement !== null ? `
-<p>
-  📊 School Performance Change: 
-  <strong style="color:${intelligence.schoolImprovement >= 0 ? '#1e8449' : '#c0392b'};">
-    ${intelligence.schoolImprovement.toFixed(2)}%
-  </strong>
-</p>
-
-<p>📈 Improving Learners: <strong>${intelligence.improvingLearners}</strong></p>
-
-<p>🏫 Improved Classes: 
-  ${intelligence.improvedClasses.length
-    ? intelligence.improvedClasses.join(", ")
-    : "None"}
-</p>
-
-<p>📉 Subjects Requiring Attention: 
-  ${intelligence.decliningSubjects.length
-    ? intelligence.decliningSubjects.join(", ")
-    : "None"}
-</p>
-
-` : `<p>🆕 No previous term data available for comparison.</p>`}
-
-
 <h4>1️⃣ Class Mean Overview</h4>
+${classSummaryHTML}
 
-<table>
-<thead>
-<tr>
-<th>Class</th>
-<th>Performance Level</th>
-<th>Status</th>
-</tr>
-</thead>
+<h4>2️⃣ Subject Analysis</h4>
+${subjectSummaryHTML}
 
-<tbody>
-${classSummary}
-</tbody>
-</table>
+<h4>3️⃣ Band Distribution (Per Grade)</h4>
+${bandHTML}
 
-
-<h4 style="margin-top:20px;">2️⃣ Subject/Learning Area Mean Analysis</h4>
-
-<table>
-<thead>
-<tr>
-<th>Subject</th>
-<th>Performance Level</th>
-<th>Alert</th>
-</tr>
-</thead>
-
-<tbody>
-${subjectAlerts}
-</tbody>
-</table>
-
-
-
-
-<h4 style="margin-top:20px;">3️⃣ Performance Band Distribution</h4>
-<p>
-${Object.entries(bandDistribution).map(([band, count]) => {
-  const percent = Object.keys(learnerMap).length
-    ? ((count / Object.keys(learnerMap).length) * 100).toFixed(1)
-    : 0;
-  const colorMap = {
-    BE2: '#c0392b', BE1: '#e74c3c',
-    AE2: '#f39c12', AE1: '#f1c40f',
-    ME2: '#3498db', ME1: '#2980b9',
-    EE2: '#27ae60', EE1: '#2ecc71'
-  };
-  return `<span style="color:${colorMap[band]}">${band}: ${count} (${percent}%)</span>`;
-}).join(' | ')}
-</p>
-
-<h4 style="margin-top:20px;">4️⃣ Learner Risk Overview</h4>
-<p>
-${atRiskLearners} learners (${Object.keys(learnerMap).length ? ((atRiskLearners / Object.keys(learnerMap).length) * 100).toFixed(1) : 0}%) currently below expectations require structured intervention.
-</p>
-
-
-
-
-
-
-
-<h4 style="margin-top:20px;">5️⃣ Strategic Recommendations</h4>
-
-<ul>
-<li>Conduct targeted remediation for subjects below Approaching expectations mean.</li>
-<li>Organize teacher review meetings for declining performance trends.</li>
-<li>Introduce peer tutoring and reward high-performing classes</li>
-</ul>
+<h4>4️⃣ Learner Risk (Per Grade)</h4>
+${riskHTML}
 
 </div>
 </div>
 `;
 }
+
+
+
 
 
 
