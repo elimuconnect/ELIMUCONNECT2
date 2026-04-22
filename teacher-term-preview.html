@@ -814,8 +814,7 @@ const records = data.map(r => ({
   admission: r.admission_number,
   className: r.class_name,
   schoolName: r.school_name,
-grade_id: r.grade_id,
-	class_id: r.class_id,
+grade_id: r.grade_id, class_id: r.class_id,
   subject: r.subject,
 
   core_competencies: r.core_competencies,
@@ -827,6 +826,8 @@ grade_id: r.grade_id,
 	 assessment_type: r.assessment_type,       // ✅ add this
   assessment_category: r.assessment_category // ✅ add this
 }));
+
+
 
 
 // Collect all assessment IDs for this term
