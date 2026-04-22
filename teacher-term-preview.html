@@ -1264,6 +1264,7 @@ function renderSchoolAnalytics(
 
 
 
+
 let gradeIntelligenceHTML = "";
 
 if (hasPreviousData) {
@@ -1284,7 +1285,7 @@ if (hasPreviousData) {
 
       const prevScores = previousLearnerMap[adm];
 
-      const prevAvg = prevScores?.length
+      const prevAvg = prevScores && prevScores.length
         ? prevScores.reduce((a,b)=>a+b,0) / prevScores.length
         : null;
 
@@ -1297,6 +1298,7 @@ if (hasPreviousData) {
 
     gradeIntelligenceHTML += `
       <h4 style="margin-top:20px;">🧠 ${grade} Intelligence Summary</h4>
+
       <p>📈 Improving Learners: <strong>${improving}</strong></p>
       <p>📉 Declining Learners: <strong>${declining}</strong></p>
       <p>➡️ Stable Learners: <strong>${unchanged}</strong></p>
@@ -1312,6 +1314,7 @@ if (hasPreviousData) {
     </p>
   `;
 }
+	
 	
   // ===== RETURN =====
   return `
