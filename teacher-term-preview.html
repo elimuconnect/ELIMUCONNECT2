@@ -1044,6 +1044,8 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
 
 
 
+	
+
 const { data: classData } = await supabase
   .from("classes")
   .select("id, grade_id")
@@ -1310,7 +1312,7 @@ ${subjectSummaryHTML}
         ${atRiskLearners} learners currently below expectations require structured intervention.
       </p>
 
-
+     
 	
       <!-- 5️⃣ STRATEGIC ACTION -->
       <h4 style="margin-top:20px;">5️⃣ Strategic Recommendations</h4>
