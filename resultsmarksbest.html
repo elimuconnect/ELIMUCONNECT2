@@ -726,7 +726,7 @@ previousRecords?.forEach(r => {
 
   previousLearnerMap[adm].push(score);
 });
-
+const hasPreviousData = Object.keys(prevLearnerMap || {}).length > 0;
 	
   // STEP 2 — BUILD LEARNER SUMMARY
   learnerSummary = {};
@@ -1234,46 +1234,57 @@ function renderSchoolAnalytics(
   });
 
 
+
 let gradeIntelligenceHTML = "";
 
-Object.entries(gradeLearnerMap).forEach(([grade, learners]) => {
+if (hasPreviousData) {
 
-  const learnerCount = Object.keys(learners).length;
+  Object.entries(gradeLearnerMap).forEach(([grade, learners]) => {
 
-  let improving = 0;
-  let declining = 0;
-  let unchanged = 0;
+    const learnerCount = Object.keys(learners).length;
 
-  Object.entries(learners).forEach(([adm, scores]) => {
+    let improving = 0;
+    let declining = 0;
+    let unchanged = 0;
 
-    const currentAvg = scores.length
-      ? scores.reduce((a,b)=>a+b,0) / scores.length
-      : 0;
+    Object.entries(learners).forEach(([adm, scores]) => {
 
-    const prevScores = prevLearnerMap[adm];
+      const currentAvg = scores.length
+        ? scores.reduce((a,b)=>a+b,0) / scores.length
+        : 0;
 
-    const prevAvg = prevScores && prevScores.length
-      ? prevScores.reduce((a,b)=>a+b,0) / prevScores.length
-      : null;
+      const prevScores = prevLearnerMap[adm];
 
-    // 👇 no previous term data
-    if (prevAvg === null) return;
+      const prevAvg = prevScores && prevScores.length
+        ? prevScores.reduce((a,b)=>a+b,0) / prevScores.length
+        : null;
 
-    if (currentAvg > prevAvg + 0.2) improving++;
-    else if (currentAvg < prevAvg - 0.2) declining++;
-    else unchanged++;
+      if (prevAvg === null) return;
+
+      if (currentAvg > prevAvg + 0.2) improving++;
+      else if (currentAvg < prevAvg - 0.2) declining++;
+      else unchanged++;
+    });
+
+    gradeIntelligenceHTML += `
+      <h4 style="margin-top:20px;">🧠 ${grade} Intelligence Summary</h4>
+
+      <p>📈 Improving Learners: <strong>${improving}</strong></p>
+      <p>📉 Declining Learners: <strong>${declining}</strong></p>
+      <p>➡️ Stable Learners: <strong>${unchanged}</strong></p>
+      <p>👨‍🎓 Total Learners: <strong>${learnerCount}</strong></p>
+    `;
   });
 
-  gradeIntelligenceHTML += `
-    <h4 style="margin-top:20px;">🧠 ${grade} Intelligence Summary</h4>
+} else {
 
-    <p>📈 Improving Learners: <strong>${improving}</strong></p>
-    <p>📉 Declining Learners: <strong>${declining}</strong></p>
-    <p>➡️ Stable Learners: <strong>${unchanged}</strong></p>
-    <p>👨‍🎓 Total Learners: <strong>${learnerCount}</strong></p>
+  gradeIntelligenceHTML = `
+    <p style="margin-top:15px; color:#555;">
+      🆕 No previous term data available for comparison.
+    </p>
   `;
-});
-
+}
+	
 
 	
   // ===== RETURN =====
