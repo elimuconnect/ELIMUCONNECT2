@@ -712,6 +712,22 @@ async function loadReport() {
     });
   }
 
+
+
+let previousLearnerMap = {};
+
+previousRecords?.forEach(r => {
+  const adm = r.admission_number;
+  const score = levelToScore(r.achievement_level);
+
+  if (!previousLearnerMap[adm]) {
+    previousLearnerMap[adm] = [];
+  }
+
+  previousLearnerMap[adm].push(score);
+});
+
+	
   // STEP 2 — BUILD LEARNER SUMMARY
   learnerSummary = {};
   Object.keys(avgMap).forEach(student => {
@@ -1026,7 +1042,8 @@ function renderSchoolAnalytics(
   intelligence,
   schoolName,
   className,
-  schoolLogo
+  schoolLogo,
+	 prevLearnerMap = {}
 ) {
 
   let gradeClassMap = {};
@@ -2064,7 +2081,8 @@ document.getElementById("schoolAnalytics").innerHTML = renderSchoolAnalytics(
   intelligence,
   currentSchool,
   currentClass,
-  schoolLogo
+  schoolLogo,
+	previousLearnerMap
 );
 
 
