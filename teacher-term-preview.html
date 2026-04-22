@@ -1085,6 +1085,7 @@ function renderSchoolAnalytics(
   let gradeSubjectMap = {};
   let gradeBandMap = {};
   let gradeRiskMap = {};
+	let gradeLearnerMap = {};
 
   // ===== PROCESS DATA =====
   records.forEach(r => {
@@ -1107,7 +1108,12 @@ function renderSchoolAnalytics(
     gradeSubjectMap[grade] ??= {};
     gradeBandMap[grade] ??= { below: 0, approaching: 0, meeting: 0, exceeding: 0 };
     gradeRiskMap[grade] ??= 0;
-    gradeLearnerMap[grade] ??= {};
+
+
+gradeLearnerMap[grade] ??= {};
+gradeLearnerMap[grade][r.admission] ??= [];
+gradeLearnerMap[grade][r.admission].push(score);
+	  
     // ===== CLASS =====
     gradeClassMap[grade][r.className] ??= [];
     gradeClassMap[grade][r.className].push(score);
