@@ -1211,11 +1211,10 @@ function renderSchoolAnalytics(
       <h5 style="margin-top:15px;">📘 ${grade}</h5>
       <p>
         ${atRisk} learners (${total ? ((atRisk/total)*100).toFixed(1) : 0}%)
-        require intervention.
+        are Below Expectations and require intervention.
       </p>
     `;
   });
-
 
 
 let gradeIntelligenceHTML = "";
@@ -1226,22 +1225,34 @@ Object.entries(gradeLearnerMap).forEach(([grade, learners]) => {
 
   let improving = 0;
   let declining = 0;
+  let unchanged = 0;
 
- Object.values(learners).forEach(scores => {
+  Object.entries(learners).forEach(([adm, scores]) => {
 
-  const avgScore = scores.length
-    ? scores.reduce((a,b)=>a+b,0) / scores.length
-    : 0;
+    const currentAvg = scores.length
+      ? scores.reduce((a,b)=>a+b,0) / scores.length
+      : 0;
 
-  if (avgScore >= 2.5) improving++;
-  else if (avgScore < 1.5) declining++;
-});
+    const prevScores = prevLearnerMap[adm];
+
+    const prevAvg = prevScores && prevScores.length
+      ? prevScores.reduce((a,b)=>a+b,0) / prevScores.length
+      : null;
+
+    // 👇 no previous term data
+    if (prevAvg === null) return;
+
+    if (currentAvg > prevAvg + 0.2) improving++;
+    else if (currentAvg < prevAvg - 0.2) declining++;
+    else unchanged++;
+  });
 
   gradeIntelligenceHTML += `
     <h4 style="margin-top:20px;">🧠 ${grade} Intelligence Summary</h4>
 
     <p>📈 Improving Learners: <strong>${improving}</strong></p>
     <p>📉 Declining Learners: <strong>${declining}</strong></p>
+    <p>➡️ Stable Learners: <strong>${unchanged}</strong></p>
     <p>👨‍🎓 Total Learners: <strong>${learnerCount}</strong></p>
   `;
 });
