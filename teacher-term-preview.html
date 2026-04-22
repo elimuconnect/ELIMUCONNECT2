@@ -1076,7 +1076,7 @@ function renderSchoolAnalytics(
     const score = subjectData.average_score;
     if (score === null || score === undefined) return;
 
-    const grade = r.grade_name || "Unknown";
+    const grade = r.grade_name ? `Grade ${r.grade_name}` : "Unknown";
 
     // ===== INIT =====
     gradeClassMap[grade] ??= {};
