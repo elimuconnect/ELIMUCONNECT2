@@ -730,6 +730,24 @@ if (previousTerm) {
 }
 
 
+
+
+let previousLearnerMap = {};
+
+previousRecords?.forEach(r => {
+  const adm = r.admission_number;
+  const score = levelToScore(r.achievement_level);
+
+  if (!previousLearnerMap[adm]) {
+    previousLearnerMap[adm] = [];
+  }
+
+  previousLearnerMap[adm].push(score);
+});
+const hasPreviousData = Object.keys(previousLearnerMap || {}).length > 0;
+
+	
+
 // ============================
 // STEP 3 — ADD THIS HERE
 // ============================
@@ -1059,7 +1077,8 @@ function renderSchoolAnalytics(
   intelligence,
   schoolName,
   className,
-  schoolLogo
+  schoolLogo,
+	 prevLearnerMap = {}
 ) {
 
   let gradeClassMap = {};
@@ -1076,7 +1095,12 @@ function renderSchoolAnalytics(
     const score = subjectData.average_score;
     if (score === null || score === undefined) return;
 
-    const grade = r.grade_name ? `Grade ${r.grade_name}` : "Unknown";
+    const grade = r.grade_name
+  ? (String(r.grade_name).startsWith("Grade")
+      ? r.grade_name
+      : `Grade ${r.grade_name}`)
+  : "Unknown";
+
 
     // ===== INIT =====
     gradeClassMap[grade] ??= {};
@@ -1238,6 +1262,62 @@ function renderSchoolAnalytics(
     `;
   });
 
+
+
+
+let gradeIntelligenceHTML = "";
+
+if (hasPreviousData) {
+
+  Object.entries(gradeLearnerMap).forEach(([grade, learners]) => {
+
+    const learnerCount = Object.keys(learners).length;
+
+    let improving = 0;
+    let declining = 0;
+    let unchanged = 0;
+
+    Object.entries(learners).forEach(([adm, scores]) => {
+
+      const currentAvg = scores.length
+        ? scores.reduce((a,b)=>a+b,0) / scores.length
+        : 0;
+
+      const prevScores = previousLearnerMap[adm];
+
+      const prevAvg = prevScores && prevScores.length
+        ? prevScores.reduce((a,b)=>a+b,0) / prevScores.length
+        : null;
+
+      if (prevAvg === null) return;
+
+      if (currentAvg > prevAvg + 0.2) improving++;
+      else if (currentAvg < prevAvg - 0.2) declining++;
+      else unchanged++;
+    });
+
+    gradeIntelligenceHTML += `
+      <h4 style="margin-top:20px;">🧠 ${grade} Intelligence Summary</h4>
+
+      <p>📈 Improving Learners: <strong>${improving}</strong></p>
+      <p>📉 Declining Learners: <strong>${declining}</strong></p>
+      <p>➡️ Stable Learners: <strong>${unchanged}</strong></p>
+      <p>👨‍🎓 Total Learners: <strong>${learnerCount}</strong></p>
+    `;
+  });
+
+} else {
+
+  gradeIntelligenceHTML = `
+    <p style="margin-top:15px; color:#555;">
+      🆕 No previous term data available for comparison.
+    </p>
+  `;
+}
+	
+
+
+	
   // ===== RETURN =====
   return `
 <div class="a4-page school-analytics">
@@ -1253,13 +1333,10 @@ function renderSchoolAnalytics(
 
 <h3>📊 School Performance Analytics</h3>
 
-<h4>🧠 Term Intelligence Summary</h4>
-${intelligence.schoolImprovement !== null ? `
-<p>📊 Change: <strong>${intelligence.schoolImprovement.toFixed(2)}%</strong></p>
-<p>📈 Improving Learners: ${intelligence.improvingLearners}</p>
-<p>🏫 Improved Classes: ${intelligence.improvedClasses.join(", ") || "None"}</p>
-<p>📉 Declining Subjects: ${intelligence.decliningSubjects.join(", ") || "None"}</p>
-` : `<p>No previous data</p>`}
+<h4 style="margin-top:20px;">🧠 Term Intelligence Summary</h4>
+
+${gradeIntelligenceHTML}
+
 
 <h4>1️⃣ Class Mean Overview</h4>
 ${classSummaryHTML}
@@ -1992,7 +2069,8 @@ document.getElementById("schoolAnalytics").innerHTML = renderSchoolAnalytics(
   intelligence,
   currentSchool,
   currentClass,
-  schoolLogo
+  schoolLogo,
+reviousLearnerMap
 );
 
 
