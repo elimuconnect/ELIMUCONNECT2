@@ -1107,7 +1107,7 @@ function renderSchoolAnalytics(
     gradeSubjectMap[grade] ??= {};
     gradeBandMap[grade] ??= { below: 0, approaching: 0, meeting: 0, exceeding: 0 };
     gradeRiskMap[grade] ??= 0;
-
+    gradeLearnerMap[grade] ??= {};
     // ===== CLASS =====
     gradeClassMap[grade][r.className] ??= [];
     gradeClassMap[grade][r.className].push(score);
