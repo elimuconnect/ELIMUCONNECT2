@@ -1078,7 +1078,7 @@ let gradeSubjectMap = {};
   const score = subjectData.average_score;
   if (!score) return;
 
-const grade = classGradeMap[r.class_id] || "Unknown";
+const grade = r.grade_name || "Unknown";
   // ===== CLASS PER GRADE =====
   gradeClassMap[grade] ??= {};
   gradeClassMap[grade][r.className] ??= [];
