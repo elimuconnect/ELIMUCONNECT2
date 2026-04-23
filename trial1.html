@@ -1030,28 +1030,9 @@ Object.entries(learnerMap).forEach(([adm, scores]) => {
   }
 });
 
-  // ===== TRUE IMPROVED CLASSES =====
-  const improvedClasses = [];
-  Object.entries(classMap).forEach(([cls, scores]) => {
-    if (!prevClassMap[cls]) return;
-    const currentAvg = avg(scores);
-    const prevAvg = avg(prevClassMap[cls]);
-    if (currentAvg - prevAvg >= 0.3) improvedClasses.push(cls);
-  });
-
-  // ===== TRUE DECLINING SUBJECTS =====
-  const decliningSubjects = [];
-  Object.entries(subjectMap).forEach(([sub, scores]) => {
-    if (!prevSubjectMap[sub]) return;
-    const currentAvg = avg(scores);
-    const prevAvg = avg(prevSubjectMap[sub]);
-    if (currentAvg - prevAvg <= -0.3) decliningSubjects.push(sub);
-  });
-
+ 
   return {
-    schoolImprovement,
-    improvedClasses,
-    decliningSubjects,
+   
     improvingLearners,
 	  learnerTrends
   };
