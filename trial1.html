@@ -922,7 +922,9 @@ strandData?.forEach(row => {
  
   
 
-
+function normAdm(v) {
+  return String(v || "").trim().toUpperCase();
+}
  
  
 
@@ -953,7 +955,7 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
   const score = levelToScore(r.level);
   if (score === null || score === undefined || isNaN(score)) return;
 
-  const adm = String(r.__admission || r.admission_number || r.admission || "").trim();
+ const adm = normAdm(r.__admission || r.admission_number || r.admission);
   const cls = String(r.className || "").trim().toUpperCase();
   const sub = String(r.subject || "").trim().toUpperCase();
 
@@ -971,7 +973,7 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
   const score = levelToScore(r.achievement_level);
   if (score === null || score === undefined || isNaN(score)) return;
 
-  const adm = String(r.__admission || r.admission_number || r.admission || "").trim();
+ const adm = normAdm(r.__admission || r.admission_number || r.admission);
   const cls = String(r.class_name || r.className || "").trim().toUpperCase();
   const sub = String(r.subject || "").trim().toUpperCase();
 
@@ -1343,8 +1345,7 @@ function renderGrouped(grouped, avgMap, intelligence) { // <-- Added intelligenc
 
 
 // 2. CREATE the cleanAdmission variable (This is the missing step!)
-    const cleanAdmission = String(admission).trim();
-
+   const cleanAdmission = normAdm(admission);
     // 3. Now use it to look up the status
     const studentStatus = intelligence?.learnerTrends?.[cleanAdmission] || "neutral";
 
