@@ -966,7 +966,7 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
   // ===== CURRENT TERM PROCESSING =====
   records.forEach(r => {
     const score = levelToScore(r.achievement_level);
-    if (!score) return;
+if (score === null || score === undefined || isNaN(score)) return;
 
     learnerMap[r.admission] ??= [];
     learnerMap[r.admission].push(score);
@@ -981,7 +981,7 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
   // ===== PREVIOUS TERM PROCESSING =====
   previousRecords.forEach(r => {
   const score = levelToScore(r.achievement_level);
-    if (!score) return;
+if (score === null || score === undefined || isNaN(score)) return;
 
     const adm = r.admission_number;
     const cls = r.class_name;
