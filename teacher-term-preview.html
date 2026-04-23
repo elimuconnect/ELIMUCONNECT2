@@ -713,8 +713,8 @@ if (previousTerm) {
   .eq("school_id", teacherSchoolId); // ✅ ADD THIS
 
   
+previousRecords = prevData || [];
 
- previousRecords = data || [];
 
   previousRecords.forEach(r => {
     const adm = r.admission_number;
@@ -965,7 +965,7 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
 
   // ===== CURRENT TERM PROCESSING =====
   records.forEach(r => {
-    const score = levelToScore(r.achievement_level);
+   const score = levelToScore(r.level);
 if (score === null || score === undefined || isNaN(score)) return;
 
     learnerMap[r.admission] ??= [];
@@ -980,10 +980,10 @@ if (score === null || score === undefined || isNaN(score)) return;
 
   // ===== PREVIOUS TERM PROCESSING =====
   previousRecords.forEach(r => {
-  const score = levelToScore(r.achievement_level);
+ const score = levelToScore(r.level);
 if (score === null || score === undefined || isNaN(score)) return;
 
-    const adm = r.admission_number;
+      const adm = r.admission_number;
     const cls = r.class_name;
     const sub = r.subject;
 
