@@ -965,7 +965,7 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
 
   // ===== CURRENT TERM PROCESSING =====
 records.forEach(r => {
-  const score = levelToScore(r.achievement_level);
+  const score = levelToScore(r.level);
   if (!score || isNaN(score)) return;
 
   const sub = r.subject?.toString().trim().toUpperCase();
