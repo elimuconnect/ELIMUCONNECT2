@@ -966,11 +966,14 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
   // ===== CURRENT TERM PROCESSING =====
 records.forEach(r => {
   const score = levelToScore(r.level);
-  if (!score || isNaN(score)) return;
+
+  if (score === null || score === undefined || isNaN(score)) return;
 
   const sub = r.subject?.toString().trim().toUpperCase();
   const cls = r.className?.toString().trim().toUpperCase();
   const adm = r.admission?.toString().trim();
+
+  console.log("CHECK CURRENT:", { sub, cls, adm, score });
 
   if (!sub || !cls || !adm) return;
 
