@@ -969,7 +969,7 @@ records.forEach(r => {
 
   if (score === null || score === undefined || isNaN(score)) return;
 
-  const sub = r.subject?.toString().trim().toUpperCase();
+  const sub = (r.subject || "").trim().toUpperCase();
   const cls = r.className?.toString().trim().toUpperCase();
   const adm = r.admission?.toString().trim();
 
@@ -992,7 +992,7 @@ previousRecords.forEach(r => {
   const score = levelToScore(r.achievement_level);
   if (!score || isNaN(score)) return;
 
-  const sub = r.subject?.toString().trim().toUpperCase();
+  const sub = (r.subject || "").trim().toUpperCase();
   const cls = r.class_name?.toString().trim().toUpperCase();
   const adm = r.admission_number?.toString().trim();
 
