@@ -1006,22 +1006,29 @@ records.forEach(r => {
   }
 
   // ===== IMPROVING LEARNERS =====
-  let improvingLearners = 0;
+ // Inside calculateTermIntelligence
+let improvingLearners = 0;
+const learnerTrends = {}; // Track status for every student
 
-  Object.entries(learnerMap).forEach(([adm, scores]) => {
-    if (!prevLearnerMap[adm]) return;
+Object.entries(learnerMap).forEach(([adm, scores]) => {
+  if (!prevLearnerMap[adm]) {
+    learnerTrends[adm] = "neutral"; // New student, no trend
+    return;
+  }
 
-    const currentAvg = avg(scores);
-    const prevAvg = avg(prevLearnerMap[adm]);
-    const diff = currentAvg - prevAvg;
+  const currentAvg = avg(scores);
+  const prevAvg = avg(prevLearnerMap[adm]);
+  const diff = currentAvg - prevAvg;
 
-    // DEBUG LOG FOR EACH LEARNER (This won't crash now)
-    if (Math.abs(diff) > 0) {
-       console.log(`Adm: ${adm} | Curr: ${currentAvg.toFixed(2)} | Prev: ${prevAvg.toFixed(2)} | Diff: ${diff.toFixed(2)}`);
-    }
-
-    if (diff >= 0.3) improvingLearners++;
-  });
+  if (diff >= 0.3) {
+    improvingLearners++;
+    learnerTrends[adm] = "improving";
+  } else if (diff <= -0.3) {
+    learnerTrends[adm] = "declining";
+  } else {
+    learnerTrends[adm] = "stable"; // This is the missing piece!
+  }
+});
 
   // ===== TRUE IMPROVED CLASSES =====
   const improvedClasses = [];
