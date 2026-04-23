@@ -964,39 +964,52 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
   const prevSubjectMap = {};
 
   // ===== CURRENT TERM PROCESSING =====
-  records.forEach(r => {
-   const score = levelToScore(r.level);
-if (score === null || score === undefined || isNaN(score)) return;
+records.forEach(r => {
+  const score = levelToScore(r.achievement_level);
+  if (!score || isNaN(score)) return;
 
-    learnerMap[r.admission] ??= [];
-    learnerMap[r.admission].push(score);
+  const sub = r.subject?.toString().trim().toUpperCase();
+  const cls = r.className?.toString().trim().toUpperCase();
+  const adm = r.admission?.toString().trim();
 
-    classMap[r.className] ??= [];
-    classMap[r.className].push(score);
+  if (!sub || !cls || !adm) return;
 
-    subjectMap[r.subject] ??= [];
-    subjectMap[r.subject].push(score);
-  });
+  learnerMap[adm] ??= [];
+  learnerMap[adm].push(score);
+
+  classMap[cls] ??= [];
+  classMap[cls].push(score);
+
+  subjectMap[sub] ??= [];
+  subjectMap[sub].push(score);
+});
 
   // ===== PREVIOUS TERM PROCESSING =====
-  previousRecords.forEach(r => {
- const score = levelToScore(r.level);
-if (score === null || score === undefined || isNaN(score)) return;
+previousRecords.forEach(r => {
+  const score = levelToScore(r.achievement_level);
+  if (!score || isNaN(score)) return;
 
-      const adm = r.admission_number;
-    const cls = r.class_name;
-    const sub = r.subject;
+  const sub = r.subject?.toString().trim().toUpperCase();
+  const cls = r.class_name?.toString().trim().toUpperCase();
+  const adm = r.admission_number?.toString().trim();
 
-    prevLearnerMap[adm] ??= [];
-    prevLearnerMap[adm].push(score);
+  if (!sub || !cls || !adm) return;
 
-    prevClassMap[cls] ??= [];
-    prevClassMap[cls].push(score);
+  prevLearnerMap[adm] ??= [];
+  prevLearnerMap[adm].push(score);
 
-    prevSubjectMap[sub] ??= [];
-    prevSubjectMap[sub].push(score);
-  });
+  prevClassMap[cls] ??= [];
+  prevClassMap[cls].push(score);
 
+  prevSubjectMap[sub] ??= [];
+  prevSubjectMap[sub].push(score);
+}); 
+
+
+console.log("Current Subject Avg:", subjectMap);
+console.log("Previous Subject Avg:", prevSubjectMap);
+
+	
   function avg(arr) {
     return arr.length
       ? arr.reduce((a,b)=>a+b,0) / arr.length
