@@ -926,6 +926,7 @@ strandData?.forEach(row => {
  
  
 
+
 function calculateTermIntelligence(records, previousRecords, previousTerm) {
 
   if (!previousTerm || !previousRecords?.length) {
@@ -945,6 +946,12 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
   const prevClassMap = {};
   const prevSubjectMap = {};
 
+  function avg(arr) {
+    return arr.length
+      ? arr.reduce((a, b) => a + b, 0) / arr.length
+      : null;
+  }
+
   // ===== CURRENT TERM PROCESSING =====
   records.forEach(r => {
     const score = levelToScore(r.achievement_level);
@@ -962,7 +969,8 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
 
   // ===== PREVIOUS TERM PROCESSING =====
   previousRecords.forEach(r => {
-  const score = levelToScore(r.achievement_level);
+    // Note: ensure your previousRecords objects use 'achievement_level'
+    const score = levelToScore(r.achievement_level);
     if (!score) return;
 
     const adm = r.admission_number;
@@ -978,22 +986,17 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
     prevSubjectMap[sub] ??= [];
     prevSubjectMap[sub].push(score);
   });
-console.log(`Current Avg: ${currentAvg}, Prev Avg: ${prevAvg}, Diff: ${currentAvg - prevAvg}`);
-  function avg(arr) {
-    return arr.length
-      ? arr.reduce((a,b)=>a+b,0) / arr.length
-      : null;
-  }
 
   // ===== SCHOOL IMPROVEMENT =====
   const currentSchoolAvg = avg(Object.values(classMap).flat());
   const previousSchoolAvg = avg(Object.values(prevClassMap).flat());
 
-  let schoolImprovement = null;
+  // DEBUG LOG FOR SCHOOL TOTALS
+  console.log(`School Totals -> Current: ${currentSchoolAvg}, Prev: ${previousSchoolAvg}`);
 
+  let schoolImprovement = null;
   if (previousSchoolAvg && previousSchoolAvg > 0) {
-    schoolImprovement =
-      ((currentSchoolAvg - previousSchoolAvg) / previousSchoolAvg) * 100;
+    schoolImprovement = ((currentSchoolAvg - previousSchoolAvg) / previousSchoolAvg) * 100;
   }
 
   // ===== IMPROVING LEARNERS =====
@@ -1004,36 +1007,32 @@ console.log(`Current Avg: ${currentAvg}, Prev Avg: ${prevAvg}, Diff: ${currentAv
 
     const currentAvg = avg(scores);
     const prevAvg = avg(prevLearnerMap[adm]);
+    const diff = currentAvg - prevAvg;
 
-    if (currentAvg - prevAvg >= 0.3) improvingLearners++;
+    // DEBUG LOG FOR EACH LEARNER (This won't crash now)
+    if (Math.abs(diff) > 0) {
+       console.log(`Adm: ${adm} | Curr: ${currentAvg.toFixed(2)} | Prev: ${prevAvg.toFixed(2)} | Diff: ${diff.toFixed(2)}`);
+    }
+
+    if (diff >= 0.3) improvingLearners++;
   });
 
   // ===== TRUE IMPROVED CLASSES =====
   const improvedClasses = [];
-
   Object.entries(classMap).forEach(([cls, scores]) => {
     if (!prevClassMap[cls]) return;
-
     const currentAvg = avg(scores);
     const prevAvg = avg(prevClassMap[cls]);
-
-    if (currentAvg - prevAvg >= 0.3) {
-      improvedClasses.push(cls);
-    }
+    if (currentAvg - prevAvg >= 0.3) improvedClasses.push(cls);
   });
 
   // ===== TRUE DECLINING SUBJECTS =====
   const decliningSubjects = [];
-
   Object.entries(subjectMap).forEach(([sub, scores]) => {
     if (!prevSubjectMap[sub]) return;
-
     const currentAvg = avg(scores);
     const prevAvg = avg(prevSubjectMap[sub]);
-
-    if (currentAvg - prevAvg <= -0.3) {
-      decliningSubjects.push(sub);
-    }
+    if (currentAvg - prevAvg <= -0.3) decliningSubjects.push(sub);
   });
 
   return {
@@ -1043,8 +1042,6 @@ console.log(`Current Avg: ${currentAvg}, Prev Avg: ${prevAvg}, Diff: ${currentAv
     improvingLearners
   };
 }
-
-
 
   
 
