@@ -1341,36 +1341,15 @@ function renderGrouped(grouped, avgMap, intelligence) { // <-- Added intelligenc
 
     const currentClass = studentRecord?.className || "—";
 
-    // ----- trend & support -----
-    const currentScores = [];
-    Object.entries(subjects).forEach(([subject, rows]) => {
-      if (subject === "__admission") return;
-      rows.forEach(r => {
-        const score = levelToScore(r.achievement_level);
-        if (score > 0) currentScores.push(score);
-      });
-    });
+   // This ensures the student card matches the school analytics perfectly
+    const studentStatus = intelligence?.learnerTrends?.[cleanAdmission] || "neutral";
 
-    const currentAvgScore = currentScores.length
-      ? currentScores.reduce((a, b) => a + b, 0) / currentScores.length
-      : null;
-
-
-
-
-// 1. Clean the admission key to match exactly how it was stored in learnerTrends
-const cleanAdmission = String(admission).trim();
-
-// 2. Lookup using that cleaned key
-const studentStatus = intelligence?.learnerTrends?.[cleanAdmission] || "neutral";
-
-const trendLabels = {
-  "improving": "Improving 📈",
-  "declining": "Declining 📉",
-  "stable": "Stable ➡",
-  "neutral": "New Learner (No Prior Data)"
-};
-
+    const trendLabels = {
+      "improving": "Improving 📈",
+      "declining": "Declining 📉",
+      "stable": "Stable ➡",
+      "neutral": "New Learner (No Prior Data)"
+    };
 const trend = trendLabels[studentStatus];
 	  
 
