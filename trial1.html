@@ -1058,17 +1058,16 @@ const improvedClasses = [];
   });
 
 
-	
-  return {
-    schoolImprovement,
-    improvedClasses,
-    decliningSubjects,
- 
-	  learnerTrends
-   
+return {
+    schoolImprovement: schoolImprovement,
+    improvedClasses: improvedClasses,
+    decliningSubjects: decliningSubjects,
+    improvingLearners: improvingLearners,
+    learnerTrends: learnerTrends,
+    // This provides the ${trend} variable for your HTML
+    trend: schoolImprovement > 0 ? "Improving" : "Declining" 
   };
 }
-
   
 
 
