@@ -1331,38 +1331,31 @@ return `
 }
 
 
-  function renderGrouped(grouped, avgMap) {
+function renderGrouped(grouped, avgMap, intelligence) { // <-- Added intelligence parameter
 
+  const firstRow = (typeof records !== "undefined" && records.length)
+    ? records[0]
+    : {};
 
-const firstRow = (typeof records !== "undefined" && records.length)
-  ? records[0]
-  : {};
-
-	  
   return Object.entries(grouped).map(([student, subjects]) => {
 
     const admission = subjects.__admission || "N/A";
 
+    // get the current student's class
+    const studentRecord = Object.entries(subjects)
+      .filter(([key]) => key !== "__admission")
+      .map(([key, rows]) => rows) // array of arrays
+      .flat()
+      .find(r => r.className);
 
-    
-	// get the current student's class
+    const currentClass = studentRecord?.className || "—";
 
-const studentRecord = Object.entries(subjects)
-  .filter(([key]) => key !== "__admission")
-  .map(([key, rows]) => rows) // array of arrays
-  .flat()
-  .find(r => r.className);
-
-const currentClass = studentRecord?.className || "—";
-
-
-	  
     // ----- trend & support -----
     const currentScores = [];
     Object.entries(subjects).forEach(([subject, rows]) => {
       if (subject === "__admission") return;
       rows.forEach(r => {
-       const score = levelToScore(r.achievement_level);
+        const score = levelToScore(r.achievement_level);
         if (score > 0) currentScores.push(score);
       });
     });
@@ -1371,15 +1364,26 @@ const currentClass = studentRecord?.className || "—";
       ? currentScores.reduce((a, b) => a + b, 0) / currentScores.length
       : null;
 
-    const prevData = previousAverages[admission];
-    const previousAvg = prevData ? prevData.total / prevData.count : null;
+    // ----- FIXED TREND LOGIC -----
+    // We now pull the pre-calculated status from the intelligence map 
+    // instead of relying on the old getTrend() logic
+    const studentStatus = intelligence?.learnerTrends?.[admission] || "neutral";
 
-    const trend = getTrend(currentAvgScore, previousAvg);
+    const trendLabels = {
+      "improving": "Improving 📈",
+      "declining": "Declining 📉",
+      "stable": "Stable ➡",
+      "neutral": "New Learner (No Prior Data)"
+    };
+
+    const trend = trendLabels[studentStatus];
+    // ------------------------------
+
     const supportFlag = generateSupportFlag(subjects);
     const insight = generateInsight(subjects);
     const { strengths, needs } = generateStrengthsAndNeeds(subjects);
-	
-	  const recommendations = generateRecommendations(subjects, trend, supportFlag);
+    
+    const recommendations = generateRecommendations(subjects, trend, supportFlag);
 
     return `
 <div class="a4-page learner-page">
@@ -1391,13 +1395,12 @@ ${renderOverviewHeader({
   postal: schoolDetail.postal_code,
   town: schoolDetail.town,
   phone: schoolDetail.phone,
- 
+  
   className: currentClass,
- term: termName,
-year: SYSTEM_YEAR,
-  logo: schoolLogo // Passed from the logic above
+  term: termName,
+  year: SYSTEM_YEAR,
+  logo: schoolLogo 
 })}
-
     <div class="split-block learner-header"
          style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
       <h4>👤 ${student} <small>(<strong>Adm: ${admission}</strong>)</small></h4>
