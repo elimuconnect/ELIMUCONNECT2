@@ -952,20 +952,18 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
       : null;
   }
 
-  // ===== CURRENT TERM PROCESSING =====
+ 
  // ===== CURRENT TERM PROCESSING =====
-records.forEach(r => {
-  // Use 'level' because that's what you called it in your .map()
-  const score = levelToScore(r.level); 
-  
-  if (!score) {
-    console.warn(`No score found for ${r.student}. Level value was:`, r.level);
-    return;
-  }
+previousRecords.forEach(r => {
+  const score = levelToScore(r.achievement_level);
+  if (!score) return;
 
-  // Use 'admission' and 'className' as per your mapping
-  learnerMap[r.admission] ??= [];
-  learnerMap[r.admission].push(score);
+  // FIX: Change 'admission_number' to 'admission' 
+  // so it matches the learnerMap keys exactly
+  const adm = r.admission_number; 
+
+  prevLearnerMap[adm] ??= [];
+  prevLearnerMap[adm].push(score);
 
   classMap[r.className] ??= [];
   classMap[r.className].push(score);
