@@ -1341,7 +1341,11 @@ function renderGrouped(grouped, avgMap, intelligence) { // <-- Added intelligenc
 
     const currentClass = studentRecord?.className || "—";
 
-   // This ensures the student card matches the school analytics perfectly
+
+// 2. CREATE the cleanAdmission variable (This is the missing step!)
+    const cleanAdmission = String(admission).trim();
+
+    // 3. Now use it to look up the status
     const studentStatus = intelligence?.learnerTrends?.[cleanAdmission] || "neutral";
 
     const trendLabels = {
@@ -1350,10 +1354,9 @@ function renderGrouped(grouped, avgMap, intelligence) { // <-- Added intelligenc
       "stable": "Stable ➡",
       "neutral": "New Learner (No Prior Data)"
     };
-const trend = trendLabels[studentStatus];
-	  
 
-   
+    const trend = trendLabels[studentStatus];
+	  
     // ------------------------------
 
     const supportFlag = generateSupportFlag(subjects);
