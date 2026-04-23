@@ -992,7 +992,7 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
   if (previousSchoolAvg && previousSchoolAvg > 0) {
     schoolImprovement = ((currentSchoolAvg - previousSchoolAvg) / previousSchoolAvg) * 100;
   }
-/ DEBUG LOG FOR SCHOOL TOTALS
+
   console.log(`School Totals -> Current: ${currentSchoolAvg}, Prev: ${previousSchoolAvg}`);
   // ===== LEARNER TRENDS =====
   let improvingLearners = 0;
