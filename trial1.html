@@ -926,106 +926,99 @@ strandData?.forEach(row => {
  
  
 
-
 function calculateTermIntelligence(records, previousRecords, previousTerm) {
-
   if (!previousTerm || !previousRecords?.length) {
     return {
       schoolImprovement: null,
       improvedClasses: [],
       decliningSubjects: [],
-      improvingLearners: 0
+      improvingLearners: 0,
+      learnerTrends: {}
     };
   }
 
   const learnerMap = {};
   const classMap = {};
   const subjectMap = {};
-
   const prevLearnerMap = {};
   const prevClassMap = {};
   const prevSubjectMap = {};
 
   function avg(arr) {
-    return arr.length
-      ? arr.reduce((a, b) => a + b, 0) / arr.length
-      : null;
+    return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
   }
 
- 
- // ===== CURRENT TERM PROCESSING =====
-previousRecords.forEach(r => {
-  const score = levelToScore(r.achievement_level);
-  if (!score) return;
+  // ===== CURRENT TERM PROCESSING =====
+  records.forEach(r => {
+    const score = levelToScore(r.level); 
+    if (!score) return;
 
-  // FIX: Change 'admission_number' to 'admission' 
-  // so it matches the learnerMap keys exactly
-  const adm = r.admission_number; 
+    // FORCE KEY TO STRING
+    const adm = String(r.admission).trim(); 
 
-  prevLearnerMap[adm] ??= [];
-  prevLearnerMap[adm].push(score);
+    learnerMap[adm] ??= [];
+    learnerMap[adm].push(score);
 
-  classMap[r.className] ??= [];
-  classMap[r.className].push(score);
+    classMap[r.className] ??= [];
+    classMap[r.className].push(score);
 
-  subjectMap[r.subject] ??= [];
-  subjectMap[r.subject].push(score);
-});
+    subjectMap[r.subject] ??= [];
+    subjectMap[r.subject].push(score);
+  });
+
   // ===== PREVIOUS TERM PROCESSING =====
   previousRecords.forEach(r => {
-    // Note: ensure your previousRecords objects use 'achievement_level'
     const score = levelToScore(r.achievement_level);
     if (!score) return;
 
-    const adm = r.admission_number;
-    const cls = r.class_name;
-    const sub = r.subject;
+    // FORCE KEY TO STRING AND MATCH KEY NAME
+    const adm = String(r.admission_number).trim(); 
 
     prevLearnerMap[adm] ??= [];
     prevLearnerMap[adm].push(score);
 
-    prevClassMap[cls] ??= [];
-    prevClassMap[cls].push(score);
+    prevClassMap[r.class_name] ??= [];
+    prevClassMap[r.class_name].push(score);
 
-    prevSubjectMap[sub] ??= [];
-    prevSubjectMap[sub].push(score);
+    prevSubjectMap[r.subject] ??= [];
+    prevSubjectMap[r.subject].push(score);
   });
 
   // ===== SCHOOL IMPROVEMENT =====
   const currentSchoolAvg = avg(Object.values(classMap).flat());
   const previousSchoolAvg = avg(Object.values(prevClassMap).flat());
 
-  // DEBUG LOG FOR SCHOOL TOTALS
-  console.log(`School Totals -> Current: ${currentSchoolAvg}, Prev: ${previousSchoolAvg}`);
-
   let schoolImprovement = null;
   if (previousSchoolAvg && previousSchoolAvg > 0) {
     schoolImprovement = ((currentSchoolAvg - previousSchoolAvg) / previousSchoolAvg) * 100;
   }
+/ DEBUG LOG FOR SCHOOL TOTALS
+  console.log(`School Totals -> Current: ${currentSchoolAvg}, Prev: ${previousSchoolAvg}`);
+  // ===== LEARNER TRENDS =====
+  let improvingLearners = 0;
+  const learnerTrends = {};
 
+  Object.entries(learnerMap).forEach(([adm, scores]) => {
+    const cleanAdm = String(adm).trim();
+    
+    if (!prevLearnerMap[cleanAdm]) {
+      learnerTrends[cleanAdm] = "neutral"; 
+      return;
+    }
 
-let improvingLearners = 0;
-const learnerTrends = {}; // Track status for every student
+    const currentAvg = avg(scores);
+    const prevAvg = avg(prevLearnerMap[cleanAdm]);
+    const diff = currentAvg - prevAvg;
 
-Object.entries(learnerMap).forEach(([adm, scores]) => {
-  if (!prevLearnerMap[adm]) {
-    learnerTrends[adm] = "neutral"; // New student, no trend
-    return;
-  }
-
-  const currentAvg = avg(scores);
-  const prevAvg = avg(prevLearnerMap[adm]);
-  const diff = currentAvg - prevAvg;
-
-  if (diff >= 0.3) {
-    improvingLearners++;
-    learnerTrends[adm] = "improving";
-  } else if (diff <= -0.3) {
-    learnerTrends[adm] = "declining";
-  } else {
-    learnerTrends[adm] = "stable"; // This is the missing piece!
-  }
-});
+    if (diff >= 0.3) {
+      improvingLearners++;
+      learnerTrends[cleanAdm] = "improving";
+    } else if (diff <= -0.3) {
+      learnerTrends[cleanAdm] = "declining";
+    } else {
+      learnerTrends[cleanAdm] = "stable";
+    }
+  });
 
 
 const improvedClasses = [];
