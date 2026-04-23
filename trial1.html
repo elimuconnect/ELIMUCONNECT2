@@ -949,41 +949,41 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
   }
 
   // ===== CURRENT TERM PROCESSING =====
-  records.forEach(r => {
-    const score = levelToScore(r.level); 
-    if (!score) return;
+ records.forEach(r => {
+  const score = levelToScore(r.level);
+  if (score === null || score === undefined || isNaN(score)) return;
 
-    // FORCE KEY TO STRING
-    const adm = String(r.admission).trim(); 
+  const adm = String(r.__admission || r.admission_number || r.admission || "").trim();
+  const cls = String(r.className || "").trim().toUpperCase();
+  const sub = String(r.subject || "").trim().toUpperCase();
 
-    learnerMap[adm] ??= [];
-    learnerMap[adm].push(score);
+  learnerMap[adm] ??= [];
+  learnerMap[adm].push(score);
 
-    classMap[r.className] ??= [];
-    classMap[r.className].push(score);
+  classMap[cls] ??= [];
+  classMap[cls].push(score);
 
-    subjectMap[r.subject] ??= [];
-    subjectMap[r.subject].push(score);
-  });
-
+  subjectMap[sub] ??= [];
+  subjectMap[sub].push(score);
+});
   // ===== PREVIOUS TERM PROCESSING =====
-  previousRecords.forEach(r => {
-    const score = levelToScore(r.achievement_level);
-    if (!score) return;
+ previousRecords.forEach(r => {
+  const score = levelToScore(r.achievement_level);
+  if (score === null || score === undefined || isNaN(score)) return;
 
-    // FORCE KEY TO STRING AND MATCH KEY NAME
-    const adm = String(r.admission_number).trim(); 
+  const adm = String(r.__admission || r.admission_number || r.admission || "").trim();
+  const cls = String(r.class_name || r.className || "").trim().toUpperCase();
+  const sub = String(r.subject || "").trim().toUpperCase();
 
-    prevLearnerMap[adm] ??= [];
-    prevLearnerMap[adm].push(score);
+  prevLearnerMap[adm] ??= [];
+  prevLearnerMap[adm].push(score);
 
-    prevClassMap[r.class_name] ??= [];
-    prevClassMap[r.class_name].push(score);
+  prevClassMap[cls] ??= [];
+  prevClassMap[cls].push(score);
 
-    prevSubjectMap[r.subject] ??= [];
-    prevSubjectMap[r.subject].push(score);
-  });
-
+  prevSubjectMap[sub] ??= [];
+  prevSubjectMap[sub].push(score);
+});
   // ===== SCHOOL IMPROVEMENT =====
   const currentSchoolAvg = avg(Object.values(classMap).flat());
   const previousSchoolAvg = avg(Object.values(prevClassMap).flat());
