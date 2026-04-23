@@ -1005,8 +1005,7 @@ records.forEach(r => {
     schoolImprovement = ((currentSchoolAvg - previousSchoolAvg) / previousSchoolAvg) * 100;
   }
 
-  // ===== IMPROVING LEARNERS =====
- // Inside calculateTermIntelligence
+
 let improvingLearners = 0;
 const learnerTrends = {}; // Track status for every student
 
@@ -1061,9 +1060,12 @@ const improvedClasses = [];
 
 	
   return {
+    schoolImprovement,
+    improvedClasses,
+    decliningSubjects,
+ 
+	  lernerTrend
    
-    improvingLearners,
-	  learnerTrends
   };
 }
 
