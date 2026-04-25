@@ -1455,9 +1455,34 @@ if (isFirstTerm) {
     "Exceeding Expectations": 4
   };
 
-  const currentLevel = getAchievementLabel(currentAvgScore);
-  const previousLevel = getAchievementLabel(previousAvg);
 
+
+
+
+
+
+// Get MOST COMMON level instead of recalculating from averages
+function getDominantLevel(scores) {
+  const counts = {};
+
+  scores.forEach(s => {
+    const label = getAchievementLabel(s);
+    counts[label] = (counts[label] || 0) + 1;
+  });
+
+  return Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])[0]?.[0] || null;
+}
+
+const currentLevel = getDominantLevel(currentScores);
+const previousLevel = getDominantLevel(previousLearnerMap[admission] || []);
+
+
+
+
+
+
+	
   const currentRank = levelRank[currentLevel] || 0;
   const previousRank = levelRank[previousLevel] || 0;
 
