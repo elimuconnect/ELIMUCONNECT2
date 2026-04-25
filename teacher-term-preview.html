@@ -635,12 +635,16 @@ async function loadReport() {
 
   const termName = terms.find(t => t.id === term_id)?.name;
 
+const sortedTerms = terms.map(t => t.name).sort();
+let isFirstTerm = termName === sortedTerms[0];
+	
 
 /* ===== LEARNER TERM AVERAGES FOR GRAPHS ===== */
 const { data: termAverages } = await supabase
   .from("learner_term_averages") // ✅ the view you already created
   .select("admission_number, term, average_score")
   .eq("academic_year", SYSTEM_YEAR);
+
 
 
 
@@ -699,7 +703,12 @@ const previousTerm = terms
   .sort()
   .filter(t => t < termName)
   .slice(-1)[0];
+ isFirstTerm = !previousTerm;
 
+if (isFirstTerm) {
+  previousAverages = {};
+  previousRecords = [];
+}
 
  
 
@@ -712,14 +721,15 @@ if (previousTerm) {
   .eq("academic_year", SYSTEM_YEAR)
   .eq("school_id", teacherSchoolId); // ✅ ADD THIS
 
-  
-previousRecords = Data || [];
 
+	
+
+ previousRecords = prevData || [];
 
   previousRecords.forEach(r => {
     const adm = r.admission_number;
-    const score = levelToScore(r.achievement_level);
-
+  const score = levelToScore(r.achievement_level);
+ 
     if (!previousAverages[adm]) {
       previousAverages[adm] = { total: 0, count: 0 };
     }
@@ -748,6 +758,13 @@ const hasPreviousData = Object.keys(previousLearnerMap || {}).length > 0;
 
 	
 
+
+
+
+
+
+
+	
 // ============================
 // STEP 3 — ADD THIS HERE
 // ============================
@@ -825,6 +842,8 @@ schoolLogo =
   manualLogos[schoolDetail.name?.trim()] ||
   null;
 
+
+
  
 // normalized records
 const records = data.map(r => ({
@@ -846,9 +865,7 @@ grade_id: r.grade_id,
 	 assessment_type: r.assessment_type,       // ✅ add this
   assessment_category: r.assessment_category // ✅ add this
 }));
-
-
-
+	
 
 // Collect all assessment IDs for this term
 const assessmentIds = [...new Set(records.map(r => r.assessment_id).filter(Boolean))];
@@ -896,7 +913,7 @@ strandData?.forEach(row => {
         text-align:center;
       ">
         ${logo ? `
-          <div class="logo-container" style=" 
+          <div class="logo-container" style="
             page-break-inside: avoid;
             break-inside: avoid;
             /* ✅ ADD THIS: Margin around the logo container */
@@ -964,55 +981,40 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
   const prevSubjectMap = {};
 
   // ===== CURRENT TERM PROCESSING =====
-records.forEach(r => {
-  const score = levelToScore(r.level);
+  records.forEach(r => {
+     const score = levelToScore(r.level);
+    if (!score) return;
 
-  if (score === null || score === undefined || isNaN(score)) return;
+    learnerMap[r.admission] ??= [];
+    learnerMap[r.admission].push(score);
 
-  const sub = (r.subject || "").trim().toUpperCase();
-  const cls = r.className?.toString().trim().toUpperCase();
-  const adm = r.admission?.toString().trim();
+    classMap[r.className] ??= [];
+    classMap[r.className].push(score);
 
-  console.log("CHECK CURRENT:", { sub, cls, adm, score });
-
-  if (!sub || !cls || !adm) return;
-
-  learnerMap[adm] ??= [];
-  learnerMap[adm].push(score);
-
-  classMap[cls] ??= [];
-  classMap[cls].push(score);
-
-  subjectMap[sub] ??= [];
-  subjectMap[sub].push(score);
-});
+    subjectMap[r.subject] ??= [];
+    subjectMap[r.subject].push(score);
+  });
 
   // ===== PREVIOUS TERM PROCESSING =====
-previousRecords.forEach(r => {
-  const score = levelToScore(r.achievement_level);
-  if (!score || isNaN(score)) return;
+  previousRecords.forEach(r => {
+ const score = levelToScore(r.achievement_level);
+ 
+    if (!score) return;
 
-  const sub = (r.subject || "").trim().toUpperCase();
-  const cls = r.class_name?.toString().trim().toUpperCase();
-  const adm = r.admission_number?.toString().trim();
+    const adm = r.admission_number;
+    const cls = r.class_name;
+    const sub = r.subject;
 
-  if (!sub || !cls || !adm) return;
+    prevLearnerMap[adm] ??= [];
+    prevLearnerMap[adm].push(score);
 
-  prevLearnerMap[adm] ??= [];
-  prevLearnerMap[adm].push(score);
+    prevClassMap[cls] ??= [];
+    prevClassMap[cls].push(score);
 
-  prevClassMap[cls] ??= [];
-  prevClassMap[cls].push(score);
+    prevSubjectMap[sub] ??= [];
+    prevSubjectMap[sub].push(score);
+  });
 
-  prevSubjectMap[sub] ??= [];
-  prevSubjectMap[sub].push(score);
-}); 
-
-
-console.log("Current Subject Avg:", subjectMap);
-console.log("Previous Subject Avg:", prevSubjectMap);
-console.log("SUBJECT KEY CHECK:", Object.keys(subjectMap), Object.keys(prevSubjectMap));
-	
   function avg(arr) {
     return arr.length
       ? arr.reduce((a,b)=>a+b,0) / arr.length
@@ -1039,7 +1041,7 @@ console.log("SUBJECT KEY CHECK:", Object.keys(subjectMap), Object.keys(prevSubje
     const currentAvg = avg(scores);
     const prevAvg = avg(prevLearnerMap[adm]);
 
-    if (currentAvg - prevAvg >= 0.3) improvingLearners++;
+    if (currentAvg - prevAvg >= 0.15) improvingLearners++;
   });
 
   // ===== TRUE IMPROVED CLASSES =====
@@ -1051,24 +1053,27 @@ console.log("SUBJECT KEY CHECK:", Object.keys(subjectMap), Object.keys(prevSubje
     const currentAvg = avg(scores);
     const prevAvg = avg(prevClassMap[cls]);
 
-    if (currentAvg - prevAvg >= 0.3) {
+    if (currentAvg - prevAvg >= 0.15) {
       improvedClasses.push(cls);
     }
   });
 
   // ===== TRUE DECLINING SUBJECTS =====
-  const decliningSubjects = [];
+const decliningSubjects = [];
 
-  Object.entries(subjectMap).forEach(([sub, scores]) => {
-    if (!prevSubjectMap[sub]) return;
+Object.entries(subjectMap).forEach(([sub, scores]) => {
 
-    const currentAvg = avg(scores);
-    const prevAvg = avg(prevSubjectMap[sub]);
+  const currentAvg = avg(scores);
 
-    if (currentAvg - prevAvg <= -0.3) {
-      decliningSubjects.push(sub);
-    }
-  });
+  // If no previous data, assume no change (prevents false decline)  
+  const prevAvg = prevSubjectMap[sub]
+    ? avg(prevSubjectMap[sub])
+    : currentAvg;
+
+  if (currentAvg - prevAvg <= -0.15) {
+    decliningSubjects.push(sub);
+  }
+});
 
   return {
     schoolImprovement,
@@ -1080,10 +1085,7 @@ console.log("SUBJECT KEY CHECK:", Object.keys(subjectMap), Object.keys(prevSubje
 
 
 
-
-	
-
-
+  
 
 
 function renderSchoolAnalytics(
@@ -1376,7 +1378,7 @@ ${riskHTML}
 }
 
 
-	
+
   
 function getPerformanceBadge(level) {
   if (!level) return "";
@@ -1435,24 +1437,55 @@ const currentClass = studentRecord?.className || "—";
 
 
 	  
-    // ----- trend & support -----
-    const currentScores = [];
-    Object.entries(subjects).forEach(([subject, rows]) => {
-      if (subject === "__admission") return;
-      rows.forEach(r => {
-       const score = levelToScore(r.achievement_level);
-        if (score > 0) currentScores.push(score);
-      });
-    });
+    
 
-    const currentAvgScore = currentScores.length
-      ? currentScores.reduce((a, b) => a + b, 0) / currentScores.length
-      : null;
+// ----- trend & support -----
+const currentScores = [];
 
-    const prevData = previousAverages[admission];
-    const previousAvg = prevData ? prevData.total / prevData.count : null;
+Object.entries(subjects).forEach(([subject, rows]) => {
+  if (subject === "__admission") return;
 
-    const trend = getTrend(currentAvgScore, previousAvg);
+  rows.forEach(r => {
+    const score = levelToScore(r.level);
+    if (score > 0) currentScores.push(score);
+  });
+});
+
+const currentAvgScore = currentScores.length
+  ? currentScores.reduce((a, b) => a + b, 0) / currentScores.length
+  : null;
+
+const prevData = isFirstTerm ? null : previousAverages[admission];
+const previousAvg = prevData ? prevData.total / prevData.count : null;
+
+// ✅ HARD RULE FIRST
+let trend;
+
+if (isFirstTerm) {
+  trend = "New Entry";
+} else if (!previousAvg) {
+  trend = "No Data";
+} else {
+
+  const levelRank = {
+    "Below Expectations(1)": 1,
+    "Approaching Expectations(2)": 2,
+    "Meeting Expectations(3)": 3,
+    "Exceeding Expectations(4)": 4
+  };
+
+  const currentLevel = getAchievementLabel(currentAvgScore);
+  const previousLevel = getAchievementLabel(previousAvg);
+
+  const currentRank = levelRank[currentLevel] || 0;
+  const previousRank = levelRank[previousLevel] || 0;
+
+  if (currentRank > previousRank) trend = "Improving";
+  else if (currentRank < previousRank) trend = "Declining";
+  else trend = "Stable";
+}
+	  
+   
     const supportFlag = generateSupportFlag(subjects);
     const insight = generateInsight(subjects);
     const { strengths, needs } = generateStrengthsAndNeeds(subjects);
@@ -2089,8 +2122,7 @@ document.getElementById("schoolAnalytics").innerHTML = renderSchoolAnalytics(
   intelligence,
   currentSchool,
   currentClass,
-  schoolLogo,
-previousLearnerMap
+  schoolLogo
 );
 
 
@@ -2670,6 +2702,7 @@ for (let i = 0; i < cards.length; i += batchSize) {
   
 
 
+
 window.downloadSchoolAnalyticsPDF = async function () {
   const analyticsDiv = document.getElementById("schoolAnalytics");
 
@@ -2726,8 +2759,8 @@ window.downloadSchoolAnalyticsPDF = async function () {
 
   document.body.removeChild(wrapper);
 };
-
   
+
 
   
   
