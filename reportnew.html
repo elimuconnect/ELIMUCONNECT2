@@ -626,6 +626,8 @@ async function loadReport() {
 
   const termName = terms.find(t => t.id === term_id)?.name;
 
+const sortedTerms = terms.map(t => t.name).sort();
+let isFirstTerm = termName === sortedTerms[0];
 
 /* ===== LEARNER TERM AVERAGES FOR GRAPHS ===== */
 const { data: termAverages } = await supabase
@@ -692,7 +694,12 @@ const previousTerm = terms
   .filter(t => t < termName)
   .slice(-1)[0];
 
+ isFirstTerm = !previousTerm;
 
+if (isFirstTerm) {
+  previousAverages = {};
+  previousRecords = [];
+}
  
 
 if (previousTerm) {
@@ -706,7 +713,7 @@ if (previousTerm) {
 
   
 
-  previousRecords = data || [];
+  previousRecords = prevData || [];
 
   previousRecords.forEach(r => {
     const adm = r.admission_number;
@@ -721,6 +728,25 @@ if (previousTerm) {
   });
 }
 
+
+
+
+
+let previousLearnerMap = {};
+
+previousRecords?.forEach(r => {
+  const adm = r.admission_number;
+  const score = levelToScore(r.achievement_level);
+
+  if (!previousLearnerMap[adm]) {
+    previousLearnerMap[adm] = [];
+  }
+
+  previousLearnerMap[adm].push(score);
+});
+const hasPreviousData = Object.keys(previousLearnerMap || {}).length > 0;
+
+	
 
 
 // ============================
@@ -803,12 +829,16 @@ schoolLogo =
   manualLogos[schoolDetail.name?.trim()] ||
   null;
  
+ 
 // normalized records
 const records = data.map(r => ({
   student: r.full_name,
   admission: r.admission_number,
   className: r.class_name,
   schoolName: r.school_name,
+	 grade_name: r.grade_name,
+grade_id: r.grade_id,
+	class_id: r.class_id,
   subject: r.subject,
 
   core_competencies: r.core_competencies,
@@ -820,8 +850,6 @@ const records = data.map(r => ({
 	 assessment_type: r.assessment_type,       // ✅ add this
   assessment_category: r.assessment_category // ✅ add this
 }));
-
-
 // Collect all assessment IDs for this term
 const assessmentIds = [...new Set(records.map(r => r.assessment_id).filter(Boolean))];
 
@@ -937,7 +965,7 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
 
   // ===== CURRENT TERM PROCESSING =====
   records.forEach(r => {
-    const score = levelToScore(r.achievement_level);
+     const score = levelToScore(r.level);
     if (!score) return;
 
     learnerMap[r.admission] ??= [];
@@ -952,7 +980,8 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
 
   // ===== PREVIOUS TERM PROCESSING =====
   previousRecords.forEach(r => {
-   const score = levelToScore(r.level);
+ const score = levelToScore(r.achievement_level);
+ 
     if (!score) return;
 
     const adm = r.admission_number;
@@ -995,7 +1024,7 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
     const currentAvg = avg(scores);
     const prevAvg = avg(prevLearnerMap[adm]);
 
-    if (currentAvg - prevAvg >= 0.3) improvingLearners++;
+    if (currentAvg - prevAvg >= 0.15) improvingLearners++;
   });
 
   // ===== TRUE IMPROVED CLASSES =====
@@ -1007,24 +1036,27 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
     const currentAvg = avg(scores);
     const prevAvg = avg(prevClassMap[cls]);
 
-    if (currentAvg - prevAvg >= 0.3) {
+    if (currentAvg - prevAvg >= 0.15) {
       improvedClasses.push(cls);
     }
   });
 
   // ===== TRUE DECLINING SUBJECTS =====
-  const decliningSubjects = [];
+const decliningSubjects = [];
 
-  Object.entries(subjectMap).forEach(([sub, scores]) => {
-    if (!prevSubjectMap[sub]) return;
+Object.entries(subjectMap).forEach(([sub, scores]) => {
 
-    const currentAvg = avg(scores);
-    const prevAvg = avg(prevSubjectMap[sub]);
+  const currentAvg = avg(scores);
 
-    if (currentAvg - prevAvg <= -0.3) {
-      decliningSubjects.push(sub);
-    }
-  });
+  // If no previous data, assume no change (prevents false decline)  
+  const prevAvg = prevSubjectMap[sub]
+    ? avg(prevSubjectMap[sub])
+    : currentAvg;
+
+  if (currentAvg - prevAvg <= -0.15) {
+    decliningSubjects.push(sub);
+  }
+});
 
   return {
     schoolImprovement,
@@ -1044,37 +1076,60 @@ function renderSchoolAnalytics(
   intelligence,
   schoolName,
   className,
-  schoolLogo) {
+  schoolLogo,
+	 prevLearnerMap = {}
+) {
 
-  let classMap = {};
-  let subjectMap = {};
-  let bandCount = { below: 0, approaching: 0, meeting: 0, exceeding: 0 };
+  let gradeClassMap = {};
+  let gradeSubjectMap = {};
+  let gradeBandMap = {};
+  let gradeRiskMap = {};
+	let gradeLearnerMap = {};
 
   // ===== PROCESS DATA =====
- records.forEach(r => {
+  records.forEach(r => {
 
-  const subjectData = avgMap?.[r.student]?.[r.subject];
-  if (!subjectData) return;
+    const subjectData = avgMap?.[r.student]?.[r.subject];
+    if (!subjectData) return;
 
-  const score = subjectData.average_score;
-  if (!score) return;
+    const score = subjectData.average_score;
+    if (score === null || score === undefined) return;
 
-  classMap[r.className] ??= [];
-  classMap[r.className].push(score);
+    const grade = r.grade_name
+  ? (String(r.grade_name).startsWith("Grade")
+      ? r.grade_name
+      : `Grade ${r.grade_name}`)
+  : "Unknown";
 
-  subjectMap[r.subject] ??= [];
-  subjectMap[r.subject].push(score);
 
-  if (score >= 3.5) bandCount.exceeding++;
-  else if (score >= 2.5) bandCount.meeting++;
-  else if (score >= 1.5) bandCount.approaching++;
-  else bandCount.below++;
-});
+    // ===== INIT =====
+    gradeClassMap[grade] ??= {};
+    gradeSubjectMap[grade] ??= {};
+    gradeBandMap[grade] ??= { below: 0, approaching: 0, meeting: 0, exceeding: 0 };
+    gradeRiskMap[grade] ??= 0;
 
-  const atRiskLearners = records.filter(r => {
-  const subjectData = avgMap?.[r.student]?.[r.subject];
-  return subjectData && subjectData.average_score < 1.5;
-}).length;
+
+gradeLearnerMap[grade] ??= {};
+gradeLearnerMap[grade][r.admission] ??= [];
+gradeLearnerMap[grade][r.admission].push(score);
+	  
+    // ===== CLASS =====
+    gradeClassMap[grade][r.className] ??= [];
+    gradeClassMap[grade][r.className].push(score);
+
+    // ===== SUBJECT =====
+    gradeSubjectMap[grade][r.subject] ??= [];
+    gradeSubjectMap[grade][r.subject].push(score);
+
+    // ===== BAND =====
+    if (score >= 3.5) gradeBandMap[grade].exceeding++;
+    else if (score >= 2.5) gradeBandMap[grade].meeting++;
+    else if (score >= 1.5) gradeBandMap[grade].approaching++;
+    else gradeBandMap[grade].below++;
+
+    // ===== RISK =====
+    if (score < 1.5) gradeRiskMap[grade]++;
+  });
 
   // ===== AVERAGE FUNCTION =====
   function avg(arr) {
@@ -1083,168 +1138,95 @@ function renderSchoolAnalytics(
       : 0;
   }
 
+  // ===== CLASS SUMMARY =====
+  let classSummaryHTML = "";
 
-const classSummary = Object.entries(classMap)
-  .map(([cls, scores]) => {
-    const mean = avg(scores);
-    return { cls, mean };
-  })
-  .sort((a, b) => b.mean - a.mean) // BEST → WORST
-  .map(({ cls, mean }) => {
+  Object.entries(gradeClassMap).forEach(([grade, classes]) => {
 
-    let level, risk;
+    const rows = Object.entries(classes)
+      .map(([cls, scores]) => {
+        const mean = avg(scores);
 
-    if (mean >= 3.5) {
-      level = "Exceeding";
-      risk = `<span style="color:#1e8449;font-weight:bold;">🟢 Strong</span>`;
-    } else if (mean >= 2.5) {
-      level = "Meeting";
-      risk = `<span style="color:#27ae60;font-weight:bold;">🟢 Stable</span>`;
-    } else if (mean >= 1.5) {
-      level = "Approaching";
-      risk = `<span style="color:#f39c12;font-weight:bold;">🟡 Monitor</span>`;
-    } else {
-      level = "Below";
-      risk = `<span style="color:#c0392b;font-weight:bold;">🔴 Needs Intervention</span>`;
-    }
+        let level, risk;
 
-    return `
-      <tr>
-        <td>${cls}</td>
-        <td>${mean.toFixed(2)} / 4 (${level})</td>
-        <td>${risk}</td>
-      </tr>
-    `;
-  }).join("");
+        if (mean >= 3.5) {
+          level = "Exceeding";
+          risk = `<span style="color:#1e8449;font-weight:bold;">🟢 Strong</span>`;
+        } else if (mean >= 2.5) {
+          level = "Meeting";
+          risk = `<span style="color:#27ae60;font-weight:bold;">🟢 Stable</span>`;
+        } else if (mean >= 1.5) {
+          level = "Approaching";
+          risk = `<span style="color:#f39c12;font-weight:bold;">🟡 Monitor</span>`;
+        } else {
+          level = "Below";
+          risk = `<span style="color:#c0392b;font-weight:bold;">🔴 Needs Intervention</span>`;
+        }
 
-	
+        return { cls, mean, html: `
+          <tr>
+            <td>${cls}</td>
+            <td>${mean.toFixed(2)} / 4 (${level})</td>
+            <td>${risk}</td>
+          </tr>
+        `};
+      })
+      .sort((a, b) => b.mean - a.mean)
+      .map(r => r.html)
+      .join("");
 
-const subjectAlerts = Object.entries(subjectMap)
-  .map(([sub, scores]) => {
-    const mean = avg(scores);
-    return { sub, mean };
-  })
-  .sort((a, b) => b.mean - a.mean) // BEST → WORST
-  .map(({ sub, mean }) => {
-
-    let level, alert = "";
-
-    if (mean >= 3.5) level = "Exceeding";
-    else if (mean >= 2.5) level = "Meeting";
-    else if (mean >= 1.5) {
-      level = "Approaching";
-      alert = `<span style="color:#f39c12;font-weight:bold;">⚠ Monitor Closely</span>`;
-    } else {
-      level = "Below";
-      alert = `<span style="color:#c0392b;font-weight:bold;">⚠ Immediate Review Required</span>`;
-    }
-
-    return `
-      <tr>
-        <td>${sub}</td>
-        <td>${mean.toFixed(2)} / 4 (${level})</td>
-        <td>${alert}</td>
-      </tr>
-    `;
-  }).join("");
-
-	
-  // ===== RETURN FULL ANALYTICS PAGE =====
-  return `
- <div class="a4-page school-analytics">
-
-
-<div class="learner-card">
-
-  <!-- SCHOOL & CLASS HEADER -->
-<div class="report-overview no-split" style="
-  border-bottom: 2px solid #333;
-  padding-bottom: 10px;
-  margin-bottom: 12px;
-">
-
-  <div style="
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    text-align:center;
-  ">
-
-    ${schoolLogo ? `
-      <div style="flex-shrink:0;">
-        <img src="${schoolLogo}"
-             style="
-               width:200px !important;
-               height:160px !important;
-               max-width:200px !important;
-               object-fit:contain;
-             "
-             onerror="this.style.display='none';"
-        />
-      </div>
-    ` : ""}
-
-    <h3 style="margin:6px 0 0 0;">${schoolName}</h3>
-
-    <div style="font-size:0.9em;color:#555;margin-top:4px;">
-      <strong>Class:</strong> ${className} |
-      <strong>Term:</strong> ${termName} – ${year}
-    </div>
-  </div>
-</div>
-
-  <h3>📊 School Performance Analytics</h3>
-
-    
-<!-- 🧠 TERM INTELLIGENCE -->
-<h4 style="margin-top:20px;">🧠 Term Intelligence Summary</h4>
-${intelligence.schoolImprovement !== null ? `
-<p>
-  📊 School Performance Change: 
-  <strong style="color:${intelligence.schoolImprovement >= 0 ? '#1e8449' : '#c0392b'};">
-    ${intelligence.schoolImprovement.toFixed(2)}%
-  </strong>
-</p>
-
-<p>📈 Improving Learners: <strong>${intelligence.improvingLearners}</strong></p>
-
-<p>🏫 Improved Classes: 
-  ${intelligence.improvedClasses.length
-    ? intelligence.improvedClasses.join(", ")
-    : "None"}
-</p>
-
-<p>📉 Subjects Requiring Attention: 
-  ${intelligence.decliningSubjects.length
-    ? intelligence.decliningSubjects.join(", ")
-    : "None"}
-</p>
-` : `
-<p>🆕 No previous term data available for comparison.</p>
-`}
-
-
-
-
-
-      <!-- 1️⃣ CLASS MEAN -->
-      <h4>1️⃣ Class Mean Overview</h4>
+    classSummaryHTML += `
+      <h5 style="margin-top:15px;">📘 ${grade}</h5>
       <table>
         <thead>
           <tr>
             <th>Class</th>
-           <th>Performance Level</th>
+            <th>Performance Level</th>
             <th>Status</th>
           </tr>
         </thead>
         <tbody>
-          ${classSummary}
+          ${rows}
         </tbody>
       </table>
+    `;
+  });
 
-      <!-- 2️⃣ SUBJECT ANALYSIS -->
-      <h4 style="margin-top:20px;">2️⃣ Subject/Learning Area Mean Analysis</h4>
+  // ===== SUBJECT SUMMARY =====
+  let subjectSummaryHTML = "";
+
+  Object.entries(gradeSubjectMap).forEach(([grade, subjects]) => {
+
+    const rows = Object.entries(subjects)
+      .map(([sub, scores]) => {
+        const mean = avg(scores);
+
+        let level, alert = "";
+
+        if (mean >= 3.5) level = "Exceeding";
+        else if (mean >= 2.5) level = "Meeting";
+        else if (mean >= 1.5) {
+          level = "Approaching";
+          alert = `<span style="color:#f39c12;font-weight:bold;">⚠ Monitor Closely</span>`;
+        } else {
+          level = "Below";
+          alert = `<span style="color:#c0392b;font-weight:bold;">⚠ Immediate Review Required</span>`;
+        }
+
+        return { sub, mean, html: `
+          <tr>
+            <td>${sub}</td>
+            <td>${mean.toFixed(2)} / 4 (${level})</td>
+            <td>${alert}</td>
+          </tr>
+        `};
+      })
+      .sort((a, b) => b.mean - a.mean)
+      .map(r => r.html)
+      .join("");
+
+    subjectSummaryHTML += `
+      <h5 style="margin-top:15px;">📘 ${grade}</h5>
       <table>
         <thead>
           <tr>
@@ -1254,42 +1236,129 @@ ${intelligence.schoolImprovement !== null ? `
           </tr>
         </thead>
         <tbody>
-          ${subjectAlerts}
+          ${rows}
         </tbody>
       </table>
+    `;
+  });
 
-      <!-- 3️⃣ BAND DISTRIBUTION -->
-      <h4 style="margin-top:20px;">3️⃣ Performance Band Distribution</h4>
+  // ===== BAND HTML =====
+  let bandHTML = "";
+
+  Object.entries(gradeBandMap).forEach(([grade, b]) => {
+    bandHTML += `
+      <h5 style="margin-top:15px;">📘 ${grade}</h5>
       <p>
-        🔴 Below: ${bandCount.below} |
-        🟡 Approaching: ${bandCount.approaching} |
-        🔵 Meeting: ${bandCount.meeting} |
-        🟢 Exceeding: ${bandCount.exceeding}
+        🔴 Below: ${b.below} |
+        🟡 Approaching: ${b.approaching} |
+        🔵 Meeting: ${b.meeting} |
+        🟢 Exceeding: ${b.exceeding}
       </p>
+    `;
+  });
 
-      <!-- 4️⃣ RISK SUMMARY -->
-      <h4 style="margin-top:20px;">4️⃣ Learner Risk Overview</h4>
-      <p>
-        ${atRiskLearners} learners currently below expectations require structured intervention.
-      </p>
+  // ===== RISK HTML =====
+  let riskHTML = "";
 
-     
+  Object.entries(gradeRiskMap).forEach(([grade, count]) => {
+    riskHTML += `
+      <h5 style="margin-top:15px;">📘 ${grade}</h5>
+      <p>${count} learners below expectations require intervention.</p>
+    `;
+  });
 
-      <!-- 5️⃣ STRATEGIC ACTION -->
-      <h4 style="margin-top:20px;">5️⃣ Strategic Recommendations</h4>
-      <ul>
-        <li>Conduct targeted remediation for subjects below Approaching expectations mean.</li>
-        <li>Organize teacher review meetings for declining performance trends.</li>
-        <li>Introduce peer tutoring and reward high-performing classes</li>
- 
-         
-        
-      </ul>
 
-    </div>
-  </div>
+
+
+let gradeIntelligenceHTML = "";
+
+if (hasPreviousData) {
+
+  Object.entries(gradeLearnerMap).forEach(([grade, learners]) => {
+
+    const learnerCount = Object.keys(learners).length;
+
+    let improving = 0;
+    let declining = 0;
+    let unchanged = 0;
+
+    Object.entries(learners).forEach(([adm, scores]) => {
+
+      const currentAvg = scores.length
+        ? scores.reduce((a,b)=>a+b,0) / scores.length
+        : 0;
+
+      const prevScores = previousLearnerMap[adm];
+
+      const prevAvg = prevScores && prevScores.length
+        ? prevScores.reduce((a,b)=>a+b,0) / prevScores.length
+        : null;
+
+      if (prevAvg === null) return;
+
+      if (currentAvg > prevAvg + 0.2) improving++;
+      else if (currentAvg < prevAvg - 0.2) declining++;
+      else unchanged++;
+    });
+
+    gradeIntelligenceHTML += `
+      <h4 style="margin-top:20px;">🧠 ${grade} Intelligence Summary</h4>
+
+      <p>📈 Improving Learners: <strong>${improving}</strong></p>
+      <p>📉 Declining Learners: <strong>${declining}</strong></p>
+      <p>➡️ Stable Learners: <strong>${unchanged}</strong></p>
+      <p>👨‍🎓 Total Learners: <strong>${learnerCount}</strong></p>
+    `;
+  });
+
+} else {
+
+  gradeIntelligenceHTML = `
+    <p style="margin-top:15px; color:#555;">
+      🆕 No previous term data available for comparison.
+    </p>
   `;
 }
+	
+	
+  // ===== RETURN =====
+  return `
+<div class="a4-page school-analytics">
+<div class="learner-card">
+
+<div class="report-overview no-split" style="border-bottom:2px solid #333;padding-bottom:10px;margin-bottom:12px;">
+  <div style="display:flex;flex-direction:column;align-items:center;text-align:center;">
+    ${schoolLogo ? `<img src="${schoolLogo}" style="width:200px;height:160px;object-fit:contain;" onerror="this.style.display='none';"/>` : ""}
+    <h3>${schoolName}</h3>
+    <div><strong>Class:</strong> ${className} | <strong>Term:</strong> ${termName} – ${year}</div>
+  </div>
+</div>
+
+<h3>📊 School Performance Analytics</h3>
+
+<h4 style="margin-top:20px;">🧠 Term Intelligence Summary</h4>
+
+${gradeIntelligenceHTML}
+
+
+<h4>1️⃣ Class Mean Overview</h4>
+${classSummaryHTML}
+
+<h4>2️⃣ Subject Analysis</h4>
+${subjectSummaryHTML}
+
+<h4>3️⃣ Band Distribution (Per Grade)</h4>
+${bandHTML}
+
+<h4>4️⃣ Learner Risk (Per Grade)</h4>
+${riskHTML}
+
+</div>
+</div>
+`;
+}
+
+
 
   
 function getPerformanceBadge(level) {
@@ -1326,11 +1395,11 @@ return `
   function renderGrouped(grouped, avgMap) {
 
 
-	  
 const firstRow = (typeof records !== "undefined" && records.length)
   ? records[0]
   : {};
 
+	  
   return Object.entries(grouped).map(([student, subjects]) => {
 
     const admission = subjects.__admission || "N/A";
@@ -1349,24 +1418,80 @@ const currentClass = studentRecord?.className || "—";
 
 
 	  
-    // ----- trend & support -----
-    const currentScores = [];
-    Object.entries(subjects).forEach(([subject, rows]) => {
-      if (subject === "__admission") return;
-      rows.forEach(r => {
-       const score = levelToScore(r.achievement_level);
-        if (score > 0) currentScores.push(score);
-      });
-    });
+    
 
-    const currentAvgScore = currentScores.length
-      ? currentScores.reduce((a, b) => a + b, 0) / currentScores.length
-      : null;
+// ----- trend & support -----
+const currentScores = [];
 
-    const prevData = previousAverages[admission];
-    const previousAvg = prevData ? prevData.total / prevData.count : null;
+Object.entries(subjects).forEach(([subject, rows]) => {
+  if (subject === "__admission") return;
 
-    const trend = getTrend(currentAvgScore, previousAvg);
+  rows.forEach(r => {
+    const score = levelToScore(r.level);
+    if (score > 0) currentScores.push(score);
+  });
+});
+
+const currentAvgScore = currentScores.length
+  ? currentScores.reduce((a, b) => a + b, 0) / currentScores.length
+  : null;
+
+const prevData = isFirstTerm ? null : previousAverages[admission];
+const previousAvg = prevData ? prevData.total / prevData.count : null;
+
+// ✅ HARD RULE FIRST
+let trend;
+
+if (isFirstTerm) {
+  trend = "New Entry";
+} else if (!previousAvg) {
+  trend = "No Data";
+} else {
+
+  const levelRank = {
+    "Below Expectations": 1,
+    "Approaching Expectations": 2,
+    "Meeting Expectations": 3,
+    "Exceeding Expectations": 4
+  };
+
+
+
+
+
+
+
+// Get MOST COMMON level instead of recalculating from averages
+function getDominantLevel(scores) {
+  const counts = {};
+
+  scores.forEach(s => {
+    const label = getAchievementLabel(s);
+    counts[label] = (counts[label] || 0) + 1;
+  });
+
+  return Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])[0]?.[0] || null;
+}
+
+const currentLevel = getDominantLevel(currentScores);
+const previousLevel = getDominantLevel(previousLearnerMap[admission] || []);
+
+
+
+
+
+
+	
+  const currentRank = levelRank[currentLevel] || 0;
+  const previousRank = levelRank[previousLevel] || 0;
+
+  if (currentRank > previousRank) trend = "Improving";
+  else if (currentRank < previousRank) trend = "Declining";
+  else trend = "Stable";
+}
+	  
+   
     const supportFlag = generateSupportFlag(subjects);
     const insight = generateInsight(subjects);
     const { strengths, needs } = generateStrengthsAndNeeds(subjects);
