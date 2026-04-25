@@ -1346,7 +1346,7 @@ const currentClass = studentRecord?.className || "—";
     Object.entries(subjects).forEach(([subject, rows]) => {
       if (subject === "__admission") return;
       rows.forEach(r => {
-       const score = levelToScore(r.achievement_level);
+     const score = levelToScore(r.level);
         if (score > 0) currentScores.push(score);
       });
     });
