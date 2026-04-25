@@ -635,6 +635,9 @@ async function loadReport() {
 
   const termName = terms.find(t => t.id === term_id)?.name;
 
+const sortedTerms = terms.map(t => t.name).sort();
+let isFirstTerm = termName === sortedTerms[0];
+	
 
 /* ===== LEARNER TERM AVERAGES FOR GRAPHS ===== */
 const { data: termAverages } = await supabase
@@ -700,7 +703,12 @@ const previousTerm = terms
   .sort()
   .filter(t => t < termName)
   .slice(-1)[0];
+ isFirstTerm = !previousTerm;
 
+if (isFirstTerm) {
+  previousAverages = {};
+  previousRecords = [];
+}
 
  
 
@@ -713,14 +721,15 @@ if (previousTerm) {
   .eq("academic_year", SYSTEM_YEAR)
   .eq("school_id", teacherSchoolId); // ✅ ADD THIS
 
-  
 
-  previousRecords = data || [];
+	
+
+ previousRecords = prevData || [];
 
   previousRecords.forEach(r => {
     const adm = r.admission_number;
-    const score = levelToScore(r.achievement_level);
-
+  const score = levelToScore(r.achievement_level);
+ 
     if (!previousAverages[adm]) {
       previousAverages[adm] = { total: 0, count: 0 };
     }
@@ -732,6 +741,30 @@ if (previousTerm) {
 
 
 
+
+let previousLearnerMap = {};
+
+previousRecords?.forEach(r => {
+  const adm = r.admission_number;
+  const score = levelToScore(r.achievement_level);
+
+  if (!previousLearnerMap[adm]) {
+    previousLearnerMap[adm] = [];
+  }
+
+  previousLearnerMap[adm].push(score);
+});
+const hasPreviousData = Object.keys(previousLearnerMap || {}).length > 0;
+
+	
+
+
+
+
+
+
+
+	
 // ============================
 // STEP 3 — ADD THIS HERE
 // ============================
@@ -949,7 +982,7 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
 
   // ===== CURRENT TERM PROCESSING =====
   records.forEach(r => {
-    const score = levelToScore(r.achievement_level);
+     const score = levelToScore(r.level);
     if (!score) return;
 
     learnerMap[r.admission] ??= [];
@@ -964,7 +997,8 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
 
   // ===== PREVIOUS TERM PROCESSING =====
   previousRecords.forEach(r => {
-   const score = levelToScore(r.level);
+ const score = levelToScore(r.achievement_level);
+ 
     if (!score) return;
 
     const adm = r.admission_number;
@@ -1007,7 +1041,7 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
     const currentAvg = avg(scores);
     const prevAvg = avg(prevLearnerMap[adm]);
 
-    if (currentAvg - prevAvg >= 0.3) improvingLearners++;
+    if (currentAvg - prevAvg >= 0.15) improvingLearners++;
   });
 
   // ===== TRUE IMPROVED CLASSES =====
@@ -1019,24 +1053,27 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
     const currentAvg = avg(scores);
     const prevAvg = avg(prevClassMap[cls]);
 
-    if (currentAvg - prevAvg >= 0.3) {
+    if (currentAvg - prevAvg >= 0.15) {
       improvedClasses.push(cls);
     }
   });
 
   // ===== TRUE DECLINING SUBJECTS =====
-  const decliningSubjects = [];
+const decliningSubjects = [];
 
-  Object.entries(subjectMap).forEach(([sub, scores]) => {
-    if (!prevSubjectMap[sub]) return;
+Object.entries(subjectMap).forEach(([sub, scores]) => {
 
-    const currentAvg = avg(scores);
-    const prevAvg = avg(prevSubjectMap[sub]);
+  const currentAvg = avg(scores);
 
-    if (currentAvg - prevAvg <= -0.3) {
-      decliningSubjects.push(sub);
-    }
-  });
+  // If no previous data, assume no change (prevents false decline)  
+  const prevAvg = prevSubjectMap[sub]
+    ? avg(prevSubjectMap[sub])
+    : currentAvg;
+
+  if (currentAvg - prevAvg <= -0.15) {
+    decliningSubjects.push(sub);
+  }
+});
 
   return {
     schoolImprovement,
@@ -1058,13 +1095,15 @@ function renderSchoolAnalytics(
   intelligence,
   schoolName,
   className,
-  schoolLogo
+  schoolLogo,
+	 prevLearnerMap = {}
 ) {
 
   let gradeClassMap = {};
   let gradeSubjectMap = {};
   let gradeBandMap = {};
   let gradeRiskMap = {};
+	let gradeLearnerMap = {};
 
   // ===== PROCESS DATA =====
   records.forEach(r => {
@@ -1075,7 +1114,12 @@ function renderSchoolAnalytics(
     const score = subjectData.average_score;
     if (score === null || score === undefined) return;
 
-    const grade = r.grade_name ? `Grade ${r.grade_name}` : "Unknown";
+    const grade = r.grade_name
+  ? (String(r.grade_name).startsWith("Grade")
+      ? r.grade_name
+      : `Grade ${r.grade_name}`)
+  : "Unknown";
+
 
     // ===== INIT =====
     gradeClassMap[grade] ??= {};
@@ -1083,6 +1127,11 @@ function renderSchoolAnalytics(
     gradeBandMap[grade] ??= { below: 0, approaching: 0, meeting: 0, exceeding: 0 };
     gradeRiskMap[grade] ??= 0;
 
+
+gradeLearnerMap[grade] ??= {};
+gradeLearnerMap[grade][r.admission] ??= [];
+gradeLearnerMap[grade][r.admission].push(score);
+	  
     // ===== CLASS =====
     gradeClassMap[grade][r.className] ??= [];
     gradeClassMap[grade][r.className].push(score);
@@ -1237,6 +1286,60 @@ function renderSchoolAnalytics(
     `;
   });
 
+
+
+
+let gradeIntelligenceHTML = "";
+
+if (hasPreviousData) {
+
+  Object.entries(gradeLearnerMap).forEach(([grade, learners]) => {
+
+    const learnerCount = Object.keys(learners).length;
+
+    let improving = 0;
+    let declining = 0;
+    let unchanged = 0;
+
+    Object.entries(learners).forEach(([adm, scores]) => {
+
+      const currentAvg = scores.length
+        ? scores.reduce((a,b)=>a+b,0) / scores.length
+        : 0;
+
+      const prevScores = previousLearnerMap[adm];
+
+      const prevAvg = prevScores && prevScores.length
+        ? prevScores.reduce((a,b)=>a+b,0) / prevScores.length
+        : null;
+
+      if (prevAvg === null) return;
+
+      if (currentAvg > prevAvg + 0.2) improving++;
+      else if (currentAvg < prevAvg - 0.2) declining++;
+      else unchanged++;
+    });
+
+    gradeIntelligenceHTML += `
+      <h4 style="margin-top:20px;">🧠 ${grade} Intelligence Summary</h4>
+
+      <p>📈 Improving Learners: <strong>${improving}</strong></p>
+      <p>📉 Declining Learners: <strong>${declining}</strong></p>
+      <p>➡️ Stable Learners: <strong>${unchanged}</strong></p>
+      <p>👨‍🎓 Total Learners: <strong>${learnerCount}</strong></p>
+    `;
+  });
+
+} else {
+
+  gradeIntelligenceHTML = `
+    <p style="margin-top:15px; color:#555;">
+      🆕 No previous term data available for comparison.
+    </p>
+  `;
+}
+	
+	
   // ===== RETURN =====
   return `
 <div class="a4-page school-analytics">
@@ -1252,13 +1355,10 @@ function renderSchoolAnalytics(
 
 <h3>📊 School Performance Analytics</h3>
 
-<h4>🧠 Term Intelligence Summary</h4>
-${intelligence.schoolImprovement !== null ? `
-<p>📊 Change: <strong>${intelligence.schoolImprovement.toFixed(2)}%</strong></p>
-<p>📈 Improving Learners: ${intelligence.improvingLearners}</p>
-<p>🏫 Improved Classes: ${intelligence.improvedClasses.join(", ") || "None"}</p>
-<p>📉 Declining Subjects: ${intelligence.decliningSubjects.join(", ") || "None"}</p>
-` : `<p>No previous data</p>`}
+<h4 style="margin-top:20px;">🧠 Term Intelligence Summary</h4>
+
+${gradeIntelligenceHTML}
+
 
 <h4>1️⃣ Class Mean Overview</h4>
 ${classSummaryHTML}
@@ -1337,24 +1437,55 @@ const currentClass = studentRecord?.className || "—";
 
 
 	  
-    // ----- trend & support -----
-    const currentScores = [];
-    Object.entries(subjects).forEach(([subject, rows]) => {
-      if (subject === "__admission") return;
-      rows.forEach(r => {
-       const score = levelToScore(r.achievement_level);
-        if (score > 0) currentScores.push(score);
-      });
-    });
+    
 
-    const currentAvgScore = currentScores.length
-      ? currentScores.reduce((a, b) => a + b, 0) / currentScores.length
-      : null;
+// ----- trend & support -----
+const currentScores = [];
 
-    const prevData = previousAverages[admission];
-    const previousAvg = prevData ? prevData.total / prevData.count : null;
+Object.entries(subjects).forEach(([subject, rows]) => {
+  if (subject === "__admission") return;
 
-    const trend = getTrend(currentAvgScore, previousAvg);
+  rows.forEach(r => {
+    const score = levelToScore(r.level);
+    if (score > 0) currentScores.push(score);
+  });
+});
+
+const currentAvgScore = currentScores.length
+  ? currentScores.reduce((a, b) => a + b, 0) / currentScores.length
+  : null;
+
+const prevData = isFirstTerm ? null : previousAverages[admission];
+const previousAvg = prevData ? prevData.total / prevData.count : null;
+
+// ✅ HARD RULE FIRST
+let trend;
+
+if (isFirstTerm) {
+  trend = "New Entry";
+} else if (!previousAvg) {
+  trend = "No Data";
+} else {
+
+  const levelRank = {
+    "Below Expectations(1)": 1,
+    "Approaching Expectations(2)": 2,
+    "Meeting Expectations(3)": 3,
+    "Exceeding Expectations(4)": 4
+  };
+
+  const currentLevel = getAchievementLabel(currentAvgScore);
+  const previousLevel = getAchievementLabel(previousAvg);
+
+  const currentRank = levelRank[currentLevel] || 0;
+  const previousRank = levelRank[previousLevel] || 0;
+
+  if (currentRank > previousRank) trend = "Improving";
+  else if (currentRank < previousRank) trend = "Declining";
+  else trend = "Stable";
+}
+	  
+   
     const supportFlag = generateSupportFlag(subjects);
     const insight = generateInsight(subjects);
     const { strengths, needs } = generateStrengthsAndNeeds(subjects);
