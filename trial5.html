@@ -626,7 +626,9 @@ async function loadReport() {
 
   const termName = terms.find(t => t.id === term_id)?.name;
 
-const sortedTerms = terms.map(t => t.name).sort();
+const sortedTerms = [...terms]
+  .sort((a, b) => a.id - b.id)   // or use a.numeric_column if available
+  .map(t => t.name);
 let isFirstTerm = termName === sortedTerms[0];
 	
 
@@ -689,18 +691,35 @@ termAverages?.forEach(r => {
 });
 
 
-const previousTerm = terms
+const sortedTerms = terms
   .map(t => t.name)
-  .sort()
-  .filter(t => t < termName)
-  .slice(-1)[0];
- isFirstTerm = !previousTerm;
+  .sort((a, b) => {
+    const aNum = parseInt(a.replace(/\D/g, ""));
+    const bNum = parseInt(b.replace(/\D/g, ""));
+    return aNum - bNum;
+  });
+
+
+
+
+const currentIndex = terms.findIndex(t => t.name === termName);
+
+const sortedById = [...terms].sort((a, b) => a.id - b.id);
+
+const previousTerm =
+  currentIndex > 0 ? sortedById[currentIndex - 1].name : null;
+
+const isFirstTerm = currentIndex === 0;
+
+
+	
+
+
 
 if (isFirstTerm) {
   previousAverages = {};
   previousRecords = [];
 }
-
 
  
 
@@ -1449,21 +1468,30 @@ const previousAvg = prevData ? prevData.total / prevData.count : null;
 
 let trend;
 
-const currentLevel = levelToScore(getAchievementLabel(currentAvgScore));
-const previousLevel = levelToScore(getAchievementLabel(previousAvg));
+const levelRank = {
+  "Below Expectations": 1,
+  "Approaching Expectations": 2,
+  "Meeting Expectations": 3,
+  "Exceeding Expectations": 4
+};
+
+const currentLevel = getAchievementLabel(currentAvgScore);
+const previousLevel = getAchievementLabel(previousAvg);
+
+const currentRank = levelRank[currentLevel] || 0;
+const previousRank = levelRank[previousLevel] || 0;
 
 if (isFirstTerm) {
   trend = "New Entry";
-} else if (previousAvg == null || isNaN(previousAvg)) {
+} else if (!previousAvg) {
   trend = "No Data";
-} else if (currentLevel > previousLevel) {
+} else if (currentRank > previousRank) {
   trend = "Improving";
-} else if (currentLevel < previousLevel) {
+} else if (currentRank < previousRank) {
   trend = "Declining";
 } else {
   trend = "Stable";
 }
-
 	  
    
     const supportFlag = generateSupportFlag(subjects);
