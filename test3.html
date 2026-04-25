@@ -720,15 +720,7 @@ if (previousTerm) {
   previousRecords.forEach(r => {
     const adm = r.admission_number;
   const score = levelToScore(r.achievement_level);
-
-previousRecords.forEach(r => {
-  console.log("PREVIOUS LEVEL RAW:", r.achievement_level);
-
-  const score = levelToScore(r.achievement_level);
-
-  console.log("PREVIOUS SCORE:", score);
-
-	  
+ 
     if (!previousAverages[adm]) {
       previousAverages[adm] = { total: 0, count: 0 };
     }
@@ -738,6 +730,12 @@ previousRecords.forEach(r => {
   });
 }
 
+previousRecords.forEach(r => {
+  console.log("PREVIOUS LEVEL RAW:", r.achievement_level);
+
+  const score = levelToScore(r.achievement_level);
+
+  console.log("PREVIOUS SCORE:", score);
 
 	
 
