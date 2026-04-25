@@ -924,84 +924,79 @@ strandData?.forEach(row => {
  
   
 
-
- 
-function normAdm(v) {
-  return String(v || "").trim().toUpperCase();
-}
- 
- 
-
+  
 function calculateTermIntelligence(records, previousRecords, previousTerm) {
+
   if (!previousTerm || !previousRecords?.length) {
     return {
       schoolImprovement: null,
       improvedClasses: [],
       decliningSubjects: [],
-      improvingLearners: 0,
-      learnerTrends: {}
+      improvingLearners: 0
     };
   }
 
   const learnerMap = {};
   const classMap = {};
   const subjectMap = {};
+
   const prevLearnerMap = {};
   const prevClassMap = {};
   const prevSubjectMap = {};
 
+  // ===== CURRENT TERM PROCESSING =====
+  records.forEach(r => {
+    const score = levelToScore(r.level);
+    if (!score) return;
+
+    learnerMap[r.admission] ??= [];
+    learnerMap[r.admission].push(score);
+
+    classMap[r.className] ??= [];
+    classMap[r.className].push(score);
+
+    subjectMap[r.subject] ??= [];
+    subjectMap[r.subject].push(score);
+  });
+
+  // ===== PREVIOUS TERM PROCESSING =====
+  previousRecords.forEach(r => {
+   const score = levelToScore(r.level);
+    if (!score) return;
+
+    const adm = r.admission_number;
+    const cls = r.class_name;
+    const sub = r.subject;
+
+    prevLearnerMap[adm] ??= [];
+    prevLearnerMap[adm].push(score);
+
+    prevClassMap[cls] ??= [];
+    prevClassMap[cls].push(score);
+
+    prevSubjectMap[sub] ??= [];
+    prevSubjectMap[sub].push(score);
+  });
+
+console.log("Current Subject Avg:", subjectMap);
+console.log("Previous Subject Avg:", prevSubjectMap);
+	
   function avg(arr) {
-    return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+    return arr.length
+      ? arr.reduce((a,b)=>a+b,0) / arr.length
+      : null;
   }
 
-  // ===== CURRENT TERM PROCESSING =====
- records.forEach(r => {
-  const score = levelToScore(r.level);
-  if (score === null || score === undefined || isNaN(score)) return;
-
- const adm = normAdm(r.__admission || r.admission_number || r.admission);
-  const cls = String(r.className || "").trim().toUpperCase();
-  const sub = String(r.subject || "").trim().toUpperCase();
-
-  learnerMap[adm] ??= [];
-  learnerMap[adm].push(score);
-
-  classMap[cls] ??= [];
-  classMap[cls].push(score);
-
-  subjectMap[sub] ??= [];
-  subjectMap[sub].push(score);
-});
-  // ===== PREVIOUS TERM PROCESSING =====
- previousRecords.forEach(r => {
-  const score = levelToScore(r.level);
-  if (score === null || score === undefined || isNaN(score)) return;
-
- const adm = normAdm(r.__admission || r.admission_number || r.admission);
-  const cls = String(r.class_name || r.className || "").trim().toUpperCase();
-  const sub = String(r.subject || "").trim().toUpperCase();
-
-  prevLearnerMap[adm] ??= [];
-  prevLearnerMap[adm].push(score);
-
-  prevClassMap[cls] ??= [];
-  prevClassMap[cls].push(score);
-
-  prevSubjectMap[sub] ??= [];
-  prevSubjectMap[sub].push(score);
-});
   // ===== SCHOOL IMPROVEMENT =====
   const currentSchoolAvg = avg(Object.values(classMap).flat());
   const previousSchoolAvg = avg(Object.values(prevClassMap).flat());
 
   let schoolImprovement = null;
+
   if (previousSchoolAvg && previousSchoolAvg > 0) {
-    schoolImprovement = ((currentSchoolAvg - previousSchoolAvg) / previousSchoolAvg) * 100;
+    schoolImprovement =
+      ((currentSchoolAvg - previousSchoolAvg) / previousSchoolAvg) * 100;
   }
-
-  console.log(`School Totals -> Current: ${currentSchoolAvg}, Prev: ${previousSchoolAvg}`);
-
-  
 
   // ===== IMPROVING LEARNERS =====
   let improvingLearners = 0;
@@ -1051,9 +1046,6 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
   };
 }
 
-
-
-  
 
 
 function renderSchoolAnalytics(
