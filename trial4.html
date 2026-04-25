@@ -635,6 +635,9 @@ async function loadReport() {
 
   const termName = terms.find(t => t.id === term_id)?.name;
 
+const sortedTerms = terms.map(t => t.name).sort();
+const isFirstTerm = termName === sortedTerms[0];
+	
 
 /* ===== LEARNER TERM AVERAGES FOR GRAPHS ===== */
 const { data: termAverages } = await supabase
@@ -700,7 +703,12 @@ const previousTerm = terms
   .sort()
   .filter(t => t < termName)
   .slice(-1)[0];
+const isFirstTerm = !previousTerm;
 
+if (isFirstTerm) {
+  previousAverages = {};
+  previousRecords = [];
+}
 
  
 
@@ -713,7 +721,8 @@ if (previousTerm) {
   .eq("academic_year", SYSTEM_YEAR)
   .eq("school_id", teacherSchoolId); // ✅ ADD THIS
 
-  
+
+	
 
  previousRecords = prevData || [];
 
@@ -1340,40 +1349,35 @@ const currentClass = studentRecord?.className || "—";
 
 
 	  
-    // ----- trend & support -----
-    const currentScores = [];
-    Object.entries(subjects).forEach(([subject, rows]) => {
-      if (subject === "__admission") return;
-      rows.forEach(r => {
-     const score = levelToScore(r.level);
-        if (score > 0) currentScores.push(score);
-      });
-    });
+    
 
+// ----- trend & support -----
+const currentScores = [];
 
+Object.entries(subjects).forEach(([subject, rows]) => {
+  if (subject === "__admission") return;
 
+  rows.forEach(r => {
+    const score = levelToScore(r.level);
+    if (score > 0) currentScores.push(score);
+  });
+});
 
-	  
-    const currentAvgScore = currentScores.length
-      ? currentScores.reduce((a, b) => a + b, 0) / currentScores.length
-      : null;
+const currentAvgScore = currentScores.length
+  ? currentScores.reduce((a, b) => a + b, 0) / currentScores.length
+  : null;
 
-    const prevData = previousAverages[admission];
-    const previousAvg = prevData ? prevData.total / prevData.count : null;
+const prevData = isFirstTerm ? null : previousAverages[admission];
+const previousAvg = prevData ? prevData.total / prevData.count : null;
 
+// ✅ HARD RULE FIRST
+let trend;
 
-
-
-
-let trend = "No Data";
-
-// ✅ If no previous term OR no previous data → Term 1 case
-if (!previousAvg || previousAvg === 0) {
+if (isFirstTerm) {
   trend = "New Entry";
+} else if (!previousAvg) {
+  trend = "No Data";
 } else {
-
-  const currentLevel = getAchievementLabel(currentAvgScore);
-  const previousLevel = getAchievementLabel(previousAvg);
 
   const levelRank = {
     "Below Expectations(1)": 1,
@@ -1382,6 +1386,9 @@ if (!previousAvg || previousAvg === 0) {
     "Exceeding Expectations(4)": 4
   };
 
+  const currentLevel = getAchievementLabel(currentAvgScore);
+  const previousLevel = getAchievementLabel(previousAvg);
+
   const currentRank = levelRank[currentLevel] || 0;
   const previousRank = levelRank[previousLevel] || 0;
 
@@ -1389,10 +1396,6 @@ if (!previousAvg || previousAvg === 0) {
   else if (currentRank < previousRank) trend = "Declining";
   else trend = "Stable";
 }
-
-
-
-
 	  
    
     const supportFlag = generateSupportFlag(subjects);
