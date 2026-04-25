@@ -1449,30 +1449,19 @@ const previousAvg = prevData ? prevData.total / prevData.count : null;
 // ✅ HARD RULE FIRST
 let trend;
 
+const diff = currentAvgScore - previousAvg;
+
 if (isFirstTerm) {
   trend = "New Entry";
-} else if (!previousAvg) {
+} else if (!previousAvg && previousAvg !== 0) {
   trend = "No Data";
+} else if (diff >= 0.15) {
+  trend = "Improving";
+} else if (diff <= -0.15) {
+  trend = "Declining";
 } else {
-
-  const levelRank = {
-    "Below Expectations": 1,
-    "Approaching Expectations": 2,
-    "Meeting Expectations": 3,
-    "Exceeding Expectations": 4
-  };
-
-  const currentLevel = getAchievementLabel(currentAvgScore);
-  const previousLevel = getAchievementLabel(previousAvg);
-
-  const currentRank = levelRank[currentLevel] || 0;
-  const previousRank = levelRank[previousLevel] || 0;
-
-  if (currentRank > previousRank) trend = "Improving";
-  else if (currentRank < previousRank) trend = "Declining";
-  else trend = "Stable";
+  trend = "Stable";
 }
-	  
    
     const supportFlag = generateSupportFlag(subjects);
     const insight = generateInsight(subjects);
