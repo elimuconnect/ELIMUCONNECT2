@@ -740,6 +740,31 @@ if (previousTerm) {
 }
 
 
+
+
+let previousLearnerMap = {};
+
+previousRecords?.forEach(r => {
+  const adm = r.admission_number;
+  const score = levelToScore(r.achievement_level);
+
+  if (!previousLearnerMap[adm]) {
+    previousLearnerMap[adm] = [];
+  }
+
+  previousLearnerMap[adm].push(score);
+});
+const hasPreviousData = Object.keys(previousLearnerMap || {}).length > 0;
+
+	
+
+
+
+
+
+
+
+	
 // ============================
 // STEP 3 — ADD THIS HERE
 // ============================
