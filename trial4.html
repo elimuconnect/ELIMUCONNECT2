@@ -636,7 +636,7 @@ async function loadReport() {
   const termName = terms.find(t => t.id === term_id)?.name;
 
 const sortedTerms = terms.map(t => t.name).sort();
-const isFirstTerm = termName === sortedTerms[0];
+let isFirstTerm = termName === sortedTerms[0];
 	
 
 /* ===== LEARNER TERM AVERAGES FOR GRAPHS ===== */
@@ -703,7 +703,7 @@ const previousTerm = terms
   .sort()
   .filter(t => t < termName)
   .slice(-1)[0];
-const isFirstTerm = !previousTerm;
+ isFirstTerm = !previousTerm;
 
 if (isFirstTerm) {
   previousAverages = {};
