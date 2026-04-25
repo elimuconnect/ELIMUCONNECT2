@@ -926,6 +926,10 @@ strandData?.forEach(row => {
 
 
  
+function normAdm(v) {
+  return String(v || "").trim().toUpperCase();
+}
+ 
  
 
 function calculateTermIntelligence(records, previousRecords, previousTerm) {
