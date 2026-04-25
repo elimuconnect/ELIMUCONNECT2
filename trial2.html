@@ -974,7 +974,7 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
 });
   // ===== PREVIOUS TERM PROCESSING =====
  previousRecords.forEach(r => {
-  const score = levelToScore(r.achievement_level);
+  const score = levelToScore(r.level);
   if (score === null || score === undefined || isNaN(score)) return;
 
  const adm = normAdm(r.__admission || r.admission_number || r.admission);
