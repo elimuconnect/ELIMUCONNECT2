@@ -721,6 +721,14 @@ if (previousTerm) {
     const adm = r.admission_number;
   const score = levelToScore(r.achievement_level);
 
+previousRecords.forEach(r => {
+  console.log("PREVIOUS LEVEL RAW:", r.achievement_level);
+
+  const score = levelToScore(r.achievement_level);
+
+  console.log("PREVIOUS SCORE:", score);
+
+	  
     if (!previousAverages[adm]) {
       previousAverages[adm] = { total: 0, count: 0 };
     }
@@ -731,6 +739,7 @@ if (previousTerm) {
 }
 
 
+	
 
 // ============================
 // STEP 3 — ADD THIS HERE
@@ -1351,6 +1360,18 @@ const currentClass = studentRecord?.className || "—";
       });
     });
 
+rows.forEach(r => {
+  console.log("CURRENT LEVEL RAW:", r.level);
+
+  const score = levelToScore(r.level);
+
+  console.log("CURRENT SCORE:", score);
+
+  if (score > 0) currentScores.push(score);
+});
+
+
+	  
     const currentAvgScore = currentScores.length
       ? currentScores.reduce((a, b) => a + b, 0) / currentScores.length
       : null;
@@ -1358,6 +1379,11 @@ const currentClass = studentRecord?.className || "—";
     const prevData = previousAverages[admission];
     const previousAvg = prevData ? prevData.total / prevData.count : null;
 
+
+
+console.log("CURRENT AVG:", currentAvgScore);
+console.log("PREVIOUS AVG:", previousAvg);
+	  
     const trend = getTrend(currentAvgScore, previousAvg);
     const supportFlag = generateSupportFlag(subjects);
     const insight = generateInsight(subjects);
