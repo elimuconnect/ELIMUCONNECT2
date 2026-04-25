@@ -629,8 +629,7 @@ async function loadReport() {
 let sortedTerms = [...terms]
   .sort((a, b) => a.id - b.id)   // or use a.numeric_column if available
   .map(t => t.name);
-let isFirstTerm = termName === sortedTerms[0];
-	
+const isFirstTerm = currentIndex === 0;
 
 /* ===== LEARNER TERM AVERAGES FOR GRAPHS ===== */
 const { data: termAverages } = await supabase
@@ -691,25 +690,15 @@ termAverages?.forEach(r => {
 });
 
 
-sortedTerms = terms
-  .map(t => t.name)
-  .sort((a, b) => {
-    const aNum = parseInt(a.replace(/\D/g, ""));
-    const bNum = parseInt(b.replace(/\D/g, ""));
-    return aNum - bNum;
-  });
 
-
-
-
-const currentIndex = terms.findIndex(t => t.name === termName);
 
 const sortedById = [...terms].sort((a, b) => a.id - b.id);
+
+const currentIndex = sortedById.findIndex(t => t.name === termName);
 
 const previousTerm =
   currentIndex > 0 ? sortedById[currentIndex - 1].name : null;
 
-const isFirstTerm = currentIndex === 0;
 
 
 	
