@@ -1350,15 +1350,7 @@ const currentClass = studentRecord?.className || "—";
       });
     });
 
-rows.forEach(r => {
-  console.log("CURRENT LEVEL RAW:", r.level);
 
-  const score = levelToScore(r.level);
-
-  console.log("CURRENT SCORE:", score);
-
-  if (score > 0) currentScores.push(score);
-});
 
 
 	  
@@ -1371,8 +1363,6 @@ rows.forEach(r => {
 
 
 
-console.log("CURRENT AVG:", currentAvgScore);
-console.log("PREVIOUS AVG:", previousAvg);
 	  
     const trend = getTrend(currentAvgScore, previousAvg);
     const supportFlag = generateSupportFlag(subjects);
