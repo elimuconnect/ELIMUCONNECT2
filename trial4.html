@@ -1365,26 +1365,30 @@ const currentClass = studentRecord?.className || "—";
 
 
 
-
-const currentLevel = getAchievementLabel(currentAvgScore);
-const previousLevel = getAchievementLabel(previousAvg);
-
 let trend = "No Data";
 
-const levelRank = {
-  "Below Expectations(1)": 1,
-  "Approaching Expectations(2)": 2,
-  "Meeting Expectations(3)": 3,
-  "Exceeding Expectations(4)": 4
-};
+// ✅ If no previous term OR no previous data → Term 1 case
+if (!previousAvg || previousAvg === 0) {
+  trend = "New Entry";
+} else {
 
-const currentRank = levelRank[currentLevel] || 0;
-const previousRank = levelRank[previousLevel] || 0;
+  const currentLevel = getAchievementLabel(currentAvgScore);
+  const previousLevel = getAchievementLabel(previousAvg);
 
-if (currentRank > previousRank) trend = "Improving";
-else if (currentRank < previousRank) trend = "Declining";
-else trend = "Stable";
+  const levelRank = {
+    "Below Expectations(1)": 1,
+    "Approaching Expectations(2)": 2,
+    "Meeting Expectations(3)": 3,
+    "Exceeding Expectations(4)": 4
+  };
 
+  const currentRank = levelRank[currentLevel] || 0;
+  const previousRank = levelRank[previousLevel] || 0;
+
+  if (currentRank > previousRank) trend = "Improving";
+  else if (currentRank < previousRank) trend = "Declining";
+  else trend = "Stable";
+}
 
 
 
