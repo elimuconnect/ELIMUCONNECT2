@@ -1289,29 +1289,24 @@ if (hasPreviousData) {
 	
 
 	
-  // ===== RETURN =====
+ 
+// ===== RETURN =====
   return `
-<div class="a4-page school-analytics">
-<div class="learner-card">
+<div class="a4-page school-analytics" style="page-break-before: avoid; break-before: avoid;">
+  <div class="learner-card" style="margin-top: 0; padding-top: 0;">
 
-<div style="text-align:center;">
+    <div style="text-align:center; page-break-inside: avoid;">
+      ${schoolLogo ? `<div style="padding-top: 10px;"><img src="${schoolLogo}" style="width:200px;height:120px;object-fit:contain;" /></div>` : ""}
+      <h3 style="margin: 5px 0;">${schoolName}</h3>
+      <div style="margin-bottom: 15px;">Class: ${className} | Term: ${termName} – ${year}</div>
+    </div>
 
+    <h3 style="margin-top:0;">📊 School Performance Analytics</h3>
 
-${schoolLogo ? `
-  <div style="padding-top: 20px; margin-bottom: 10px;">
-    <img src="${schoolLogo}" style="width:200px; height:120px; object-fit:contain; display: block; margin: 0 auto;" />
-  </div>` : ""}
-
-
-  <h3>${schoolName}</h3>
-  <div>Class: ${className} | Term: ${termName} – ${year}</div>
-</div>
-
-<h3>📊 School Performance Analytics</h3>
-
-<h4 style="margin-top:20px;">🧠 Term Intelligence Summary</h4>
-
-${gradeIntelligenceHTML}
+    <div class="intelligence-section" style="page-break-inside: auto;">
+      <h4 style="margin-top:10px;">🧠 Term Intelligence Summary</h4>
+      ${gradeIntelligenceHTML}
+    </div>
 
 <h4>1️⃣ Class Mean Overview</h4>
 ${classSummaryHTML}
