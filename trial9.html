@@ -408,7 +408,7 @@ function isEditAllowed(createdAt) {
   const remainingDays = EDIT_WINDOW_DAYS - diffDays;
 
   return {
-   allowed: diffDays < EDIT_WINDOW_DAYS
+   allowed: diffDays < EDIT_WINDOW_DAYS,
     remainingDays: remainingDays
   };
 }
