@@ -383,7 +383,6 @@ function getAssessmentFilters() {
   };
 }
 
-
 function isEditAllowed(createdAt) {
   const EDIT_WINDOW_DAYS = 14;
 
@@ -392,15 +391,15 @@ function isEditAllowed(createdAt) {
   const created = new Date(createdAt);
   const now = new Date();
 
-  // normalize to midnight (removes time issues)
-  created.setHours(0, 0, 0, 0);
-  now.setHours(0, 0, 0, 0);
+  // Convert to LOCAL date strings (removes timezone issues)
+  const createdDate = new Date(created.getFullYear(), created.getMonth(), created.getDate());
+  const nowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  const diffDays = Math.floor((now - created) / (1000 * 60 * 60 * 24));
+  const diffDays = Math.floor((nowDate - createdDate) / (1000 * 60 * 60 * 24));
 
   return {
-    allowed: diffDays < EDIT_WINDOW_DAYS, // IMPORTANT: use < not <=
-    remainingDays: Math.max(EDIT_WINDOW_DAYS - diffDays, 0)
+    allowed: diffDays < EDIT_WINDOW_DAYS,
+   remainingDays: EDIT_WINDOW_DAYS - diffDays
   };
 }
   
@@ -949,8 +948,8 @@ document.getElementById("sleContainer").innerHTML = "";
   
 if (editCheck.allowed) {
 
-  statusEl.innerText =
-    `Existing assessment found. Editing allowed for ${editCheck.remainingDays} more day(s).`;
+ statusEl.innerText =
+  `Existing assessment found. Editing allowed for ${Math.max(editCheck.remainingDays, 0)} more day(s).`;
 
   document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = false);
   document.getElementById("subjectCompetency").disabled = false;
