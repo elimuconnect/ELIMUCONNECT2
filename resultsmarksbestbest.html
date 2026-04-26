@@ -962,6 +962,9 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
     prevSubjectMap[sub].push(score);
   });
 
+console.log("Current Subject Avg:", subjectMap);
+console.log("Previous Subject Avg:", prevSubjectMap);
+	
   function avg(arr) {
     return arr.length
       ? arr.reduce((a,b)=>a+b,0) / arr.length
