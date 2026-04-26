@@ -384,22 +384,25 @@ function getAssessmentFilters() {
 }
 
 
-
 function isEditAllowed(createdAt) {
   const EDIT_WINDOW_DAYS = 14;
 
-  const createdDate = new Date(createdAt);
-  if (!createdAt || isNaN(createdDate.getTime())) return { allowed: true, remainingDays: 14 };
+  if (!createdAt) return { allowed: true, remainingDays: 14 };
 
+  const created = new Date(createdAt);
   const now = new Date();
-  const diffDays = Math.floor((now - createdDate) / (1000 * 60 * 60 * 24));
+
+  // normalize to midnight (removes time issues)
+  created.setHours(0, 0, 0, 0);
+  now.setHours(0, 0, 0, 0);
+
+  const diffDays = Math.floor((now - created) / (1000 * 60 * 60 * 24));
 
   return {
-    allowed: diffDays <= EDIT_WINDOW_DAYS,
-    remainingDays: EDIT_WINDOW_DAYS - diffDays
+    allowed: diffDays < EDIT_WINDOW_DAYS, // IMPORTANT: use < not <=
+    remainingDays: Math.max(EDIT_WINDOW_DAYS - diffDays, 0)
   };
 }
-
   
 
 function resetSaveButton() {
