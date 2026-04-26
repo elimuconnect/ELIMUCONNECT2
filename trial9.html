@@ -382,36 +382,29 @@ function getAssessmentFilters() {
     category: document.getElementById("assessmentCategorySelect").value
   };
 }
+
+
 function isEditAllowed(createdAt) {
   const EDIT_WINDOW_DAYS = 14;
 
-  if (!createdAt) return { allowed: true, remainingDays: EDIT_WINDOW_DAYS };
+  if (!createdAt) {
+    return { allowed: true, remainingDays: EDIT_WINDOW_DAYS };
+  }
 
   const created = new Date(createdAt);
   const now = new Date();
 
-  // Normalize both dates to midnight UTC-safe
-  const createdDate = Date.UTC(
-    created.getFullYear(),
-    created.getMonth(),
-    created.getDate()
-  );
-
-  const nowDate = Date.UTC(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate()
-  );
-
-  const diffDays = Math.floor((nowDate - createdDate) / (1000 * 60 * 60 * 24));
+  const diffTime = now.getTime() - created.getTime();
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
   const remainingDays = EDIT_WINDOW_DAYS - diffDays;
 
   return {
-   allowed: diffDays < EDIT_WINDOW_DAYS,
+    allowed: diffDays < EDIT_WINDOW_DAYS,
     remainingDays: remainingDays
   };
 }
+
   
 
 function resetSaveButton() {
