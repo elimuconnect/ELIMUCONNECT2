@@ -1,4 +1,4 @@
-  <!DOCTYPE html>
+   <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -375,6 +375,16 @@ if (!classId || !subjectId) {
 
 
 
+function getAssessmentFilters() {
+  return {
+    termId: document.getElementById("termSelect").value,
+    assessmentTypeId: document.getElementById("assessmentTypeSelect").value,
+    category: document.getElementById("assessmentCategorySelect").value
+  };
+}
+
+
+
 function resetSaveButton() {
   const saveBtn = document.getElementById("saveAssessment");
   const statusEl = document.getElementById("status");
@@ -403,7 +413,7 @@ const { data: assessmentTypes } = await supabase.from("assessment_types").select
 document.getElementById("assessmentTypeSelect").innerHTML = `<option value="" disabled selected>-- Select Assessment Type --</option>${assessmentTypes.map(a => `<option value="${a.id}">${a.name}</option>`).join("")}`;
 
 // Auto-check on page load after terms/types are loaded
-loadExistingAssessment();
+setTimeout(loadExistingAssessment, 0);
 
   
 // Load achievement levels
@@ -850,14 +860,10 @@ statusEl.innerText = "Assessment saved successfully!";
 
  
 async function loadExistingAssessment() {
-  const termSelect = document.getElementById("termSelect");
-  const assessmentTypeSelect = document.getElementById("assessmentTypeSelect");
-  const statusEl = document.getElementById("assessmentStatus");
+ const statusEl = document.getElementById("assessmentStatus");
 
-  const termId = termSelect.value;
-  const assessmentTypeId = assessmentTypeSelect.value;
+const { termId, assessmentTypeId, category } = getAssessmentFilters();
 
-  const category = document.getElementById("assessmentCategorySelect").value;
 if (!termId || !assessmentTypeId || !category) {
   statusEl.innerText = "";
   return null;
@@ -959,10 +965,9 @@ document.querySelectorAll(".sleCheckbox").forEach(cb => cb.disabled = true);
   
   return existingAssessment;
 }
-  document.getElementById("termSelect").onchange = loadExistingAssessment;
+ document.getElementById("termSelect").onchange = loadExistingAssessment;
 document.getElementById("assessmentTypeSelect").onchange = loadExistingAssessment;
-
-
+document.getElementById("assessmentCategorySelect").onchange = loadExistingAssessment;
 
   // Toggle dropdown
 document.getElementById("dropdownBtn").onclick = () => {
