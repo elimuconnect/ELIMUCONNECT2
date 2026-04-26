@@ -385,6 +385,23 @@ function getAssessmentFilters() {
 
 
 
+function isEditAllowed(createdAt) {
+  const EDIT_WINDOW_DAYS = 14;
+
+  const createdDate = new Date(createdAt);
+  if (!createdAt || isNaN(createdDate.getTime())) return { allowed: true, remainingDays: 14 };
+
+  const now = new Date();
+  const diffDays = Math.floor((now - createdDate) / (1000 * 60 * 60 * 24));
+
+  return {
+    allowed: diffDays <= EDIT_WINDOW_DAYS,
+    remainingDays: EDIT_WINDOW_DAYS - diffDays
+  };
+}
+
+  
+
 function resetSaveButton() {
   const saveBtn = document.getElementById("saveAssessment");
   const statusEl = document.getElementById("status");
@@ -413,7 +430,9 @@ const { data: assessmentTypes } = await supabase.from("assessment_types").select
 document.getElementById("assessmentTypeSelect").innerHTML = `<option value="" disabled selected>-- Select Assessment Type --</option>${assessmentTypes.map(a => `<option value="${a.id}">${a.name}</option>`).join("")}`;
 
 // Auto-check on page load after terms/types are loaded
-setTimeout(loadExistingAssessment, 0);
+window.addEventListener("load", () => {
+  setTimeout(loadExistingAssessment, 300);
+});
 
   
 // Load achievement levels
@@ -635,18 +654,13 @@ const category = document.getElementById("assessmentCategorySelect").value;
 
 let assessmentId;
 
-if (existingAssessment) {
 
-  const createdDate = new Date(existingAssessment.created_at);
-  const now = new Date();
 
-  const diffDays = Math.floor(
-    (now - createdDate) / (1000 * 60 * 60 * 24)
-  );
+ if (existingAssessment) {
 
-  const EDIT_WINDOW_DAYS = 14;
+  const editCheck = isEditAllowed(existingAssessment.created_at);
 
-  if (diffDays <= EDIT_WINDOW_DAYS) {
+  if (editCheck.allowed) {
 
     // ✅ Update existing
     assessmentId = existingAssessment.id;
@@ -897,12 +911,7 @@ document.getElementById("sleContainer").innerHTML = "";
     return null;
   }
 
-  // 2️⃣ Calculate difference in days
-  const createdDate = new Date(existingAssessment.created_at);
-  const now = new Date();
-  const diffDays = Math.floor(
-  (now - createdDate) / (1000 * 60 * 60 * 24)
-);
+  const editCheck = isEditAllowed(existingAssessment.created_at);
 
   // 3️⃣ Load core competencies
   const selectedCoreIds = existingAssessment.core_competencies || [];
@@ -935,26 +944,22 @@ document.getElementById("sleContainer").innerHTML = "";
 
 
   
-const EDIT_WINDOW_DAYS = 14;
-
-if (diffDays <= EDIT_WINDOW_DAYS) {
-
-  const remainingDays = EDIT_WINDOW_DAYS - diffDays;
+if (editCheck.allowed) {
 
   statusEl.innerText =
-    `Existing assessment found. Editing allowed for ${remainingDays} more day(s).`;
+    `Existing assessment found. Editing allowed for ${editCheck.remainingDays} more day(s).`;
 
   document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = false);
   document.getElementById("subjectCompetency").disabled = false;
   document.querySelectorAll(".strandCheckbox").forEach(cb => cb.disabled = false);
-document.querySelectorAll(".sleCheckbox").forEach(cb => cb.disabled = false);
+  document.querySelectorAll(".sleCheckbox").forEach(cb => cb.disabled = false);
   document.querySelectorAll(".coreCompetency").forEach(cb => cb.disabled = false);
+
 
 } else {
 
   statusEl.innerText =
-    `Editing window closed (after ${EDIT_WINDOW_DAYS} days). You can create a new assessment now.`;
-
+  `Editing window closed. You can create a new assessment now.`;
   document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = true);
   document.getElementById("subjectCompetency").disabled = true;
   document.querySelectorAll(".strandCheckbox").forEach(cb => cb.disabled = true);
