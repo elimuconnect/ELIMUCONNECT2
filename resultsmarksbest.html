@@ -2699,13 +2699,13 @@ window.downloadSchoolAnalyticsPDF = async function () {
   clone.style.display = "block";
   clone.style.width = "190mm";
   clone.style.margin = "0";       // Remove auto margin
-  clone.style.paddingTop = "2mm"; // Tiny buffer just to prevent edge-clipping
+  clone.style.paddingTop = "4mm"; // Tiny buffer just to prevent edge-clipping
   clone.style.boxSizing = "border-box";
 
   await new Promise(r => setTimeout(r, 500));
 
   const opt = {
-    margin: [10, 10, 10, 10], // Standard 10mm margin (balanced)
+    margin: [15, 10, 10, 10], // Standard 10mm margin (balanced)
     filename: filename,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { 
