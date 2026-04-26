@@ -1003,7 +1003,7 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
     const currentAvg = avg(scores);
     const prevAvg = avg(prevLearnerMap[adm]);
 
-    if (currentAvg - prevAvg >= 0.15) improvingLearners++;
+    if (currentAvg - prevAvg >= 0.3) improvingLearners++;
   });
 
   // ===== TRUE IMPROVED CLASSES =====
@@ -1015,7 +1015,7 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
     const currentAvg = avg(scores);
     const prevAvg = avg(prevClassMap[cls]);
 
-    if (currentAvg - prevAvg >= 0.15) {
+    if (currentAvg - prevAvg >= 0.3) {
       improvedClasses.push(cls);
     }
   });
@@ -1032,7 +1032,7 @@ Object.entries(subjectMap).forEach(([sub, scores]) => {
     ? avg(prevSubjectMap[sub])
     : currentAvg;
 
-  if (currentAvg - prevAvg <= -0.15) {
+  if (currentAvg - prevAvg <= -0.3) {
     decliningSubjects.push(sub);
   }
 });
