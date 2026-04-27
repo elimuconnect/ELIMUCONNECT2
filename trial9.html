@@ -875,8 +875,9 @@ statusEl.innerText = "Assessment saved successfully!";
 }
 };
 
-async function loadExistingAssessment() {
 
+async function loadExistingAssessment() {
+  clearFormForNewAssessment();
   const statusEl = document.getElementById("assessmentStatus");
 
   const { termId, assessmentTypeId, category } = getAssessmentFilters();
@@ -885,7 +886,10 @@ async function loadExistingAssessment() {
     statusEl.innerText = "";
     return null;
   }
-
+// ✅ ADD THIS LINE HERE
+clearFormForNewAssessment();
+  
+  // 1️⃣ Get existing assessment
   const { data: existingAssessment } = await supabase
     .from("assessments")
     .select("*")
@@ -899,36 +903,63 @@ async function loadExistingAssessment() {
     .limit(1)
     .maybeSingle();
 
-  // =========================
-  // CASE 1: NO ASSESSMENT
-  // =========================
+  // CASE 1: NO assessment
   if (!existingAssessment) {
     statusEl.innerText = "No previous assessment found. You can create a new one.";
-
-    clearFormForNewAssessment();   // ✅ ONLY HERE
+    clearFormForNewAssessment();
     enableAllInputs();
     return null;
   }
 
-  // =========================
-  // CASE 2: EXISTS
-  // =========================
+  // 2️⃣ Check edit window
   const editCheck = isEditAllowed(existingAssessment.created_at);
 
+  // CASE 2: EDITABLE
   if (editCheck.allowed) {
 
     statusEl.innerText =
       `Existing assessment found. Editing allowed for ${Math.max(editCheck.remainingDays, 0)} more day(s).`;
 
-    // ✅ LOAD DATA FIRST
-    loadAssessmentData(existingAssessment);
+    // Load existing data
+    const selectedCoreIds = existingAssessment.core_competencies || [];
+    document.querySelectorAll(".coreCompetency").forEach(cb => {
+      cb.checked = selectedCoreIds.includes(cb.value);
+    });
+
+    document.getElementById("subjectCompetency").value =
+      existingAssessment.subject_competencies || "";
+
+    // Load student results
+    const { data: results } = await supabase
+      .from("assessment_results")
+      .select("*")
+      .eq("assessment_id", existingAssessment.id);
+
+if (!results || results.length === 0) {
+  return; // nothing to load → keep cleared state
+}
+
+
+    
+    const studentRows = document.querySelectorAll("#studentsBody tr");
+    studentRows.forEach(tr => {
+      const studentResult = results.find(r => r.student_id === tr.dataset.id);
+
+const sel = tr.querySelector(".performanceLevel");
+
+if (studentResult) {
+  sel.value = studentResult.achievement_level_id;
+} else {
+  sel.value = "";          // 🔥 FORCE reset if no data
+  sel.selectedIndex = 0;
+}
+      
+    });
 
     enableAllInputs();
   }
 
-  // =========================
-  // CASE 3: EXPIRED
-  // =========================
+  // CASE 3: EXPIRED → NEW MODE
   else {
 
     statusEl.innerText =
@@ -938,6 +969,7 @@ async function loadExistingAssessment() {
     enableAllInputs();
   }
 }
+
   
  document.getElementById("termSelect").onchange = loadExistingAssessment;
 document.getElementById("assessmentTypeSelect").onchange = loadExistingAssessment;
