@@ -345,7 +345,7 @@
 </tr>
 </thead>
       <tbody id="studentsBody">
-        <tr><td colspan="3">Loading students...</td></tr>
+      <tr><td colspan="4">Loading students...</td></tr>
       </tbody>
     </table>
     <br>
@@ -493,7 +493,7 @@ competencies
 const tbody = document.getElementById("studentsBody");
 
 if (!students?.length) {
-  tbody.innerHTML = `<tr><td colspan="3">No students in this class</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="4">No students in this class</td></tr>`;
 } else {
   tbody.innerHTML = students.map(s => `
 <tr data-id="${s.id}">
@@ -1021,39 +1021,29 @@ function enableAllInputs() {
 
 
   
+function setupDropdown(btnId, containerId) {
+  const btn = document.getElementById(btnId);
+  const container = document.getElementById(containerId);
 
-  // Toggle dropdown
-document.getElementById("dropdownBtn").onclick = () => {
-  const container = document.getElementById("coreCompetenciesContainer");
-  container.style.display = container.style.display === "block" ? "none" : "block";
-};
+  if (!btn || !container) return;
 
-// Close dropdown if clicked outside
-document.addEventListener("click", function(event) {
-  const dropdown = document.querySelector(".dropdown");
-  if (!dropdown.contains(event.target)) {
-    document.getElementById("coreCompetenciesContainer").style.display = "none";
-  }
-});
+  btn.onclick = (e) => {
+    e.stopPropagation();
+    container.style.display =
+      container.style.display === "block" ? "none" : "block";
+  };
 
+  document.addEventListener("click", (event) => {
+    if (!btn.parentElement.contains(event.target)) {
+      container.style.display = "none";
+    }
+  });
+}
 
-// Toggle dropdowns
-document.getElementById("dropdownStrandBtn").onclick = () => {
-  strandContainer.style.display = strandContainer.style.display === "block" ? "none" : "block";
-};
-document.getElementById("dropdownSLEBtn").onclick = () => {
-  sleContainer.style.display = sleContainer.style.display === "block" ? "none" : "block";
-};
-
-// Close dropdown if clicked outside
-document.addEventListener("click", function(event) {
-  if (!document.getElementById("dropdownStrandBtn").parentElement.contains(event.target)) {
-    strandContainer.style.display = "none";
-  }
-  if (!document.getElementById("dropdownSLEBtn").parentElement.contains(event.target)) {
-    sleContainer.style.display = "none";
-  }
-});
+// Apply to all dropdowns
+setupDropdown("dropdownBtn", "coreCompetenciesContainer");
+setupDropdown("dropdownStrandBtn", "strandContainer");
+setupDropdown("dropdownSLEBtn", "sleContainer");
 
 
 
@@ -1070,11 +1060,10 @@ document.addEventListener("input", function(e){
   }
 
   const level = convertMarksToLevel(mark);
-
   row.querySelector(".levelOutput").innerText = level;
 
 });
-
+  
 </script>
 </body>
 </html>
