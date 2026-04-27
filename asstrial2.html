@@ -1,4 +1,4 @@
-  <!DOCTYPE html>
+    <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -270,6 +270,10 @@
   overflow-x:auto;
 }
   
+.dropdown-content.show {
+  display: block;
+}
+  
 </style>
 </head>
 <body>
@@ -344,7 +348,7 @@
 </tr>
 </thead>
       <tbody id="studentsBody">
-        <tr><td colspan="3">Loading students...</td></tr>
+        <tr><td colspan="4">Loading students...</td></tr>
       </tbody>
     </table>
     <br>
@@ -391,6 +395,43 @@ function convertMarksToLevel(mark){
 
   return "BE2";
 }
+
+
+
+
+
+
+function getAssessmentFilters() {
+  return {
+    termId: document.getElementById("termSelect").value,
+    assessmentTypeId: document.getElementById("assessmentTypeSelect").value,
+    category: document.getElementById("assessmentCategorySelect").value
+  };
+}
+
+
+function isEditAllowed(createdAt) {
+  const EDIT_WINDOW_DAYS = 14;
+
+  if (!createdAt) {
+    return { allowed: true, remainingDays: EDIT_WINDOW_DAYS };
+  }
+
+  const created = new Date(createdAt);
+  const now = new Date();
+
+  const diffTime = now.getTime() - created.getTime();
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+  const remainingDays = EDIT_WINDOW_DAYS - diffDays;
+
+  return {
+    allowed: diffDays < EDIT_WINDOW_DAYS,
+    remainingDays: remainingDays
+  };
+}
+
+  
 
 
 
@@ -462,7 +503,7 @@ competencies
 const tbody = document.getElementById("studentsBody");
 
 if (!students?.length) {
-  tbody.innerHTML = `<tr><td colspan="3">No students in this class</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="4">No students in this class</td></tr>`;
 } else {
   tbody.innerHTML = students.map(s => `
 <tr data-id="${s.id}">
@@ -637,18 +678,12 @@ const category = document.getElementById("assessmentCategorySelect").value;
 
 let assessmentId;
 
-if (existingAssessment) {
+ if (existingAssessment) {
 
-  const createdDate = new Date(existingAssessment.created_at);
-  const now = new Date();
+  const editCheck = isEditAllowed(existingAssessment.created_at);
 
-  const diffDays = Math.floor(
-    (now - createdDate) / (1000 * 60 * 60 * 24)
-  );
+  if (editCheck.allowed) {
 
-  const EDIT_WINDOW_DAYS = 14;
-
-  if (diffDays <= EDIT_WINDOW_DAYS) {
 
     // ✅ Update existing
     assessmentId = existingAssessment.id;
@@ -860,24 +895,21 @@ statusEl.innerText = "Marks saved successfully!";
 } finally {
 
   saveBtn.disabled = false;
-  saveBtn.innerText = "Save Marks";
+  saveBtn.innerText = "Save Assessment";
 
 }
 }
- 
 async function loadExistingAssessment() {
-  const termSelect = document.getElementById("termSelect");
-  const assessmentTypeSelect = document.getElementById("assessmentTypeSelect");
   const statusEl = document.getElementById("assessmentStatus");
 
-  const termId = termSelect.value;
-  const assessmentTypeId = assessmentTypeSelect.value;
+  const { termId, assessmentTypeId, category } = getAssessmentFilters();
 
-  const category = document.getElementById("assessmentCategorySelect").value;
-if (!termId || !assessmentTypeId || !category) {
-  statusEl.innerText = "";
-  return null;
-}
+  if (!termId || !assessmentTypeId || !category) {
+    statusEl.innerText = "";
+    return null;
+  }
+
+ 
 
 
   // 1️⃣ Get existing assessment
@@ -894,132 +926,130 @@ if (!termId || !assessmentTypeId || !category) {
     .limit(1)
     .maybeSingle();
 
-  if (!existingAssessment) {
-    statusEl.innerText = "No previous assessment found. You can create a new one.";
-    document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = false);
-    document.getElementById("subjectCompetency").value = "";
-    // Uncheck all strand checkboxes
-document.querySelectorAll(".strandCheckbox").forEach(cb => cb.checked = false);
 
-// Clear all SLE checkboxes
-document.getElementById("sleContainer").innerHTML = "";
-    document.querySelectorAll(".coreCompetency").forEach(cb => cb.checked = false);
+
+  // =========================
+  // 🔵 STATE A: NO ASSESSMENT
+  // =========================
+  if (!existingAssessment) {
+    clearFormForNewAssessment();
+    enableAllInputs();
+
+    statusEl.innerText =
+      "No previous assessment found. You can create a new one.";
+
     return null;
   }
 
-  // 2️⃣ Calculate difference in days
-  const createdDate = new Date(existingAssessment.created_at);
-  const now = new Date();
-  const diffDays = Math.floor(
-  (now - createdDate) / (1000 * 60 * 60 * 24)
-);
+  // 2️⃣ Check edit window
+  const editCheck = isEditAllowed(existingAssessment.created_at);
 
-  // 3️⃣ Load core competencies
-  const selectedCoreIds = existingAssessment.core_competencies || [];
-  document.querySelectorAll(".coreCompetency").forEach(cb => {
-    cb.checked = selectedCoreIds.includes(cb.value);
-  });
 
-  // 4️⃣ Load subject competencies
-  document.getElementById("subjectCompetency").value = existingAssessment.subject_competencies || "";
-
-  // 5️⃣ Load strands + learning experiences (checkbox version)
+  // IMPORTANT FIX: load results by assessment_id
+  const { data: results } = await supabase
+    .from("results2")
+    .select("*")
+    .eq("assessment_id", existingAssessment.id);
 
 
 
-  // 6️⃣ Load student results
-const { data: results } = await supabase
-  .from("results2")
-  .select("*")
-  .eq("class_id", classId)
-  .eq("subject_id", subjectId)
-  .eq("term_id", termId)
-  .eq("academic_year", academicYear);
+// core competencies
+const selectedCoreIds = existingAssessment.core_competencies || [];
+document.querySelectorAll(".coreCompetency").forEach(cb => {
+  cb.checked = selectedCoreIds.includes(cb.value);
+});
 
-  const studentRows = document.querySelectorAll("#studentsBody tr");
- studentRows.forEach(tr => {
+// subject competency
+document.getElementById("subjectCompetency").value =
+  existingAssessment.subject_competencies || "";
 
- const studentResult = results?.find(r => r.student_id === tr.dataset.id);
-
-  if(studentResult){
-
-    tr.querySelector(".marksInput").value = studentResult.marks;
-    tr.querySelector(".levelOutput").innerText = studentResult.level;
-
+// student results
+document.querySelectorAll("#studentsBody tr").forEach(tr => {
+  const r = results?.find(x => x.student_id === tr.dataset.id);
+  if (r) {
+    tr.querySelector(".marksInput").value = r.marks;
+    tr.querySelector(".levelOutput").innerText = r.level;
   }
-
 });
 
 
 
-  
-const EDIT_WINDOW_DAYS = 14;
 
-if (diffDays <= EDIT_WINDOW_DAYS) {
+  // =========================
+  // 🟡 STATE B: EDITABLE
+  // =========================
+  if (editCheck.allowed) {
+    statusEl.innerText =
+      `Editing allowed for ${Math.max(editCheck.remainingDays, 0)} more day(s).`;
 
-  const remainingDays = EDIT_WINDOW_DAYS - diffDays;
+    enableAllInputs();
+    return existingAssessment;
+  }
 
+  // =========================
+  // 🔴 STATE C: EXPIRED
+  // =========================
   statusEl.innerText =
-    `Existing assessment found. Editing allowed for ${remainingDays} more day(s).`;
+    "Editing window closed. You can create a new assessment.";
 
-  document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = false);
-  document.getElementById("subjectCompetency").disabled = false;
-  document.querySelectorAll(".strandCheckbox").forEach(cb => cb.disabled = false);
-document.querySelectorAll(".sleCheckbox").forEach(cb => cb.disabled = false);
-  document.querySelectorAll(".coreCompetency").forEach(cb => cb.disabled = false);
-
-} else {
-
-  statusEl.innerText =
-    `Editing window closed (after ${EDIT_WINDOW_DAYS} days). You can create a new assessment now.`;
-
-  document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = true);
-  document.getElementById("subjectCompetency").disabled = true;
-  document.querySelectorAll(".strandCheckbox").forEach(cb => cb.disabled = true);
-document.querySelectorAll(".sleCheckbox").forEach(cb => cb.disabled = true);
-  document.querySelectorAll(".coreCompetency").forEach(cb => cb.disabled = true);
-}
-
-  
   return existingAssessment;
 }
-  document.getElementById("termSelect").onchange = loadExistingAssessment;
+
+
+  
+
+ document.getElementById("termSelect").onchange = loadExistingAssessment;
 document.getElementById("assessmentTypeSelect").onchange = loadExistingAssessment;
+document.getElementById("assessmentCategorySelect").onchange = loadExistingAssessment;
 
 
 
-  // Toggle dropdown
-document.getElementById("dropdownBtn").onclick = () => {
-  const container = document.getElementById("coreCompetenciesContainer");
-  container.style.display = container.style.display === "block" ? "none" : "block";
-};
+function enableAllInputs() {
+  document.querySelectorAll(".marksInput").forEach(sel => sel.disabled = false);
+  document.getElementById("subjectCompetency").disabled = false;
+  document.querySelectorAll(".strandCheckbox").forEach(cb => cb.disabled = false);
+  document.querySelectorAll(".sleCheckbox").forEach(cb => cb.disabled = false);
+  document.querySelectorAll(".coreCompetency").forEach(cb => cb.disabled = false);
+}
 
-// Close dropdown if clicked outside
-document.addEventListener("click", function(event) {
-  const dropdown = document.querySelector(".dropdown");
-  if (!dropdown.contains(event.target)) {
-    document.getElementById("coreCompetenciesContainer").style.display = "none";
-  }
+
+  function clearFormForNewAssessment() {
+  // Reset student performance levels to default (NOT blank)
+ document.querySelectorAll(".marksInput").forEach(inp => {
+  inp.value = "";
 });
 
+  document.getElementById("subjectCompetency").value = "";
 
-// Toggle dropdowns
-document.getElementById("dropdownStrandBtn").onclick = () => {
-  strandContainer.style.display = strandContainer.style.display === "block" ? "none" : "block";
-};
-document.getElementById("dropdownSLEBtn").onclick = () => {
-  sleContainer.style.display = sleContainer.style.display === "block" ? "none" : "block";
-};
+  document.querySelectorAll(".coreCompetency").forEach(cb => cb.checked = false);
+  document.querySelectorAll(".strandCheckbox").forEach(cb => cb.checked = false);
 
-// Close dropdown if clicked outside
-document.addEventListener("click", function(event) {
-  if (!document.getElementById("dropdownStrandBtn").parentElement.contains(event.target)) {
-    strandContainer.style.display = "none";
-  }
-  if (!document.getElementById("dropdownSLEBtn").parentElement.contains(event.target)) {
-    sleContainer.style.display = "none";
-  }
+  document.getElementById("sleContainer").innerHTML = "";
+}
+
+function setupDropdown(btnId, containerId) {
+  const btn = document.getElementById(btnId);
+  const container = document.getElementById(containerId);
+
+  if (!btn || !container) return;
+
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    container.classList.toggle("show");
+  });
+}
+
+// ONE global click handler only
+document.addEventListener("click", () => {
+  document.querySelectorAll(".dropdown-content").forEach(d => {
+    d.classList.remove("show");
+  });
 });
+  
+// Apply to all dropdowns
+setupDropdown("dropdownBtn", "coreCompetenciesContainer");
+setupDropdown("dropdownStrandBtn", "strandContainer");
+setupDropdown("dropdownSLEBtn", "sleContainer");
 
 
 
@@ -1036,10 +1066,11 @@ document.addEventListener("input", function(e){
   }
 
   const level = convertMarksToLevel(mark);
-
   row.querySelector(".levelOutput").innerText = level;
 
 });
+  
+
 
 </script>
 </body>
