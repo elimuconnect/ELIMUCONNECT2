@@ -434,11 +434,10 @@ document.getElementById("termSelect").innerHTML = `<option value="" disabled sel
 const { data: assessmentTypes } = await supabase.from("assessment_types").select("id, name");
 document.getElementById("assessmentTypeSelect").innerHTML = `<option value="" disabled selected>-- Select Assessment Type --</option>${assessmentTypes.map(a => `<option value="${a.id}">${a.name}</option>`).join("")}`;
 
-// Auto-check on page load after terms/types are loaded
 window.addEventListener("load", () => {
-  setTimeout(loadExistingAssessment, 300);
+  clearFormForNewAssessment();     // ✅ clear FIRST
+  setTimeout(loadExistingAssessment, 300); // then load
 });
-
   
 // Load achievement levels
 const { data: levels } = await supabase
@@ -879,6 +878,7 @@ statusEl.innerText = "Assessment saved successfully!";
 
 
 async function loadExistingAssessment() {
+  clearFormForNewAssessment();
   const statusEl = document.getElementById("assessmentStatus");
 
   const { termId, assessmentTypeId, category } = getAssessmentFilters();
@@ -936,13 +936,25 @@ clearFormForNewAssessment();
       .select("*")
       .eq("assessment_id", existingAssessment.id);
 
+if (!results || results.length === 0) {
+  return; // nothing to load → keep cleared state
+}
+
+
+    
     const studentRows = document.querySelectorAll("#studentsBody tr");
     studentRows.forEach(tr => {
       const studentResult = results.find(r => r.student_id === tr.dataset.id);
-      if (studentResult) {
-        const sel = tr.querySelector(".performanceLevel");
-        sel.value = studentResult.achievement_level_id;
-      }
+
+const sel = tr.querySelector(".performanceLevel");
+
+if (studentResult) {
+  sel.value = studentResult.achievement_level_id;
+} else {
+  sel.value = "";          // 🔥 FORCE reset if no data
+  sel.selectedIndex = 0;
+}
+      
     });
 
     enableAllInputs();
@@ -976,10 +988,12 @@ function enableAllInputs() {
 }
 
 
-  function clearFormForNewAssessment() {
-  // Reset student performance levels to default (NOT blank)
+function clearFormForNewAssessment() {
+
+  // 🔥 FORCE reset performance levels properly
   document.querySelectorAll(".performanceLevel").forEach(sel => {
-    sel.selectedIndex = 0; // important: avoids empty invalid state
+    sel.value = "";              // clear value
+    sel.selectedIndex = 0;       // fallback to first option
   });
 
   document.getElementById("subjectCompetency").value = "";
@@ -989,8 +1003,6 @@ function enableAllInputs() {
 
   document.getElementById("sleContainer").innerHTML = "";
 }
-
-
   
   // Toggle dropdown
 document.getElementById("dropdownBtn").onclick = () => {
