@@ -887,7 +887,9 @@ async function loadExistingAssessment() {
     statusEl.innerText = "";
     return null;
   }
-
+// ✅ ADD THIS LINE HERE
+clearFormForNewAssessment();
+  
   // 1️⃣ Get existing assessment
   const { data: existingAssessment } = await supabase
     .from("assessments")
