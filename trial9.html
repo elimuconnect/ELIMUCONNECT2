@@ -877,17 +877,16 @@ statusEl.innerText = "Assessment saved successfully!";
 };
 
 
- 
+
 async function loadExistingAssessment() {
- const statusEl = document.getElementById("assessmentStatus");
+  const statusEl = document.getElementById("assessmentStatus");
 
-const { termId, assessmentTypeId, category } = getAssessmentFilters();
+  const { termId, assessmentTypeId, category } = getAssessmentFilters();
 
-if (!termId || !assessmentTypeId || !category) {
-  statusEl.innerText = "";
-  return null;
-}
-
+  if (!termId || !assessmentTypeId || !category) {
+    statusEl.innerText = "";
+    return null;
+  }
 
   // 1️⃣ Get existing assessment
   const { data: existingAssessment } = await supabase
@@ -903,82 +902,94 @@ if (!termId || !assessmentTypeId || !category) {
     .limit(1)
     .maybeSingle();
 
+  // CASE 1: NO assessment
   if (!existingAssessment) {
     statusEl.innerText = "No previous assessment found. You can create a new one.";
-    document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = false);
-    document.getElementById("subjectCompetency").value = "";
-    // Uncheck all strand checkboxes
-document.querySelectorAll(".strandCheckbox").forEach(cb => cb.checked = false);
-
-// Clear all SLE checkboxes
-document.getElementById("sleContainer").innerHTML = "";
-    document.querySelectorAll(".coreCompetency").forEach(cb => cb.checked = false);
+    clearFormForNewAssessment();
+    enableAllInputs();
     return null;
   }
 
+  // 2️⃣ Check edit window
   const editCheck = isEditAllowed(existingAssessment.created_at);
 
-  // 3️⃣ Load core competencies
-  const selectedCoreIds = existingAssessment.core_competencies || [];
-  document.querySelectorAll(".coreCompetency").forEach(cb => {
-    cb.checked = selectedCoreIds.includes(cb.value);
-  });
+  // CASE 2: EDITABLE
+  if (editCheck.allowed) {
 
-  // 4️⃣ Load subject competencies
-  document.getElementById("subjectCompetency").value = existingAssessment.subject_competencies || "";
+    statusEl.innerText =
+      `Existing assessment found. Editing allowed for ${Math.max(editCheck.remainingDays, 0)} more day(s).`;
 
-  // 5️⃣ Load strands + learning experiences (checkbox version)
+    // Load existing data
+    const selectedCoreIds = existingAssessment.core_competencies || [];
+    document.querySelectorAll(".coreCompetency").forEach(cb => {
+      cb.checked = selectedCoreIds.includes(cb.value);
+    });
 
+    document.getElementById("subjectCompetency").value =
+      existingAssessment.subject_competencies || "";
 
+    // Load student results
+    const { data: results } = await supabase
+      .from("assessment_results")
+      .select("*")
+      .eq("assessment_id", existingAssessment.id);
 
-  // 6️⃣ Load student results
-  const { data: results } = await supabase
-    .from("assessment_results")
-    .select("*")
-    .eq("assessment_id", existingAssessment.id);
+    const studentRows = document.querySelectorAll("#studentsBody tr");
+    studentRows.forEach(tr => {
+      const studentResult = results.find(r => r.student_id === tr.dataset.id);
+      if (studentResult) {
+        const sel = tr.querySelector(".performanceLevel");
+        sel.value = studentResult.achievement_level_id;
+      }
+    });
 
-  const studentRows = document.querySelectorAll("#studentsBody tr");
-  studentRows.forEach(tr => {
-    const studentResult = results.find(r => r.student_id === tr.dataset.id);
-    if (studentResult) {
-      const sel = tr.querySelector(".performanceLevel");
-      sel.value = studentResult.achievement_level_id;
-    }
-  });
+    enableAllInputs();
+  }
 
+  // CASE 3: EXPIRED → NEW MODE
+  else {
 
+    statusEl.innerText =
+      "Editing window closed. You can create a new assessment now.";
+
+    clearFormForNewAssessment();
+    enableAllInputs();
+  }
+}
 
   
-if (editCheck.allowed) {
+ document.getElementById("termSelect").onchange = loadExistingAssessment;
+document.getElementById("assessmentTypeSelect").onchange = loadExistingAssessment;
+document.getElementById("assessmentCategorySelect").onchange = loadExistingAssessment;
 
- statusEl.innerText =
-  `Existing assessment found. Editing allowed for ${Math.max(editCheck.remainingDays, 0)} more day(s).`;
 
+
+
+function enableAllInputs() {
   document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = false);
   document.getElementById("subjectCompetency").disabled = false;
   document.querySelectorAll(".strandCheckbox").forEach(cb => cb.disabled = false);
   document.querySelectorAll(".sleCheckbox").forEach(cb => cb.disabled = false);
   document.querySelectorAll(".coreCompetency").forEach(cb => cb.disabled = false);
-
-
-} else {
-
-  statusEl.innerText =
-  `Editing window closed. You can create a new assessment now.`;
-  document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = true);
-  document.getElementById("subjectCompetency").disabled = true;
-  document.querySelectorAll(".strandCheckbox").forEach(cb => cb.disabled = true);
-document.querySelectorAll(".sleCheckbox").forEach(cb => cb.disabled = true);
-  document.querySelectorAll(".coreCompetency").forEach(cb => cb.disabled = true);
 }
+
+
+  function clearFormForNewAssessment() {
+  // Reset student performance levels to default (NOT blank)
+  document.querySelectorAll(".performanceLevel").forEach(sel => {
+    sel.selectedIndex = 0; // important: avoids empty invalid state
+  });
+
+  document.getElementById("subjectCompetency").value = "";
+
+  document.querySelectorAll(".coreCompetency").forEach(cb => cb.checked = false);
+  document.querySelectorAll(".strandCheckbox").forEach(cb => cb.checked = false);
+
+  document.getElementById("sleContainer").innerHTML = "";
+}
+
 
   
-  return existingAssessment;
-}
- document.getElementById("termSelect").onchange = loadExistingAssessment;
-document.getElementById("assessmentTypeSelect").onchange = loadExistingAssessment;
-document.getElementById("assessmentCategorySelect").onchange = loadExistingAssessment;
-
   // Toggle dropdown
 document.getElementById("dropdownBtn").onclick = () => {
   const container = document.getElementById("coreCompetenciesContainer");
