@@ -935,11 +935,6 @@ async function loadExistingAssessment() {
   // 2️⃣ Check edit window
   const editCheck = isEditAllowed(existingAssessment.created_at);
 
-  // =========================
-  // LOAD COMMON DATA FIRST
-  // =========================
-  loadCoreCompetencies(existingAssessment);
-  loadSubjectCompetency(existingAssessment);
 
   // IMPORTANT FIX: load results by assessment_id
   const { data: results } = await supabase
@@ -947,7 +942,29 @@ async function loadExistingAssessment() {
     .select("*")
     .eq("assessment_id", existingAssessment.id);
 
-  fillStudentResults(results);
+
+
+// core competencies
+const selectedCoreIds = existingAssessment.core_competencies || [];
+document.querySelectorAll(".coreCompetency").forEach(cb => {
+  cb.checked = selectedCoreIds.includes(cb.value);
+});
+
+// subject competency
+document.getElementById("subjectCompetency").value =
+  existingAssessment.subject_competencies || "";
+
+// student results
+document.querySelectorAll("#studentsBody tr").forEach(tr => {
+  const r = results?.find(x => x.student_id === tr.dataset.id);
+  if (r) {
+    tr.querySelector(".marksInput").value = r.marks;
+    tr.querySelector(".levelOutput").innerText = r.level;
+  }
+});
+
+
+  
 
   // =========================
   // 🟡 STATE B: EDITABLE
@@ -966,10 +983,6 @@ async function loadExistingAssessment() {
   statusEl.innerText =
     "Editing window closed. You can create a new assessment.";
 
-  // IMPORTANT RULE:
-  // DO NOT clear data automatically here (user may need reference)
-  disableAllInputs();
-
   return existingAssessment;
 }
 
@@ -981,7 +994,13 @@ document.getElementById("assessmentTypeSelect").onchange = loadExistingAssessmen
 document.getElementById("assessmentCategorySelect").onchange = loadExistingAssessment;
 
 
-
+function disableAllInputs() {
+  document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = true);
+  document.getElementById("subjectCompetency").disabled = true;
+  document.querySelectorAll(".strandCheckbox").forEach(cb => cb.disabled = true);
+  document.querySelectorAll(".sleCheckbox").forEach(cb => cb.disabled = true);
+  document.querySelectorAll(".coreCompetency").forEach(cb => cb.disabled = true);
+}
 
 function enableAllInputs() {
   document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = false);
