@@ -435,7 +435,7 @@ const { data: assessmentTypes } = await supabase.from("assessment_types").select
 document.getElementById("assessmentTypeSelect").innerHTML = `<option value="" disabled selected>-- Select Assessment Type --</option>${assessmentTypes.map(a => `<option value="${a.id}">${a.name}</option>`).join("")}`;
 
 window.addEventListener("load", () => {
-  clearFormForNewAssessment();     // ✅ clear FIRST
+ 
   setTimeout(loadExistingAssessment, 300); // then load
 });
   
