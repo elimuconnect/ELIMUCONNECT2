@@ -876,6 +876,7 @@ statusEl.innerText = "Assessment saved successfully!";
 };
 
 async function loadExistingAssessment() {
+
   const statusEl = document.getElementById("assessmentStatus");
 
   const { termId, assessmentTypeId, category } = getAssessmentFilters();
@@ -902,103 +903,40 @@ async function loadExistingAssessment() {
   // CASE 1: NO ASSESSMENT
   // =========================
   if (!existingAssessment) {
-    statusEl.innerText =
-      "No previous assessment found. You can create a new one.";
+    statusEl.innerText = "No previous assessment found. You can create a new one.";
 
-    document.querySelectorAll(".performanceLevel").forEach(sel => {
-      sel.value = "";
-      sel.selectedIndex = 0;
-      sel.disabled = false;
-    });
-
-    document.getElementById("subjectCompetency").value = "";
-    document.getElementById("subjectCompetency").disabled = false;
-
-    document.querySelectorAll(".coreCompetency").forEach(cb => {
-      cb.checked = false;
-      cb.disabled = false;
-    });
-
-    document.querySelectorAll(".strandCheckbox").forEach(cb => {
-      cb.checked = false;
-      cb.disabled = false;
-    });
-
-    document.querySelectorAll(".sleCheckbox").forEach(cb => {
-      cb.checked = false;
-      cb.disabled = false;
-    });
-
-    document.getElementById("sleContainer").innerHTML = "";
-
+    clearFormForNewAssessment();   // ✅ ONLY HERE
+    enableAllInputs();
     return null;
   }
 
   // =========================
-  // CASE 2 & 3: USE FIRST FUNCTION EXPIRY LOGIC
+  // CASE 2: EXISTS
   // =========================
   const editCheck = isEditAllowed(existingAssessment.created_at);
 
-  // =========================
-  // LOAD DATA (SECOND FUNCTION LOGIC)
-  // =========================
-
-  const selectedCoreIds = existingAssessment.core_competencies || [];
-
-  document.querySelectorAll(".coreCompetency").forEach(cb => {
-    cb.checked = selectedCoreIds.includes(cb.value);
-    cb.disabled = !editCheck.allowed;
-  });
-
-  document.getElementById("subjectCompetency").value =
-    existingAssessment.subject_competencies || "";
-
-  document.getElementById("subjectCompetency").disabled = !editCheck.allowed;
-
-  const { data: results } = await supabase
-    .from("assessment_results")
-    .select("*")
-    .eq("assessment_id", existingAssessment.id);
-
-  document.querySelectorAll("#studentsBody tr").forEach(tr => {
-    const studentResult = results?.find(
-      r => r.student_id === tr.dataset.id
-    );
-
-    const sel = tr.querySelector(".performanceLevel");
-
-    if (studentResult) {
-      sel.value = studentResult.achievement_level_id;
-    } else {
-      sel.value = "";
-      sel.selectedIndex = 0;
-    }
-
-    sel.disabled = !editCheck.allowed;
-  });
-
-  document.querySelectorAll(".strandCheckbox").forEach(cb => {
-    cb.disabled = !editCheck.allowed;
-  });
-
-  document.querySelectorAll(".sleCheckbox").forEach(cb => {
-    cb.disabled = !editCheck.allowed;
-  });
-
-  document.getElementById("subjectCompetency").disabled = !editCheck.allowed;
-
-  // =========================
-  // STATUS MESSAGE (FROM FIRST LOGIC)
-  // =========================
   if (editCheck.allowed) {
+
     statusEl.innerText =
       `Existing assessment found. Editing allowed for ${Math.max(editCheck.remainingDays, 0)} more day(s).`;
-  } else {
-    statusEl.innerText =
-      "Editing window closed (after 14 days). You can create a new assessment now.";
+
+    // ✅ LOAD DATA FIRST
+    loadAssessmentData(existingAssessment);
+
+    enableAllInputs();
   }
 
-  return existingAssessment;
+  // =========================
+  // CASE 3: EXPIRED
+  // =========================
+  else {
+
+    statusEl.innerText =
+      "Editing window closed. You can create a new assessment now.";
+
+    clearFormForNewAssessment();
+    enableAllInputs();
+  }
 }
   
  document.getElementById("termSelect").onchange = loadExistingAssessment;
@@ -1067,5 +1005,7 @@ document.addEventListener("click", function(event) {
 });
   
 </script>
+  
+
 </body>
 </html>
