@@ -994,16 +994,9 @@ document.getElementById("assessmentTypeSelect").onchange = loadExistingAssessmen
 document.getElementById("assessmentCategorySelect").onchange = loadExistingAssessment;
 
 
-function disableAllInputs() {
-  document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = true);
-  document.getElementById("subjectCompetency").disabled = true;
-  document.querySelectorAll(".strandCheckbox").forEach(cb => cb.disabled = true);
-  document.querySelectorAll(".sleCheckbox").forEach(cb => cb.disabled = true);
-  document.querySelectorAll(".coreCompetency").forEach(cb => cb.disabled = true);
-}
 
 function enableAllInputs() {
-  document.querySelectorAll(".performanceLevel").forEach(sel => sel.disabled = false);
+  document.querySelectorAll(".marksInput").forEach(sel => sel.disabled = false);
   document.getElementById("subjectCompetency").disabled = false;
   document.querySelectorAll(".strandCheckbox").forEach(cb => cb.disabled = false);
   document.querySelectorAll(".sleCheckbox").forEach(cb => cb.disabled = false);
@@ -1013,7 +1006,7 @@ function enableAllInputs() {
 
   function clearFormForNewAssessment() {
   // Reset student performance levels to default (NOT blank)
-  document.querySelectorAll(".performanceLevel").forEach(sel => {
+  document.querySelectorAll(".marksInput").forEach(sel => {
     sel.selectedIndex = 0; // important: avoids empty invalid state
   });
 
