@@ -894,7 +894,7 @@ statusEl.innerText = "Marks saved successfully!";
 
 }
 }
- 
+
 async function loadExistingAssessment() {
   const statusEl = document.getElementById("assessmentStatus");
 
@@ -905,10 +905,7 @@ async function loadExistingAssessment() {
     return null;
   }
 
-  // 🔥 reset form first (safe baseline)
-  clearFormForNewAssessment();
-
-  // 1️⃣ Get existing assessment
+  // 1️⃣ Fetch existing assessment
   const { data: existingAssessment } = await supabase
     .from("assessments")
     .select("*")
@@ -923,92 +920,61 @@ async function loadExistingAssessment() {
     .maybeSingle();
 
   // =========================
-  // CASE 1: NO ASSESSMENT
+  // 🔵 STATE A: NO ASSESSMENT
   // =========================
   if (!existingAssessment) {
+    clearFormForNewAssessment();
+    enableAllInputs();
+
     statusEl.innerText =
       "No previous assessment found. You can create a new one.";
 
-    clearFormForNewAssessment();
-    enableAllInputs();
     return null;
   }
 
-  // =========================
-  // CASE 2 & 3: EXPIRY LOGIC (14 DAYS)
-  // =========================
+  // 2️⃣ Check edit window
   const editCheck = isEditAllowed(existingAssessment.created_at);
 
   // =========================
-  // LOAD CORE DATA (COMMON)
+  // LOAD COMMON DATA FIRST
   // =========================
-  const selectedCoreIds = existingAssessment.core_competencies || [];
+  loadCoreCompetencies(existingAssessment);
+  loadSubjectCompetency(existingAssessment);
 
-  document.querySelectorAll(".coreCompetency").forEach(cb => {
-    cb.checked = selectedCoreIds.includes(cb.value);
-    cb.disabled = !editCheck.allowed;
-  });
-
-  document.getElementById("subjectCompetency").value =
-    existingAssessment.subject_competencies || "";
-
-  document.getElementById("subjectCompetency").disabled = !editCheck.allowed;
-
-  // =========================
-  // LOAD STUDENT RESULTS (results3 version)
-  // =========================
+  // IMPORTANT FIX: load results by assessment_id
   const { data: results } = await supabase
     .from("results3")
     .select("*")
-    .eq("class_id", classId)
-    .eq("subject_id", subjectId)
-    .eq("term_id", termId)
-    .eq("academic_year", academicYear);
+    .eq("assessment_id", existingAssessment.id);
 
-  const studentRows = document.querySelectorAll("#studentsBody tr");
-
-  studentRows.forEach(tr => {
-    const studentResult = results?.find(r => r.student_id === tr.dataset.id);
-
-    if (studentResult) {
-      const marksInput = tr.querySelector(".marksInput");
-      const levelOutput = tr.querySelector(".levelOutput");
-
-      if (marksInput) marksInput.value = studentResult.marks;
-      if (levelOutput) levelOutput.innerText = studentResult.level;
-    }
-  });
+  fillStudentResults(results);
 
   // =========================
-  // DISABLE / ENABLE UI
-  // =========================
-  document.querySelectorAll(".performanceLevel").forEach(sel => {
-    sel.disabled = !editCheck.allowed;
-  });
-
-  document.querySelectorAll(".strandCheckbox").forEach(cb => {
-    cb.disabled = !editCheck.allowed;
-  });
-
-  document.querySelectorAll(".sleCheckbox").forEach(cb => {
-    cb.disabled = !editCheck.allowed;
-  });
-
-  // =========================
-  // STATUS MESSAGE (14-day rule)
+  // 🟡 STATE B: EDITABLE
   // =========================
   if (editCheck.allowed) {
     statusEl.innerText =
-      `Existing assessment found. Editing allowed for ${Math.max(editCheck.remainingDays, 0)} more day(s).`;
-  } else {
-    statusEl.innerText =
-      "Editing window closed (after 14 days). You can create a new assessment now.";
+      `Editing allowed for ${Math.max(editCheck.remainingDays, 0)} more day(s).`;
+
+    enableAllInputs();
+    return existingAssessment;
   }
 
-  enableAllInputs();
+  // =========================
+  // 🔴 STATE C: EXPIRED
+  // =========================
+  statusEl.innerText =
+    "Editing window closed. You can create a new assessment.";
+
+  // IMPORTANT RULE:
+  // DO NOT clear data automatically here (user may need reference)
+  disableAllInputs();
 
   return existingAssessment;
 }
+
+
+  
 
  document.getElementById("termSelect").onchange = loadExistingAssessment;
 document.getElementById("assessmentTypeSelect").onchange = loadExistingAssessment;
