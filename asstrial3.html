@@ -1006,9 +1006,9 @@ function enableAllInputs() {
 
   function clearFormForNewAssessment() {
   // Reset student performance levels to default (NOT blank)
-  document.querySelectorAll(".marksInput").forEach(sel => {
-    sel.selectedIndex = 0; // important: avoids empty invalid state
-  });
+ document.querySelectorAll(".marksInput").forEach(inp => {
+  inp.value = "";
+});
 
   document.getElementById("subjectCompetency").value = "";
 
@@ -1019,19 +1019,17 @@ function enableAllInputs() {
 }
 
 
-
-  
 function setupDropdown(btnId, containerId) {
   const btn = document.getElementById(btnId);
   const container = document.getElementById(containerId);
 
   if (!btn || !container) return;
 
-  btn.onclick = (e) => {
+  btn.addEventListener("click", (e) => {
     e.stopPropagation();
     container.style.display =
       container.style.display === "block" ? "none" : "block";
-  };
+  });
 
   document.addEventListener("click", (event) => {
     if (!btn.parentElement.contains(event.target)) {
@@ -1039,7 +1037,7 @@ function setupDropdown(btnId, containerId) {
     }
   });
 }
-
+  
 // Apply to all dropdowns
 setupDropdown("dropdownBtn", "coreCompetenciesContainer");
 setupDropdown("dropdownStrandBtn", "strandContainer");
