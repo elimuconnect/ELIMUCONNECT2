@@ -1728,6 +1728,30 @@ ${getAchievementLabel(subjectAvg)}
 
 
 
+
+
+function renderBroadsheet() {
+  if (viewMode.value !== "broadsheet") return;
+
+  const mode = broadsheetMode.value;
+
+  if (!mode) {
+    reportDiv.innerHTML = `<p>Please select Grade or Class Broadsheet</p>`;
+    return;
+  }
+
+  reportDiv.innerHTML = `
+    <h2>📊 ${mode === "grade" ? "Grade" : "Class"} Broadsheet</h2>
+    ${generateBroadsheet(records, avgMap, mode)}
+  `;
+}
+
+
+
+
+
+	
+
 function generateBroadsheet(records, avgMap, mode = "grade") {
 
   let gradeClassMap = {};
