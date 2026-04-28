@@ -450,6 +450,7 @@ td {
 
 <label>Broadsheet Mode</label><br />
 <select id="broadsheetMode">
+  <option value="" selected disabled>Select Broadsheet Type</option>
   <option value="grade">Grade Broadsheet</option>
   <option value="class">Class Broadsheet</option>
 </select>
@@ -2411,10 +2412,16 @@ requestAnimationFrame(() => {
 
 
 
-/* ===== BROADSHEET VIEW ===== */
+
+	/* ===== BROADSHEET VIEW ===== */
 if (viewMode.value === "broadsheet") {
 
   const mode = document.getElementById("broadsheetMode").value;
+
+  if (!mode) {
+    reportDiv.innerHTML = `<p>Please select Grade or Class Broadsheet</p>`;
+    return;
+  }
 
   reportDiv.innerHTML = `
     <h2>📊 ${mode === "grade" ? "Grade" : "Class"} Broadsheet</h2>
