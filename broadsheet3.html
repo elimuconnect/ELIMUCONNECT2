@@ -2414,13 +2414,16 @@ requestAnimationFrame(() => {
 /* ===== BROADSHEET VIEW ===== */
 if (viewMode.value === "broadsheet") {
 
-  reportDiv.innerHTML = `
-    <h2>📊 Class Broadsheet</h2>
-    ${generateBroadsheet(records, avgMap)}
-  `;
+  const mode = document.getElementById("broadsheetMode").value;
 
+  reportDiv.innerHTML = `
+    <h2>📊 ${mode === "grade" ? "Grade" : "Class"} Broadsheet</h2>
+    ${generateBroadsheet(records, avgMap, mode)}
+  `;
 }
 
+
+	
 	
 /* ===== CLASS VIEW ===== */
 if (viewMode.value === "class") {
