@@ -3006,9 +3006,8 @@ for (let i = 0; i < cards.length; i += batchSize) {
 
 
 
-
 document.getElementById("downloadBroadsheetBtn")
-.addEventListener("click", () => {
+.addEventListener("click", async () => {
 
   const container = document.getElementById("report");
 
@@ -3017,49 +3016,39 @@ document.getElementById("downloadBroadsheetBtn")
     return;
   }
 
-  // 🔥 force proper A4 landscape scaling
-  const opt = {
-    margin:       [10, 10, 10, 10], // top, left, bottom, right
-    filename:     `Broadsheet_${new Date().toISOString().slice(0,10)}.pdf`,
-    image:        { type: "jpeg", quality: 1 },
-    html2canvas:  { 
-      scale: 2,
-      useCORS: true,
-      scrollX: 0,
-      scrollY: 0
-    },
+  // 🔥 CLONE (so UI is not affected)
+  const clone = container.cloneNode(true);
+
+  // 🔥 CREATE WRAPPER
+  const wrapper = document.createElement("div");
+  wrapper.style.width = "1122px"; // A4 landscape width in px (~297mm)
+  wrapper.style.padding = "10px";
+  wrapper.style.boxSizing = "border-box";
+  wrapper.style.background = "#fff";
+
+  // 🔥 FORCE FIT TABLE
+  clone.style.width = "100%";
+  clone.style.transform = "scale(0.85)"; // 🔥 adjust if needed
+  clone.style.transformOrigin = "top left";
+
+  wrapper.appendChild(clone);
+
+  document.body.appendChild(wrapper); // required for rendering
+
+  await html2pdf().set({
+    margin: 0,
+    filename: `Broadsheet_${new Date().toISOString().slice(0,10)}.pdf`,
+    image: { type: "jpeg", quality: 1 },
+    html2canvas: { scale: 2, useCORS: true },
     jsPDF: {
-      unit: "mm",
-      format: "a4",
+      unit: "px",
+      format: [1122, 794], // exact A4 landscape
       orientation: "landscape"
-    },
-    pagebreak: {
-      mode: ["avoid-all", "css", "legacy"]
     }
-  };
+  }).from(wrapper).save();
 
-  html2pdf()
-    .set(opt)
-    .from(container)
-    .toPdf()
-    .get("pdf")
-    .then(pdf => {
-
-      // 🔥 ensure perfect fit scaling (important for broadsheets)
-      const totalPages = pdf.internal.getNumberOfPages();
-
-      for (let i = 1; i <= totalPages; i++) {
-        pdf.setPage(i);
-
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-
-        // optional: you can add footer/page numbers later here
-      }
-    })
-    .save();
+  document.body.removeChild(wrapper); // cleanup
 });
-
 
 
 	
