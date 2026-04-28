@@ -1716,6 +1716,9 @@ ${getAchievementLabel(subjectAvg)}
 
 
 
+
+
+
 function generateBroadsheet(records, avgMap) {
 
   let gradeClassMap = {};
@@ -1733,20 +1736,15 @@ function generateBroadsheet(records, avgMap) {
     gradeClassMap[grade][r.className] ??= {};
     gradeClassMap[grade][r.className][r.student] ??= {
       admission: r.admission,
-      subjects: {},
-      levels: {}   // ✅ store levels separately
+      subjects: {}
     };
 
     const subjectData = avgMap?.[r.student]?.[r.subject];
     if (!subjectData) return;
 
-    // ===== STORE PERCENTAGE (NOT LEVEL HERE) =====
+    // store score only (NO level mixing here)
     gradeClassMap[grade][r.className][r.student].subjects[r.subject] =
-      subjectData.average_score; // percentage or marks
-
-    // ===== STORE LEVEL DIRECTLY FROM SUPABASE ROW =====
-    gradeClassMap[grade][r.className][r.student].levels[r.subject] =
-      subjectData.achievement_level || null;
+      subjectData.average_score;
   });
 
   let html = "";
@@ -1758,37 +1756,32 @@ function generateBroadsheet(records, avgMap) {
 
     Object.entries(classes).forEach(([cls, students]) => {
 
-      // ===== GET ALL SUBJECTS =====
       const subjectList = Array.from(
-        new Set(
-          Object.values(students).flatMap(s => Object.keys(s.subjects))
-        )
+        new Set(Object.values(students).flatMap(s => Object.keys(s.subjects)))
       );
 
-      // ===== COMPUTE (NO LEVEL CALCULATION FROM SCORE) =====
+      // ===== CALC USING PDF LOGIC =====
       const sortedStudents = Object.entries(students).map(([name, data]) => {
 
         const scores = subjectList
           .map(sub => data.subjects[sub])
           .filter(v => v !== undefined && v !== null && !isNaN(v));
 
-        // Convert score → percentage total (score / 64)
         const total = scores.reduce((a, b) => a + b, 0);
         const avg = scores.length ? total / scores.length : 0;
 
-        const summary = learnerSummary?.[name] || {};
+        const level = getAchievementLabel(avg); // ✅ SAME AS PDF
 
         return {
           name,
-          ...data,
+          admission: data.admission,
+          subjects: data.subjects,
           total,
           avg,
-          summary
+          level
         };
-
       }).sort((a, b) => b.avg - a.avg);
 
-      // ===== TABLE =====
       html += `
         <h3 style="margin-top:15px;">Class: ${cls}</h3>
         <div class="table-wrapper">
@@ -1800,7 +1793,7 @@ function generateBroadsheet(records, avgMap) {
               <th>Adm</th>
               ${subjectList.map(s => `<th>${s}</th>`).join("")}
               <th>Total (/64)</th>
-              <th>Average (%)</th>
+              <th>Average</th>
               <th>Level</th>
             </tr>
           </thead>
@@ -1808,13 +1801,6 @@ function generateBroadsheet(records, avgMap) {
       `;
 
       sortedStudents.forEach((s, index) => {
-
-        // ===== USE STORED LEVEL FIRST (NO RE-CALC TO EE1) =====
-        let level = s.summary?.overall_level;
-
-        if (!level) {
-          level = getAchievementLabel(s.avg); // fallback only
-        }
 
         html += `
           <tr>
@@ -1828,7 +1814,7 @@ function generateBroadsheet(records, avgMap) {
 
             <td>${s.total.toFixed(2)}</td>
             <td>${s.avg.toFixed(2)}</td>
-            <td>${level}</td>
+            <td>${s.level}</td>
           </tr>
         `;
       });
@@ -1839,6 +1825,16 @@ function generateBroadsheet(records, avgMap) {
 
   return html;
 }
+
+
+
+
+
+
+
+
+
+
 	
   
 function renderAchievementGuide() {
