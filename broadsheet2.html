@@ -1035,6 +1035,7 @@ console.log("Previous Subject Avg:", prevSubjectMap);
 
 
 
+
 function renderSchoolAnalytics(
   records,
   termName,
@@ -1286,8 +1287,6 @@ if (hasPreviousData) {
 }
 	
 
-
-
  // ===== RETURN =====
   return `
 <div class="a4-page school-analytics" style="page-break-before: avoid; break-before: avoid;">
@@ -1305,8 +1304,8 @@ if (hasPreviousData) {
       <h4 style="margin-top:10px;">🧠 Term Intelligence Summary</h4>
       ${gradeIntelligenceHTML}
     </div>
-
 	
+
 <h4>1️⃣ Class Mean Overview</h4>
 ${classSummaryHTML}
 
@@ -1323,7 +1322,6 @@ ${riskHTML}
 </div>
 `;
 }
-
 
 
 
