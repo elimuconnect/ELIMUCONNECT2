@@ -1716,8 +1716,6 @@ ${getAchievementLabel(subjectAvg)}
 
 
 
-
-
 function generateBroadsheet(records, avgMap) {
 
   let gradeClassMap = {};
@@ -1735,14 +1733,20 @@ function generateBroadsheet(records, avgMap) {
     gradeClassMap[grade][r.className] ??= {};
     gradeClassMap[grade][r.className][r.student] ??= {
       admission: r.admission,
-      subjects: {}
+      subjects: {},
+      levels: {}   // ✅ store levels separately
     };
 
     const subjectData = avgMap?.[r.student]?.[r.subject];
     if (!subjectData) return;
 
+    // ===== STORE PERCENTAGE (NOT LEVEL HERE) =====
     gradeClassMap[grade][r.className][r.student].subjects[r.subject] =
-      subjectData.average_score;
+      subjectData.average_score; // percentage or marks
+
+    // ===== STORE LEVEL DIRECTLY FROM SUPABASE ROW =====
+    gradeClassMap[grade][r.className][r.student].levels[r.subject] =
+      subjectData.achievement_level || null;
   });
 
   let html = "";
@@ -1752,28 +1756,27 @@ function generateBroadsheet(records, avgMap) {
 
     html += `<h2 style="margin-top:20px;">📘 ${grade} Broadsheet</h2>`;
 
-    // ===== LOOP CLASSES =====
     Object.entries(classes).forEach(([cls, students]) => {
 
       // ===== GET ALL SUBJECTS =====
-      const allSubjects = new Set();
-      Object.values(students).forEach(s => {
-        Object.keys(s.subjects).forEach(sub => allSubjects.add(sub));
-      });
+      const subjectList = Array.from(
+        new Set(
+          Object.values(students).flatMap(s => Object.keys(s.subjects))
+        )
+      );
 
-      const subjectList = Array.from(allSubjects);
-
-      // ===== COMPUTE TOTALS + AVG (NO RE-CALC FROM RAW SCORES) =====
+      // ===== COMPUTE (NO LEVEL CALCULATION FROM SCORE) =====
       const sortedStudents = Object.entries(students).map(([name, data]) => {
-
-        const summary = learnerSummary?.[name] || {};
 
         const scores = subjectList
           .map(sub => data.subjects[sub])
           .filter(v => v !== undefined && v !== null && !isNaN(v));
 
+        // Convert score → percentage total (score / 64)
         const total = scores.reduce((a, b) => a + b, 0);
         const avg = scores.length ? total / scores.length : 0;
+
+        const summary = learnerSummary?.[name] || {};
 
         return {
           name,
@@ -1796,8 +1799,8 @@ function generateBroadsheet(records, avgMap) {
               <th>Name</th>
               <th>Adm</th>
               ${subjectList.map(s => `<th>${s}</th>`).join("")}
-              <th>Total</th>
-              <th>Average</th>
+              <th>Total (/64)</th>
+              <th>Average (%)</th>
               <th>Level</th>
             </tr>
           </thead>
@@ -1806,8 +1809,12 @@ function generateBroadsheet(records, avgMap) {
 
       sortedStudents.forEach((s, index) => {
 
-        const avgValue = s.summary.overall_average ?? s.avg;
-        const level = s.summary.overall_level ?? getAchievementLabel(avgValue);
+        // ===== USE STORED LEVEL FIRST (NO RE-CALC TO EE1) =====
+        let level = s.summary?.overall_level;
+
+        if (!level) {
+          level = getAchievementLabel(s.avg); // fallback only
+        }
 
         html += `
           <tr>
@@ -1820,7 +1827,7 @@ function generateBroadsheet(records, avgMap) {
             `).join("")}
 
             <td>${s.total.toFixed(2)}</td>
-            <td>${avgValue.toFixed(2)}</td>
+            <td>${s.avg.toFixed(2)}</td>
             <td>${level}</td>
           </tr>
         `;
@@ -1832,12 +1839,6 @@ function generateBroadsheet(records, avgMap) {
 
   return html;
 }
-
-
-
-	
-
-
 	
   
 function renderAchievementGuide() {
