@@ -1717,12 +1717,11 @@ ${getAchievementLabel(subjectAvg)}
 
 
 
-
 function generateBroadsheet(records, avgMap) {
 
   let gradeClassMap = {};
 
-  // ===== BUILD STRUCTURE (LEVEL → SCORE ONLY) =====
+  // ===== BUILD STRUCTURE =====
   records.forEach(r => {
 
     const grade = r.grade_name
@@ -1750,7 +1749,6 @@ function generateBroadsheet(records, avgMap) {
 
   let html = "";
 
-  // ===== GRADES =====
   Object.entries(gradeClassMap).forEach(([grade, classes]) => {
 
     html += `<h2 style="margin-top:20px;">📘 ${grade} Broadsheet</h2>`;
@@ -1775,9 +1773,6 @@ function generateBroadsheet(records, avgMap) {
         const subjectsDone = scores.length;
 
         const total = scores.reduce((a, b) => a + b, 0);
-
-        const maxTotal = subjectsDone * 8;
-
         const avg = subjectsDone ? total / subjectsDone : 0;
 
         return {
@@ -1785,11 +1780,10 @@ function generateBroadsheet(records, avgMap) {
           ...data,
           total,
           avg,
-          maxTotal,
           subjectsDone
         };
 
-      }).sort((a, b) => b.total - a.total);
+      }).sort((a, b) => b.avg - a.avg); // 🔥 RANK BY AVERAGE
 
       // ===== TABLE =====
       html += `
@@ -1824,7 +1818,7 @@ function generateBroadsheet(records, avgMap) {
               <td>${s.subjects[sub] ?? "-"}</td>
             `).join("")}
 
-            <td>${s.total.toFixed(2)} / ${s.maxTotal.toFixed(0)}</td>
+            <td>${s.total.toFixed(2)} / ${s.subjectsDone * 8}</td>
             <td>${s.avg.toFixed(2)} / 8</td>
             <td>${level}</td>
           </tr>
@@ -1837,10 +1831,6 @@ function generateBroadsheet(records, avgMap) {
 
   return html;
 }
-
-	
-
-
 	
   
 function renderAchievementGuide() {
