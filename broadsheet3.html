@@ -444,8 +444,18 @@ td {
   <option value="subject">Subject</option>
   <option value="class">Class</option>   <!-- ✅ NEW -->
 	<option value="broadsheet">Broadsheet</option>
+
 </select><br /><br />
 
+
+<label>Broadsheet Mode</label><br />
+<select id="broadsheetMode">
+  <option value="grade">Grade Broadsheet</option>
+  <option value="class">Class Broadsheet</option>
+</select>
+<br /><br />
+
+	
 <div id="filterBox"></div>
 <p id="status"></p>
 <hr />
@@ -1717,9 +1727,7 @@ ${getAchievementLabel(subjectAvg)}
 
 
 
-
-
-function generateBroadsheet(records, avgMap) {
+function generateBroadsheet(records, avgMap, mode = "grade") {
 
   let gradeClassMap = {};
 
@@ -1748,64 +1756,46 @@ function generateBroadsheet(records, avgMap) {
     gradeClassMap[grade][r.className][r.student].subjects[r.subject] = score;
   });
 
+
   let html = "";
 
-  // =====================================================
-  // 1. LOOP GRADES
-  // =====================================================
-  Object.entries(gradeClassMap).forEach(([grade, classes]) => {
 
-    html += `<h2 style="margin-top:20px;">📘 ${grade} Broadsheet</h2>`;
-
-    // =====================================================
-    // 2. GRADE-WIDE BROADSHEET (ALL CLASSES COMBINED)
-    // =====================================================
-
-    let allStudents = {};
-
-    Object.values(classes).forEach(students => {
-      Object.entries(students).forEach(([name, data]) => {
-        allStudents[name] ??= {
-          admission: data.admission,
-          subjects: {}
-        };
-
-        Object.entries(data.subjects).forEach(([sub, score]) => {
-          allStudents[name].subjects[sub] = score;
-        });
-      });
+  // ===== GET SUBJECTS =====
+  const getSubjects = (students) => {
+    const set = new Set();
+    Object.values(students).forEach(s => {
+      Object.keys(s.subjects).forEach(sub => set.add(sub));
     });
+    return Array.from(set);
+  };
 
-    const allSubjectsSet = new Set();
-    Object.values(allStudents).forEach(s => {
-      Object.keys(s.subjects).forEach(sub => allSubjectsSet.add(sub));
-    });
 
-    const allSubjects = Array.from(allSubjectsSet);
+  // ===== BUILD TABLE =====
+  const buildTable = (title, students, subjects) => {
 
-    const gradeRanked = Object.entries(allStudents).map(([name, data]) => {
+    const ranked = Object.entries(students).map(([name, data]) => {
 
-      const scores = allSubjects
+      const scores = subjects
         .map(sub => data.subjects[sub])
         .filter(v => typeof v === "number");
 
-      const subjectsDone = scores.length;
-
       const total = scores.reduce((a, b) => a + b, 0);
-      const avg = subjectsDone ? total / subjectsDone : 0;
+      const avg = scores.length ? total / scores.length : 0;
 
       return {
         name,
-        ...data,
+        admission: data.admission,
+        subjects: data.subjects,
         total,
-        avg,
-        subjectsDone
+        avg
       };
 
-    }).sort((a, b) => b.avg - a.avg);
+    })
+    .sort((a, b) => b.avg - a.avg); // ✅ rank by average
 
-    html += `
-      <h3>🏆 ${grade} Overall Ranking (All Classes)</h3>
+
+    return `
+      <h3 style="margin-top:15px;">${title}</h3>
       <div class="table-wrapper">
       <table>
         <thead>
@@ -1813,119 +1803,80 @@ function generateBroadsheet(records, avgMap) {
             <th>Rank</th>
             <th>Name</th>
             <th>Adm</th>
-            ${allSubjects.map(s => `<th>${s} (/8)</th>`).join("")}
+            ${subjects.map(s => `<th>${s} (/8)</th>`).join("")}
             <th>Total</th>
             <th>Average (/8)</th>
             <th>Level</th>
           </tr>
         </thead>
         <tbody>
-    `;
-
-    gradeRanked.forEach((s, index) => {
-
-      const level = getAchievementLabel(s.avg);
-
-      html += `
-        <tr>
-          <td>${index + 1}</td>
-          <td>${s.name}</td>
-          <td>${s.admission}</td>
-          ${allSubjects.map(sub => `
-            <td>${s.subjects[sub] ?? "-"}</td>
-          `).join("")}
-          <td>${s.total.toFixed(2)}</td>
-          <td>${s.avg.toFixed(2)}</td>
-          <td>${level}</td>
-        </tr>
-      `;
-    });
-
-    html += `</tbody></table></div>`;
-
-    // =====================================================
-    // 3. CLASS-BY-CLASS BROADSHEET
-    // =====================================================
-
-    Object.entries(classes).forEach(([cls, students]) => {
-
-      const subjectSet = new Set();
-
-      Object.values(students).forEach(s => {
-        Object.keys(s.subjects).forEach(sub => subjectSet.add(sub));
-      });
-
-      const subjects = Array.from(subjectSet);
-
-      const sortedStudents = Object.entries(students).map(([name, data]) => {
-
-        const scores = subjects
-          .map(sub => data.subjects[sub])
-          .filter(v => typeof v === "number");
-
-        const subjectsDone = scores.length;
-
-        const total = scores.reduce((a, b) => a + b, 0);
-        const avg = subjectsDone ? total / subjectsDone : 0;
-
-        return {
-          name,
-          ...data,
-          total,
-          avg,
-          subjectsDone
-        };
-
-      }).sort((a, b) => b.avg - a.avg);
-
-      html += `
-        <h3 style="margin-top:15px;">🏫 Class: ${cls}</h3>
-        <div class="table-wrapper">
-        <table>
-          <thead>
+          ${ranked.map((s, i) => `
             <tr>
-              <th>Rank</th>
-              <th>Name</th>
-              <th>Adm</th>
-              ${subjects.map(s => `<th>${s} (/8)</th>`).join("")}
-              <th>Total</th>
-              <th>Average (/8)</th>
-              <th>Level</th>
+              <td>${i + 1}</td>
+              <td>${s.name}</td>
+              <td>${s.admission}</td>
+
+              ${subjects.map(sub => `
+                <td>${s.subjects[sub] ?? "-"}</td>
+              `).join("")}
+
+              <td>${s.total.toFixed(2)}</td>
+              <td>${s.avg.toFixed(2)}</td>
+              <td>${getAchievementLabel(s.avg)}</td>
             </tr>
-          </thead>
-          <tbody>
-      `;
+          `).join("")}
+        </tbody>
+      </table>
+      </div>
+    `;
+  };
 
-      sortedStudents.forEach((s, index) => {
 
-        const level = getAchievementLabel(s.avg);
+  // =====================================================
+  // MODE SWITCH
+  // =====================================================
 
-        html += `
-          <tr>
-            <td>${index + 1}</td>
-            <td>${s.name}</td>
-            <td>${s.admission}</td>
-            ${subjects.map(sub => `
-              <td>${s.subjects[sub] ?? "-"}</td>
-            `).join("")}
-            <td>${s.total.toFixed(2)}</td>
-            <td>${s.avg.toFixed(2)}</td>
-            <td>${level}</td>
-          </tr>
-        `;
+  if (mode === "grade") {
+
+    Object.entries(gradeClassMap).forEach(([grade, classes]) => {
+
+      let mergedStudents = {};
+
+      Object.values(classes).forEach(students => {
+        Object.entries(students).forEach(([name, data]) => {
+          mergedStudents[name] = data;
+        });
       });
 
-      html += `</tbody></table></div>`;
+      const subjects = getSubjects(mergedStudents);
+
+      html += `<h2>📘 ${grade} Broadsheet (All Classes)</h2>`;
+      html += buildTable(grade, mergedStudents, subjects);
     });
-  });
+
+  }
+
+
+  else if (mode === "class") {
+
+    Object.entries(gradeClassMap).forEach(([grade, classes]) => {
+
+      html += `<h2>📘 ${grade}</h2>`;
+
+      Object.entries(classes).forEach(([cls, students]) => {
+
+        const subjects = getSubjects(students);
+
+        html += buildTable(`Class ${cls}`, students, subjects);
+      });
+    });
+  }
 
   return html;
 }
+const mode = document.getElementById("broadsheetMode").value;
 
-
-
-
-
+generateBroadsheet(records, avgMap, mode);
 
 
 
