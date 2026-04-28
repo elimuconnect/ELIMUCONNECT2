@@ -1035,8 +1035,6 @@ console.log("Previous Subject Avg:", prevSubjectMap);
 
 
 
-
-
 function renderSchoolAnalytics(
   records,
   termName,
@@ -1048,65 +1046,50 @@ function renderSchoolAnalytics(
 	 prevLearnerMap = {}
 ) {
 
-  
+  let gradeClassMap = {};
+  let gradeSubjectMap = {};
+  let gradeLearnerMap = {};
 
- // ===== PROCESS DATA (FIXED: NO DATA LOSS) =====
+  // ===== PROCESS DATA =====
+  const countedSubjects = new Set();
 
-const gradeClassMap = {};
-const gradeSubjectMap = {};
-const gradeLearnerMap = {};
+  for (const r of records) {
 
-const learnerSubjectMap = {}; 
-// admission → subject → [scores]
+    const key = r.admission + "_" + r.subject;
+    if (countedSubjects.has(key)) continue;
+    countedSubjects.add(key);
 
-for (const r of records) {
+    const score = levelToScore(r.level);
+    if (!score && score !== 0) continue;
 
-  const score = levelToScore(r.level);
-  if (typeof score !== "number" || isNaN(score)) continue;
+   const grade = r.grade_name
+  ? (String(r.grade_name).startsWith("Grade")
+      ? r.grade_name
+      : `Grade ${r.grade_name}`)
+  : "Unknown";
 
-  const grade = r.grade_name
-    ? (String(r.grade_name).startsWith("Grade")
-        ? r.grade_name
-        : `Grade ${r.grade_name}`)
-    : "Unknown";
+    // INIT
+    gradeClassMap[grade] ??= {};
+    gradeSubjectMap[grade] ??= {};
+    gradeLearnerMap[grade] ??= {};
 
-  const className = r.className;
-  const subject = r.subject;
-  const adm = r.admission;
+    // CLASS
+    (gradeClassMap[grade][r.className] ??= []).push(score);
 
-  // ==============================
-  // 1. BUILD RAW SUBJECT STORAGE
-  // ==============================
-  if (!learnerSubjectMap[adm]) learnerSubjectMap[adm] = {};
-  if (!learnerSubjectMap[adm][subject]) learnerSubjectMap[adm][subject] = [];
-  learnerSubjectMap[adm][subject].push(score);
+    // SUBJECT
+    (gradeSubjectMap[grade][r.subject] ??= []).push(score);
 
-  // ==============================
-  // 2. CLASS MAP (STORE LATER AVG)
-  // ==============================
-  gradeClassMap[grade] ??= {};
-  gradeClassMap[grade][className] ??= [];
+    // LEARNER
+    (gradeLearnerMap[grade][r.admission] ??= []).push(score);
+  }
 
-  // ==============================
-  // 3. SUBJECT MAP
-  // ==============================
-  gradeSubjectMap[grade] ??= {};
-  gradeSubjectMap[grade][subject] ??= [];
+  // ===== AVERAGE FUNCTION =====
+  function avg(arr) {
+    return arr.length
+      ? arr.reduce((a, b) => a + b, 0) / arr.length
+      : 0;
+  }
 
-  // ==============================
-  // 4. LEARNER MAP
-  // ==============================
-  gradeLearnerMap[grade] ??= {};
-  gradeLearnerMap[grade][adm] ??= [];
-
-  gradeSubjectMap[grade][subject].push(score);
-}
-
-function avg(arr) {
-  return arr.length
-    ? arr.reduce((a, b) => a + b, 0) / arr.length
-    : 0;
-}
 
 	
   // ===== CLASS SUMMARY =====
@@ -1303,6 +1286,8 @@ if (hasPreviousData) {
 }
 	
 
+
+
  // ===== RETURN =====
   return `
 <div class="a4-page school-analytics" style="page-break-before: avoid; break-before: avoid;">
@@ -1320,8 +1305,8 @@ if (hasPreviousData) {
       <h4 style="margin-top:10px;">🧠 Term Intelligence Summary</h4>
       ${gradeIntelligenceHTML}
     </div>
-	
 
+	
 <h4>1️⃣ Class Mean Overview</h4>
 ${classSummaryHTML}
 
@@ -1338,6 +1323,10 @@ ${riskHTML}
 </div>
 `;
 }
+
+
+
+
 
 
 function getPerformanceBadge(level) {
