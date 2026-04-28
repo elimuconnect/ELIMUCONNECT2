@@ -1723,7 +1723,7 @@ function generateBroadsheet(records, avgMap) {
 
   let gradeClassMap = {};
 
-  // ===== GROUP BY GRADE → CLASS → STUDENT =====
+  // ===== GROUP DATA =====
   records.forEach(r => {
 
     const grade = r.grade_name
@@ -1742,14 +1742,12 @@ function generateBroadsheet(records, avgMap) {
     const subjectData = avgMap?.[r.student]?.[r.subject];
     if (!subjectData) return;
 
-    // store score only (NO level mixing here)
     gradeClassMap[grade][r.className][r.student].subjects[r.subject] =
       subjectData.average_score;
   });
 
   let html = "";
 
-  // ===== LOOP GRADES =====
   Object.entries(gradeClassMap).forEach(([grade, classes]) => {
 
     html += `<h2 style="margin-top:20px;">📘 ${grade} Broadsheet</h2>`;
@@ -1760,17 +1758,22 @@ function generateBroadsheet(records, avgMap) {
         new Set(Object.values(students).flatMap(s => Object.keys(s.subjects)))
       );
 
-      // ===== CALC USING PDF LOGIC =====
-      const sortedStudents = Object.entries(students).map(([name, data]) => {
+      // ===== BUILD STUDENTS =====
+      let sortedStudents = Object.entries(students).map(([name, data]) => {
 
         const scores = subjectList
-          .map(sub => data.subjects[sub])
-          .filter(v => v !== undefined && v !== null && !isNaN(v));
+          .map(sub => {
+            const val = data.subjects[sub];
+            return (val !== undefined && val !== null && !isNaN(val)) ? val : 0;
+          });
 
         const total = scores.reduce((a, b) => a + b, 0);
-        const avg = scores.length ? total / scores.length : 0;
 
-        const level = getAchievementLabel(avg); // ✅ SAME AS PDF
+        const maxTotal = subjectList.length * 8;
+
+        const avg = subjectList.length ? total / subjectList.length : 0;
+
+        const level = getAchievementLabel(avg);
 
         return {
           name,
@@ -1778,9 +1781,13 @@ function generateBroadsheet(records, avgMap) {
           subjects: data.subjects,
           total,
           avg,
+          maxTotal,
           level
         };
-      }).sort((a, b) => b.avg - a.avg);
+      });
+
+      // ===== RANKING (IMPORTANT FIX) =====
+      sortedStudents.sort((a, b) => b.total - a.total);
 
       html += `
         <h3 style="margin-top:15px;">Class: ${cls}</h3>
@@ -1791,8 +1798,8 @@ function generateBroadsheet(records, avgMap) {
               <th>Rank</th>
               <th>Name</th>
               <th>Adm</th>
-              ${subjectList.map(s => `<th>${s}</th>`).join("")}
-              <th>Total (/64)</th>
+              ${subjectList.map(s => `<th>${s} (/8)</th>`).join("")}
+              <th>Total</th>
               <th>Average</th>
               <th>Level</th>
             </tr>
@@ -1808,11 +1815,12 @@ function generateBroadsheet(records, avgMap) {
             <td>${s.name}</td>
             <td>${s.admission}</td>
 
-            ${subjectList.map(sub => `
-              <td>${s.subjects[sub] ?? "-"}</td>
-            `).join("")}
+            ${subjectList.map(sub => {
+              const val = s.subjects[sub] ?? 0;
+              return `<td>${val.toFixed(2)}</td>`;
+            }).join("")}
 
-            <td>${s.total.toFixed(2)}</td>
+            <td>${s.total.toFixed(2)} / ${s.maxTotal}</td>
             <td>${s.avg.toFixed(2)}</td>
             <td>${s.level}</td>
           </tr>
@@ -1825,10 +1833,6 @@ function generateBroadsheet(records, avgMap) {
 
   return html;
 }
-
-
-
-
 
 
 
