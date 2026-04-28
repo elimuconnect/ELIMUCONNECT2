@@ -1716,6 +1716,8 @@ ${getAchievementLabel(subjectAvg)}
 
 
 
+
+
 function generateBroadsheet(records, avgMap) {
 
   let gradeClassMap = {};
@@ -1739,11 +1741,8 @@ function generateBroadsheet(records, avgMap) {
     const subjectData = avgMap?.[r.student]?.[r.subject];
     if (!subjectData) return;
 
-    // ✅ FIX: convert /100 → /8
-    const normalizedScore = (Number(subjectData.average_score) / 100) * 8;
-
     gradeClassMap[grade][r.className][r.student].subjects[r.subject] =
-      normalizedScore;
+      subjectData.average_score;
   });
 
   let html = "";
@@ -1753,8 +1752,10 @@ function generateBroadsheet(records, avgMap) {
 
     html += `<h2 style="margin-top:20px;">📘 ${grade} Broadsheet</h2>`;
 
+    // ===== LOOP CLASSES =====
     Object.entries(classes).forEach(([cls, students]) => {
 
+      // ===== GET ALL SUBJECTS =====
       const allSubjects = new Set();
       Object.values(students).forEach(s => {
         Object.keys(s.subjects).forEach(sub => allSubjects.add(sub));
@@ -1762,7 +1763,7 @@ function generateBroadsheet(records, avgMap) {
 
       const subjectList = Array.from(allSubjects);
 
-      // ===== COMPUTE TOTALS + AVG (ALL IN /8) =====
+      // ===== COMPUTE TOTALS + AVG (NO RE-CALC FROM RAW SCORES) =====
       const sortedStudents = Object.entries(students).map(([name, data]) => {
 
         const summary = learnerSummary?.[name] || {};
@@ -1772,7 +1773,6 @@ function generateBroadsheet(records, avgMap) {
           .filter(v => v !== undefined && v !== null && !isNaN(v));
 
         const total = scores.reduce((a, b) => a + b, 0);
-
         const avg = scores.length ? total / scores.length : 0;
 
         return {
@@ -1806,7 +1806,6 @@ function generateBroadsheet(records, avgMap) {
 
       sortedStudents.forEach((s, index) => {
 
-        // already /8 now consistent
         const avgValue = s.summary.overall_average ?? s.avg;
         const level = s.summary.overall_level ?? getAchievementLabel(avgValue);
 
@@ -1833,6 +1832,10 @@ function generateBroadsheet(records, avgMap) {
 
   return html;
 }
+
+
+
+	
 
 
 	
