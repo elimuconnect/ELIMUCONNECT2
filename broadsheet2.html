@@ -1052,46 +1052,63 @@ function renderSchoolAnalytics(
   let gradeSubjectMap = {};
   let gradeLearnerMap = {};
 
-  // ===== PROCESS DATA =====
-  const countedSubjects = new Set();
+ // ===== PROCESS DATA (FIXED: NO DATA LOSS) =====
 
-  for (const r of records) {
+const gradeClassMap = {};
+const gradeSubjectMap = {};
+const gradeLearnerMap = {};
 
-    const key = r.admission + "_" + r.subject;
-    if (countedSubjects.has(key)) continue;
-    countedSubjects.add(key);
+const learnerSubjectMap = {}; 
+// admission → subject → [scores]
 
-    const score = levelToScore(r.level);
-    if (!score && score !== 0) continue;
+for (const r of records) {
 
-   const grade = r.grade_name
-  ? (String(r.grade_name).startsWith("Grade")
-      ? r.grade_name
-      : `Grade ${r.grade_name}`)
-  : "Unknown";
+  const score = levelToScore(r.level);
+  if (typeof score !== "number" || isNaN(score)) continue;
 
-    // INIT
-    gradeClassMap[grade] ??= {};
-    gradeSubjectMap[grade] ??= {};
-    gradeLearnerMap[grade] ??= {};
+  const grade = r.grade_name
+    ? (String(r.grade_name).startsWith("Grade")
+        ? r.grade_name
+        : `Grade ${r.grade_name}`)
+    : "Unknown";
 
-    // CLASS
-    (gradeClassMap[grade][r.className] ??= []).push(score);
+  const className = r.className;
+  const subject = r.subject;
+  const adm = r.admission;
 
-    // SUBJECT
-    (gradeSubjectMap[grade][r.subject] ??= []).push(score);
+  // ==============================
+  // 1. BUILD RAW SUBJECT STORAGE
+  // ==============================
+  if (!learnerSubjectMap[adm]) learnerSubjectMap[adm] = {};
+  if (!learnerSubjectMap[adm][subject]) learnerSubjectMap[adm][subject] = [];
+  learnerSubjectMap[adm][subject].push(score);
 
-    // LEARNER
-    (gradeLearnerMap[grade][r.admission] ??= []).push(score);
-  }
+  // ==============================
+  // 2. CLASS MAP (STORE LATER AVG)
+  // ==============================
+  gradeClassMap[grade] ??= {};
+  gradeClassMap[grade][className] ??= [];
 
-  // ===== AVERAGE FUNCTION =====
-  function avg(arr) {
-    return arr.length
-      ? arr.reduce((a, b) => a + b, 0) / arr.length
-      : 0;
-  }
+  // ==============================
+  // 3. SUBJECT MAP
+  // ==============================
+  gradeSubjectMap[grade] ??= {};
+  gradeSubjectMap[grade][subject] ??= [];
 
+  // ==============================
+  // 4. LEARNER MAP
+  // ==============================
+  gradeLearnerMap[grade] ??= {};
+  gradeLearnerMap[grade][adm] ??= [];
+
+  gradeSubjectMap[grade][subject].push(score);
+}
+
+function avg(arr) {
+  return arr.length
+    ? arr.reduce((a, b) => a + b, 0) / arr.length
+    : 0;
+}
 
 	
   // ===== CLASS SUMMARY =====
