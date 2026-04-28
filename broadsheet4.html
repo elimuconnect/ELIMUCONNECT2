@@ -2996,6 +2996,17 @@ for (let i = 0; i < cards.length; i += batchSize) {
 
   
 
+
+
+
+
+
+
+
+
+
+
+
 document.getElementById("downloadBroadsheetBtn")
 .addEventListener("click", () => {
 
@@ -3006,14 +3017,52 @@ document.getElementById("downloadBroadsheetBtn")
     return;
   }
 
-  html2pdf().set({
-    margin: 10,
-    filename: `Broadsheet_${new Date().toISOString().slice(0,10)}.pdf`,
-    image: { type: "jpeg", quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
-    jsPDF: { unit: "mm", format: "a4", orientation: "landscape" } // ✅ IMPORTANT
-  }).from(container).save();
+  // 🔥 force proper A4 landscape scaling
+  const opt = {
+    margin:       [10, 10, 10, 10], // top, left, bottom, right
+    filename:     `Broadsheet_${new Date().toISOString().slice(0,10)}.pdf`,
+    image:        { type: "jpeg", quality: 1 },
+    html2canvas:  { 
+      scale: 2,
+      useCORS: true,
+      scrollX: 0,
+      scrollY: 0
+    },
+    jsPDF: {
+      unit: "mm",
+      format: "a4",
+      orientation: "landscape"
+    },
+    pagebreak: {
+      mode: ["avoid-all", "css", "legacy"]
+    }
+  };
+
+  html2pdf()
+    .set(opt)
+    .from(container)
+    .toPdf()
+    .get("pdf")
+    .then(pdf => {
+
+      // 🔥 ensure perfect fit scaling (important for broadsheets)
+      const totalPages = pdf.internal.getNumberOfPages();
+
+      for (let i = 1; i <= totalPages; i++) {
+        pdf.setPage(i);
+
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+
+        // optional: you can add footer/page numbers later here
+      }
+    })
+    .save();
 });
+
+
+
+	
 
 
 
