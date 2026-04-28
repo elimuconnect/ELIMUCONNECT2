@@ -1765,10 +1765,19 @@ ${getAchievementLabel(subjectAvg)}
       const sortedStudents = Object.entries(students).map(([name, data]) => {
 
 
-const scores = subjectList
-  .map(sub => data.subjects[sub])
-  .filter(v => v !== undefined && v !== null);
 
+
+const scores = subjectList
+  .map(sub => {
+    const val = data.subjects[sub];
+
+    // convert 0–100 → 1–8 scale
+    return val ? (val / 100) * 8 : null;
+  })
+  .filter(v => v !== null);
+
+
+		  
 		  
 const total = scores.reduce((a, b) => a + b, 0);
 const avg = scores.length ? total / scores.length : 0;
@@ -1807,7 +1816,7 @@ const avg = scores.length ? total / scores.length : 0;
             `).join("")}
             <td>${s.total.toFixed(2)}</td>
 <td>${s.avg.toFixed(2)}</td>
-<td>${getAchievementLabel(subjectAvg)}</td>
+<td>${getAchievementLabel(s.avg)}</td>
           </tr>
         `;
       });
