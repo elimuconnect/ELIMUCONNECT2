@@ -1714,9 +1714,7 @@ ${getAchievementLabel(subjectAvg)}
 }
 
 
-
-
-  function generateBroadsheet(records, avgMap) {
+function generateBroadsheet(records, avgMap) {
 
   let gradeClassMap = {};
 
@@ -1761,30 +1759,27 @@ ${getAchievementLabel(subjectAvg)}
 
       const subjectList = Array.from(allSubjects);
 
-      // ===== COMPUTE TOTALS & SORT =====
+      // ===== COMPUTE TOTALS + AVG (NO RE-CALC FROM RAW SCORES) =====
       const sortedStudents = Object.entries(students).map(([name, data]) => {
 
+        const summary = learnerSummary?.[name] || {};
 
+        const scores = subjectList
+          .map(sub => data.subjects[sub])
+          .filter(v => v !== undefined && v !== null && !isNaN(v));
 
+        const total = scores.reduce((a, b) => a + b, 0);
+        const avg = scores.length ? total / scores.length : 0;
 
-const scores = subjectList
-  .map(sub => {
-    const val = data.subjects[sub];
+        return {
+          name,
+          ...data,
+          total,
+          avg,
+          summary
+        };
 
-    // convert 0–100 → 1–8 scale
-    return val ? (val / 100) * 8 : null;
-  })
-  .filter(v => v !== null);
-
-
-		  
-		  
-const total = scores.reduce((a, b) => a + b, 0);
-const avg = scores.length ? total / scores.length : 0;
-		  
-        return { name, ...data, total, avg };
-
-      }).sort((a,b) => b.avg - a.avg); // 🔥 SORT TOP → BOTTOM
+      }).sort((a, b) => b.avg - a.avg);
 
       // ===== TABLE =====
       html += `
@@ -1799,24 +1794,30 @@ const avg = scores.length ? total / scores.length : 0;
               ${subjectList.map(s => `<th>${s}</th>`).join("")}
               <th>Total</th>
               <th>Average</th>
-             <th>Level</th>
+              <th>Level</th>
             </tr>
           </thead>
           <tbody>
       `;
 
       sortedStudents.forEach((s, index) => {
+
+        const avgValue = s.summary.overall_average ?? s.avg;
+        const level = s.summary.overall_level ?? getAchievementLabel(avgValue);
+
         html += `
           <tr>
             <td>${index + 1}</td>
             <td>${s.name}</td>
             <td>${s.admission}</td>
+
             ${subjectList.map(sub => `
-              <td>${(s.subjects[sub] ?? "-")}</td>
+              <td>${s.subjects[sub] ?? "-"}</td>
             `).join("")}
+
             <td>${s.total.toFixed(2)}</td>
-<td>${s.avg.toFixed(2)}</td>
-<td>${getAchievementLabel(s.avg)}</td>
+            <td>${avgValue.toFixed(2)}</td>
+            <td>${level}</td>
           </tr>
         `;
       });
@@ -1827,7 +1828,6 @@ const avg = scores.length ? total / scores.length : 0;
 
   return html;
 }
-  
   
   
   
