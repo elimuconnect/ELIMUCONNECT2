@@ -3004,8 +3004,6 @@ for (let i = 0; i < cards.length; i += batchSize) {
 
 
 
-
-
 document.getElementById("downloadBroadsheetBtn")
 .addEventListener("click", async () => {
 
@@ -3016,38 +3014,39 @@ document.getElementById("downloadBroadsheetBtn")
     return;
   }
 
-  // 🔥 CLONE (so UI is not affected)
   const clone = container.cloneNode(true);
 
-  // 🔥 CREATE WRAPPER
+  // 🔥 FIX TABLES INSIDE CLONE
+  clone.querySelectorAll("table").forEach(t => {
+    t.style.width = "100%";
+    t.style.tableLayout = "fixed";
+    t.style.fontSize = "10px";
+  });
+
   const wrapper = document.createElement("div");
-  wrapper.style.width = "1122px"; // A4 landscape width in px (~297mm)
+  wrapper.style.width = "1122px";
   wrapper.style.padding = "10px";
-  wrapper.style.boxSizing = "border-box";
   wrapper.style.background = "#fff";
 
-  // 🔥 FORCE FIT TABLE
-  clone.style.width = "100%";
-  clone.style.transform = "scale(0.85)"; // 🔥 adjust if needed
-  clone.style.transformOrigin = "top left";
-
   wrapper.appendChild(clone);
-
-  document.body.appendChild(wrapper); // required for rendering
+  document.body.appendChild(wrapper);
 
   await html2pdf().set({
-    margin: 0,
+    margin: 5,
     filename: `Broadsheet_${new Date().toISOString().slice(0,10)}.pdf`,
     image: { type: "jpeg", quality: 1 },
-    html2canvas: { scale: 2, useCORS: true },
+    html2canvas: {
+      scale: 2,
+      useCORS: true
+    },
     jsPDF: {
       unit: "px",
-      format: [1122, 794], // exact A4 landscape
+      format: [1122, 794],
       orientation: "landscape"
     }
   }).from(wrapper).save();
 
-  document.body.removeChild(wrapper); // cleanup
+  document.body.removeChild(wrapper);
 });
 
 
