@@ -2014,9 +2014,23 @@ function generateBroadsheet(records, avgMap, mode = "grade") {
       <table>
         <thead>
           <tr>
-            <th>Rank</th>
-            <th>Name</th>
-            <th>Adm</th>
+
+<th style="width:35px;">#</th>
+
+<th style="
+  width:110px;
+  max-width:110px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+">
+  Name
+</th>
+
+<th style="width:70px;">Adm</th>
+
+
+			
 
 
 ${subjects.map(s => `
@@ -2033,18 +2047,33 @@ ${subjects.map(s => `
 
 		  
 `).join("")}
-		   
-            <th>Total</th>
-            <th>Avg(/8)</th>
-            <th>Level</th>
+
+
+
+<th style="width:70px;">Tot</th>
+<th style="width:70px;">Avg</th>
+<th style="width:80px;">Lvl</th>
+
+		  
           </tr>
         </thead>
         <tbody>
           ${ranked.map((s, i) => `
             <tr>
-              <td>${i + 1}</td>
-              <td>${s.name}</td>
-              <td>${s.admission}</td>
+             <td style="width:35px;">${i + 1}</td>
+
+<td style="
+  width:110px;
+  max-width:110px;
+  white-space:normal;        /* ✅ allow wrapping */
+  word-break:break-word;     /* ✅ break long words */
+  line-height:1.1;           /* ✅ compact lines */
+  text-align:left;
+">
+  ${s.name}
+</td>
+
+<td style="width:70px;">${s.admission}</td>
 
               ${subjects.map(sub => `
 
@@ -2058,9 +2087,9 @@ ${subjects.map(s => `
 			   
               `).join("")}
 
-              <td>${s.total.toFixed(2)}</td>
-              <td>${s.avg.toFixed(2)}</td>
-              <td>${getAchievementLabel(s.avg)}</td>
+             <td style="width:70px;">${s.total.toFixed(2)}</td>
+<td style="width:70px;">${s.avg.toFixed(2)}</td>
+<td style="width:80px;">${getAchievementLabel(s.avg)}</td>
             </tr>
           `).join("")}
         </tbody>
