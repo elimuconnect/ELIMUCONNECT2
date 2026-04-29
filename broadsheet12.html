@@ -1488,14 +1488,6 @@ const currentAvgScore = currentScores.length
 const prevData = isFirstTerm ? null : previousAverages[admission];
 const previousAvg = prevData ? prevData.total / prevData.count : null;
 
-// ✅ HARD RULE FIRST
-let trend;
-
-if (isFirstTerm) {
-  trend = "New Entry";
-} else if (!previousAvg) {
-  trend = "No Data";
-} else {
 
   // ===== TREND FIXED VERSION =====
 
