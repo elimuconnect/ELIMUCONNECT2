@@ -2060,8 +2060,9 @@ ${subjects.map(s => `
 			   
               `).join("")}
 
-             <td style="width:70px;">${s.total.toFixed(2)}</td>
+    
 <td style="width:70px;">${Math.round(s.total)}</td>
+ <td>${s.avg.toFixed(2)}</td>
 <td style="width:80px;">${getAchievementLabel(s.avg)}</td>
             </tr>
           `).join("")}
