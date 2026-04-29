@@ -1142,15 +1142,13 @@ function renderSchoolAnalytics(
     // ===== SUBJECT =====
     (gradeSubjectMap[grade][r.subject] ??= []).push(score);
 
-    // ===== BAND + RISK =====
-    if (score >= 3.5) gradeBandMap[grade].exceeding++;
-    else if (score >= 2.5) gradeBandMap[grade].meeting++;
-    else if (score >= 1.5) gradeBandMap[grade].approaching++;
-    else {
-      gradeBandMap[grade].below++;
-      gradeRiskMap[grade]++;
-    }
-  });
+   const band = getAchievementLabel(score);
+
+if (["EE1","EE2"].includes(band)) gradeBandMap[grade].exceeding++;
+else if (["ME1","ME2"].includes(band)) gradeBandMap[grade].meeting++;
+else if (band === "AE1") gradeBandMap[grade].approaching++;
+else gradeBandMap[grade].below++;
+   
 
   // ===== AVERAGE FUNCTION =====
   function avg(arr) {
@@ -1271,10 +1269,18 @@ function renderSchoolAnalytics(
       </p>
     `;
 
-    riskHTML += `
-      <h5 style="margin-top:15px;">📘 ${grade}</h5>
-      <p>${gradeRiskMap[grade]} learners require intervention.</p>
-    `;
+const riskCount = gradeRiskMap[grade] || 0;
+const totalLearners = Object.keys(gradeLearnerMap[grade] || {}).length;
+
+riskHTML += `
+  <h5 style="margin-top:15px;">📘 ${grade}</h5>
+  <p>
+    ${riskCount} / ${totalLearners}
+    (${totalLearners ? ((riskCount/totalLearners)*100).toFixed(1) : 0}%)
+    learners require intervention.
+  </p>
+`;
+	  
   });
 
   // ===== INTELLIGENCE (UNCHANGED) =====
