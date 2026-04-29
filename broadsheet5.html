@@ -2066,43 +2066,49 @@ ${subjects.map(s => `
   // =====================================================
   // MODE SWITCH
   // =====================================================
+// =====================================================
+// MODE SWITCH (FIXED HEADERS ONLY)
+// =====================================================
 
-  if (mode === "grade") {
+if (mode === "grade") {
 
-    Object.entries(gradeClassMap).forEach(([grade, classes]) => {
+  Object.entries(gradeClassMap).forEach(([grade, classes]) => {
 
-      let mergedStudents = {};
+    let mergedStudents = {};
 
-      Object.values(classes).forEach(students => {
-        Object.entries(students).forEach(([name, data]) => {
-          mergedStudents[name] = data;
-        });
-      });
-
-      const subjects = getSubjects(mergedStudents);
-
-      html += `<h2>📘 ${grade} Broadsheet (All Classes)</h2>`;
-      html += buildTable(grade, mergedStudents, subjects);
-    });
-
-  }
-
-
-  else if (mode === "class") {
-
-    Object.entries(gradeClassMap).forEach(([grade, classes]) => {
-
-      html += `<h2>📘 ${grade}</h2>`;
-
-      Object.entries(classes).forEach(([cls, students]) => {
-
-       const subjects = getSubjects(students).sort();
-
-        html += buildTable(`Class ${cls}`, students, subjects);
+    Object.values(classes).forEach(students => {
+      Object.entries(students).forEach(([name, data]) => {
+        mergedStudents[name] = data;
       });
     });
-  }
 
+    const subjects = getSubjects(mergedStudents);
+
+    html += `<h2>📘 ${grade} Broadsheet (All Classes)</h2>`;
+    html += buildTable(grade, mergedStudents, subjects);
+  });
+
+}
+
+
+else if (mode === "class") {
+
+  Object.entries(gradeClassMap).forEach(([grade, classes]) => {
+
+    Object.entries(classes).forEach(([cls, students]) => {
+
+      const subjects = getSubjects(students).sort();
+
+      // ✅ HEADER MOVED HERE (PER CLASS)
+      html += `<h2 style="margin-top:10px;">📘 ${grade} - Class ${cls}</h2>`;
+
+      html += buildTable(`Class ${cls}`, students, subjects);
+    });
+
+  });
+
+}
+ 
   return html;
 }
 const mode = document.getElementById("broadsheetMode").value;
