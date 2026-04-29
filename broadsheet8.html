@@ -2015,28 +2015,21 @@ function generateBroadsheet(records, avgMap, mode = "grade") {
         <thead>
           <tr>
 
-<th style="width:35px;">#</th>
+<th style="width:30px;">#</th>
 
 <th style="
   width:110px;
-  max-width:110px;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
+  text-align:center;
 ">
   Name
 </th>
 
-<td style="
-  max-width:60px;
-  font-size:11px;
-  word-break:break-all;
-  white-space:normal;
-  line-height:1.2;
+<th style="
+  width:110px;
+  text-align:center;
 ">
-   <td>${s.admission}</td>
-</td>
-
+  Name
+</th>
 
 			
 
@@ -2081,9 +2074,17 @@ ${subjects.map(s => `
   ${s.name}
 </td>
 
-<td style="width:70px;">${s.admission}</td>
+<td style="
+  max-width:60px;
+  font-size:11px;
+  word-break:break-all;
+  white-space:normal;
+  line-height:1.2;
+">
+  ${s.admission ?? "-"}
+</td>
 
-              ${subjects.map(sub => `
+   ${subjects.map(sub => `
 
 
 <td style="
