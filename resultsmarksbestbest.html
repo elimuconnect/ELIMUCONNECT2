@@ -416,6 +416,81 @@ td {
   }
 }
 
+
+
+
+
+
+
+
+
+.broadsheet-btn {
+  width: 100%;
+  max-width: 420px;
+  padding: 14px 18px;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+
+  background: linear-gradient(135deg, #1f4037, #99f2c8);
+  color: #fff;
+
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  transition: all 0.25s ease-in-out;
+
+  position: relative;
+  overflow: hidden;
+}
+
+/* small subtitle */
+.broadsheet-btn span {
+  font-size: 12px;
+  font-weight: 400;
+  opacity: 0.9;
+}
+
+/* hover effect */
+.broadsheet-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
+}
+
+/* click effect */
+.broadsheet-btn:active {
+  transform: scale(0.98);
+}
+
+/* subtle shine animation */
+.broadsheet-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: rgba(255,255,255,0.2);
+  transform: skewX(-25deg);
+}
+
+.broadsheet-btn:hover::before {
+  animation: shine 0.8s ease;
+}
+
+@keyframes shine {
+  0% { left: -75%; }
+  100% { left: 130%; }
+}
+
+
 	
 </style>
 
@@ -443,9 +518,20 @@ td {
   <option value="student">Student (Admission No/UPI No)</option>
   <option value="subject">Subject</option>
   <option value="class">Class</option>   <!-- ✅ NEW -->
-	
+	<option value="broadsheet">Broadsheet</option>
+
 </select><br /><br />
 
+
+<label>Broadsheet Mode</label><br />
+<select id="broadsheetMode">
+  <option value="" selected disabled>Select Broadsheet Type</option>
+  <option value="grade">Grade Broadsheet</option>
+  <option value="class">Class Broadsheet</option>
+</select>
+<br /><br />
+
+	
 <div id="filterBox"></div>
 <p id="status"></p>
 <hr />
@@ -464,7 +550,16 @@ td {
 </div>
 
 
-<button id="downloadCurrentViewBtn" style="flex:1; display:none;">
+
+
+<button id="downloadBroadsheetBtn" class="broadsheet-btn">
+  📊 Download Broadsheet Report
+  <span>Grade & Class ranking overview</span>
+</button>
+	
+
+	
+	<button id="downloadCurrentViewBtn" style="flex:1; display:none;">
   ⬇️ Download detailed report<br>
 
 </button>
@@ -1036,7 +1131,6 @@ console.log("Previous Subject Avg:", prevSubjectMap);
 
 
 
-
 function renderSchoolAnalytics(
   records,
   termName,
@@ -1288,8 +1382,6 @@ if (hasPreviousData) {
 }
 	
 
-
-
  // ===== RETURN =====
   return `
 <div class="a4-page school-analytics" style="page-break-before: avoid; break-before: avoid;">
@@ -1307,8 +1399,8 @@ if (hasPreviousData) {
       <h4 style="margin-top:10px;">🧠 Term Intelligence Summary</h4>
       ${gradeIntelligenceHTML}
     </div>
-
 	
+
 <h4>1️⃣ Class Mean Overview</h4>
 ${classSummaryHTML}
 
@@ -1325,6 +1417,9 @@ ${riskHTML}
 </div>
 `;
 }
+
+
+
 
 
 function getPerformanceBadge(level) {
@@ -1718,10 +1813,374 @@ ${getAchievementLabel(subjectAvg)}
 
 
 
-  
-  
-  
-  
+
+function renderBroadsheet() {
+  if (viewMode.value !== "broadsheet") return;
+
+  const mode = broadsheetMode.value;
+
+  if (!mode) {
+    reportDiv.innerHTML = `<p>Please select Grade or Class Broadsheet</p>`;
+    return;
+  }
+
+reportDiv.innerHTML = generateBroadsheet(records, avgMap, mode);
+}
+
+
+
+
+// ============================
+// EVENT LISTENERS
+// ============================
+
+viewMode.addEventListener("change", () => {
+  loadReport();
+  renderBroadsheet(); // important
+});
+
+broadsheetMode.addEventListener("change", renderBroadsheet);
+	
+
+
+
+
+const SUBJECT_SHORT = {
+  // ===== MATHEMATICS VARIANTS =====
+  "Mathematics": "Math",
+  "Core Mathematics": "Core Math",
+  "Essential Mathematics": "Ess Math",
+  "Pure Mathematics": "Pure Math",
+  "Applied Mathematics": "App Math",
+
+  // ===== LANGUAGES =====
+  "English": "Eng",
+  "Kiswahili": "Kisw",
+  "Literature in English": "Lit Eng",
+  "Fasihi ya Kiswahili": "Fas Kisw",
+
+  // ===== SCIENCES =====
+  "Integrated Science": "Sci",
+  "Biology": "Bio",
+  "Chemistry": "Chem",
+  "Physics": "Phy",
+
+  // ===== HUMANITIES =====
+  "Social Studies": "SST",
+  "History and Government": "Hist",
+  "Geography": "Geo",
+  "CRE": "CRE",
+  "IRE": "IRE",
+  "HRE": "HRE",
+
+  // ===== TECHNICAL & APPLIED =====
+  "Computer Studies": "Comp",
+  "Computer Science": "CS",
+  "Business Studies": "BST",
+  "Agriculture": "Agri",
+  "Home Science": "HSc",
+
+  // ===== CREATIVE =====
+  "Art and Craft": "Art",
+  "Music": "Music",
+
+  // ===== PHYSICAL =====
+  "Physical Education": "P.E"
+};
+
+	
+
+
+
+
+function shortSubject(name) {
+  if (!name) return "";
+
+  const n = name.toLowerCase();
+
+  let short = "";
+
+  // ===== MATH VARIANTS =====
+  if (n.includes("math")) {
+    if (n.includes("core")) short = "Core Math";
+    else if (n.includes("essential")) short = "Ess Math";
+    else if (n.includes("pure")) short = "Pure Math";
+    else if (n.includes("applied")) short = "App Math";
+    else short = "Math";
+  }
+  // ===== DIRECT MAP =====
+  else if (SUBJECT_SHORT[name]) {
+    short = SUBJECT_SHORT[name];
+  }
+  // ===== FALLBACK =====
+  else {
+    short = name
+      .split(" ")
+      .map(w => w.substring(0, 3))
+      .join(" ");
+  }
+
+  // 🔥 KEY PART: SPLIT INTO MULTIPLE ROWS
+ return short
+  .split(" ")
+  .map(w => `<div style="line-height:1;">${w}</div>`)
+  .join("");
+}
+	
+	
+function generateBroadsheet(records, avgMap, mode = "grade") {
+
+  let gradeClassMap = {};
+
+  // ===== BUILD STRUCTURE =====
+  records.forEach(r => {
+
+    const grade = r.grade_name
+      ? (String(r.grade_name).startsWith("Grade")
+          ? r.grade_name
+          : `Grade ${r.grade_name}`)
+      : "Unknown";
+
+    gradeClassMap[grade] ??= {};
+    gradeClassMap[grade][r.className] ??= {};
+    gradeClassMap[grade][r.className][r.student] ??= {
+      admission: r.admission,
+      subjects: {}
+    };
+
+    const subjectData = avgMap?.[r.student]?.[r.subject];
+    if (!subjectData) return;
+
+    const score = levelToScore(subjectData.achievement_level);
+    if (typeof score !== "number" || isNaN(score)) return;
+
+    gradeClassMap[grade][r.className][r.student].subjects[r.subject] = score;
+  });
+
+
+  let html = `
+  ${renderOverviewHeader({
+    school: schoolDetail.name,
+    poBox: schoolDetail.po_box,
+    postal: schoolDetail.postal_code,
+    town: schoolDetail.town,
+    phone: schoolDetail.phone,
+   
+    className: mode === "grade" ? "GRADE BROADSHEET" : "CLASS BROADSHEET",
+    term: termName,
+    year: SYSTEM_YEAR,
+    logo: schoolLogo
+  })}
+`;
+
+
+  // ===== GET SUBJECTS =====
+  const getSubjects = (students) => {
+    const set = new Set();
+    Object.values(students).forEach(s => {
+      Object.keys(s.subjects).forEach(sub => set.add(sub));
+    });
+    return Array.from(set);
+  };
+
+
+  // ===== BUILD TABLE =====
+  const buildTable = (title, students, subjects) => {
+
+    const ranked = Object.entries(students).map(([name, data]) => {
+
+      const scores = subjects
+        .map(sub => data.subjects[sub])
+        .filter(v => typeof v === "number");
+
+      const total = scores.reduce((a, b) => a + b, 0);
+      const avg = scores.length ? total / scores.length : 0;
+
+      return {
+        name,
+        admission: data.admission,
+        subjects: data.subjects,
+        total,
+        avg
+      };
+
+    })
+    .sort((a, b) => b.avg - a.avg); // ✅ rank by average
+
+
+    return `
+      <h3 style="margin-top:15px;">${title}</h3>
+      <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+
+<th style="width:30px;">#</th>
+
+<th style="
+  width:110px;
+  text-align:center;
+">
+  Name
+</th>
+
+<th style="
+  width:90px;
+  text-align:center;
+">
+  ADM
+</th>
+
+			
+
+
+${subjects.map(s => `
+
+
+<th title="${s}" style="
+  font-size:14px;
+  word-wrap:break-word;
+  white-space:normal;
+  text-align:center;
+">
+  ${shortSubject(s)}
+</th>
+
+		  
+`).join("")}
+
+
+
+<th style="width:60px;">Tot</th>
+<th style="width:70px;">Avg</th>
+<th style="width:70px;">Lvl</th>
+
+		  
+          </tr>
+        </thead>
+        <tbody>
+          ${ranked.map((s, i) => `
+            <tr>
+             <td style="width:35px;">${i + 1}</td>
+
+<td style="
+  width:110px;
+  max-width:110px;
+  white-space:normal;        /* ✅ allow wrapping */
+  word-break:break-word;     /* ✅ break long words */
+  line-height:1.1;           /* ✅ compact lines */
+  text-align:left;
+">
+  ${s.name}
+</td>
+
+<td style="
+  max-width:90px;
+  font-size:11px;
+  word-break:break-all;
+  white-space:normal;
+  line-height:1.2;
+">
+  ${s.admission ?? "-"}
+</td>
+
+   ${subjects.map(sub => `
+
+
+<td style="
+  font-size:15px;
+  text-align:center;
+">
+  ${s.subjects[sub] ?? "-"}
+</td>
+			   
+              `).join("")}
+
+             <td style="width:70px;">${s.total.toFixed(2)}</td>
+<td style="width:70px;">${Math.round(s.total)}</td>
+<td style="width:80px;">${getAchievementLabel(s.avg)}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+      </div>
+    `;
+  };
+
+
+  // =====================================================
+  // MODE SWITCH
+  // =====================================================
+// =====================================================
+// MODE SWITCH (FIXED HEADERS ONLY)
+// =====================================================
+
+if (mode === "grade") {
+
+  Object.entries(gradeClassMap).forEach(([grade, classes]) => {
+
+    let mergedStudents = {};
+
+    Object.values(classes).forEach(students => {
+      Object.entries(students).forEach(([name, data]) => {
+        mergedStudents[name] = data;
+      });
+    });
+
+    const subjects = getSubjects(mergedStudents);
+
+    html += `<h2>📘 ${grade} Broadsheet (All Classes)</h2>`;
+    html += buildTable(grade, mergedStudents, subjects);
+  });
+
+}
+
+else if (mode === "class") {
+
+  // ❌ REMOVE global header for class mode
+  html = "";
+
+  Object.entries(gradeClassMap).forEach(([grade, classes]) => {
+
+    Object.entries(classes).forEach(([cls, students]) => {
+
+      const subjects = getSubjects(students).sort();
+
+      // ✅ FULL HEADER PER CLASS
+      html += `
+        <div style="page-break-before: always;">
+          ${renderOverviewHeader({
+            school: schoolDetail.name,
+            poBox: schoolDetail.po_box,
+            postal: schoolDetail.postal_code,
+            town: schoolDetail.town,
+            phone: schoolDetail.phone,
+            className: `Class ${cls} (${grade})`,
+            term: termName,
+            year: SYSTEM_YEAR,
+            logo: schoolLogo
+          })}
+      `;
+
+      html += buildTable(`Class ${cls}`, students, subjects);
+
+      html += `</div>`;
+    });
+
+  });
+
+}
+ 
+  return html;
+}
+const mode = document.getElementById("broadsheetMode").value;
+
+generateBroadsheet(records, avgMap, mode);
+
+
+
+
+
   
 function renderAchievementGuide() {
   return `
@@ -2252,6 +2711,11 @@ requestAnimationFrame(() => {
   }
 
 
+if (viewMode.value === "broadsheet") {
+  renderBroadsheet();
+  return;
+}
+	
 	
 /* ===== CLASS VIEW ===== */
 if (viewMode.value === "class") {
@@ -2667,7 +3131,7 @@ for (let i = 0; i < cards.length; i += batchSize) {
 
 
 
-
+  
   window.downloadSchoolAnalyticsPDF = async function () {
 
   const analyticsDiv = document.getElementById("schoolAnalytics");
@@ -2694,12 +3158,79 @@ for (let i = 0; i < cards.length; i += batchSize) {
     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
   }).from(clone).save();
 };
-  
 
   
 
 
-	
+
+
+
+document.getElementById("downloadBroadsheetBtn").addEventListener("click", async () => {
+  const container = document.getElementById("report");
+  if (!container || container.innerHTML.trim() === "") {
+    alert("No broadsheet to download");
+    return;
+  }
+
+  // 1. CLONE CONTENT
+  const clone = container.cloneNode(true);
+  clone.style.margin = "0";
+  clone.style.padding = "0";
+  
+  // 2. FIX TABLE LAYOUT
+  clone.querySelectorAll("table").forEach(t => {
+    t.style.width = "100%";
+    t.style.borderCollapse = "collapse"; // Ensure borders don't double up
+  });
+
+  clone.querySelectorAll("th, td").forEach(cell => {
+    cell.style.fontSize = "11px"; // Slightly smaller helps avoid overflows
+    cell.style.textAlign = "center";
+    cell.style.padding = "4px"; 
+    cell.style.border = "1px solid #ccc";
+    cell.style.wordBreak = "break-word";
+  });
+
+  // 3. WRAPPER (Removing the fixed pixel width/height helps html2pdf calculate flow)
+  const wrapper = document.createElement("div");
+  wrapper.style.width = "1050px"; // Slightly less than 1122 to account for PDF margins
+  wrapper.style.background = "#fff";
+  wrapper.appendChild(clone);
+  document.body.appendChild(wrapper);
+
+  // 4. EXPORT PDF
+  const opt = {
+    // Setting a margin (top, left, bottom, right) prevents text cutting
+    margin: [10, 10, 10, 10], 
+    filename: `Broadsheet_${new Date().toISOString().slice(0, 10)}.pdf`,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: { 
+      scale: 2, 
+      useCORS: true, 
+      logging: false,
+      scrollY: 0 // Forces capture from the top of the element
+    },
+    jsPDF: { 
+      unit: "mm", 
+      format: "a4", 
+      orientation: "landscape" 
+    },
+    // This avoids breaking in the middle of a row
+    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+  };
+
+  try {
+    await html2pdf().set(opt).from(wrapper).save();
+  } catch (error) {
+    console.error("PDF Generation failed:", error);
+  } finally {
+    document.body.removeChild(wrapper);
+  }
+});
+
+
+
+
 </script>
 </body>
 </html>
