@@ -2092,16 +2092,29 @@ if (mode === "grade") {
 
 else if (mode === "class") {
 
+  // ❌ REMOVE global header for class mode
+  html = "";
+
   Object.entries(gradeClassMap).forEach(([grade, classes]) => {
 
     Object.entries(classes).forEach(([cls, students]) => {
 
       const subjects = getSubjects(students).sort();
 
-      // 🔥 FORCE NEW PAGE PER CLASS + HEADER
+      // ✅ FULL HEADER PER CLASS
       html += `
         <div style="page-break-before: always;">
-          <h2 style="margin-top:10px;">📘 ${grade} - Class ${cls}</h2>
+          ${renderOverviewHeader({
+            school: schoolDetail.name,
+            poBox: schoolDetail.po_box,
+            postal: schoolDetail.postal_code,
+            town: schoolDetail.town,
+            phone: schoolDetail.phone,
+            className: `Class ${cls} (${grade})`,
+            term: termName,
+            year: SYSTEM_YEAR,
+            logo: schoolLogo
+          })}
       `;
 
       html += buildTable(`Class ${cls}`, students, subjects);
