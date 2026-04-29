@@ -1145,8 +1145,12 @@ gradeLearnerMap[grade][r.admission].push(score);
 
     // ===== SUBJECT =====
     gradeSubjectMap[grade][r.subject] ??= [];
-    gradeSubjectMap[grade][r.subject].push(score);
+  
+	  gradeSubjectMap[grade][r.subject].push(score);
 
+});
+
+	  
   // ===== FIXED BAND & RISK (PER LEARNER) =====
 Object.entries(gradeLearnerMap).forEach(([grade, learners]) => {
 
