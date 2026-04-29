@@ -958,7 +958,7 @@ strandData?.forEach(row => {
  
 
 
-function calculateTermIntelligence(records, previousRecords, previousTerm) {
+  function calculateTermIntelligence(records, previousRecords, previousTerm) {
 
   if (!previousTerm || !previousRecords?.length) {
     return {
@@ -979,7 +979,7 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
 
   // ===== CURRENT TERM PROCESSING =====
   records.forEach(r => {
-     const score = levelToScore(r.level);
+    const score = levelToScore(r.level);
     if (!score) return;
 
     learnerMap[r.admission] ??= [];
@@ -994,8 +994,7 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
 
   // ===== PREVIOUS TERM PROCESSING =====
   previousRecords.forEach(r => {
- const score = levelToScore(r.achievement_level);
- 
+    const score = levelToScore(r.achievement_level);
     if (!score) return;
 
     const adm = r.admission_number;
@@ -1012,11 +1011,31 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
     prevSubjectMap[sub].push(score);
   });
 
+  // ===== HELPERS (ONCE ONLY) =====
   function avg(arr) {
     return arr.length
-      ? arr.reduce((a,b)=>a+b,0) / arr.length
+      ? arr.reduce((a, b) => a + b, 0) / arr.length
       : null;
   }
+
+  function getDominantLevel(scores) {
+    const counts = {};
+
+    scores.forEach(s => {
+      const label = getAchievementLabel(s);
+      counts[label] = (counts[label] || 0) + 1;
+    });
+
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])[0]?.[0] || null;
+  }
+
+  const levelRank = {
+    "Below Expectations": 1,
+    "Approaching Expectations": 2,
+    "Meeting Expectations": 3,
+    "Exceeding Expectations": 4
+  };
 
   // ===== SCHOOL IMPROVEMENT =====
   const currentSchoolAvg = avg(Object.values(classMap).flat());
@@ -1033,44 +1052,48 @@ function calculateTermIntelligence(records, previousRecords, previousTerm) {
   let improvingLearners = 0;
 
   Object.entries(learnerMap).forEach(([adm, scores]) => {
-    if (!prevLearnerMap[adm]) return;
+    const prevScores = prevLearnerMap[adm];
+    if (!prevScores) return;
 
-    const currentAvg = avg(scores);
-    const prevAvg = avg(prevLearnerMap[adm]);
+    const currentLevel = getDominantLevel(scores);
+    const prevLevel = getDominantLevel(prevScores);
 
-    if (currentAvg - prevAvg >= 0.15) improvingLearners++;
+    const diff =
+      (levelRank[currentLevel] || 0) -
+      (levelRank[prevLevel] || 0);
+
+    if (diff > 0) improvingLearners++;
   });
 
-  // ===== TRUE IMPROVED CLASSES =====
+  // ===== IMPROVED CLASSES =====
   const improvedClasses = [];
 
   Object.entries(classMap).forEach(([cls, scores]) => {
-    if (!prevClassMap[cls]) return;
+    const prevScores = prevClassMap[cls];
+    if (!prevScores) return;
 
     const currentAvg = avg(scores);
-    const prevAvg = avg(prevClassMap[cls]);
+    const prevAvg = avg(prevScores);
 
     if (currentAvg - prevAvg >= 0.15) {
       improvedClasses.push(cls);
     }
   });
 
-  // ===== TRUE DECLINING SUBJECTS =====
-const decliningSubjects = [];
+  // ===== DECLINING SUBJECTS =====
+  const decliningSubjects = [];
 
-Object.entries(subjectMap).forEach(([sub, scores]) => {
+  Object.entries(subjectMap).forEach(([sub, scores]) => {
+    const currentAvg = avg(scores);
 
-  const currentAvg = avg(scores);
+    const prevAvg = prevSubjectMap[sub]
+      ? avg(prevSubjectMap[sub])
+      : currentAvg;
 
-  // If no previous data, assume no change (prevents false decline)  
-  const prevAvg = prevSubjectMap[sub]
-    ? avg(prevSubjectMap[sub])
-    : currentAvg;
-
-  if (currentAvg - prevAvg <= -0.15) {
-    decliningSubjects.push(sub);
-  }
-});
+    if (currentAvg - prevAvg <= -0.15) {
+      decliningSubjects.push(sub);
+    }
+  });
 
   return {
     schoolImprovement,
@@ -1079,10 +1102,6 @@ Object.entries(subjectMap).forEach(([sub, scores]) => {
     improvingLearners
   };
 }
-
-
-
-  
 
 
 
@@ -1478,24 +1497,28 @@ if (isFirstTerm) {
   trend = "No Data";
 } else {
 
-  const levelRank = {
-    "Below Expectations(1)": 1,
-    "Approaching Expectations(2)": 2,
-    "Meeting Expectations(3)": 3,
-    "Exceeding Expectations(4)": 4
-  };
+  // ===== TREND FIXED VERSION =====
 
+// STRICT consistent ranking (use SAME format everywhere)
+const levelRank = {
+  "Below Expectations": 1,
+  "Approaching Expectations": 2,
+  "Meeting Expectations": 3,
+  "Exceeding Expectations": 4
+};
 
-
-
-
-
-// Get MOST COMMON level instead of recalculating from averages
+// Get dominant level safely (consistent conversion)
 function getDominantLevel(scores) {
   const counts = {};
 
   scores.forEach(s => {
-    const label = getAchievementLabel(s);
+    const label = getAchievementLabel(s)
+      .replace("(1)", "")
+      .replace("(2)", "")
+      .replace("(3)", "")
+      .replace("(4)", "")
+      .trim();
+
     counts[label] = (counts[label] || 0) + 1;
   });
 
@@ -1506,20 +1529,23 @@ function getDominantLevel(scores) {
 const currentLevel = getDominantLevel(currentScores);
 const previousLevel = getDominantLevel(previousLearnerMap[admission] || []);
 
+// SAFE fallback (prevents undefined flipping trend)
+const currentRank = levelRank[currentLevel] ?? 0;
+const previousRank = levelRank[previousLevel] ?? 0;
 
+let trend = "No Data";
 
-
-
-
-	
-  const currentRank = levelRank[currentLevel] || 0;
-  const previousRank = levelRank[previousLevel] || 0;
-
-  if (currentRank > previousRank) trend = "Improving";
-  else if (currentRank < previousRank) trend = "Declining";
-  else trend = "Stable";
+if (isFirstTerm) {
+  trend = "New Entry";
+} else if (!previousLevel) {
+  trend = "No Data";
+} else if (currentRank > previousRank) {
+  trend = "Improving";
+} else if (currentRank < previousRank) {
+  trend = "Declining";
+} else {
+  trend = "Stable";
 }
-	  
    
     const supportFlag = generateSupportFlag(subjects);
     const insight = generateInsight(subjects);
