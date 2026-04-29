@@ -1092,6 +1092,8 @@ Object.entries(subjectMap).forEach(([sub, scores]) => {
 
   
 
+
+
 function renderSchoolAnalytics(
   records,
   termName,
@@ -1100,56 +1102,73 @@ function renderSchoolAnalytics(
   schoolName,
   className,
   schoolLogo,
-  prevLearnerMap = {}
+	 prevLearnerMap = {}
 ) {
 
   let gradeClassMap = {};
   let gradeSubjectMap = {};
-  let gradeLearnerMap = {};
-
-  // 🔥 FIX: missing maps
   let gradeBandMap = {};
   let gradeRiskMap = {};
+	
 
-  // ===== PROCESS DATA =====
-  records.forEach(r => {
+let gradeLearnerScoreMap = {};
+let gradeLearnerSet = {};
 
-    const subjectData = avgMap?.[r.student]?.[r.subject];
-    if (!subjectData) return;
+// ===== PROCESS DATA =====
+records.forEach(r => {
 
-    const score = subjectData.average_score;
-    if (score === null || score === undefined) return;
+  const subjectData = avgMap?.[r.student]?.[r.subject];
+  if (!subjectData) return;
 
-    const grade = r.grade_name
-      ? (String(r.grade_name).startsWith("Grade")
-          ? r.grade_name
-          : `Grade ${r.grade_name}`)
-      : "Unknown";
+  const score = subjectData.average_score;
+  if (score === null || score === undefined) return;
 
-    // ===== INIT =====
-    gradeClassMap[grade] ??= {};
-    gradeSubjectMap[grade] ??= {};
-    gradeLearnerMap[grade] ??= {};
-    gradeBandMap[grade] ??= { below: 0, approaching: 0, meeting: 0, exceeding: 0 };
-    gradeRiskMap[grade] ??= 0;
+  const grade = r.grade_name
+    ? (String(r.grade_name).startsWith("Grade")
+        ? r.grade_name
+        : `Grade ${r.grade_name}`)
+    : "Unknown";
 
-    gradeLearnerMap[grade][r.admission] ??= [];
-    gradeLearnerMap[grade][r.admission].push(score);
+  const learnerKey = r.admission;
 
-    // ===== CLASS =====
-    (gradeClassMap[grade][r.className] ??= []).push(score);
+  // ===== INIT =====
+  gradeLearnerMap[grade] ??= {};
+  gradeLearnerScoreMap[grade] ??= {};
+  gradeLearnerSet[grade] ??= new Set();
 
-    // ===== SUBJECT =====
-    (gradeSubjectMap[grade][r.subject] ??= []).push(score);
+  // ===== COLLECT UNIQUE LEARNERS =====
+  gradeLearnerSet[grade].add(learnerKey);
 
-   const band = getAchievementLabel(score);
+  // ===== STORE SCORES PER LEARNER =====
+  gradeLearnerScoreMap[grade][learnerKey] ??= [];
+  gradeLearnerScoreMap[grade][learnerKey].push(score);
 
-if (["EE1","EE2"].includes(band)) gradeBandMap[grade].exceeding++;
-else if (["ME1","ME2"].includes(band)) gradeBandMap[grade].meeting++;
-else if (band === "AE1") gradeBandMap[grade].approaching++;
-else gradeBandMap[grade].below++;
-   }); 
+  // ===== CLASS =====
+  gradeClassMap[grade] ??= {};
+  gradeClassMap[grade][r.className] ??= [];
+  gradeClassMap[grade][r.className].push(score);
 
+  // ===== SUBJECT =====
+  gradeSubjectMap[grade] ??= {};
+  gradeSubjectMap[grade][r.subject] ??= [];
+  gradeSubjectMap[grade][r.subject].push(score);
+
+  // ===== BAND =====
+  gradeBandMap[grade] ??= { below: 0, approaching: 0, meeting: 0, exceeding: 0 };
+
+  if (score >= 3.5) gradeBandMap[grade].exceeding++;
+  else if (score >= 2.5) gradeBandMap[grade].meeting++;
+  else if (score >= 1.5) gradeBandMap[grade].approaching++;
+  else gradeBandMap[grade].below++;
+
+  // ===== RISK =====
+  gradeRiskMap[grade] ??= 0;
+  if (score < 1.5) gradeRiskMap[grade]++;
+});
+
+
+
+	
   // ===== AVERAGE FUNCTION =====
   function avg(arr) {
     return arr.length
@@ -1182,14 +1201,16 @@ else gradeBandMap[grade].below++;
           risk = `<span style="color:#c0392b;font-weight:bold;">🔴 Needs Intervention</span>`;
         }
 
-        return `
+        return { cls, mean, html: `
           <tr>
             <td>${cls}</td>
             <td>${mean.toFixed(2)} / 4 (${level})</td>
             <td>${risk}</td>
           </tr>
-        `;
+        `};
       })
+      .sort((a, b) => b.mean - a.mean)
+      .map(r => r.html)
       .join("");
 
     classSummaryHTML += `
@@ -1202,7 +1223,9 @@ else gradeBandMap[grade].below++;
             <th>Status</th>
           </tr>
         </thead>
-        <tbody>${rows}</tbody>
+        <tbody>
+          ${rows}
+        </tbody>
       </table>
     `;
   });
@@ -1228,14 +1251,16 @@ else gradeBandMap[grade].below++;
           alert = `<span style="color:#c0392b;font-weight:bold;">⚠ Immediate Review Required</span>`;
         }
 
-        return `
+        return { sub, mean, html: `
           <tr>
             <td>${sub}</td>
             <td>${mean.toFixed(2)} / 4 (${level})</td>
             <td>${alert}</td>
           </tr>
-        `;
+        `};
       })
+      .sort((a, b) => b.mean - a.mean)
+      .map(r => r.html)
       .join("");
 
     subjectSummaryHTML += `
@@ -1248,124 +1273,159 @@ else gradeBandMap[grade].below++;
             <th>Alert</th>
           </tr>
         </thead>
-        <tbody>${rows}</tbody>
+        <tbody>
+          ${rows}
+        </tbody>
       </table>
     `;
   });
 
-  // ===== BAND + RISK =====
+  // ===== BAND HTML =====
   let bandHTML = "";
-  let riskHTML = "";
 
-  Object.entries(gradeBandMap).forEach(([grade, b]) => {
 
-    bandHTML += `
-      <h5 style="margin-top:15px;">📘 ${grade}</h5>
-      <p>
-        🔴 Below: ${b.below} |
-        🟡 Approaching: ${b.approaching} |
-        🔵 Meeting: ${b.meeting} |
-        🟢 Exceeding: ${b.exceeding}
-      </p>
-    `;
 
-const riskCount = gradeRiskMap[grade] || 0;
-const totalLearners = Object.keys(gradeLearnerMap[grade] || {}).length;
+Object.entries(gradeLearnerScoreMap).forEach(([grade, learners]) => {
 
-riskHTML += `
-  <h5 style="margin-top:15px;">📘 ${grade}</h5>
-  <p>
-    ${riskCount} / ${totalLearners}
-    (${totalLearners ? ((riskCount/totalLearners)*100).toFixed(1) : 0}%)
-    learners require intervention.
-  </p>
-`;
-	  
+  let b = { below:0, approaching:0, meeting:0, exceeding:0 };
+
+  Object.values(learners).forEach(scores => {
+    const avgScore = scores.reduce((a,b)=>a+b,0) / scores.length;
+
+    if (avgScore >= 3.5) b.exceeding++;
+    else if (avgScore >= 2.5) b.meeting++;
+    else if (avgScore >= 1.5) b.approaching++;
+    else b.below++;
   });
 
-  // ===== INTELLIGENCE (UNCHANGED) =====
-  let gradeIntelligenceHTML = "";
+  const total = Object.keys(learners).length;
 
-  if (hasPreviousData) {
+  bandHTML += `
+    <h5 style="margin-top:15px;">📘 ${grade}</h5>
+    <p>
+      🔴 Below: ${b.below} |
+      🟡 Approaching: ${b.approaching} |
+      🔵 Meeting: ${b.meeting} |
+      🟢 Exceeding: ${b.exceeding}
+    </p>
+  `;
+});
 
-    Object.entries(gradeLearnerMap).forEach(([grade, learners]) => {
 
-      const learnerCount = Object.keys(learners).length;
+	
+  // ===== RISK HTML =====
+  let riskHTML = "";
 
-      let improving = 0;
-      let declining = 0;
-      let unchanged = 0;
+ Object.entries(gradeLearnerScoreMap).forEach(([grade, learners]) => {
 
-      Object.entries(learners).forEach(([adm, scores]) => {
+  let atRisk = 0;
+  const total = Object.keys(learners).length;
 
-        const currentAvg = scores.length
-          ? scores.reduce((a,b)=>a+b,0) / scores.length
-          : 0;
+  Object.values(learners).forEach(scores => {
+    const avgScore = scores.reduce((a,b)=>a+b,0) / scores.length;
 
-        const prevScores = prevLearnerMap[adm];
+    if (avgScore < 1.5) atRisk++;
+  });
 
-        const prevAvg = prevScores && prevScores.length
-          ? prevScores.reduce((a,b)=>a+b,0) / prevScores.length
-          : null;
+  riskHTML += `
+    <h5 style="margin-top:15px;">📘 ${grade}</h5>
+    <p>
+      ${atRisk} learners (${total ? ((atRisk/total)*100).toFixed(1) : 0}%)
+      are below expectations and require intervention.
+    </p>
+  `;
+});
 
-        if (prevAvg === null) return;
 
-        if (currentAvg > prevAvg + 0.2) improving++;
-        else if (currentAvg < prevAvg - 0.2) declining++;
-        else unchanged++;
-      });
+let gradeIntelligenceHTML = "";
 
-      gradeIntelligenceHTML += `
-        <h4 style="margin-top:20px;">🧠 ${grade} Intelligence Summary</h4>
+if (hasPreviousData) {
 
-        <p>📈 Improving Learners: <strong>${improving}</strong></p>
-        <p>📉 Declining Learners: <strong>${declining}</strong></p>
-        <p>➡️ Stable Learners: <strong>${unchanged}</strong></p>
-        <p>👨‍🎓 Total Learners: <strong>${learnerCount}</strong></p>
-      `;
+  Object.entries(gradeLearnerScoreMap).forEach(([grade, learners]) => {
+
+    const learnerCount = Object.keys(learners).length;
+
+    let improving = 0;
+    let declining = 0;
+    let unchanged = 0;
+
+    Object.entries(learners).forEach(([adm, scores]) => {
+
+      const currentAvg = scores.length
+        ? scores.reduce((a,b)=>a+b,0) / scores.length
+        : 0;
+
+      const prevScores = previousLearnerMap[adm];
+
+      const prevAvg = prevScores && prevScores.length
+        ? prevScores.reduce((a,b)=>a+b,0) / prevScores.length
+        : null;
+
+      if (prevAvg === null) return;
+
+      if (currentAvg > prevAvg + 0.2) improving++;
+      else if (currentAvg < prevAvg - 0.2) declining++;
+      else unchanged++;
     });
 
-  } else {
-    gradeIntelligenceHTML = `
-      <p style="margin-top:15px; color:#555;">
-        🆕 No previous term data available for comparison.
-      </p>
+    gradeIntelligenceHTML += `
+      <h4 style="margin-top:20px;">🧠 ${grade} Intelligence Summary</h4>
+
+      <p>📈 Improving Learners: <strong>${improving}</strong></p>
+      <p>📉 Declining Learners: <strong>${declining}</strong></p>
+      <p>➡️ Stable Learners: <strong>${unchanged}</strong></p>
+      <p>👨‍🎓 Total Learners: <strong>${learnerCount}</strong></p>
     `;
-  }
+  });
 
-  // ===== RETURN =====
-  return `
-    <div class="a4-page school-analytics">
-      <div class="learner-card">
+} else {
 
-        <div style="text-align:center;">
-          ${schoolLogo ? `<img src="${schoolLogo}" style="width:200px;height:120px;object-fit:contain;" />` : ""}
-          <h3>${schoolName}</h3>
-          <div>Class: ${className} | Term: ${termName} – ${year}</div>
-        </div>
-
-        <h3>📊 School Performance Analytics</h3>
-
-        <h4>🧠 Term Intelligence Summary</h4>
-        ${gradeIntelligenceHTML}
-
-        <h4>1️⃣ Class Mean Overview</h4>
-        ${classSummaryHTML}
-
-        <h4>2️⃣ Subject Analysis</h4>
-        ${subjectSummaryHTML}
-
-        <h4>3️⃣ Band Distribution (Per Grade)</h4>
-        ${bandHTML}
-
-        <h4>4️⃣ Learner Risk (Per Grade)</h4>
-        ${riskHTML}
-
-      </div>
-    </div>
+  gradeIntelligenceHTML = `
+    <p style="margin-top:15px; color:#555;">
+      🆕 No previous term data available for comparison.
+    </p>
   `;
 }
-  
+	
+	
+ // ===== RETURN =====
+  return `
+<div class="a4-page school-analytics" style="page-break-before: avoid; break-before: avoid;">
+  <div class="learner-card" style="margin-top: 0; padding-top: 0;">
+
+    <div style="text-align:center; page-break-inside: avoid;">
+      ${schoolLogo ? `<div style="padding-top: 10px;"><img src="${schoolLogo}" style="width:200px;height:120px;object-fit:contain;" /></div>` : ""}
+      <h3 style="margin: 5px 0;">${schoolName}</h3>
+      <div style="margin-bottom: 15px;">Class: ${className} | Term: ${termName} – ${year}</div>
+    </div>
+
+    <h3 style="margin-top:0;">📊 School Performance Analytics</h3>
+
+    <div class="intelligence-section" style="page-break-inside: auto;">
+      <h4 style="margin-top:10px;">🧠 Term Intelligence Summary</h4>
+      ${gradeIntelligenceHTML}
+    </div>
+
+<h4>1️⃣ Class Mean Overview</h4>
+${classSummaryHTML}
+
+<h4>2️⃣ Subject Analysis</h4>
+${subjectSummaryHTML}
+
+<h4>3️⃣ Band Distribution (Per Grade)</h4>
+${bandHTML}
+
+<h4>4️⃣ Learner Risk (Per Grade)</h4>
+${riskHTML}
+
+</div>
+</div>
+`;
+}
+
+
+
+	
 function getPerformanceBadge(level) {
   if (!level) return "";
 
