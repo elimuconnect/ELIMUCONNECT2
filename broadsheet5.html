@@ -2090,23 +2090,24 @@ if (mode === "grade") {
 
 }
 
-
 else if (mode === "class") {
 
-  Object.entries(classes).forEach(([cls, students]) => {
+  Object.entries(gradeClassMap).forEach(([grade, classes]) => {
 
-  const subjects = getSubjects(students).sort();
+    Object.entries(classes).forEach(([cls, students]) => {
 
-  // 🔥 FORCE NEW BLOCK PER CLASS (fix rendering collapse issue)
-  html += `
-    <div style="page-break-before: always;">
-      <h2 style="margin-top:10px;">📘 ${grade} - Class ${cls}</h2>
-  `;
+      const subjects = getSubjects(students).sort();
 
-  html += buildTable(`Class ${cls}`, students, subjects);
+      // 🔥 FORCE NEW PAGE PER CLASS + HEADER
+      html += `
+        <div style="page-break-before: always;">
+          <h2 style="margin-top:10px;">📘 ${grade} - Class ${cls}</h2>
+      `;
 
-  html += `</div>`;
-});
+      html += buildTable(`Class ${cls}`, students, subjects);
+
+      html += `</div>`;
+    });
 
   });
 
