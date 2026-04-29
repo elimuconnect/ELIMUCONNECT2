@@ -2027,7 +2027,15 @@ function generateBroadsheet(records, avgMap, mode = "grade") {
   Name
 </th>
 
-<th style="width:70px;">Adm</th>
+<td style="
+  max-width:60px;
+  font-size:11px;
+  word-break:break-all;
+  white-space:normal;
+  line-height:1.2;
+">
+  ${s.admission ?? "-"}
+</td>
 
 
 			
