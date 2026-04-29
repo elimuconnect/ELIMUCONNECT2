@@ -1846,8 +1846,84 @@ broadsheetMode.addEventListener("change", renderBroadsheet);
 	
 
 
+
+
+const SUBJECT_SHORT = {
+  // ===== MATHEMATICS VARIANTS =====
+  "Mathematics": "Math",
+  "Core Mathematics": "Core Math",
+  "Essential Mathematics": "Ess Math",
+  "Pure Mathematics": "Pure Math",
+  "Applied Mathematics": "App Math",
+
+  // ===== LANGUAGES =====
+  "English": "Eng",
+  "Kiswahili": "Kisw",
+  "Literature in English": "Lit Eng",
+  "Fasihi ya Kiswahili": "Fas Kisw",
+
+  // ===== SCIENCES =====
+  "Integrated Science": "Sci",
+  "Biology": "Bio",
+  "Chemistry": "Chem",
+  "Physics": "Phy",
+
+  // ===== HUMANITIES =====
+  "Social Studies": "SST",
+  "History and Government": "Hist",
+  "Geography": "Geo",
+  "CRE": "CRE",
+  "IRE": "IRE",
+  "HRE": "HRE",
+
+  // ===== TECHNICAL & APPLIED =====
+  "Computer Studies": "Comp",
+  "Computer Science": "CS",
+  "Business Studies": "BST",
+  "Agriculture": "Agri",
+  "Home Science": "HSc",
+
+  // ===== CREATIVE =====
+  "Art and Craft": "Art",
+  "Music": "Music",
+
+  // ===== PHYSICAL =====
+  "Physical Education": "P.E"
+};
+
 	
 
+
+
+function shortSubject(name) {
+  if (!name) return "";
+
+  const n = name.toLowerCase();
+
+  // 🔥 HANDLE MATH VARIANTS PROPERLY
+  if (n.includes("math")) {
+    if (n.includes("core")) return "Core Math";
+    if (n.includes("essential")) return "Ess Math";
+    if (n.includes("pure")) return "Pure Math";
+    if (n.includes("applied")) return "App Math";
+    return "Math";
+  }
+
+  // direct mapping
+  if (SUBJECT_SHORT[name]) return SUBJECT_SHORT[name];
+
+  // 🔥 BETTER FALLBACK (multi-word compression)
+  return name
+    .split(" ")
+    .map(w => w.substring(0, 3))
+    .join(" ");
+}
+
+
+
+
+	
+	
 function generateBroadsheet(records, avgMap, mode = "grade") {
 
   let gradeClassMap = {};
@@ -1937,7 +2013,23 @@ function generateBroadsheet(records, avgMap, mode = "grade") {
             <th>Rank</th>
             <th>Name</th>
             <th>Adm</th>
-            ${subjects.map(s => `<th>${s} (/8)</th>`).join("")}
+
+
+${subjects.map(s => `
+
+
+<th title="${s}" style="
+  font-size:10px;
+  word-wrap:break-word;
+  white-space:normal;
+  text-align:center;
+">
+  ${shortSubject(s)}
+</th>
+
+		  
+`).join("")}
+		   
             <th>Total</th>
             <th>Average (/8)</th>
             <th>Level</th>
@@ -1951,7 +2043,15 @@ function generateBroadsheet(records, avgMap, mode = "grade") {
               <td>${s.admission}</td>
 
               ${subjects.map(sub => `
-                <td>${s.subjects[sub] ?? "-"}</td>
+
+
+<td style="
+  font-size:10px;
+  text-align:center;
+">
+  ${s.subjects[sub] ?? "-"}
+</td>
+			   
               `).join("")}
 
               <td>${s.total.toFixed(2)}</td>
@@ -1999,7 +2099,7 @@ function generateBroadsheet(records, avgMap, mode = "grade") {
 
       Object.entries(classes).forEach(([cls, students]) => {
 
-        const subjects = getSubjects(students);
+       const subjects = getSubjects(students).sort();
 
         html += buildTable(`Class ${cls}`, students, subjects);
       });
