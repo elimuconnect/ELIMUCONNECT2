@@ -1824,10 +1824,7 @@ function renderBroadsheet() {
     return;
   }
 
-  reportDiv.innerHTML = `
-    <h2>📊 ${mode === "grade" ? "Grade" : "Class"} Broadsheet</h2>
-    ${generateBroadsheet(records, avgMap, mode)}
-  `;
+reportDiv.innerHTML = generateBroadsheet(records, avgMap, mode);
 }
 
 
@@ -3102,8 +3099,6 @@ for (let i = 0; i < cards.length; i += batchSize) {
 
 
 
-
-
 document.getElementById("downloadBroadsheetBtn")
 .addEventListener("click", async () => {
 
@@ -3114,36 +3109,55 @@ document.getElementById("downloadBroadsheetBtn")
     return;
   }
 
+  // =========================
+  // 1. CLONE CONTENT (ONCE)
+  // =========================
   const clone = container.cloneNode(true);
 
-  // 🔥 RESET LAYOUT
+  // Remove unwanted spacing
   clone.style.margin = "0";
   clone.style.padding = "0";
-  clone.style.width = "100%";
 
+  // Remove extra spacing above headers
+  clone.querySelectorAll("h1,h2,h3").forEach(h => {
+    h.style.marginTop = "0";
+  });
+
+  // =========================
+  // 2. FIX TABLE LAYOUT
+  // =========================
   clone.querySelectorAll("table").forEach(t => {
     t.style.width = "100%";
     t.style.tableLayout = "fixed";
   });
 
   clone.querySelectorAll("th, td").forEach(cell => {
-    cell.style.fontSize = "14px";
+    cell.style.fontSize = "13px";
+    cell.style.textAlign = "center";
+    cell.style.whiteSpace = "normal";
+    cell.style.wordBreak = "break-word";
   });
 
-  // 🔥 PERFECT A4 CONTAINER
+  // =========================
+  // 3. WRAPPER (A4 LANDSCAPE)
+  // =========================
   const wrapper = document.createElement("div");
+
   wrapper.style.width = "1122px";
-  wrapper.style.height = "794px";
-  wrapper.style.padding = "20px";
-  wrapper.style.boxSizing = "border-box";
-  wrapper.style.display = "flex";
-  wrapper.style.flexDirection = "column";
-  wrapper.style.justifyContent = "flex-start"; // 🔥 FIXES HEADER POSITION
+  wrapper.style.minHeight = "794px";   // A4 landscape height
+  wrapper.style.padding = "10px";
+  wrapper.style.margin = "0";
   wrapper.style.background = "#fff";
+
+  // IMPORTANT: force top alignment
+  wrapper.style.position = "relative";
 
   wrapper.appendChild(clone);
   document.body.appendChild(wrapper);
 
+  // =========================
+  // 4. EXPORT PDF
+  // =========================
   await html2pdf().set({
     margin: 0,
     filename: `Broadsheet_${new Date().toISOString().slice(0,10)}.pdf`,
@@ -3159,9 +3173,9 @@ document.getElementById("downloadBroadsheetBtn")
     }
   }).from(wrapper).save();
 
+  // cleanup
   document.body.removeChild(wrapper);
 });
-
 
 	
 
