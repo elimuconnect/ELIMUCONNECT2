@@ -261,7 +261,9 @@ input[type="file"] {
   </div>
 
 </div>
-  
+
+
+
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -270,15 +272,29 @@ const supabase = createClient(
   "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
 );
 
+// ======================
+// ELEMENTS
+// ======================
 const teacherSelect = document.getElementById("teacherSelect");
 const classSelect = document.getElementById("classSelect");
 const subjectSelect = document.getElementById("subjectSelect");
 const assignStatus = document.getElementById("assignStatus");
 const currentAssignmentsDiv = document.getElementById("currentAssignments");
+
+const studentClass = document.getElementById("studentClass");
+const excelClass = document.getElementById("excelClass");
+const manageClass = document.getElementById("manageClass");
+const studentsTable = document.getElementById("studentsTable");
 const schoolSelect = document.getElementById("schoolSelect");
-// --------------------
-// 0️⃣ Auth & Admin Check
-// --------------------
+
+// ======================
+// STATE
+// ======================
+let activeSchoolId = null;
+
+// ======================
+// AUTH
+// ======================
 const { data: { user } } = await supabase.auth.getUser();
 if (!user) throw new Error("Not logged in");
 
@@ -288,159 +304,170 @@ const { data: adminProfile } = await supabase
   .eq("auth_id", user.id)
   .single();
 
+if (!adminProfile) throw new Error("Profile not found");
 
-
-let activeSchoolId = null;
-
-if (!adminProfile) {
-  alert("Profile not found");
-  throw new Error("No profile");
-}
-
-// 🔴 SUPERADMIN
+// ======================
+// SCHOOL SELECTION
+// ======================
 if (adminProfile.role === "superadmin") {
 
   document.getElementById("schoolSelectorCard").style.display = "block";
-
-  
 
   const { data: schools, error } = await supabase
     .from("schools")
     .select("id, name")
     .order("name");
 
-  if (error) {
-    alert("Failed to load schools");
-    throw error;
-  }
-schoolSelect.innerHTML = "<option>No schools found</option>";
- 
-  schoolSelect.innerHTML = schools
-    .map(s => `<option value="${s.id}">${s.name}</option>`)
-    .join("");
+  if (error) throw error;
+
+  schoolSelect.innerHTML =
+    `<option value="">Select school</option>` +
+    (schools || []).map(s =>
+      `<option value="${s.id}">${s.name}</option>`
+    ).join("");
 
   document.getElementById("loadSchoolBtn").onclick = async () => {
-    const selected = schoolSelect.value;
-
-    if (!selected) {
-      alert("Select a school");
-      return;
-    }
-
-    activeSchoolId = selected;
+    activeSchoolId = schoolSelect.value;
+    if (!activeSchoolId) return alert("Select a school");
     await initDashboard();
   };
-}
 
-// 🔵 NORMAL ADMIN
-else if (adminProfile.role === "admin") {
+} else if (adminProfile.role === "admin") {
   activeSchoolId = adminProfile.school_id;
   await initDashboard();
-}
-
-else {
+} else {
   alert("Access denied");
   throw new Error("Unauthorized");
 }
 
-
-
-// --------------------
-// 1️⃣ Load Teachers
-// --------------------
+// ======================
+// LOAD TEACHERS
+// ======================
 async function loadTeachers() {
-  const { data: teachers, error } = await supabase
+  const { data, error } = await supabase
     .from("profiles")
     .select("id, full_name")
     .eq("role", "teacher")
     .eq("school_id", activeSchoolId);
 
-  if (error) { console.error(error); teacherSelect.innerHTML = `<option>Error loading teachers</option>`; return; }
-  if (!teachers || teachers.length === 0) { teacherSelect.innerHTML = `<option>No teachers found</option>`; return; }
+  if (error) return console.error(error);
 
-  teacherSelect.innerHTML = teachers.map(t => `<option value="${t.id}">${t.full_name || "No Name"}</option>`).join('');
+  teacherSelect.innerHTML =
+    `<option value="">Select teacher</option>` +
+    (data || []).map(t =>
+      `<option value="${t.id}">${t.full_name}</option>`
+    ).join("");
+
   loadCurrentAssignments();
 }
 
-// --------------------
-// 2️⃣ Load Classes & Subjects
-// --------------------
+// ======================
+// LOAD CLASSES
+// ======================
 async function loadClasses() {
-  const { data: classes } = await supabase
+  const { data } = await supabase
     .from("classes")
     .select("id, name")
     .eq("school_id", activeSchoolId);
 
-  classSelect.innerHTML = classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  const html =
+    `<option value="">Select class</option>` +
+    (data || []).map(c =>
+      `<option value="${c.id}">${c.name}</option>`
+    ).join("");
+
+  classSelect.innerHTML = html;
 }
 
+// ======================
+// LOAD SUBJECTS
+// ======================
 async function loadSubjects() {
-  const { data: subjects, error } = await supabase
+  const { data, error } = await supabase
     .from("subjects")
     .select("id, name")
     .or(`school_id.eq.${activeSchoolId},school_id.is.null`);
 
-  if (error) { 
-    console.error(error); 
-    subjectSelect.innerHTML = `<option>Error loading subjects</option>`; 
-    return; 
+  if (error) {
+    console.error(error);
+    subjectSelect.innerHTML = `<option>Error loading subjects</option>`;
+    return;
   }
 
-  subjectSelect.innerHTML = subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  subjectSelect.innerHTML =
+    (data || []).map(s =>
+      `<option value="${s.id}">${s.name}</option>`
+    ).join("");
 }
-// --------------------
-// 3️⃣ Assign Subjects to Teacher
-// --------------------
+
+// ======================
+// ASSIGN SUBJECTS
+// ======================
 document.getElementById("assignBtn").onclick = async () => {
+
   const teacherId = teacherSelect.value;
   const classId = classSelect.value;
-  const selectedSubjects = Array.from(subjectSelect.selectedOptions).map(o => o.value);
+  const selectedSubjects =
+    Array.from(subjectSelect.selectedOptions).map(o => o.value);
 
   if (!teacherId || !classId || !selectedSubjects.length) {
-    assignStatus.innerText = "Select teacher, class, and subjects"; return;
+    assignStatus.innerText = "Select teacher, class, and subjects";
+    return;
   }
 
-  // Check existing assignments
   const { data: existing } = await supabase
     .from("teacher_subjects")
     .select("subject_id")
     .eq("teacher_id", teacherId)
     .eq("class_id", classId);
 
-  const existingIds = existing?.map(e => e.subject_id) || [];
+  const existingIds = (existing || []).map(e => e.subject_id);
+
   const newRows = selectedSubjects
-    .filter(subjId => !existingIds.includes(subjId))
-    .map(subjId => ({ teacher_id: teacherId, class_id: classId, subject_id: subjId }));
+    .filter(id => !existingIds.includes(id))
+    .map(id => ({
+      teacher_id: teacherId,
+      class_id: classId,
+      subject_id: id
+    }));
 
   if (newRows.length === 0) {
-    assignStatus.innerText = "All selected subjects are already assigned"; return;
+    assignStatus.innerText = "Already assigned";
+    return;
   }
 
-  const { error } = await supabase.from("teacher_subjects").insert(newRows);
-  if (error) assignStatus.innerText = "Error: " + error.message;
-  else { assignStatus.innerText = "Assigned successfully"; loadCurrentAssignments(); }
+  const { error } = await supabase
+    .from("teacher_subjects")
+    .insert(newRows);
+
+  if (error) {
+    assignStatus.innerText = error.message;
+  } else {
+    assignStatus.innerText = "Assigned successfully";
+    loadCurrentAssignments();
+  }
 };
 
-// --------------------
-// 4️⃣ Load Current Assignments
-// --------------------
+// ======================
+// LOAD ASSIGNMENTS
+// ======================
 async function loadCurrentAssignments() {
-  const teacherId = teacherSelect.value;
-  if (!teacherId) { currentAssignmentsDiv.innerHTML = "Select a teacher to view assignments"; return; }
 
-  const { data: assignments, error } = await supabase
+  const teacherId = teacherSelect.value;
+  if (!teacherId) return;
+
+  const { data, error } = await supabase
     .from("teacher_subjects")
     .select(`
-      id,
+      teacher_id,
       class_id,
       subject_id,
-      classes ( name ),
-      subjects ( name )
+      classes(name),
+      subjects(name)
     `)
     .eq("teacher_id", teacherId);
 
-  if (error) { console.error(error); currentAssignmentsDiv.innerHTML = "Error loading assignments"; return; }
-  if (!assignments || assignments.length === 0) { currentAssignmentsDiv.innerHTML = "No assignments yet"; return; }
+  if (error) return console.error(error);
 
   currentAssignmentsDiv.innerHTML = `
     <table>
@@ -449,97 +476,87 @@ async function loadCurrentAssignments() {
         <th>Subject</th>
         <th>Action</th>
       </tr>
-      ${assignments.map(a => `
+      ${(data || []).map(a => `
         <tr>
-          <td>${a.classes?.name || "N/A"}</td>
-          <td>${a.subjects?.name || "N/A"}</td>
+          <td>${a.classes?.name}</td>
+          <td>${a.subjects?.name}</td>
           <td>
             <button class="unassign"
-              data-teacher="${teacherId}"
+              data-teacher="${a.teacher_id}"
               data-class="${a.class_id}"
               data-subject="${a.subject_id}">
               Unassign
             </button>
           </td>
         </tr>
-      `).join('')}
+      `).join("")}
     </table>
   `;
 }
 
-// --------------------
-// Handle Unassign properly
-// --------------------
+// ======================
+// UNASSIGN
+// ======================
 currentAssignmentsDiv.addEventListener("click", async (e) => {
+
   if (!e.target.classList.contains("unassign")) return;
 
-  // Convert IDs to correct type (UUIDs in string form are fine)
   const teacherId = e.target.dataset.teacher;
   const classId = e.target.dataset.class;
   const subjectId = e.target.dataset.subject;
 
-  if (!teacherId || !classId || !subjectId) {
-    alert("Invalid assignment data"); 
-    return;
-  }
-
-  // ✅ Delete using exact UUIDs
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from("teacher_subjects")
     .delete()
-    .match({
-      teacher_id: teacherId,
-      class_id: classId,
-      subject_id: subjectId
-    });
+    .eq("teacher_id", teacherId)
+    .eq("class_id", classId)
+    .eq("subject_id", subjectId);
 
   if (error) {
-    alert("Error unassigning: " + error.message);
-    console.error(error);
+    alert(error.message);
   } else {
-    alert("Unassigned successfully");
-    loadCurrentAssignments(); // refresh table
+    loadCurrentAssignments();
   }
 });
 
-// --------------------
-// 6️⃣ Reload assignments on teacher change
-// --------------------
+// ======================
+// EVENTS
+// ======================
 teacherSelect.addEventListener("change", loadCurrentAssignments);
 
-
-
-
-const studentClass = document.getElementById("studentClass");
-
+// ======================
+// STUDENTS - CLASS LOAD
+// ======================
 async function loadStudentClasses() {
-  const { data: classes } = await supabase
+  const { data } = await supabase
     .from("classes")
     .select("id, name")
     .eq("school_id", activeSchoolId);
 
-  studentClass.innerHTML = classes
-    .map(c => `<option value="${c.id}">${c.name}</option>`)
-    .join('');
+  studentClass.innerHTML =
+    (data || []).map(c =>
+      `<option value="${c.id}">${c.name}</option>`
+    ).join("");
 }
 
-
+// ======================
+// ADD STUDENT
+// ======================
 document.getElementById("addStudentBtn").onclick = async () => {
 
-  const full_name = document.getElementById("studentName").value;
-  const gender = document.getElementById("studentGender").value;
-  const admission_number = document.getElementById("admissionNumber").value;
-  const date_of_birth = document.getElementById("dob").value;
-  const admission_year = document.getElementById("admissionYear").value;
+  const full_name = studentName.value;
+  const gender = studentGender.value;
+  const admission_number = admissionNumber.value;
+  const date_of_birth = dob.value;
+  const admission_year = admissionYear.value;
   const class_id = studentClass.value;
 
   if (!full_name || !admission_number || !class_id) {
-  document.getElementById("studentStatus").innerText = "Fill required fields (Name, Admission No, Class)";
-  return;
-}
+    studentStatus.innerText = "Fill required fields";
+    return;
+  }
 
-const { error } = await supabase.from("students").insert([
-  {
+  const { error } = await supabase.from("students").insert([{
     school_id: activeSchoolId,
     class_id,
     full_name,
@@ -547,236 +564,78 @@ const { error } = await supabase.from("students").insert([
     gender: gender || null,
     date_of_birth: date_of_birth || null,
     admission_year: admission_year ? parseInt(admission_year) : null
-  }
-]);
+  }]);
 
-  if (error) {
-    document.getElementById("studentStatus").innerText = error.message;
-  } else {
-    document.getElementById("studentStatus").innerText = "Student added successfully";
-  }
+  studentStatus.innerText = error
+    ? error.message
+    : "Student added successfully";
 };
 
-
-const excelClass = document.getElementById("excelClass");
-
+// ======================
+// EXCEL CLASSES
+// ======================
 async function loadExcelClasses() {
-  const { data: classes } = await supabase
+  const { data } = await supabase
     .from("classes")
     .select("id, name")
     .eq("school_id", activeSchoolId);
 
-  excelClass.innerHTML = classes
-    .map(c => `<option value="${c.id}">${c.name}</option>`)
-    .join('');
+  excelClass.innerHTML =
+    (data || []).map(c =>
+      `<option value="${c.id}">${c.name}</option>`
+    ).join("");
 }
 
-await loadExcelClasses();
-
-  
-// --------------------
-// 7️⃣ Initial Load
-// --------------------
-await loadTeachers();
-await loadClasses();
-await loadSubjects();
-await loadStudentClasses();
-
-
-  document.getElementById("uploadExcelBtn").onclick = async () => {
-
-  const file = document.getElementById("excelFile").files[0];
-  const class_id = excelClass.value;
-
-  if (!file) {
-    document.getElementById("excelStatus").innerText = "Select Excel file";
-    return;
-  }
-
-  const reader = new FileReader();
-
-  reader.onload = async (e) => {
-    const data = new Uint8Array(e.target.result);
-    const workbook = XLSX.read(data, { type: "array" });
-
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const jsonData = XLSX.utils.sheet_to_json(sheet);
-
-    const studentsToInsert = jsonData.map(row => ({
-      school_id: activeSchoolId,
-      class_id,
-      full_name: row.full_name,
-      gender: row.gender,
-      admission_number: row.admission_number,
-      date_of_birth: row.date_of_birth,
-      admission_year: row.admission_year
-    }));
-
-    const { error } = await supabase.from("students").insert(studentsToInsert);
-
-    if (error) {
-      document.getElementById("excelStatus").innerText = error.message;
-    } else {
-      document.getElementById("excelStatus").innerText =
-        studentsToInsert.length + " students uploaded successfully";
-    }
-  };
-
-  reader.readAsArrayBuffer(file);
-};
-
-
-const manageClass = document.getElementById("manageClass");
-const studentsTable = document.getElementById("studentsTable");
-
-// Load classes into manage dropdown
+// ======================
+// LOAD MANAGE CLASSES
+// ======================
 async function loadManageClasses() {
-  const { data: classes } = await supabase
+  const { data } = await supabase
     .from("classes")
     .select("id, name")
     .eq("school_id", activeSchoolId);
 
-  manageClass.innerHTML = classes
-    .map(c => `<option value="${c.id}">${c.name}</option>`)
-    .join('');
+  manageClass.innerHTML =
+    (data || []).map(c =>
+      `<option value="${c.id}">${c.name}</option>`
+    ).join("");
 }
 
-await loadManageClasses();
-
-
-
-
+// ======================
+// LOAD STUDENTS
+// ======================
 document.getElementById("loadStudentsBtn").onclick = async () => {
+
   const class_id = manageClass.value;
 
- const { data: students, error } = await supabase
-  .from("students")
-  .select("*")
-  .eq("class_id", class_id)
-  .eq("school_id", activeSchoolId)
- .order("full_name", { ascending: true, nullsFirst: false })
+  const { data, error } = await supabase
+    .from("students")
+    .select("*")
+    .eq("class_id", class_id)
+    .eq("school_id", activeSchoolId)
+    .order("full_name");
 
   if (error) {
     studentsTable.innerHTML = "Error loading students";
     return;
   }
 
-  if (!students.length) {
-    studentsTable.innerHTML = "No students found";
-    return;
-  }
-
   studentsTable.innerHTML = `
-  <table>
-    <tr>
-      <th>Name</th>
-      <th>Gender</th>
-      <th>Admission No</th>
-      <th>DOB</th>
-      <th>Year</th>
-      <th>Action</th>
-    </tr>
-    ${students.map(s => `
+    <table>
       <tr>
-        <td><input value="${s.full_name || ''}" data-field="full_name"></td>
-        
-        <td>
-          <select data-field="gender">
-            <option value="Male" ${s.gender === 'Male' ? 'selected' : ''}>Male</option>
-            <option value="Female" ${s.gender === 'Female' ? 'selected' : ''}>Female</option>
-          </select>
-        </td>
-        
-        <td><input value="${s.admission_number || ''}" data-field="admission_number"></td>
-        
-        <td><input type="date" value="${s.date_of_birth || ''}" data-field="date_of_birth"></td>
-        
-        <td><input type="number" value="${s.admission_year || ''}" data-field="admission_year"></td>
-
-        <td>
-          <button class="saveStudent" data-id="${s.id}">Save</button>
-          <button class="deleteStudent" data-id="${s.id}">Delete</button>
-        </td>
+        <th>Name</th>
+        <th>Gender</th>
+        <th>Admission No</th>
+        <th>DOB</th>
+        <th>Year</th>
       </tr>
-    `).join('')}
-  </table>
-`;
+    </table>
+  `;
 };
 
-
-studentsTable.addEventListener("click", async (e) => {
-
-  // ======================
-  // SAVE STUDENT
-  // ======================
-  if (e.target.classList.contains("saveStudent")) {
-
-    const row = e.target.closest("tr");
-    const studentId = e.target.dataset.id;
-
-    const inputs = row.querySelectorAll("[data-field]");
-    const updatedData = {};
-
-    inputs.forEach(input => {
-
-
-let value = input.value;
-
-// handle empty values
-if (value === "") value = null;
-
-// convert numbers properly
-if (input.dataset.field === "admission_year" && value !== null) {
-  value = parseInt(value);
-}
-
-updatedData[input.dataset.field] = value;
-
-
-		
-    });
-
-    const { error } = await supabase
-      .from("students")
-      .update(updatedData)
-      .eq("id", studentId)
-      .eq("school_id", activeSchoolId); // 🔐 safety
-
-    if (error) {
-      alert("Error updating: " + error.message);
-    } else {
-      alert("Student updated successfully");
-    }
-  }
-
-  // ======================
-  // DELETE STUDENT
-  // ======================
-  if (e.target.classList.contains("deleteStudent")) {
-
-    const studentId = e.target.dataset.id;
-
-    if (!confirm("Are you sure you want to delete this student?")) return;
-
-    const { error } = await supabase
-      .from("students")
-      .delete()
-      .eq("id", studentId)
-      .eq("school_id",activeSchoolId);
-
-    if (error) {
-      alert("Error deleting: " + error.message);
-    } else {
-      alert("Student deleted");
-      document.getElementById("loadStudentsBtn").click(); // refresh
-    }
-  }
-
-});
-
-
-
-
+// ======================
+// INIT
+// ======================
 async function initDashboard() {
   await loadTeachers();
   await loadClasses();
@@ -785,10 +644,8 @@ async function initDashboard() {
   await loadExcelClasses();
   await loadManageClasses();
 }
-
-
+</script>
 
 	
-</script>
 </body>
 </html>
