@@ -182,16 +182,6 @@ input[type="file"] {
 <div class="container">
 
 
-<div id="schoolSelectorCard" class="card" style="display:none;">
-  <h2>Select School</h2>
-  <div class="form-grid">
-    <select id="schoolSelect"></select>
-    <button id="selectSchoolBtn">Load School</button>
-  </div>
-</div>
-
-
-
 
 <!-- Teacher Assignment -->
   <div class="card">
@@ -313,23 +303,30 @@ if (adminProfile.role === "superadmin") {
 
   document.getElementById("schoolSelectorCard").style.display = "block";
 
-  const { data: schools } = await supabase
-    .from("schools")
-    .select("id, name")
-    .order("name");
+  const { data: schools, error } = await supabase
+  .from("schools")
+  .select("id, name")
+  .order("name");
 
-  const schoolSelect = document.getElementById("schoolSelect");
+if (error) {
+  alert("Failed to load schools");
+  return;
+}
 
-  schoolSelect.innerHTML = schools.map(s =>
-    `<option value="${s.id}">${s.name}</option>`
-  ).join("");
+if (!schools || schools.length === 0) {
+  schoolSelect.innerHTML = "<option>No schools found</option>";
+  return;
+}
+ document.getElementById("loadSchoolBtn").onclick = async () => {
+  activeSchoolId = document.getElementById("schoolSelect").value;
 
-  document.getElementById("loadSchoolBtn").onclick = async () => {
-    activeSchoolId = schoolSelect.value;
-    if (!activeSchoolId) return alert("Select a school");
+  if (!activeSchoolId) {
+    alert("Select a school");
+    return;
+  }
 
-    await initDashboard();
-  };
+  await initDashboard();
+};
 
 }
 
@@ -780,9 +777,7 @@ updatedData[input.dataset.field] = value;
 
 
 
-
 async function initDashboard() {
-
   await loadTeachers();
   await loadClasses();
   await loadSubjects();
