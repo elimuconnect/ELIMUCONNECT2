@@ -263,7 +263,6 @@ input[type="file"] {
 </div>
 
 
-
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -287,6 +286,14 @@ const manageClass = document.getElementById("manageClass");
 const studentsTable = document.getElementById("studentsTable");
 const schoolSelect = document.getElementById("schoolSelect");
 
+// Student inputs
+const studentName = document.getElementById("studentName");
+const studentGender = document.getElementById("studentGender");
+const admissionNumber = document.getElementById("admissionNumber");
+const dob = document.getElementById("dob");
+const admissionYear = document.getElementById("admissionYear");
+const studentStatus = document.getElementById("studentStatus");
+
 // ======================
 // STATE
 // ======================
@@ -307,7 +314,7 @@ const { data: adminProfile } = await supabase
 if (!adminProfile) throw new Error("Profile not found");
 
 // ======================
-// SCHOOL SELECTION
+// SCHOOL SELECT
 // ======================
 if (adminProfile.role === "superadmin") {
 
@@ -344,13 +351,11 @@ if (adminProfile.role === "superadmin") {
 // LOAD TEACHERS
 // ======================
 async function loadTeachers() {
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from("profiles")
     .select("id, full_name")
     .eq("role", "teacher")
     .eq("school_id", activeSchoolId);
-
-  if (error) return console.error(error);
 
   teacherSelect.innerHTML =
     `<option value="">Select teacher</option>` +
@@ -370,13 +375,11 @@ async function loadClasses() {
     .select("id, name")
     .eq("school_id", activeSchoolId);
 
-  const html =
+  classSelect.innerHTML =
     `<option value="">Select class</option>` +
     (data || []).map(c =>
       `<option value="${c.id}">${c.name}</option>`
     ).join("");
-
-  classSelect.innerHTML = html;
 }
 
 // ======================
@@ -431,7 +434,7 @@ document.getElementById("assignBtn").onclick = async () => {
       subject_id: id
     }));
 
-  if (newRows.length === 0) {
+  if (!newRows.length) {
     assignStatus.innerText = "Already assigned";
     return;
   }
@@ -440,12 +443,9 @@ document.getElementById("assignBtn").onclick = async () => {
     .from("teacher_subjects")
     .insert(newRows);
 
-  if (error) {
-    assignStatus.innerText = error.message;
-  } else {
-    assignStatus.innerText = "Assigned successfully";
-    loadCurrentAssignments();
-  }
+  assignStatus.innerText = error ? error.message : "Assigned successfully";
+
+  loadCurrentAssignments();
 };
 
 // ======================
@@ -456,7 +456,7 @@ async function loadCurrentAssignments() {
   const teacherId = teacherSelect.value;
   if (!teacherId) return;
 
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from("teacher_subjects")
     .select(`
       teacher_id,
@@ -466,8 +466,6 @@ async function loadCurrentAssignments() {
       subjects(name)
     `)
     .eq("teacher_id", teacherId);
-
-  if (error) return console.error(error);
 
   currentAssignmentsDiv.innerHTML = `
     <table>
@@ -501,31 +499,21 @@ currentAssignmentsDiv.addEventListener("click", async (e) => {
 
   if (!e.target.classList.contains("unassign")) return;
 
-  const teacherId = e.target.dataset.teacher;
-  const classId = e.target.dataset.class;
-  const subjectId = e.target.dataset.subject;
+  const { teacher, class: classId, subject } = e.target.dataset;
 
   const { error } = await supabase
     .from("teacher_subjects")
     .delete()
-    .eq("teacher_id", teacherId)
+    .eq("teacher_id", teacher)
     .eq("class_id", classId)
-    .eq("subject_id", subjectId);
+    .eq("subject_id", subject);
 
-  if (error) {
-    alert(error.message);
-  } else {
-    loadCurrentAssignments();
-  }
+  if (error) alert(error.message);
+  else loadCurrentAssignments();
 });
 
 // ======================
-// EVENTS
-// ======================
-teacherSelect.addEventListener("change", loadCurrentAssignments);
-
-// ======================
-// STUDENTS - CLASS LOAD
+// STUDENT CLASS LOAD
 // ======================
 async function loadStudentClasses() {
   const { data } = await supabase
@@ -544,11 +532,11 @@ async function loadStudentClasses() {
 // ======================
 document.getElementById("addStudentBtn").onclick = async () => {
 
-  const full_name = studentName.value;
-  const gender = studentGender.value;
-  const admission_number = admissionNumber.value;
-  const date_of_birth = dob.value;
-  const admission_year = admissionYear.value;
+  const { value: full_name } = studentName;
+  const { value: gender } = studentGender;
+  const { value: admission_number } = admissionNumber;
+  const { value: date_of_birth } = dob;
+  const { value: admission_year } = admissionYear;
   const class_id = studentClass.value;
 
   if (!full_name || !admission_number || !class_id) {
@@ -572,22 +560,7 @@ document.getElementById("addStudentBtn").onclick = async () => {
 };
 
 // ======================
-// EXCEL CLASSES
-// ======================
-async function loadExcelClasses() {
-  const { data } = await supabase
-    .from("classes")
-    .select("id, name")
-    .eq("school_id", activeSchoolId);
-
-  excelClass.innerHTML =
-    (data || []).map(c =>
-      `<option value="${c.id}">${c.name}</option>`
-    ).join("");
-}
-
-// ======================
-// LOAD MANAGE CLASSES
+// MANAGE CLASSES
 // ======================
 async function loadManageClasses() {
   const { data } = await supabase
@@ -602,7 +575,7 @@ async function loadManageClasses() {
 }
 
 // ======================
-// LOAD STUDENTS
+// LOAD STUDENTS (FIXED)
 // ======================
 document.getElementById("loadStudentsBtn").onclick = async () => {
 
@@ -615,7 +588,7 @@ document.getElementById("loadStudentsBtn").onclick = async () => {
     .eq("school_id", activeSchoolId)
     .order("full_name");
 
-  if (error) {
+  if (error || !data) {
     studentsTable.innerHTML = "Error loading students";
     return;
   }
@@ -629,6 +602,15 @@ document.getElementById("loadStudentsBtn").onclick = async () => {
         <th>DOB</th>
         <th>Year</th>
       </tr>
+      ${(data || []).map(s => `
+        <tr>
+          <td>${s.full_name}</td>
+          <td>${s.gender || ""}</td>
+          <td>${s.admission_number}</td>
+          <td>${s.date_of_birth || ""}</td>
+          <td>${s.admission_year || ""}</td>
+        </tr>
+      `).join("")}
     </table>
   `;
 };
