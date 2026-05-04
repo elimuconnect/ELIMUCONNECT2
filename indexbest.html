@@ -184,6 +184,13 @@ if (profileError || !profile) {
   return;
 }
 
+
+if (profile.role === "superadmin") {
+  window.location.href = "superadmin.html";
+  return;
+}
+
+      
 if (profile.role === "teacher") {
 
   // 🔹 Get school package type
