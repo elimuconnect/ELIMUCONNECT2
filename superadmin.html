@@ -275,7 +275,7 @@ const classSelect = document.getElementById("classSelect");
 const subjectSelect = document.getElementById("subjectSelect");
 const assignStatus = document.getElementById("assignStatus");
 const currentAssignmentsDiv = document.getElementById("currentAssignments");
-
+const schoolSelect = document.getElementById("schoolSelect");
 // --------------------
 // 0️⃣ Auth & Admin Check
 // --------------------
@@ -302,7 +302,7 @@ if (adminProfile.role === "superadmin") {
 
   document.getElementById("schoolSelectorCard").style.display = "block";
 
-  const schoolSelect = document.getElementById("schoolSelect");
+  
 
   const { data: schools, error } = await supabase
     .from("schools")
@@ -313,12 +313,8 @@ if (adminProfile.role === "superadmin") {
     alert("Failed to load schools");
     throw error;
   }
-
-  if (!schools || schools.length === 0) {
-    schoolSelect.innerHTML = "<option>No schools found</option>";
-    return;
-  }
-
+schoolSelect.innerHTML = "<option>No schools found</option>";
+ 
   schoolSelect.innerHTML = schools
     .map(s => `<option value="${s.id}">${s.name}</option>`)
     .join("");
@@ -346,19 +342,6 @@ else {
   alert("Access denied");
   throw new Error("Unauthorized");
 }
-
-// 🔵 NORMAL ADMIN
-else if (adminProfile.role === "admin") {
-  activeSchoolId = adminProfile.school_id;
-  await initDashboard();
-}
-
-else {
-  alert("Access denied");
-  throw new Error("Unauthorized");
-}
-
-
 
 
 
