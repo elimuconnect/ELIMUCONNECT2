@@ -416,6 +416,73 @@ td {
   }
 }
 
+.broadsheet-btn {
+  width: 100%;
+  max-width: 420px;
+  padding: 14px 18px;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+
+  background: linear-gradient(135deg, #1f4037, #99f2c8);
+  color: #fff;
+
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  transition: all 0.25s ease-in-out;
+
+  position: relative;
+  overflow: hidden;
+}
+
+/* small subtitle */
+.broadsheet-btn span {
+  font-size: 12px;
+  font-weight: 400;
+  opacity: 0.9;
+}
+
+/* hover effect */
+.broadsheet-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
+}
+
+/* click effect */
+.broadsheet-btn:active {
+  transform: scale(0.98);
+}
+
+/* subtle shine animation */
+.broadsheet-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: rgba(255,255,255,0.2);
+  transform: skewX(-25deg);
+}
+
+.broadsheet-btn:hover::before {
+  animation: shine 0.8s ease;
+}
+
+@keyframes shine {
+  0% { left: -75%; }
+  100% { left: 130%; }
+}
+
+
 	
 </style>
 
@@ -450,7 +517,6 @@ td {
 
 
 
-
 <div id="filterBox"></div>
 <p id="status"></p>
 <hr />
@@ -481,6 +547,8 @@ td {
 </div>
 
 
+
+
 <button id="downloadBroadsheetBtn" class="broadsheet-btn">
   📊 Download Broadsheet Report
   <span>Grade & Class ranking overview</span>
@@ -494,6 +562,15 @@ td {
 </button>
 
 </div>
+
+  
+<div id="schoolAnalytics" style="display:none;"></div>
+<div id="report"></div>
+
+</button>
+
+</div>
+
 
   
 <div id="schoolAnalytics" style="display:none;"></div>
