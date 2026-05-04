@@ -290,7 +290,6 @@ const { data: adminProfile } = await supabase
 
 
 
-
 let activeSchoolId = null;
 
 if (!adminProfile) {
@@ -303,31 +302,49 @@ if (adminProfile.role === "superadmin") {
 
   document.getElementById("schoolSelectorCard").style.display = "block";
 
+  const schoolSelect = document.getElementById("schoolSelect");
+
   const { data: schools, error } = await supabase
-  .from("schools")
-  .select("id, name")
-  .order("name");
+    .from("schools")
+    .select("id, name")
+    .order("name");
 
-if (error) {
-  alert("Failed to load schools");
-  return;
-}
+  if (error) {
+    alert("Failed to load schools");
+    throw error;
+  }
 
-if (!schools || schools.length === 0) {
-  schoolSelect.innerHTML = "<option>No schools found</option>";
-  return;
-}
- document.getElementById("loadSchoolBtn").onclick = async () => {
-  activeSchoolId = document.getElementById("schoolSelect").value;
-
-  if (!activeSchoolId) {
-    alert("Select a school");
+  if (!schools || schools.length === 0) {
+    schoolSelect.innerHTML = "<option>No schools found</option>";
     return;
   }
 
-  await initDashboard();
-};
+  schoolSelect.innerHTML = schools
+    .map(s => `<option value="${s.id}">${s.name}</option>`)
+    .join("");
 
+  document.getElementById("loadSchoolBtn").onclick = async () => {
+    const selected = schoolSelect.value;
+
+    if (!selected) {
+      alert("Select a school");
+      return;
+    }
+
+    activeSchoolId = selected;
+    await initDashboard();
+  };
+}
+
+// 🔵 NORMAL ADMIN
+else if (adminProfile.role === "admin") {
+  activeSchoolId = adminProfile.school_id;
+  await initDashboard();
+}
+
+else {
+  alert("Access denied");
+  throw new Error("Unauthorized");
 }
 
 // 🔵 NORMAL ADMIN
