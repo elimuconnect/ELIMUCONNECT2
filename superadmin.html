@@ -662,6 +662,11 @@ async function loadExcelClasses() {
 
   const reader = new FileReader();
 
+	  if (!class_id) {
+  document.getElementById("excelStatus").innerText = "Select a class";
+  return;
+}
+
   reader.onload = async (e) => {
     const data = new Uint8Array(e.target.result);
     const workbook = XLSX.read(data, { type: "array" });
@@ -669,15 +674,15 @@ async function loadExcelClasses() {
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const jsonData = XLSX.utils.sheet_to_json(sheet);
 
-    const studentsToInsert = jsonData.map(row => ({
-      school_id: school_id: activeSchoolId,
-      class_id,
-      full_name: row.full_name,
-      gender: row.gender,
-      admission_number: row.admission_number,
-      date_of_birth: row.date_of_birth,
-      admission_year: row.admission_year
-    }));
+   const studentsToInsert = jsonData.map(row => ({
+  school_id: activeSchoolId,
+  class_id,
+  full_name: row.full_name || row.name,
+  gender: row.gender || null,
+  admission_number: row.admission_number,
+  date_of_birth: row.date_of_birth || null,
+  admission_year: row.admission_year || null
+})).filter(s => s.full_name && s.admission_number);
 
     const { error } = await supabase.from("students").insert(studentsToInsert);
 
