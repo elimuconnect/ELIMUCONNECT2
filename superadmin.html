@@ -467,6 +467,18 @@ async function loadCurrentAssignments() {
     `)
     .eq("teacher_id", teacherId);
 
+if (error) {
+    console.error(error);
+    currentAssignmentsDiv.innerHTML = "Error loading assignments";
+    return;
+  }
+
+  // ✅ THIS IS WHERE IT GOES
+  if (!data || data.length === 0) {
+    currentAssignmentsDiv.innerHTML = "No assignments yet";
+    return;
+  }
+
   currentAssignmentsDiv.innerHTML = `
     <table>
       <tr>
@@ -499,14 +511,21 @@ currentAssignmentsDiv.addEventListener("click", async (e) => {
 
   if (!e.target.classList.contains("unassign")) return;
 
-  const { teacher, class: classId, subject } = e.target.dataset;
+
+
+const teacherId = e.target.dataset.teacher;
+const classId = e.target.dataset.class;
+const subjectId = e.target.dataset.subject;
+
+
+	
 
   const { error } = await supabase
     .from("teacher_subjects")
     .delete()
-    .eq("teacher_id", teacher)
-    .eq("class_id", classId)
-    .eq("subject_id", subject);
+   .eq("teacher_id", teacherId)
+.eq("class_id", classId)
+.eq("subject_id", subjectId);
 
   if (error) alert(error.message);
   else loadCurrentAssignments();
@@ -615,6 +634,20 @@ document.getElementById("loadStudentsBtn").onclick = async () => {
   `;
 };
 
+
+async function loadExcelClasses() {
+  const { data: classes } = await supabase
+    .from("classes")
+    .select("id, name")
+    .eq("school_id", adminProfile.school_id);
+
+  excelClass.innerHTML = classes
+    .map(c => `<option value="${c.id}">${c.name}</option>`)
+    .join('');
+}
+
+
+	
 // ======================
 // INIT
 // ======================
