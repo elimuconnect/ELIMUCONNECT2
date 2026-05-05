@@ -763,6 +763,23 @@ updatedData[input.dataset.field] = value;
 
 });
 
+
+
+
+
+	
+// ======================
+// INIT
+// ======================
+async function initDashboard() {
+  await loadTeachers();
+  await loadClasses();
+  await loadSubjects();
+  await loadStudentClasses();
+  await loadExcelClasses();
+  await loadManageClasses();
+}
+
 	
 </script>
 </body>
