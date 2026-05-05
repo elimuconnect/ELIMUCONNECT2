@@ -454,9 +454,13 @@ document.getElementById("assignBtn").onclick = async () => {
 async function loadCurrentAssignments() {
 
   const teacherId = teacherSelect.value;
-  if (!teacherId) return;
 
-  const { data } = await supabase
+  if (!teacherId) {
+    currentAssignmentsDiv.innerHTML = "Select a teacher";
+    return;
+  }
+
+  const { data, error } = await supabase
     .from("teacher_subjects")
     .select(`
       teacher_id,
@@ -467,13 +471,12 @@ async function loadCurrentAssignments() {
     `)
     .eq("teacher_id", teacherId);
 
-if (error) {
+  if (error) {
     console.error(error);
     currentAssignmentsDiv.innerHTML = "Error loading assignments";
     return;
   }
 
-  // ✅ THIS IS WHERE IT GOES
   if (!data || data.length === 0) {
     currentAssignmentsDiv.innerHTML = "No assignments yet";
     return;
@@ -486,7 +489,7 @@ if (error) {
         <th>Subject</th>
         <th>Action</th>
       </tr>
-      ${(data || []).map(a => `
+      ${data.map(a => `
         <tr>
           <td>${a.classes?.name}</td>
           <td>${a.subjects?.name}</td>
