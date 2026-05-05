@@ -629,17 +629,6 @@ async function loadExcelClasses() {
 };
 
 
-// Load classes into manage dropdown
-async function loadManageClasses() {
-  const { data: classes } = await supabase
-    .from("classes")
-    .select("id, name")
-    .eq("school_id", adminProfile.school_id);
-
-  manageClass.innerHTML = classes
-    .map(c => `<option value="${c.id}">${c.name}</option>`)
-    .join('');
-}
 
 
 
