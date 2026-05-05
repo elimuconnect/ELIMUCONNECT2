@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Roboto, sans-serif;
+  background: #f4f6f9;
+  color: #333;
+}
+
+/* ===== HEADER ===== */
+.header {
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  color: white;
+  padding: 20px 30px;
+  font-size: 22px;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+/* ===== CONTAINER ===== */
+.container {
+  padding: 30px;
+}
+
+/* ===== CARD ===== */
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  margin-bottom: 25px;
+}
+
+.card h2 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 18px;
+  color: #1e3c72;
+}
+
+/* ===== FORM GRID ===== */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+/* ===== INPUTS ===== */
+input, select {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  background: #fafafa;
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: #2a5298;
+  background: #fff;
+}
+
+/* ===== BUTTONS ===== */
+button {
+  padding: 10px 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  background: #2a5298;
+  color: white;
+  transition: 0.3s;
+}
+
+button:hover {
+  background: #1e3c72;
+}
+
+/* Danger button */
+button.unassign {
+  background: #e74c3c;
+}
+
+button.unassign:hover {
+  background: #c0392b;
+}
+
+/* ===== STATUS ===== */
+.status {
+  margin-top: 10px;
+  font-size: 13px;
+  color: green;
+}
+
+/* ===== TABLE ===== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+th {
+  background: #2a5298;
+  color: white;
+  padding: 10px;
+  text-align: left;
+}
+
+td {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+tr:hover {
+  background: #f2f6ff;
+}
+
+/* ===== FILE INPUT STYLE ===== */
+input[type="file"] {
+  background: white;
+  border: 1px dashed #2a5298;
+  padding: 10px;
+}
+
+/* Responsive */
+@media(max-width: 600px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+
+/* Make subject multi-select large and clear */
+#subjectSelect {
+  min-height: 180px;
+  height: 220px;
+  padding: 10px;
+  background: #fff;
+  border: 2px solid #2a5298;
+  font-size: 14px;
+}
+
+/* Improve options spacing */
+#subjectSelect option {
+  padding: 6px;
+}
+  
+</style>
+  
+</head>
+<body>
+
+<div class="header">
+  School Admin Dashboard
+</div>
+
+
+
+
+<div class="card" id="schoolSelectorCard" style="display:none;">
+  <h2>Select School (Superadmin)</h2>
+  <div class="form-grid">
+    <select id="schoolSelect"></select>
+    <button id="loadSchoolBtn">Load School</button>
+  </div>
+</div>
+
+
+
+
+
+<div class="container">
+
+  <!-- Teacher Assignment -->
+  <div class="card">
+    <h2>Assign Classes & Subjects</h2>
+
+    <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
+  <select id="teacherSelect"></select>
+  <select id="classSelect"></select>
+</div>
+
+<div style="margin-top:15px;">
+  <label style="font-weight:600; display:block; margin-bottom:6px;">
+    Select Subjects (Hold Ctrl to select multiple)
+  </label>
+  <select id="subjectSelect" multiple></select>
+</div>
+
+<div style="margin-top:15px;">
+  <button id="assignBtn">Assign Subjects</button>
+</div>
+
+    <div id="assignStatus" class="status"></div>
+  </div>
+
+  <!-- Current Assignments -->
+  <div class="card">
+    <h2>Current Assignments</h2>
+    <div id="currentAssignments">Select a teacher to view assignments</div>
+  </div>
+
+  <!-- Add Student -->
+  <div class="card">
+    <h2>Add Student (Single Entry)</h2>
+
+    <div class="form-grid">
+      <input type="text" id="studentName" placeholder="Full Name">
+      <select id="studentGender">
+        <option value="">Select Gender</option>
+        <option value="Male">Male</option>
+        <option value="Female">Female</option>
+      </select>
+      <input type="text" id="admissionNumber" placeholder="Admission Number">
+      <input type="date" id="dob">
+      <input type="number" id="admissionYear" placeholder="Admission Year">
+      <select id="studentClass"></select>
+      <button id="addStudentBtn">Add Student</button>
+    </div>
+
+    <div id="studentStatus" class="status"></div>
+  </div>
+
+  <!-- Excel Upload -->
+  <div class="card">
+    <h2>Upload Students (Excel)</h2>
+
+    <div class="form-grid">
+      <input type="file" id="excelFile" accept=".xlsx, .xls">
+      <select id="excelClass"></select>
+      <button id="uploadExcelBtn">Upload</button>
+    </div>
+
+    <div id="excelStatus" class="status"></div>
+	</div>
+	
+	<div class="card">
+  <h2>Manage Students</h2>
+
+  <div class="form-grid">
+    <select id="manageClass"></select>
+    <button id="loadStudentsBtn">Load Students</button>
+  </div>
+
+  <div id="studentsTable"></div>
+  
+
+	
+  </div>
+
+</div>
+ 
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabase = createClient(
+  "https://zcmzuetusvpmvubbjlmx.supabase.co",
+  "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
+);
+
+// ======================
+// ELEMENTS
+// ======================
+const teacherSelect = document.getElementById("teacherSelect");
+const classSelect = document.getElementById("classSelect");
+const subjectSelect = document.getElementById("subjectSelect");
+const assignStatus = document.getElementById("assignStatus");
+const currentAssignmentsDiv = document.getElementById("currentAssignments");
+
+const studentClass = document.getElementById("studentClass");
+const excelClass = document.getElementById("excelClass");
+const manageClass = document.getElementById("manageClass");
+const studentsTable = document.getElementById("studentsTable");
+const schoolSelect = document.getElementById("schoolSelect");
+
+// Student inputs
+const studentName = document.getElementById("studentName");
+const studentGender = document.getElementById("studentGender");
+const admissionNumber = document.getElementById("admissionNumber");
+const dob = document.getElementById("dob");
+const admissionYear = document.getElementById("admissionYear");
+const studentStatus = document.getElementById("studentStatus");
+
+// ======================
+// STATE
+// ======================
+let activeSchoolId = null;
+
+// ======================
+// AUTH
+// ======================
+const { data: { user } } = await supabase.auth.getUser();
+if (!user) throw new Error("Not logged in");
+
+const { data: adminProfile } = await supabase
+  .from("profiles")
+  .select("*")
+  .eq("auth_id", user.id)
+  .single();
+
+if (!adminProfile) throw new Error("Profile not found");
+
+// ======================
+// SCHOOL SELECT
+// ======================
+if (adminProfile.role === "superadmin") {
+  activeSchoolId = null; // global mode
+
+
+  document.getElementById("schoolSelectorCard").style.display = "block";
+
+  const { data: schools, error } = await supabase
+    .from("schools")
+    .select("id, name")
+    .order("name");
+
+  if (error) throw error;
+
+  schoolSelect.innerHTML =
+    `<option value="">Select school</option>` +
+    (schools || []).map(s =>
+      `<option value="${s.id}">${s.name}</option>`
+    ).join("");
+
+  document.getElementById("loadSchoolBtn").onclick = async () => {
+    activeSchoolId = schoolSelect.value;
+    if (!activeSchoolId) return alert("Select a school");
+    await initDashboard();
+  };
+
+} else if (adminProfile.role === "admin") {
+  activeSchoolId = adminProfile.school_id;
+  await initDashboard();
+} else {
+  alert("Access denied");
+  throw new Error("Unauthorized");
+}
+
+// --------------------
+// 1️⃣ Load Teachers
+// --------------------
+async function loadTeachers() {
+  const { data: teachers, error } = await supabase
+    .from("profiles")
+    .select("id, full_name")
+    .eq("role", "teacher")
+    .eq("school_id", activeSchoolId);
+
+  if (error) { console.error(error); teacherSelect.innerHTML = `<option>Error loading teachers</option>`; return; }
+  if (!teachers || teachers.length === 0) { teacherSelect.innerHTML = `<option>No teachers found</option>`; return; }
+
+  teacherSelect.innerHTML = teachers.map(t => `<option value="${t.id}">${t.full_name || "No Name"}</option>`).join('');
+  loadCurrentAssignments();
+}
+
+// --------------------
+// 2️⃣ Load Classes & Subjects
+// --------------------
+async function loadClasses() {
+  let query = supabase.from("classes").select("id, name");
+
+  if (activeSchoolId) {
+    query = query.eq("school_id", activeSchoolId);
+  }
+
+  const { data, error } = await query;
+
+  const classes = data || [];
+  classSelect.innerHTML = classes.map(c =>
+    `<option value="${c.id}">${c.name}</option>`
+  ).join('');
+}
+async function loadSubjects() {
+  const { data: subjects, error } = await supabase
+    .from("subjects")
+    .select("id, name")
+    .or(`school_id.eq.${activeSchoolId},school_id.is.null`);
+
+  if (error) { 
+    console.error(error); 
+    subjectSelect.innerHTML = `<option>Error loading subjects</option>`; 
+    return; 
+  }
+
+  subjectSelect.innerHTML = subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+}
+// --------------------
+// 3️⃣ Assign Subjects to Teacher
+// --------------------
+document.getElementById("assignBtn").onclick = async () => {
+  const teacherId = teacherSelect.value;
+  const classId = classSelect.value;
+  const selectedSubjects = Array.from(subjectSelect.selectedOptions).map(o => o.value);
+
+  if (!teacherId || !classId || !selectedSubjects.length) {
+    assignStatus.innerText = "Select teacher, class, and subjects"; return;
+  }
+
+  // Check existing assignments
+  const { data: existing } = await supabase
+    .from("teacher_subjects")
+    .select("subject_id")
+    .eq("teacher_id", teacherId)
+    .eq("class_id", classId);
+
+  const existingIds = existing?.map(e => e.subject_id) || [];
+  const newRows = selectedSubjects
+    .filter(subjId => !existingIds.includes(subjId))
+    .map(subjId => ({ teacher_id: teacherId, class_id: classId, subject_id: subjId }));
+
+  if (newRows.length === 0) {
+    assignStatus.innerText = "All selected subjects are already assigned"; return;
+  }
+
+  const { error } = await supabase.from("teacher_subjects").insert(newRows);
+  if (error) assignStatus.innerText = "Error: " + error.message;
+  else { assignStatus.innerText = "Assigned successfully"; loadCurrentAssignments(); }
+};
+
+// --------------------
+// 4️⃣ Load Current Assignments
+// --------------------
+async function loadCurrentAssignments() {
+  const teacherId = teacherSelect.value;
+  if (!teacherId) { currentAssignmentsDiv.innerHTML = "Select a teacher to view assignments"; return; }
+
+  const { data: assignments, error } = await supabase
+    .from("teacher_subjects")
+    .select(`
+      id,
+      class_id,
+      subject_id,
+      classes ( name ),
+      subjects ( name )
+    `)
+    .eq("teacher_id", teacherId);
+
+  if (error) { console.error(error); currentAssignmentsDiv.innerHTML = "Error loading assignments"; return; }
+  if (!assignments || assignments.length === 0) { currentAssignmentsDiv.innerHTML = "No assignments yet"; return; }
+
+  currentAssignmentsDiv.innerHTML = `
+    <table>
+      <tr>
+        <th>Class</th>
+        <th>Subject</th>
+        <th>Action</th>
+      </tr>
+      ${assignments.map(a => `
+        <tr>
+          <td>${a.classes?.name || "N/A"}</td>
+          <td>${a.subjects?.name || "N/A"}</td>
+          <td>
+            <button class="unassign"
+              data-teacher="${teacherId}"
+              data-class="${a.class_id}"
+              data-subject="${a.subject_id}">
+              Unassign
+            </button>
+          </td>
+        </tr>
+      `).join('')}
+    </table>
+  `;
+}
+
+// --------------------
+// Handle Unassign properly
+// --------------------
+currentAssignmentsDiv.addEventListener("click", async (e) => {
+  if (!e.target.classList.contains("unassign")) return;
+
+  // Convert IDs to correct type (UUIDs in string form are fine)
+  const teacherId = e.target.dataset.teacher;
+  const classId = e.target.dataset.class;
+  const subjectId = e.target.dataset.subject;
+
+  if (!teacherId || !classId || !subjectId) {
+    alert("Invalid assignment data"); 
+    return;
+  }
+
+  // ✅ Delete using exact UUIDs
+  const { data, error } = await supabase
+    .from("teacher_subjects")
+    .delete()
+    .match({
+      teacher_id: teacherId,
+      class_id: classId,
+      subject_id: subjectId
+    });
+
+  if (error) {
+    alert("Error unassigning: " + error.message);
+    console.error(error);
+  } else {
+    alert("Unassigned successfully");
+    loadCurrentAssignments(); // refresh table
+  }
+});
+
+// --------------------
+// 6️⃣ Reload assignments on teacher change
+// --------------------
+teacherSelect.addEventListener("change", loadCurrentAssignments);
+
+
+
+async function loadManageClasses() {
+  if (!activeSchoolId) return;
+
+  const { data: classes, error } = await supabase
+    .from("classes")
+    .select("id, name")
+    .eq("school_id", activeSchoolId);
+
+  if (error || !classes) {
+    manageClass.innerHTML = `<option>No classes found</option>`;
+    return;
+  }
+
+  manageClass.innerHTML = classes
+    .map(c => `<option value="${c.id}">${c.name}</option>`)
+    .join('');
+}
+
+
+document.getElementById("addStudentBtn").onclick = async () => {
+
+  const full_name = document.getElementById("studentName").value;
+  const gender = document.getElementById("studentGender").value;
+  const admission_number = document.getElementById("admissionNumber").value;
+  const date_of_birth = document.getElementById("dob").value;
+  const admission_year = document.getElementById("admissionYear").value;
+  const class_id = studentClass.value;
+
+  if (!full_name || !admission_number || !class_id) {
+  document.getElementById("studentStatus").innerText = "Fill required fields (Name, Admission No, Class)";
+  return;
+}
+
+const { error } = await supabase.from("students").insert([
+  {
+    school_id: activeSchoolId,
+    class_id,
+    full_name,
+    admission_number,
+    gender: gender || null,
+    date_of_birth: date_of_birth || null,
+    admission_year: admission_year ? parseInt(admission_year) : null
+  }
+]);
+
+  if (error) {
+    document.getElementById("studentStatus").innerText = error.message;
+  } else {
+    document.getElementById("studentStatus").innerText = "Student added successfully";
+  }
+};
+
+
+
+
+async function loadExcelClasses() {
+  const { data: classes } = await supabase
+    .from("classes")
+    .select("id, name")
+    .eq("school_id",activeSchoolId );
+
+  excelClass.innerHTML = classes
+    .map(c => `<option value="${c.id}">${c.name}</option>`)
+    .join('');
+}
+
+
+  
+
+  document.getElementById("uploadExcelBtn").onclick = async () => {
+
+  const file = document.getElementById("excelFile").files[0];
+  const class_id = excelClass.value;
+
+  if (!file) {
+    document.getElementById("excelStatus").innerText = "Select Excel file";
+    return;
+  }
+
+  const reader = new FileReader();
+
+
+	  if (!activeSchoolId) {
+  document.getElementById("excelStatus").innerText = "Select a school first";
+  return;
+}
+
+  reader.onload = async (e) => {
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, { type: "array" });
+
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const jsonData = XLSX.utils.sheet_to_json(sheet);
+
+   const studentsToInsert = jsonData
+  .map(row => ({
+    school_id: activeSchoolId,
+    class_id,
+    full_name: row.full_name || row.name,
+    gender: row.gender || null,
+    admission_number: row.admission_number,
+    date_of_birth: row.date_of_birth || null,
+    admission_year: row.admission_year ? parseInt(row.admission_year) : null
+  }))
+  .filter(s => s.full_name && s.admission_number);
+
+    const { error } = await supabase.from("students").insert(studentsToInsert);
+
+    if (error) {
+      document.getElementById("excelStatus").innerText = error.message;
+    } else {
+      document.getElementById("excelStatus").innerText =
+        studentsToInsert.length + " students uploaded successfully";
+    }
+  };
+
+  reader.readAsArrayBuffer(file);
+};
+
+
+
+async function loadStudentClasses() {
+  const { data: classes } = await supabase
+    .from("classes")
+    .select("id, name")
+    .eq("school_id", adminProfile.school_id);
+
+  studentClass.innerHTML = classes
+    .map(c => `<option value="${c.id}">${c.name}</option>`)
+    .join('');
+}
+
+
+document.getElementById("loadStudentsBtn").onclick = async () => {
+  const class_id = manageClass.value;
+
+ const { data: students, error } = await supabase
+  .from("students")
+  .select("*")
+  .eq("class_id", class_id)
+  .eq("school_id",  activeSchoolId)
+ .order("full_name", { ascending: true, nullsFirst: false })
+
+  if (error) {
+    studentsTable.innerHTML = "Error loading students";
+    return;
+  }
+
+  if (!students.length) {
+    studentsTable.innerHTML = "No students found";
+    return;
+  }
+
+  studentsTable.innerHTML = `
+  <table>
+    <tr>
+      <th>Name</th>
+      <th>Gender</th>
+      <th>Admission No</th>
+      <th>DOB</th>
+      <th>Year</th>
+      <th>Action</th>
+    </tr>
+    ${students.map(s => `
+      <tr>
+        <td><input value="${s.full_name || ''}" data-field="full_name"></td>
+        
+        <td>
+          <select data-field="gender">
+            <option value="Male" ${s.gender === 'Male' ? 'selected' : ''}>Male</option>
+            <option value="Female" ${s.gender === 'Female' ? 'selected' : ''}>Female</option>
+          </select>
+        </td>
+        
+        <td><input value="${s.admission_number || ''}" data-field="admission_number"></td>
+        
+        <td><input type="date" value="${s.date_of_birth || ''}" data-field="date_of_birth"></td>
+        
+        <td><input type="number" value="${s.admission_year || ''}" data-field="admission_year"></td>
+
+        <td>
+          <button class="saveStudent" data-id="${s.id}">Save</button>
+          <button class="deleteStudent" data-id="${s.id}">Delete</button>
+        </td>
+      </tr>
+    `).join('')}
+  </table>
+`;
+};
+
+
+studentsTable.addEventListener("click", async (e) => {
+
+  // ======================
+  // SAVE STUDENT
+  // ======================
+  if (e.target.classList.contains("saveStudent")) {
+
+    const row = e.target.closest("tr");
+    const studentId = e.target.dataset.id;
+
+    const inputs = row.querySelectorAll("[data-field]");
+    const updatedData = {};
+
+    inputs.forEach(input => {
+
+
+let value = input.value;
+
+// handle empty values
+if (value === "") value = null;
+
+// convert numbers properly
+if (input.dataset.field === "admission_year" && value !== null) {
+  value = parseInt(value);
+}
+
+updatedData[input.dataset.field] = value;
+
+
+		
+    });
+
+    const { error } = await supabase
+      .from("students")
+      .update(updatedData)
+      .eq("id", studentId)
+      .eq("school_id",  activeSchoolId); // 🔐 safety
+
+    if (error) {
+      alert("Error updating: " + error.message);
+    } else {
+      alert("Student updated successfully");
+    }
+  }
+
+  // ======================
+  // DELETE STUDENT
+  // ======================
+  if (e.target.classList.contains("deleteStudent")) {
+
+    const studentId = e.target.dataset.id;
+
+    if (!confirm("Are you sure you want to delete this student?")) return;
+
+    const { error } = await supabase
+      .from("students")
+      .delete()
+      .eq("id", studentId)
+      .eq("school_id",  activeSchoolId);
+
+    if (error) {
+      alert("Error deleting: " + error.message);
+    } else {
+      alert("Student deleted");
+      document.getElementById("loadStudentsBtn").click(); // refresh
+    }
+  }
+
+});
+
+
+
+
+
+	
+// ======================
+// INIT
+// ======================
+async function initDashboard() {
+  await loadTeachers();
+  await loadClasses();
+  await loadSubjects();
+  await loadStudentClasses();
+  await loadExcelClasses();
+  await loadManageClasses();
+}
+
+	
+</script>
+</body>
+</html>
