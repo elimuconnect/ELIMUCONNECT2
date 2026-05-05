@@ -358,32 +358,22 @@ document.getElementById("assignBtn").onclick = async () => {
 // 4️⃣ Load Current Assignments
 // --------------------
 async function loadCurrentAssignments() {
-
   const teacherId = teacherSelect.value;
-  if (!teacherId) return;
+  if (!teacherId) { currentAssignmentsDiv.innerHTML = "Select a teacher to view assignments"; return; }
 
-  const { data, error } = await supabase
+  const { data: assignments, error } = await supabase
     .from("teacher_subjects")
     .select(`
-      teacher_id,
+      id,
       class_id,
       subject_id,
-      classes(name),
-      subjects(name)
+      classes ( name ),
+      subjects ( name )
     `)
     .eq("teacher_id", teacherId);
 
-  if (error) {
-    console.error(error);
-    currentAssignmentsDiv.innerHTML = "Error loading assignments";
-    return;
-  }
-
-  // ✅ THIS IS WHERE IT GOES
-  if (!data || data.length === 0) {
-    currentAssignmentsDiv.innerHTML = "No assignments yet";
-    return;
-  }
+  if (error) { console.error(error); currentAssignmentsDiv.innerHTML = "Error loading assignments"; return; }
+  if (!assignments || assignments.length === 0) { currentAssignmentsDiv.innerHTML = "No assignments yet"; return; }
 
   currentAssignmentsDiv.innerHTML = `
     <table>
@@ -392,20 +382,20 @@ async function loadCurrentAssignments() {
         <th>Subject</th>
         <th>Action</th>
       </tr>
-      ${data.map(a => `
+      ${assignments.map(a => `
         <tr>
-          <td>${a.classes?.name}</td>
-          <td>${a.subjects?.name}</td>
+          <td>${a.classes?.name || "N/A"}</td>
+          <td>${a.subjects?.name || "N/A"}</td>
           <td>
             <button class="unassign"
-              data-teacher="${a.teacher_id}"
+              data-teacher="${teacherId}"
               data-class="${a.class_id}"
               data-subject="${a.subject_id}">
               Unassign
             </button>
           </td>
         </tr>
-      `).join("")}
+      `).join('')}
     </table>
   `;
 }
@@ -507,11 +497,11 @@ async function loadExcelClasses() {
   const { data: classes } = await supabase
     .from("classes")
     .select("id, name")
-  .eq("school_id", activeSchoolId);
+    .eq("school_id", adminProfile.school_id);
 
- excelClass.innerHTML = (classes || []).map(c =>
-  `<option value="${c.id}">${c.name}</option>`
-).join('');
+  excelClass.innerHTML = classes
+    .map(c => `<option value="${c.id}">${c.name}</option>`)
+    .join('');
 }
 
 await loadExcelClasses();
