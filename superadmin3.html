@@ -402,8 +402,12 @@ async function loadClasses() {
     .from("subjects")
     .select("id, name");
 
-  // superadmin sees ALL subjects
-  if (!isSuperadmin && activeSchoolId) {
+  if (!isSuperadmin) {
+  if (!activeSchoolId) {
+    subjectSelect.innerHTML = `<option>Select a school first</option>`;
+    return;
+  }
+
   query = query.or(
     `school_id.eq.${activeSchoolId},school_id.is.null`
   );
@@ -550,10 +554,12 @@ async function loadManageClasses() {
     .from("classes")
     .select("id, name");
 
-  if (!isSuperadmin) {
+if (!isSuperadmin) {
   if (!activeSchoolId) {
-    return; // or show empty state
+    manageClass.innerHTML = `<option>Select a school first</option>`;
+    return;
   }
+
   query = query.eq("school_id", activeSchoolId);
 }
 
@@ -619,12 +625,17 @@ async function loadExcelClasses() {
     .select("id, name");
 
   // only filter if NOT superadmin
- if (!isSuperadmin) {
+
+
+if (!isSuperadmin) {
   if (!activeSchoolId) {
-    return; // or show empty state
+    excelClass.innerHTML = `<option>Select a school first</option>`;
+    return;
   }
+
   query = query.eq("school_id", activeSchoolId);
 }
+	
   const { data, error } = await query;
 
   if (error) {
@@ -706,12 +717,17 @@ async function loadStudentClasses() {
 
   // if NOT superadmin → filter by school
  
+
 if (!isSuperadmin) {
   if (!activeSchoolId) {
-    return; // or show empty state
+    studentClass.innerHTML = `<option>Select a school first</option>`;
+    return;
   }
+
   query = query.eq("school_id", activeSchoolId);
 }
+
+	
   const { data, error } = await query;
 
   if (error) {
