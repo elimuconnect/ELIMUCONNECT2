@@ -511,14 +511,20 @@ teacherSelect.addEventListener("change", loadCurrentAssignments);
 
 
 
+async function loadManageClasses() {
+  if (!activeSchoolId) return;
 
-async function loadStudentClasses() {
-  const { data: classes } = await supabase
+  const { data: classes, error } = await supabase
     .from("classes")
     .select("id, name")
-    .eq("school_id",activeSchoolId);
+    .eq("school_id", activeSchoolId);
 
-  studentClass.innerHTML = classes
+  if (error || !classes) {
+    manageClass.innerHTML = `<option>No classes found</option>`;
+    return;
+  }
+
+  manageClass.innerHTML = classes
     .map(c => `<option value="${c.id}">${c.name}</option>`)
     .join('');
 }
@@ -571,7 +577,6 @@ async function loadExcelClasses() {
     .join('');
 }
 
-await loadExcelClasses();
 
   
 
