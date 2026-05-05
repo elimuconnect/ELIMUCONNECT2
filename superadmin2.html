@@ -630,7 +630,16 @@ async function loadExcelClasses() {
 
 
 
+async function loadStudentClasses() {
+  const { data: classes } = await supabase
+    .from("classes")
+    .select("id, name")
+    .eq("school_id", adminProfile.school_id);
 
+  studentClass.innerHTML = classes
+    .map(c => `<option value="${c.id}">${c.name}</option>`)
+    .join('');
+}
 
 
 document.getElementById("loadStudentsBtn").onclick = async () => {
