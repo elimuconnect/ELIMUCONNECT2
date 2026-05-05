@@ -297,6 +297,7 @@ const studentStatus = document.getElementById("studentStatus");
 // STATE
 // ======================
 let activeSchoolId = null;
+let isSuperadmin = false;
 
 // ======================
 // AUTH
@@ -316,7 +317,7 @@ if (!adminProfile) throw new Error("Profile not found");
 // SCHOOL SELECT
 // ======================
 if (adminProfile.role === "superadmin") {
-  activeSchoolId = null; // global mode
+  isSuperadmin = true;
 
 
   document.getElementById("schoolSelectorCard").style.display = "block";
@@ -368,33 +369,56 @@ async function loadTeachers() {
 // --------------------
 // 2️⃣ Load Classes & Subjects
 // --------------------
-async function loadClasses() {
-  let query = supabase.from("classes").select("id, name");
 
-  if (activeSchoolId) {
+
+async function loadClasses() {
+  let query = supabase
+    .from("classes")
+    .select("id, name");
+
+  if (!isSuperadmin) {
     query = query.eq("school_id", activeSchoolId);
   }
 
   const { data, error } = await query;
 
-  const classes = data || [];
-  classSelect.innerHTML = classes.map(c =>
-    `<option value="${c.id}">${c.name}</option>`
-  ).join('');
-}
-async function loadSubjects() {
-  const { data: subjects, error } = await supabase
-    .from("subjects")
-    .select("id, name")
-    .or(`school_id.eq.${activeSchoolId},school_id.is.null`);
-
-  if (error) { 
-    console.error(error); 
-    subjectSelect.innerHTML = `<option>Error loading subjects</option>`; 
-    return; 
+  if (error) {
+    console.error(error);
+    classSelect.innerHTML = `<option>Error loading classes</option>`;
+    return;
   }
 
-  subjectSelect.innerHTML = subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  const classes = data || [];
+
+  classSelect.innerHTML = classes
+    .map(c => `<option value="${c.id}">${c.name}</option>`)
+    .join('');
+}
+	async function loadSubjects() {
+  let query = supabase
+    .from("subjects")
+    .select("id, name");
+
+  // superadmin sees ALL subjects
+  if (!isSuperadmin) {
+    query = query.or(
+      `school_id.eq.${activeSchoolId},school_id.is.null`
+    );
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error(error);
+    subjectSelect.innerHTML = `<option>Error loading subjects</option>`;
+    return;
+  }
+
+  const subjects = data || [];
+
+  subjectSelect.innerHTML = subjects
+    .map(s => `<option value="${s.id}">${s.name}</option>`)
+    .join('');
 }
 // --------------------
 // 3️⃣ Assign Subjects to Teacher
@@ -518,14 +542,29 @@ teacherSelect.addEventListener("change", loadCurrentAssignments);
 
 
 async function loadManageClasses() {
-  if (!activeSchoolId) return;
 
-  const { data: classes, error } = await supabase
+  let query = supabase
     .from("classes")
-    .select("id, name")
-    .eq("school_id", activeSchoolId);
+    .select("id, name");
 
-  if (error || !classes) {
+  // normal admin → filter by school
+  if (!isSuperadmin) {
+    if (!activeSchoolId) return;
+
+    query = query.eq("school_id", activeSchoolId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error(error);
+    manageClass.innerHTML = `<option>Error loading classes</option>`;
+    return;
+  }
+
+  const classes = data || [];
+
+  if (!classes.length) {
     manageClass.innerHTML = `<option>No classes found</option>`;
     return;
   }
@@ -534,7 +573,6 @@ async function loadManageClasses() {
     .map(c => `<option value="${c.id}">${c.name}</option>`)
     .join('');
 }
-
 
 document.getElementById("addStudentBtn").onclick = async () => {
 
@@ -571,18 +609,38 @@ const { error } = await supabase.from("students").insert([
 
 
 
-
 async function loadExcelClasses() {
-  const { data: classes } = await supabase
+
+  let query = supabase
     .from("classes")
-    .select("id, name")
-    .eq("school_id",activeSchoolId );
+    .select("id, name");
+
+  // only filter if NOT superadmin
+  if (!isSuperadmin) {
+    if (!activeSchoolId) return;
+
+    query = query.eq("school_id", activeSchoolId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error(error);
+    excelClass.innerHTML = `<option>Error loading classes</option>`;
+    return;
+  }
+
+  const classes = data || [];
+
+  if (!classes.length) {
+    excelClass.innerHTML = `<option>No classes found</option>`;
+    return;
+  }
 
   excelClass.innerHTML = classes
     .map(c => `<option value="${c.id}">${c.name}</option>`)
     .join('');
 }
-
 
   
 
@@ -637,12 +695,26 @@ async function loadExcelClasses() {
 };
 
 
-
 async function loadStudentClasses() {
-  const { data: classes } = await supabase
+
+  let query = supabase
     .from("classes")
-    .select("id, name")
-    .eq("school_id", adminProfile.school_id);
+    .select("id, name");
+
+  // if NOT superadmin → filter by school
+  if (!isSuperadmin) {
+    query = query.eq("school_id", activeSchoolId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error(error);
+    studentClass.innerHTML = `<option>Error loading classes</option>`;
+    return;
+  }
+
+  const classes = data || [];
 
   studentClass.innerHTML = classes
     .map(c => `<option value="${c.id}">${c.name}</option>`)
