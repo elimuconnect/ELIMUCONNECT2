@@ -618,9 +618,6 @@ await loadExcelClasses();
 };
 
 
-const manageClass = document.getElementById("manageClass");
-const studentsTable = document.getElementById("studentsTable");
-
 // Load classes into manage dropdown
 async function loadManageClasses() {
   const { data: classes } = await supabase
