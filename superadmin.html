@@ -177,13 +177,9 @@ input[type="file"] {
 </div>
 
 
-
-
 <div class="container">
 
-
-
-<!-- Teacher Assignment -->
+  <!-- Teacher Assignment -->
   <div class="card">
     <h2>Assign Classes & Subjects</h2>
 
@@ -261,6 +257,7 @@ input[type="file"] {
   </div>
 
 </div>
+  
 
 
 <script type="module">
@@ -642,7 +639,7 @@ async function loadExcelClasses() {
   const { data: classes } = await supabase
     .from("classes")
     .select("id, name")
-    .eq("school_id", adminProfile.school_id);
+   .eq("school_id", activeSchoolId);
 
   excelClass.innerHTML = classes
     .map(c => `<option value="${c.id}">${c.name}</option>`)
@@ -650,6 +647,53 @@ async function loadExcelClasses() {
 }
 
 
+
+
+
+  document.getElementById("uploadExcelBtn").onclick = async () => {
+
+  const file = document.getElementById("excelFile").files[0];
+  const class_id = excelClass.value;
+
+  if (!file) {
+    document.getElementById("excelStatus").innerText = "Select Excel file";
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = async (e) => {
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, { type: "array" });
+
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const jsonData = XLSX.utils.sheet_to_json(sheet);
+
+    const studentsToInsert = jsonData.map(row => ({
+      school_id: adminProfile.school_id,
+      class_id,
+      full_name: row.full_name,
+      gender: row.gender,
+      admission_number: row.admission_number,
+      date_of_birth: row.date_of_birth,
+      admission_year: row.admission_year
+    }));
+
+    const { error } = await supabase.from("students").insert(studentsToInsert);
+
+    if (error) {
+      document.getElementById("excelStatus").innerText = error.message;
+    } else {
+      document.getElementById("excelStatus").innerText =
+        studentsToInsert.length + " students uploaded successfully";
+    }
+  };
+
+  reader.readAsArrayBuffer(file);
+};
+
+
+	
 	
 // ======================
 // INIT
