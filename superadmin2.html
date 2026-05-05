@@ -587,6 +587,12 @@ await loadExcelClasses();
 
   const reader = new FileReader();
 
+
+	  if (!activeSchoolId) {
+  document.getElementById("excelStatus").innerText = "Select a school first";
+  return;
+}
+
   reader.onload = async (e) => {
     const data = new Uint8Array(e.target.result);
     const workbook = XLSX.read(data, { type: "array" });
@@ -622,15 +628,13 @@ await loadExcelClasses();
 async function loadManageClasses() {
   const { data: classes } = await supabase
     .from("classes")
-     .eq("school_id",  activeSchoolId);
-
+    .select("id, name")
+    .eq("school_id", adminProfile.school_id);
 
   manageClass.innerHTML = classes
     .map(c => `<option value="${c.id}">${c.name}</option>`)
     .join('');
 }
-
-await loadManageClasses();
 
 
 
