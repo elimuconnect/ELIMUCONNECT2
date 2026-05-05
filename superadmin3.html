@@ -376,9 +376,12 @@ async function loadClasses() {
     .from("classes")
     .select("id, name");
 
-  if (!isSuperadmin) {
-    query = query.eq("school_id", activeSchoolId);
+ if (!isSuperadmin) {
+  if (!activeSchoolId) {
+    return; // or show empty state
   }
+  query = query.eq("school_id", activeSchoolId);
+}
 
   const { data, error } = await query;
 
@@ -400,11 +403,11 @@ async function loadClasses() {
     .select("id, name");
 
   // superadmin sees ALL subjects
-  if (!isSuperadmin) {
-    query = query.or(
-      `school_id.eq.${activeSchoolId},school_id.is.null`
-    );
-  }
+  if (!isSuperadmin && activeSchoolId) {
+  query = query.or(
+    `school_id.eq.${activeSchoolId},school_id.is.null`
+  );
+}
 
   const { data, error } = await query;
 
@@ -547,12 +550,12 @@ async function loadManageClasses() {
     .from("classes")
     .select("id, name");
 
-  // normal admin → filter by school
   if (!isSuperadmin) {
-    if (!activeSchoolId) return;
-
-    query = query.eq("school_id", activeSchoolId);
+  if (!activeSchoolId) {
+    return; // or show empty state
   }
+  query = query.eq("school_id", activeSchoolId);
+}
 
   const { data, error } = await query;
 
@@ -616,12 +619,12 @@ async function loadExcelClasses() {
     .select("id, name");
 
   // only filter if NOT superadmin
-  if (!isSuperadmin) {
-    if (!activeSchoolId) return;
-
-    query = query.eq("school_id", activeSchoolId);
+ if (!isSuperadmin) {
+  if (!activeSchoolId) {
+    return; // or show empty state
   }
-
+  query = query.eq("school_id", activeSchoolId);
+}
   const { data, error } = await query;
 
   if (error) {
@@ -702,10 +705,13 @@ async function loadStudentClasses() {
     .select("id, name");
 
   // if NOT superadmin → filter by school
-  if (!isSuperadmin) {
-    query = query.eq("school_id", activeSchoolId);
+ 
+if (!isSuperadmin) {
+  if (!activeSchoolId) {
+    return; // or show empty state
   }
-
+  query = query.eq("school_id", activeSchoolId);
+}
   const { data, error } = await query;
 
   if (error) {
