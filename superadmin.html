@@ -670,7 +670,7 @@ async function loadExcelClasses() {
     const jsonData = XLSX.utils.sheet_to_json(sheet);
 
     const studentsToInsert = jsonData.map(row => ({
-      school_id: adminProfile.school_id,
+      school_id: school_id: activeSchoolId,,
       class_id,
       full_name: row.full_name,
       gender: row.gender,
