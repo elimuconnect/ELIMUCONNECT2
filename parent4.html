@@ -724,36 +724,13 @@ const status = document.getElementById("status");
   let subjectSet = new Set();
   let competencyCount = 0;
 
-  
-/* ========== AUTH ========== */
-const { data: { user } } = await supabase.auth.getUser();
-if (!user) location.href = "index.html";
 
 
-
-const { data: profile } = await supabase
-  .from("profiles")
-  .select("school_id, role")
-  .eq("auth_id", user.id)
-  .single();
-
-const teacherSchoolId = profile.school_id;
-
-
-
-
-
-
-/* ========== SCHOOL DETAILS FROM SUPABASE ========== */
-const { data: school, error: schoolError } = await supabase
+const { data: school } = await supabase
   .from("schools")
   .select("name, po_box, postal_code, town, phone, email, logo_url")
-  .eq("id", teacherSchoolId)
+  .limit(1)
   .single();
-
-if (schoolError) {
-  console.error("School fetch error:", schoolError.message);
-}
 
 
 	
@@ -2024,7 +2001,7 @@ filterBox.innerHTML = `
     }).from(container).save();
   });
 
- document.getElementById("verifyParentBtn").addEventListener("click", async () => {
+document.getElementById("verifyParentBtn").addEventListener("click", async () => {
 
   const adm = document.getElementById("admInput").value.trim();
   const parentName = document.getElementById("parentNameInput").value.trim().toLowerCase();
@@ -2035,20 +2012,20 @@ filterBox.innerHTML = `
     return;
   }
 
-  // STEP 1: CHECK STUDENT MATCH IN DB
+  // 1. CHECK STUDENT
   const { data: student, error } = await supabase
     .from("students")
-    .select("full_name, admission_number, parent_name, parent_phone")
+    .select("*")
     .eq("admission_number", adm)
     .single();
 
-  if (!student || error) {
+  if (error || !student) {
     reportDiv.innerHTML = "<p>Student not found</p>";
     return;
   }
 
-  // STEP 2: VERIFY PARENT DETAILS
-  const matchName = student.parent_name?.toLowerCase() === parentName;
+  // 2. VERIFY PARENT
+  const matchName = student.parent_name?.trim().toLowerCase() === parentName;
   const matchPhone = student.parent_phone === parentPhone;
 
   if (!matchName || !matchPhone) {
@@ -2056,28 +2033,28 @@ filterBox.innerHTML = `
     return;
   }
 
-  // STEP 3: FILTER RESULTS
-  const filtered = records.filter(r => r.admission === adm);
+  // 3. FETCH RESULTS (NO SCHOOL FILTER!)
+  const { data: resultsData } = await supabase
+    .from("results2_report_view")
+    .select("*")
+    .eq("admission_number", adm)
+    .eq("academic_year", SYSTEM_YEAR);
 
-  if (!filtered.length) {
-    reportDiv.innerHTML = "<p>No results found for this student</p>";
+  if (!resultsData || resultsData.length === 0) {
+    reportDiv.innerHTML = "<p>No results found</p>";
     return;
   }
 
+  // 4. GROUP RESULTS
   const grouped = {};
-  filtered.forEach(r => {
-    grouped[r.student] ??= { __admission: r.admission };
-    grouped[r.student][r.subject] ??= [];
-    grouped[r.student][r.subject].push(r);
+
+  resultsData.forEach(r => {
+    grouped[r.full_name] ??= { __admission: r.admission_number };
+    grouped[r.full_name][r.subject] ??= [];
+    grouped[r.full_name][r.subject].push(r);
   });
 
-  const sortedGrouped = Object.fromEntries(
-    Object.entries(grouped).sort((a, b) =>
-      a[0].localeCompare(b[0], undefined, { sensitivity: "base" })
-    )
-  );
-
-  reportDiv.innerHTML = renderGrouped(sortedGrouped, avgMap);
+  reportDiv.innerHTML = renderGrouped(grouped, avgMap);
 
 
     // Show button **after DOM has been updated**
