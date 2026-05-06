@@ -582,7 +582,7 @@ async function loadManageClasses() {
 
   let query = supabase
     .from("classes")
-    .select("id, name");
+    .select("id, name")
  .eq("school_id", activeSchoolId); // ✅ filter
 if (!isSuperadmin) {
   if (!activeSchoolId) {
