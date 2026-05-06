@@ -540,7 +540,6 @@ await loadStudentClasses();
 
 
   document.getElementById("uploadExcelBtn").onclick = async () => {
-
   const file = document.getElementById("excelFile").files[0];
   const class_id = excelClass.value;
 
@@ -558,20 +557,41 @@ await loadStudentClasses();
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const jsonData = XLSX.utils.sheet_to_json(sheet);
 
+    // Validate required fields
+    const invalidRows = jsonData.filter(row =>
+      !row.full_name ||
+      !row.admission_number ||
+      !row.parent_name ||
+      !row.parent_phone
+    );
+
+    if (invalidRows.length > 0) {
+      document.getElementById("excelStatus").innerText =
+        `Upload failed: ${invalidRows.length} row(s) missing required parent/student data`;
+      return;
+    }
+
     const studentsToInsert = jsonData.map(row => ({
       school_id: adminProfile.school_id,
       class_id,
-      full_name: row.full_name,
-      gender: row.gender,
-      admission_number: row.admission_number,
-      date_of_birth: row.date_of_birth,
+      full_name: row.full_name?.trim(),
+      gender: row.gender || null,
+      admission_number: row.admission_number?.trim(),
+      parent_name: row.parent_name?.trim(),
+      parent_phone: row.parent_phone?.trim(),
+      date_of_birth: row.date_of_birth || null,
       admission_year: row.admission_year
+        ? parseInt(row.admission_year)
+        : null
     }));
 
-    const { error } = await supabase.from("students").insert(studentsToInsert);
+    const { error } = await supabase
+      .from("students")
+      .insert(studentsToInsert);
 
     if (error) {
-      document.getElementById("excelStatus").innerText = error.message;
+      document.getElementById("excelStatus").innerText =
+        "Error: " + error.message;
     } else {
       document.getElementById("excelStatus").innerText =
         studentsToInsert.length + " students uploaded successfully";
