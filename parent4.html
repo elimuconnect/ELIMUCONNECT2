@@ -652,7 +652,6 @@ const supabase = createClient(
 
 
 
-
 document.addEventListener("click", async (e) => {
   if (e.target && e.target.id === "verifyParentBtn") {
 
@@ -660,69 +659,62 @@ document.addEventListener("click", async (e) => {
     const parentName = document.getElementById("parentNameInput").value.trim().toLowerCase();
     const parentPhone = document.getElementById("parentPhoneInput").value.trim();
 
-    if (!adm || !parentName || !parentPhone) {
-      alert("Please fill all fields");
+    const term_id = termSelect.value;
+    const selectedCategory = categorySelect.value;
+
+    if (!adm || !parentName || !parentPhone || !term_id || !selectedCategory) {
+      alert("Please fill all fields including Term and Category");
       return;
     }
 
-    // 1. FETCH STUDENT
-    const { data: student, error } = await supabase
-      .from("students")
+    const termName = terms.find(t => t.id === term_id)?.name;
+
+    // ✅ SINGLE SAFE QUERY (NO EXTRA TRUST)
+    const { data: resultsData, error } = await supabase
+      .from("results2_report_view")
       .select("*")
       .eq("admission_number", adm)
-      .single();
+      .eq("academic_year", SYSTEM_YEAR)
+      .eq("term", termName)
+      .eq("assessment_category", selectedCategory);
 
-    if (error || !student) {
-      reportDiv.innerHTML = "<p>Student not found</p>";
+    if (error || !resultsData || resultsData.length === 0) {
+      reportDiv.innerHTML = "<p style='color:red'>No results found</p>";
       return;
     }
 
-    // 2. VERIFY ALL 3 FIELDS
+    // ✅ VERIFY NAME + PHONE FROM FIRST RESULT (SAFE CHECK)
+    const first = resultsData[0];
+
     const matchName =
-      (student.parent_name || "").trim().toLowerCase() === parentName;
+      (first.parent_name || "").trim().toLowerCase() === parentName;
 
     const matchPhone =
-      (student.parent_phone || "").trim() === parentPhone;
+      (first.parent_phone || "").trim() === parentPhone;
 
-    const matchAdm =
-      student.admission_number === adm;
-
-    if (!matchName || !matchPhone || !matchAdm) {
+    if (!matchName || !matchPhone) {
       reportDiv.innerHTML = "<p style='color:red'>❌ Parent details do not match</p>";
       return;
     }
 
-    // 3. FETCH RESULTS
-    const { data: resultsData } = await supabase
-      .from("results2_report_view")
-      .select("*")
-      .eq("admission_number", adm)
-      .eq("academic_year", SYSTEM_YEAR);
-
-    if (!resultsData || resultsData.length === 0) {
-      reportDiv.innerHTML = "<p>No results found</p>";
-      return;
-    }
-
-    // 4. GROUP RESULTS
+    // ✅ GROUP RESULTS
     const grouped = {};
-
     resultsData.forEach(r => {
       grouped[r.full_name] ??= { __admission: r.admission_number };
       grouped[r.full_name][r.subject] ??= [];
       grouped[r.full_name][r.subject].push(r);
     });
 
-    // 5. DISPLAY
+    // ✅ DISPLAY
     reportDiv.innerHTML = renderGrouped(grouped, avgMap);
 
-    // 6. SHOW DOWNLOAD BUTTON
+    // ✅ SHOW DOWNLOAD ONLY FOR SINGLE STUDENT
     const downloadVisibleBtn = document.getElementById("downloadCurrentViewBtn");
-    requestAnimationFrame(() => {
-      downloadVisibleBtn.style.display =
-        Object.keys(grouped).length === 1 ? "flex" : "none";
-    });
+
+    downloadVisibleBtn.style.display =
+      Object.keys(grouped).length === 1 ? "flex" : "none";
   }
+});
 });
 
 
