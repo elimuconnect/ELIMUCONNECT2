@@ -491,7 +491,85 @@ td {
 }
 
 
-	
+
+/* MAIN LAYOUT */
+.dashboard-container {
+  max-width: 1200px;
+  margin: auto;
+}
+
+/* CARD STYLE */
+.filter-card,
+.download-card {
+  background: white;
+  border-radius: 18px;
+  padding: 25px;
+  margin-bottom: 25px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.06);
+}
+
+/* SECTION TITLES */
+.filter-card h3,
+.download-card h3 {
+  margin-bottom: 20px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+/* TWO-COLUMN FORM GRID */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+/* FORM GROUP */
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+/* FULL WIDTH ROW */
+.full-width {
+  grid-column: span 2;
+}
+
+/* DOWNLOAD BUTTON LAYOUT */
+.actions-box {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+/* FIX BUTTON */
+button {
+  width: 100%;
+  padding: 16px;
+  border-radius: 12px;
+  border: none;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  background: #2563eb;
+  color: white;
+  transition: all 0.25s ease;
+}
+
+/* MOBILE RESPONSIVE */
+@media (max-width: 768px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .actions-box {
+    grid-template-columns: 1fr;
+  }
+
+  .full-width {
+    grid-column: span 1;
+  }
+}
+
 </style>
 
 </head>
@@ -499,86 +577,87 @@ td {
 
 
 
+<div class="dashboard-container">
 
-<label>Academic Year</label><br />
-<input value="2026" disabled /><br /><br />
+  <!-- FILTER PANEL -->
+  <div class="filter-card">
+    <h3>Report Configuration</h3>
 
+    <div class="form-grid">
 
-	
+      <div class="form-group">
+        <label>Academic Year</label>
+        <input value="2026" disabled />
+      </div>
 
-<label>Category</label><br />
-<select id="categorySelect"></select><br /><br />
+      <div class="form-group">
+        <label>Category</label>
+        <select id="categorySelect"></select>
+      </div>
 
+      <div class="form-group">
+        <label>Term</label>
+        <select id="termSelect"></select>
+      </div>
 
-<label>Term</label><br />
-<select id="termSelect"></select><br /><br />
+      <div class="form-group">
+        <label>View Mode</label>
+        <select id="viewMode">
+          <option value="term">Term Results</option>
+          <option value="student">Student (Admission No/UPI No)</option>
+          <option value="subject">Subject</option>
+          <option value="class">Class</option>
+          <option value="broadsheet">Broadsheet</option>
+        </select>
+      </div>
 
-<select id="viewMode">
-  <option value="term">Term Results</option>
-  <option value="student">Student (Admission No/UPI No)</option>
-  <option value="subject">Subject</option>
-  <option value="class">Class</option>   <!-- ✅ NEW -->
-	<option value="broadsheet">Broadsheet</option>
+      <div class="form-group full-width">
+        <label>Broadsheet Mode</label>
+        <select id="broadsheetMode">
+          <option value="" selected disabled>Select Broadsheet Type</option>
+          <option value="grade">Grade Broadsheet</option>
+          <option value="class">Class Broadsheet</option>
+        </select>
+      </div>
 
-</select><br /><br />
+    </div>
 
+    <div id="filterBox"></div>
+    <p id="status"></p>
+  </div>
 
+  <!-- DOWNLOAD PANEL -->
+  <div class="download-card">
+    <h3>Downloads</h3>
 
+    <div class="actions-box">
 
-	
-<div id="filterBox"></div>
-<p id="status"></p>
-<hr />
-	
+      <button onclick="downloadPDF()">
+        ⬇️ Download Report Form(s)
+        <small>Recommended for parents & learners</small>
+      </button>
 
-	
-<label>Broadsheet Mode</label><br />
-<select id="broadsheetMode">
-  <option value="" selected disabled>Select Broadsheet Type</option>
-  <option value="grade">Grade Broadsheet</option>
-  <option value="class">Class Broadsheet</option>
-</select>
-<br /><br />
+      <button onclick="downloadSchoolAnalyticsPDF()">
+        ⬇️ Download School Analysis Report
+        <small>For school leadership & QA</small>
+      </button>
 
+      <button id="downloadBroadsheetBtn" class="broadsheet-btn">
+        📊 Download Broadsheet Report
+        <span>Grade & Class ranking overview</span>
+      </button>
 
+      <button id="downloadCurrentViewBtn" style="display:none;">
+        ⬇️ Download Detailed Report
+      </button>
 
-<div class="actions-box controls-row">
-  <button onclick="downloadPDF()" style="flex: 1;">
-    ⬇️ Download Report Form(s)<br>
-    <small>Recommended for parents & learners</small>
-  </button>
+    </div>
+  </div>
 
-
- <button onclick="downloadSchoolAnalyticsPDF()" style="flex: 1;">
-    ⬇️ Download School Analysis Report<br>
-    <small>For school leadership & QA</small>
-  </button>
 </div>
 
-
-
-
-<button id="downloadBroadsheetBtn" class="broadsheet-btn">
-  📊 Download Broadsheet Report
-  <span>Grade & Class ranking overview</span>
-</button>
-	
-
-	
-	<button id="downloadCurrentViewBtn" style="flex:1; display:none;">
-  ⬇️ Download detailed report<br>
-
-</button>
-
-</div>
-
-
-
-
-  
 <div id="schoolAnalytics" style="display:none;"></div>
 <div id="report"></div>
-
 
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
