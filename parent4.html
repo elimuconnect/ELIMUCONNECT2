@@ -715,7 +715,7 @@ document.addEventListener("click", async (e) => {
       Object.keys(grouped).length === 1 ? "flex" : "none";
   }
 });
-});
+
 
 
 
@@ -914,7 +914,7 @@ async function loadReport() {
       .select("*")
       .eq("term", previousTerm)
       .eq("academic_year", SYSTEM_YEAR)
-	  .eq("school_id", teacherSchoolId);
+	
 
     previousRecords = data || [];
     previousRecords.forEach(r => {
@@ -968,15 +968,15 @@ const hasPreviousData = Object.keys(previousLearnerMap || {}).length > 0;
   const batchSize = 1000;
 
   while (true) {
-    const response = await supabase
-      .from("results2_report_view")
-      .select("*")
-      .eq("term", termName)
-		 .eq("assessment_category", selectedCategory)
-      .eq("academic_year", SYSTEM_YEAR)
-      .range(from, from + batchSize - 1)
-	  .eq("school_id", teacherSchoolId);
-
+   const response = await supabase
+  .from("results2_report_view")
+  .select("*")
+  .eq("term", termName)
+  .eq("assessment_category", selectedCategory)
+  .eq("academic_year", SYSTEM_YEAR)
+ 
+  .range(from, from + batchSize - 1);
+	  
     const batch = response.data;
     if (response.error || !batch || batch.length === 0) break;
 
