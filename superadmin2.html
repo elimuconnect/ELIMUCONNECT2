@@ -598,53 +598,59 @@ if (!isSuperadmin) {
     .join('');
 }
 
+
+
+
+
 document.getElementById("addStudentBtn").onclick = async () => {
 
-  const full_name = document.getElementById("studentName").value;
+  const full_name = document.getElementById("studentName").value.trim();
   const gender = document.getElementById("studentGender").value;
-  const admission_number = document.getElementById("admissionNumber").value;
+  const admission_number = document.getElementById("admissionNumber").value.trim();
+
+  const parent_name = document.getElementById("parentName").value.trim();
+  const parent_phone = document.getElementById("parentPhone").value.trim();
+
   const date_of_birth = document.getElementById("dob").value;
   const admission_year = document.getElementById("admissionYear").value;
   const class_id = studentClass.value;
 
+  // ✅ DEBUG (optional but helpful)
+  console.log({ full_name, admission_number, parent_name, parent_phone, class_id });
 
-
- if (
-  !full_name ||
-  !admission_number ||
-  !parent_name ||
-  !parent_phone ||
-  !class_id
-){
-   document.getElementById("studentStatus").innerText =
-    "Fill required fields (Name, Admission No, Parent Name, Parent Phone, Class)";
-  return;
-}
-
-
-
-const { error } = await supabase.from("students").insert([
-  {
-    school_id: adminProfile.school_id,
-    class_id,
-    full_name,
-    admission_number,
-    parent_name,
-    parent_phone,
-    gender: gender || null,
-    date_of_birth: date_of_birth || null,
-    admission_year: admission_year ? parseInt(admission_year) : null
+  if (
+    !full_name ||
+    !admission_number ||
+    !parent_name ||
+    !parent_phone ||
+    !class_id
+  ) {
+    studentStatus.innerText =
+      "Fill required fields (Name, Admission No, Parent Name, Parent Phone, Class)";
+    return;
   }
-]);
 
+  const { error } = await supabase.from("students").insert([
+    {
+      school_id: activeSchoolId,
+      class_id,
+      full_name,
+      admission_number,
+      parent_name,
+      parent_phone,
+      gender: gender || null,
+      date_of_birth: date_of_birth || null,
+      admission_year: admission_year ? parseInt(admission_year) : null
+    }
+  ]);
 
   if (error) {
-    document.getElementById("studentStatus").innerText = error.message;
+    studentStatus.innerText = error.message;
   } else {
-    document.getElementById("studentStatus").innerText = "Student added successfully";
+    studentStatus.innerText = "Student added successfully";
   }
 };
-
+	
 
 
 async function loadExcelClasses() {
