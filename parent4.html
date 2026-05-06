@@ -648,6 +648,92 @@ const supabase = createClient(
   "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
 );
 
+
+
+
+
+
+document.addEventListener("click", async (e) => {
+  if (e.target && e.target.id === "verifyParentBtn") {
+
+    const adm = document.getElementById("admInput").value.trim();
+    const parentName = document.getElementById("parentNameInput").value.trim().toLowerCase();
+    const parentPhone = document.getElementById("parentPhoneInput").value.trim();
+
+    if (!adm || !parentName || !parentPhone) {
+      alert("Please fill all fields");
+      return;
+    }
+
+    // 1. FETCH STUDENT
+    const { data: student, error } = await supabase
+      .from("students")
+      .select("*")
+      .eq("admission_number", adm)
+      .single();
+
+    if (error || !student) {
+      reportDiv.innerHTML = "<p>Student not found</p>";
+      return;
+    }
+
+    // 2. VERIFY ALL 3 FIELDS
+    const matchName =
+      (student.parent_name || "").trim().toLowerCase() === parentName;
+
+    const matchPhone =
+      (student.parent_phone || "").trim() === parentPhone;
+
+    const matchAdm =
+      student.admission_number === adm;
+
+    if (!matchName || !matchPhone || !matchAdm) {
+      reportDiv.innerHTML = "<p style='color:red'>❌ Parent details do not match</p>";
+      return;
+    }
+
+    // 3. FETCH RESULTS
+    const { data: resultsData } = await supabase
+      .from("results2_report_view")
+      .select("*")
+      .eq("admission_number", adm)
+      .eq("academic_year", SYSTEM_YEAR);
+
+    if (!resultsData || resultsData.length === 0) {
+      reportDiv.innerHTML = "<p>No results found</p>";
+      return;
+    }
+
+    // 4. GROUP RESULTS
+    const grouped = {};
+
+    resultsData.forEach(r => {
+      grouped[r.full_name] ??= { __admission: r.admission_number };
+      grouped[r.full_name][r.subject] ??= [];
+      grouped[r.full_name][r.subject].push(r);
+    });
+
+    // 5. DISPLAY
+    reportDiv.innerHTML = renderGrouped(grouped, avgMap);
+
+    // 6. SHOW DOWNLOAD BUTTON
+    const downloadVisibleBtn = document.getElementById("downloadCurrentViewBtn");
+    requestAnimationFrame(() => {
+      downloadVisibleBtn.style.display =
+        Object.keys(grouped).length === 1 ? "flex" : "none";
+    });
+  }
+});
+
+
+
+
+
+
+
+
+
+	
 const SYSTEM_YEAR = "2026";
 let results = [];
 let schoolLogo = null;
@@ -2001,73 +2087,6 @@ filterBox.innerHTML = `
     }).from(container).save();
   });
 
-document.getElementById("verifyParentBtn").addEventListener("click", async () => {
-
-  const adm = document.getElementById("admInput").value.trim();
-  const parentName = document.getElementById("parentNameInput").value.trim().toLowerCase();
-  const parentPhone = document.getElementById("parentPhoneInput").value.trim();
-
-  if (!adm || !parentName || !parentPhone) {
-    alert("Please fill all fields");
-    return;
-  }
-
-  // 1. CHECK STUDENT
-  const { data: student, error } = await supabase
-    .from("students")
-    .select("*")
-    .eq("admission_number", adm)
-    .single();
-
-  if (error || !student) {
-    reportDiv.innerHTML = "<p>Student not found</p>";
-    return;
-  }
-
-  // 2. VERIFY PARENT
-  const matchName = student.parent_name?.trim().toLowerCase() === parentName;
-  const matchPhone = student.parent_phone === parentPhone;
-
-  if (!matchName || !matchPhone) {
-    reportDiv.innerHTML = "<p style='color:red'>Parent details do not match</p>";
-    return;
-  }
-
-  // 3. FETCH RESULTS (NO SCHOOL FILTER!)
-  const { data: resultsData } = await supabase
-    .from("results2_report_view")
-    .select("*")
-    .eq("admission_number", adm)
-    .eq("academic_year", SYSTEM_YEAR);
-
-  if (!resultsData || resultsData.length === 0) {
-    reportDiv.innerHTML = "<p>No results found</p>";
-    return;
-  }
-
-  // 4. GROUP RESULTS
-  const grouped = {};
-
-  resultsData.forEach(r => {
-    grouped[r.full_name] ??= { __admission: r.admission_number };
-    grouped[r.full_name][r.subject] ??= [];
-    grouped[r.full_name][r.subject].push(r);
-  });
-
-  reportDiv.innerHTML = renderGrouped(grouped, avgMap);
-
-
-    // Show button **after DOM has been updated**
-    requestAnimationFrame(() => {
-    
-
-      // Show download button only if exactly 1 student
-      if (Object.keys(grouped).length === 1) {
-        downloadVisibleBtn.style.display = "flex";
-      } else {
-        downloadVisibleBtn.style.display = "none";
-      }
-    });
   });
 }
  
