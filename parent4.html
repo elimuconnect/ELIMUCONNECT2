@@ -575,12 +575,10 @@ button {
 <body>
 
 
-
 <div class="dashboard-container">
 
-  <!-- FILTER PANEL -->
   <div class="filter-card">
-    <h3>Report Configuration</h3>
+    <h3>Parent Portal - Report Configuration</h3>
 
     <div class="form-grid">
 
@@ -599,12 +597,10 @@ button {
         <select id="termSelect"></select>
       </div>
 
-      <div class="form-group">
+      <div class="form-group" style="display:none;">
         <label>View Mode</label>
         <select id="viewMode">
-          <option value="term">Term Results</option>
           <option value="student">Student (Admission No/UPI No)</option>
-    
         </select>
       </div>
 
@@ -614,24 +610,18 @@ button {
     <p id="status"></p>
   </div>
 
-  <!-- DOWNLOAD PANEL -->
   <div class="download-card">
     <h3>Downloads</h3>
 
     <div class="actions-box">
-
-
-
-<button onclick="downloadPDF()">
+      <button onclick="downloadPDF()" style="display:none;">
         ⬇️ Download Report Form(s)
         <small>Recommended for parents & learners</small>
       </button>
-		
 
       <button id="downloadCurrentViewBtn" style="display:none;">
-        ⬇️ Download Detailed Report
+        ⬇️ Download Report Form
       </button>
-
     </div>
   </div>
 
@@ -648,102 +638,16 @@ const supabase = createClient(
   "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
 );
 
-
-
-
-
-document.addEventListener("click", async (e) => {
-  if (e.target && e.target.id === "verifyParentBtn") {
-
-    const adm = document.getElementById("admInput").value.trim();
-    const parentName = document.getElementById("parentNameInput").value.trim().toLowerCase();
-    const parentPhone = document.getElementById("parentPhoneInput").value.trim();
-
-    const term_id = termSelect.value;
-    const selectedCategory = categorySelect.value;
-
-    if (!adm || !parentName || !parentPhone || !term_id || !selectedCategory) {
-      alert("Please fill all fields including Term and Category");
-      return;
-    }
-
-    const termName = terms.find(t => t.id === term_id)?.name;
-
-    // ✅ SINGLE SAFE QUERY (NO EXTRA TRUST)
-    const { data: resultsData, error } = await supabase
-      .from("results2_report_view")
-      .select("*")
-      .eq("admission_number", adm)
-      .eq("academic_year", SYSTEM_YEAR)
-      .eq("term", termName)
-      .eq("assessment_category", selectedCategory);
-
-    if (error || !resultsData || resultsData.length === 0) {
-      reportDiv.innerHTML = "<p style='color:red'>No results found</p>";
-      return;
-    }
-
-    // ✅ VERIFY NAME + PHONE FROM FIRST RESULT (SAFE CHECK)
-    const first = resultsData[0];
-
-    const matchName =
-      (first.parent_name || "").trim().toLowerCase() === parentName;
-
-    const matchPhone =
-      (first.parent_phone || "").trim() === parentPhone;
-
-    if (!matchName || !matchPhone) {
-      reportDiv.innerHTML = "<p style='color:red'>❌ Parent details do not match</p>";
-      return;
-    }
-
-    // ✅ GROUP RESULTS
-    const grouped = {};
-    resultsData.forEach(r => {
-      grouped[r.full_name] ??= { __admission: r.admission_number };
-      grouped[r.full_name][r.subject] ??= [];
-      grouped[r.full_name][r.subject].push(r);
-    });
-
-    // ✅ DISPLAY
-    reportDiv.innerHTML = renderGrouped(grouped, avgMap);
-
-    // ✅ SHOW DOWNLOAD ONLY FOR SINGLE STUDENT
-    const downloadVisibleBtn = document.getElementById("downloadCurrentViewBtn");
-
-    downloadVisibleBtn.style.display =
-      Object.keys(grouped).length === 1 ? "flex" : "none";
-  }
-});
-
-
-
-
-
-
-
-
-
-
-	
 const SYSTEM_YEAR = "2026";
 let results = [];
 let schoolLogo = null;
 let data = [];
 
-
-
-
-
-  
 let trendMap = {};
-let avgMap = {}; // make it global so downloadPDF can access it
- let learnerSummary = {};
+let avgMap = {};
+let learnerSummary = {};
 let previousRecords = [];
 let previousAverages = {};
-
-
-  
 
 const levelColor = {
   "BE2": "#fee2e2",
@@ -767,8 +671,7 @@ function getAchievementLabel(score) {
   return "BE2";
 }
 
-
-  function levelToScore(level) {
+function levelToScore(level) {
   if (!level) return 0;
 
   const clean = level.trim().toUpperCase();
@@ -784,34 +687,24 @@ function getAchievementLabel(score) {
 
   return 0;
 }
-  
+
 const termSelect = document.getElementById("termSelect");
 const viewMode = document.getElementById("viewMode");
 const filterBox = document.getElementById("filterBox");
 const reportDiv = document.getElementById("report");
 const status = document.getElementById("status");
 
-
-
-
-
- // ===== PER SUBJECT COVERAGE =====
-  let strandSet = new Set();
-  let learningExpCount = 0;
-  let coreSet = new Set();
-  let subjectSet = new Set();
-  let competencyCount = 0;
-
-
+let strandSet = new Set();
+let learningExpCount = 0;
+let coreSet = new Set();
+let subjectSet = new Set();
+let competencyCount = 0;
 
 const { data: school } = await supabase
   .from("schools")
   .select("name, po_box, postal_code, town, phone, email, logo_url")
   .limit(1)
   .single();
-
-
-	
 
 /* ========== LOAD TERMS ========== */
 const { data: terms } = await supabase
@@ -830,38 +723,111 @@ const { data: categories } = await supabase
   .select("category")
   .not("category", "is", null);
 
-// remove duplicates
 const uniqueCategories = [...new Set(categories.map(c => c.category))];
 
 categorySelect.innerHTML =
   `<option value="">Select category</option>` +
   uniqueCategories.map(c => `<option value="${c}">${c}</option>`).join("");
 
+// Initialize Filter Box for Parent Input
+filterBox.innerHTML = `
+  <div style="margin-bottom: 12px;">
+    <label><strong>Admission Number</strong></label><br/>
+    <input id="admInput" style="width: 100%; padding: 6px; margin-top: 4px; border: 1px solid #ccc; border-radius: 4px;" placeholder="Enter admission number" />
+  </div>
+  <div style="margin-bottom: 12px;">
+    <label><strong>Parent Name</strong></label><br/>
+    <input id="parentNameInput" style="width: 100%; padding: 6px; margin-top: 4px; border: 1px solid #ccc; border-radius: 4px;" placeholder="Enter parent name" />
+  </div>
+  <div style="margin-bottom: 12px;">
+    <label><strong>Parent Phone</strong></label><br/>
+    <input id="parentPhoneInput" style="width: 100%; padding: 6px; margin-top: 4px; border: 1px solid #ccc; border-radius: 4px;" placeholder="Enter parent phone" />
+  </div>
+  <button id="verifyParentBtn" style="width: 100%; padding: 10px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+    View Results
+  </button>
+`;
+
+// Parent Verification Logic
+document.addEventListener("click", async (e) => {
+  if (e.target && e.target.id === "verifyParentBtn") {
+    const adm = document.getElementById("admInput").value.trim();
+    const parentName = document.getElementById("parentNameInput").value.trim().toLowerCase();
+    const parentPhone = document.getElementById("parentPhoneInput").value.trim();
+
+    const term_id = termSelect.value;
+    const selectedCategory = categorySelect.value;
+
+    if (!adm || !parentName || !parentPhone || !term_id || !selectedCategory) {
+      alert("Please fill all fields including Term and Category");
+      return;
+    }
+
+    const termName = terms.find(t => t.id === term_id)?.name;
+
+    const { data: resultsData, error } = await supabase
+      .from("results2_report_view")
+      .select("*")
+      .eq("admission_number", adm)
+      .eq("academic_year", SYSTEM_YEAR)
+      .eq("term", termName)
+      .eq("assessment_category", selectedCategory);
+
+    if (error || !resultsData || resultsData.length === 0) {
+      reportDiv.innerHTML = "<p style='color:red'>No results found</p>";
+      return;
+    }
+
+    const first = resultsData[0];
+
+    const matchName =
+      (first.parent_name || "").trim().toLowerCase() === parentName;
+
+    const matchPhone =
+      (first.parent_phone || "").trim() === parentPhone;
+
+    if (!matchName || !matchPhone) {
+      reportDiv.innerHTML = "<p style='color:red'>❌ Parent details do not match</p>";
+      return;
+    }
+
+    const grouped = {};
+    resultsData.forEach(r => {
+      grouped[r.full_name] ??= { __admission: r.admission_number };
+      grouped[r.full_name][r.subject] ??= [];
+      grouped[r.full_name][r.subject].push(r);
+    });
+
+    reportDiv.innerHTML = renderGrouped(grouped, avgMap);
+
+    const downloadVisibleBtn = document.getElementById("downloadCurrentViewBtn");
+
+    downloadVisibleBtn.style.display =
+      Object.keys(grouped).length === 1 ? "flex" : "none";
+  }
+});
+
 /* ========== MAIN LOAD ========== */
 async function loadReport() {
   reportDiv.innerHTML = "";
-  filterBox.innerHTML = "";
   
   const term_id = termSelect.value;
   const selectedCategory = categorySelect.value;
-  
+
   if (!term_id || !selectedCategory) {
-  status.innerText = ".";
-  return;
-}
+    status.innerText = ".";
+    return;
+  }
 
   const termName = terms.find(t => t.id === term_id)?.name;
 
-  /* ===== LEARNER TERM AVERAGES FOR GRAPHS ===== */
   const { data: termAverages } = await supabase
     .from("learner_term_levels")
     .select("admission_number, term, average_score")
     .eq("academic_year", SYSTEM_YEAR);
 
-  // Initialize avgMap globally
-  avgMap = {}; 
-  
-  /* ===== AVERAGES (BATCHED TO PREVENT MISSING SUBJECTS) ===== */
+  avgMap = {};
+
   let avgFrom = 0;
   const avgBatchSize = 1000;
 
@@ -870,20 +836,19 @@ async function loadReport() {
       .from("term_subject_report_view2")
       .select("full_name, subject_name, average_score, achievement_level")
       .eq("term", termName)
-		 .eq("assessment_category", selectedCategory)
+      .eq("assessment_category", selectedCategory)
       .range(avgFrom, avgFrom + avgBatchSize - 1);
 
     if (avgErr || !avgBatch || avgBatch.length === 0) break;
 
     avgBatch.forEach(a => {
-      // FIX: Added safety check to prevent crash on null names
-      if (!a.full_name) return; 
+      if (!a.full_name) return;
 
-      const student = a.full_name.trim(); // Trim to ensure PDF name matching
+      const student = a.full_name.trim();
       const subj = a.subject_name;
 
       if (!avgMap[student]) avgMap[student] = {};
-      
+
       avgMap[student][subj] = {
         achievement_level: a.achievement_level,
         average_score: a.average_score
@@ -913,8 +878,7 @@ async function loadReport() {
       .from("results2_report_view")
       .select("*")
       .eq("term", previousTerm)
-      .eq("academic_year", SYSTEM_YEAR)
-	
+      .eq("academic_year", SYSTEM_YEAR);
 
     previousRecords = data || [];
     previousRecords.forEach(r => {
@@ -928,22 +892,19 @@ async function loadReport() {
     });
   }
 
+  let previousLearnerMap = {};
 
+  previousRecords?.forEach(r => {
+    const adm = r.admission_number;
+    const score = levelToScore(r.achievement_level);
 
-let previousLearnerMap = {};
+    if (!previousLearnerMap[adm]) {
+      previousLearnerMap[adm] = [];
+    }
 
-previousRecords?.forEach(r => {
-  const adm = r.admission_number;
-  const score = levelToScore(r.achievement_level);
-
-  if (!previousLearnerMap[adm]) {
-    previousLearnerMap[adm] = [];
-  }
-
-  previousLearnerMap[adm].push(score);
-});
-const hasPreviousData = Object.keys(previousLearnerMap || {}).length > 0;
-  // STEP 2 — BUILD LEARNER SUMMARY
+    previousLearnerMap[adm].push(score);
+  });
+  
   learnerSummary = {};
   Object.keys(avgMap).forEach(student => {
     const subjectEntries = Object.values(avgMap[student]);
@@ -968,15 +929,14 @@ const hasPreviousData = Object.keys(previousLearnerMap || {}).length > 0;
   const batchSize = 1000;
 
   while (true) {
-   const response = await supabase
-  .from("results2_report_view")
-  .select("*")
-  .eq("term", termName)
-  .eq("assessment_category", selectedCategory)
-  .eq("academic_year", SYSTEM_YEAR)
- 
-  .range(from, from + batchSize - 1);
-	  
+    const response = await supabase
+      .from("results2_report_view")
+      .select("*")
+      .eq("term", termName)
+      .eq("assessment_category", selectedCategory)
+      .eq("academic_year", SYSTEM_YEAR)
+      .range(from, from + batchSize - 1);
+
     const batch = response.data;
     if (response.error || !batch || batch.length === 0) break;
 
@@ -987,78 +947,61 @@ const hasPreviousData = Object.keys(previousLearnerMap || {}).length > 0;
 
   data = allResults;
   results = allResults;
+
+  const schoolDetail = {
+    name: school?.name || "—",
+    po_box: school?.po_box || "—",
+    postal_code: school?.postal_code || "—",
+    town: school?.town || "—",
+    phone: school?.phone || "—",
+    email: school?.email || "—"
+  };
+
+  const manualLogos = {
+    "SHANZU SENIOR SECONDARY SCHOOL": "https://res.cloudinary.com/dwvt4e9o2/image/upload/v1773573305/schoollogo1_rnpce8.jpg"
+  };
   
-  
-console.log("Total Records Loaded:", data.length);
+  schoolLogo =
+    school?.logo_url ||
+    manualLogos[schoolDetail.name?.trim()] ||
+    null;
 
+  const records = data.map(r => ({
+    student: r.full_name,
+    admission: r.admission_number,
+    className: r.class_name,
+    schoolName: r.school_name,
+    grade_name: r.grade_name,
+    grade_id: r.grade_id,
+    class_id: r.class_id,
+    subject: r.subject,
+    core_competencies: r.core_competencies,
+    subject_competencies: r.subject_competencies,
+    level: r.achievement_level,
+    remarks: r.remarks,
+    assessment_id: r.assessment_id,
+    assessment_type: r.assessment_type,
+    assessment_category: r.assessment_category
+  }));
 
+  const assessmentIds = [...new Set(records.map(r => r.assessment_id).filter(Boolean))];
 
-
-
-const schoolDetail = {
-  name: school?.name || "—",
-  po_box: school?.po_box || "—",
-  postal_code: school?.postal_code || "—",
-  town: school?.town || "—",
-  phone: school?.phone || "—",
-  email: school?.email || "—"
-};
-
-
-
-// 2. Logo Logic (Kept as before)
-const manualLogos = {
-  "SHANZU SENIOR SECONDARY SCHOOL": "https://res.cloudinary.com/dwvt4e9o2/image/upload/v1773573305/schoollogo1_rnpce8.jpg"
-};
-schoolLogo =
-  school?.logo_url ||
-  manualLogos[schoolDetail.name?.trim()] ||
-  null;
- 
-// normalized records
-const records = data.map(r => ({
-  student: r.full_name,
-  admission: r.admission_number,
-  className: r.class_name,
-  schoolName: r.school_name,
-grade_name: r.grade_name,
-grade_id: r.grade_id,
-	class_id: r.class_id,
-  subject: r.subject,
-
-  core_competencies: r.core_competencies,
-  subject_competencies: r.subject_competencies,
-
-  level: r.achievement_level,
-  remarks: r.remarks,
-  assessment_id: r.assessment_id,
-	 assessment_type: r.assessment_type,       // ✅ add this
-	  assessment_category: r.assessment_category // ✅ add this
-}));
-
-
-// Collect all assessment IDs for this term
-const assessmentIds = [...new Set(records.map(r => r.assessment_id).filter(Boolean))];
-
-  
   const { data: strandData } = await supabase
-  .from("assessment_strands_view")
-  .select("*")
-  .in("assessment_id", assessmentIds);
+    .from("assessment_strands_view")
+    .select("*")
+    .in("assessment_id", assessmentIds);
 
+  const strandMap = {};
 
-const strandMap = {};
+  strandData?.forEach(row => {
+    if (!row.assessment_id) return;
 
-strandData?.forEach(row => {
-  if (!row.assessment_id) return;
-
-  strandMap[row.assessment_id] ??= [];
-  strandMap[row.assessment_id].push({
-    strand: row.strand,
-    outcome: row.learning_experience
+    strandMap[row.assessment_id] ??= [];
+    strandMap[row.assessment_id].push({
+      strand: row.strand,
+      outcome: row.learning_experience
+    });
   });
-});
- 
  
   
  function renderOverviewHeader({
