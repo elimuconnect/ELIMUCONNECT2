@@ -403,7 +403,7 @@ async function loadTeachers() {
 async function loadClasses() {
   let query = supabase
     .from("classes")
-    .select("id, name");
+    .select("id, name")
     .eq("school_id", activeSchoolId); // ✅ ALWAYS FILTER
 
  if (!isSuperadmin) {
@@ -672,7 +672,7 @@ async function loadExcelClasses() {
 
   let query = supabase
     .from("classes")
-    .select("id, name");
+    .select("id, name")
  .eq("school_id", activeSchoolId); // ✅ filter
   // only filter if NOT superadmin
 
@@ -784,7 +784,7 @@ async function loadStudentClasses() {
 
   let query = supabase
     .from("classes")
-    .select("id, name");
+    .select("id, name")
  .eq("school_id", activeSchoolId); // ✅ filter
   // if NOT superadmin → filter by school
  
