@@ -627,9 +627,11 @@ document.getElementById("loadStudentsBtn").onclick = async () => {
     <tr>
       <th>Name</th>
       <th>Gender</th>
-      <th>Admission No</th>
-      <th>DOB</th>
-      <th>Year</th>
+     <th>Admission No</th>
+<th>Parent Name</th>
+<th>Parent Phone</th>
+<th>DOB</th>
+<th>Year</th>
       <th>Action</th>
     </tr>
     ${students.map(s => `
@@ -644,6 +646,14 @@ document.getElementById("loadStudentsBtn").onclick = async () => {
         </td>
         
         <td><input value="${s.admission_number || ''}" data-field="admission_number"></td>
+
+
+
+<td><input value="${s.parent_name || ''}" data-field="parent_name"></td>
+
+<td><input value="${s.parent_phone || ''}" data-field="parent_phone"></td>
+
+		
         
         <td><input type="date" value="${s.date_of_birth || ''}" data-field="date_of_birth"></td>
         
