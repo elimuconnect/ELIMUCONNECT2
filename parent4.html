@@ -729,83 +729,6 @@ categorySelect.innerHTML =
   `<option value="">Select category</option>` +
   uniqueCategories.map(c => `<option value="${c}">${c}</option>`).join("");
 
-// Initialize Filter Box for Parent Input
-filterBox.innerHTML = `
-  <div style="margin-bottom: 12px;">
-    <label><strong>Admission Number</strong></label><br/>
-    <input id="admInput" style="width: 100%; padding: 6px; margin-top: 4px; border: 1px solid #ccc; border-radius: 4px;" placeholder="Enter admission number" />
-  </div>
-  <div style="margin-bottom: 12px;">
-    <label><strong>Parent Name</strong></label><br/>
-    <input id="parentNameInput" style="width: 100%; padding: 6px; margin-top: 4px; border: 1px solid #ccc; border-radius: 4px;" placeholder="Enter parent name" />
-  </div>
-  <div style="margin-bottom: 12px;">
-    <label><strong>Parent Phone</strong></label><br/>
-    <input id="parentPhoneInput" style="width: 100%; padding: 6px; margin-top: 4px; border: 1px solid #ccc; border-radius: 4px;" placeholder="Enter parent phone" />
-  </div>
-  <button id="verifyParentBtn" style="width: 100%; padding: 10px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
-    View Results
-  </button>
-`;
-
-// Parent Verification Logic
-document.addEventListener("click", async (e) => {
-  if (e.target && e.target.id === "verifyParentBtn") {
-    const adm = document.getElementById("admInput").value.trim();
-    const parentName = document.getElementById("parentNameInput").value.trim().toLowerCase();
-    const parentPhone = document.getElementById("parentPhoneInput").value.trim();
-
-    const term_id = termSelect.value;
-    const selectedCategory = categorySelect.value;
-
-    if (!adm || !parentName || !parentPhone || !term_id || !selectedCategory) {
-      alert("Please fill all fields including Term and Category");
-      return;
-    }
-
-    const termName = terms.find(t => t.id === term_id)?.name;
-
-    const { data: resultsData, error } = await supabase
-      .from("results2_report_view")
-      .select("*")
-      .eq("admission_number", adm)
-      .eq("academic_year", SYSTEM_YEAR)
-      .eq("term", termName)
-      .eq("assessment_category", selectedCategory);
-
-    if (error || !resultsData || resultsData.length === 0) {
-      reportDiv.innerHTML = "<p style='color:red'>No results found</p>";
-      return;
-    }
-
-    const first = resultsData[0];
-
-    const matchName =
-      (first.parent_name || "").trim().toLowerCase() === parentName;
-
-    const matchPhone =
-      (first.parent_phone || "").trim() === parentPhone;
-
-    if (!matchName || !matchPhone) {
-      reportDiv.innerHTML = "<p style='color:red'>❌ Parent details do not match</p>";
-      return;
-    }
-
-    const grouped = {};
-    resultsData.forEach(r => {
-      grouped[r.full_name] ??= { __admission: r.admission_number };
-      grouped[r.full_name][r.subject] ??= [];
-      grouped[r.full_name][r.subject].push(r);
-    });
-
-    reportDiv.innerHTML = renderGrouped(grouped, avgMap);
-
-    const downloadVisibleBtn = document.getElementById("downloadCurrentViewBtn");
-
-    downloadVisibleBtn.style.display =
-      Object.keys(grouped).length === 1 ? "flex" : "none";
-  }
-});
 
 /* ========== MAIN LOAD ========== */
 async function loadReport() {
@@ -1583,6 +1506,99 @@ ${getAchievementLabel(subjectAvg)}
 
 
 
+
+
+
+
+
+
+
+// Initialize Filter Box for Parent Input
+filterBox.innerHTML = `
+  <div style="margin-bottom: 12px;">
+    <label><strong>Admission Number</strong></label><br/>
+    <input id="admInput" style="width: 100%; padding: 6px; margin-top: 4px; border: 1px solid #ccc; border-radius: 4px;" placeholder="Enter admission number" />
+  </div>
+  <div style="margin-bottom: 12px;">
+    <label><strong>Parent Name</strong></label><br/>
+    <input id="parentNameInput" style="width: 100%; padding: 6px; margin-top: 4px; border: 1px solid #ccc; border-radius: 4px;" placeholder="Enter parent name" />
+  </div>
+  <div style="margin-bottom: 12px;">
+    <label><strong>Parent Phone</strong></label><br/>
+    <input id="parentPhoneInput" style="width: 100%; padding: 6px; margin-top: 4px; border: 1px solid #ccc; border-radius: 4px;" placeholder="Enter parent phone" />
+  </div>
+  <button id="verifyParentBtn" style="width: 100%; padding: 10px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+    View Results
+  </button>
+`;
+
+// Parent Verification Logic
+document.addEventListener("click", async (e) => {
+  if (e.target && e.target.id === "verifyParentBtn") {
+    const adm = document.getElementById("admInput").value.trim();
+    const parentName = document.getElementById("parentNameInput").value.trim().toLowerCase();
+    const parentPhone = document.getElementById("parentPhoneInput").value.trim();
+
+    const term_id = termSelect.value;
+    const selectedCategory = categorySelect.value;
+
+    if (!adm || !parentName || !parentPhone || !term_id || !selectedCategory) {
+      alert("Please fill all fields including Term and Category");
+      return;
+    }
+
+    const termName = terms.find(t => t.id === term_id)?.name;
+
+    const { data: resultsData, error } = await supabase
+      .from("results2_report_view")
+      .select("*")
+      .eq("admission_number", adm)
+      .eq("academic_year", SYSTEM_YEAR)
+      .eq("term", termName)
+      .eq("assessment_category", selectedCategory);
+
+    if (error || !resultsData || resultsData.length === 0) {
+      reportDiv.innerHTML = "<p style='color:red'>No results found</p>";
+      return;
+    }
+
+    const first = resultsData[0];
+
+    const matchName =
+      (first.parent_name || "").trim().toLowerCase() === parentName;
+
+    const matchPhone =
+      (first.parent_phone || "").trim() === parentPhone;
+
+    if (!matchName || !matchPhone) {
+      reportDiv.innerHTML = "<p style='color:red'>❌ Parent details do not match</p>";
+      return;
+    }
+
+    const grouped = {};
+    resultsData.forEach(r => {
+      grouped[r.full_name] ??= { __admission: r.admission_number };
+      grouped[r.full_name][r.subject] ??= [];
+      grouped[r.full_name][r.subject].push(r);
+    });
+
+    reportDiv.innerHTML = renderGrouped(grouped, avgMap);
+
+    const downloadVisibleBtn = document.getElementById("downloadCurrentViewBtn");
+
+    downloadVisibleBtn.style.display =
+      Object.keys(grouped).length === 1 ? "flex" : "none";
+  }
+});
+
+
+
+
+
+
+
+
+	
   
 function renderAchievementGuide() {
   return `
