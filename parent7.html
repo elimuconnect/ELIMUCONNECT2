@@ -771,7 +771,7 @@ while (true) {
     .select("full_name,subject_name,average_score,achievement_level")
     .eq("term", termName)
 	   .eq("assessment_category", selectedCategory)
-    .eq("school_id", teacherSchoolId)
+  
     .range(avgFrom, avgFrom + avgBatchSize - 1);
 
   if (avgErr || !avgBatch || avgBatch.length === 0) break;
@@ -829,7 +829,6 @@ if (previousTerm) {
   .select("*")
   .eq("term", previousTerm)
   .eq("academic_year", SYSTEM_YEAR)
-  .eq("school_id", teacherSchoolId); // ✅ ADD THIS
 
   
 
@@ -909,7 +908,7 @@ while (true) {
     .eq("term", termName)
 	   .eq("assessment_category", selectedCategory)
     .eq("academic_year", SYSTEM_YEAR)
-    .eq("school_id", teacherSchoolId)
+   
     .range(from, from + batchSize - 1);
 
   const batch = response.data;
