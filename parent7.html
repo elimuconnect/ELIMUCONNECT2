@@ -701,32 +701,6 @@ const status = document.getElementById("status");
   let competencyCount = 0;
 
   
-/* ========== AUTH ========== */
-const { data: { user } } = await supabase.auth.getUser();
-if (!user) location.href = "index.html";
-
-
-/* ===== Get teacher's school ID ===== */
-const { data: profile } = await supabase
-  .from("profiles")
-  .select("school_id")
-  .eq("auth_id", user.id)
-  .single();
-
-const teacherSchoolId = profile?.school_id;
-
-
-
-/* ========== SCHOOL DETAILS FROM SUPABASE ========== */
-const { data: school, error: schoolError } = await supabase
-  .from("schools")
-  .select("name, po_box, postal_code, town, phone, email, logo_url")
-  .eq("id", teacherSchoolId)
-  .single();
-
-if (schoolError) {
-  console.error("School fetch error:", schoolError.message);
-}
 	
 	
 /* ========== LOAD TERMS ========== */
