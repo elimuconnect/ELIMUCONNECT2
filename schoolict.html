@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <title>Smart Elimu Connect | CBC School Digital Systems</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <style>
 :root {
   --primary: #0b3c5d;
@@ -21,8 +20,8 @@
 }
 
 body {
-  margin: 0;
-  font-family: "Segoe UI", Arial, sans-serif;
+  margin:0;
+  font-family:"Segoe UI", Arial, sans-serif;
   background: var(--light);
   color: var(--dark);
 }
@@ -39,52 +38,50 @@ body {
   top: 0;
   z-index: 1000;
 }
-
 .navbar h1 {
-  font-size: 1.4rem;
-  margin: 0;
-  color: white;
+  font-size:1.4rem;
+  margin:0;
+  color:white;
 }
 
 /* Hamburger */
 .hamburger {
-  display: flex;
-  flex-direction: column;
-  cursor: pointer;
+  display:flex;
+  flex-direction:column;
+  cursor:pointer;
 }
-
 .hamburger div {
-  width: 28px;
-  height: 3px;
-  background: white;
-  margin: 4px 0;
-  transition: 0.3s;
+  width:28px;
+  height:3px;
+  background:white;
+  margin:4px 0;
+  transition:0.3s;
 }
 
-/* Nav Menu */
+/* Nav links */
 .nav-links {
-  display: none;
+  display:none;
   flex-direction: column;
-  gap: 8px;
+  gap:8px;
   position: absolute;
   top: 60px;
   right: 24px;
   background: var(--primary);
-  padding: 10px 16px;
-  border-radius: 8px;
+  padding:10px 16px;
+  border-radius:8px;
   box-shadow: 0 4px 8px rgba(0,0,0,0.2);
   z-index: 999;
 }
 
 .nav-links a {
-  display: inline-block;
+  display:inline-block;
   padding: 8px 16px;
   border-radius: 6px;
-  text-decoration: none;
+  text-decoration:none;
   font-weight: 600;
-  color: white;
+  color:white;
   white-space: nowrap;
-  transition: 0.3s;
+  transition:0.3s;
 }
 
 .nav-links a.home { background: var(--home); }
@@ -96,10 +93,10 @@ body {
 .nav-links a.class-lists { background: var(--class-lists); }
 
 .nav-links a:hover {
-  opacity: 0.85;
+  opacity:0.85;
 }
 
-/* Hero */
+/* Hero Section */
 .hero {
   position: relative;
   background: var(--primary);
@@ -109,22 +106,23 @@ body {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  justify-content: center;
 }
 
 .hero img {
   width: 120px;
-  margin-bottom: 20px;
+  margin-bottom:20px;
 }
 
 .hero h2 {
-  font-size: 2.8rem;
-  margin-bottom: 20px;
+  font-size:2.8rem;
+  margin-bottom:20px;
 }
 
 .hero p {
-  font-size: 1.25rem;
-  max-width: 750px;
-  line-height: 1.7;
+  font-size:1.25rem;
+  max-width:750px;
+  line-height:1.7;
 }
 </style>
 
@@ -142,7 +140,9 @@ body {
 
 <!-- Nav Menu -->
 <div class="nav-links" id="navMenu">
-  <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schoolicttools" class="home">Home</a>
+  <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schoolicttools" class="home">
+    Home
+  </a>
 
   <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin" class="ict">
     ICT Tools
@@ -176,7 +176,6 @@ body {
     Class Lists
   </a>
 </div>
-
 <!-- Hero Section -->
 <section class="hero">
   <img src="https://static.wixstatic.com/media/9ba186_61b351de3531446995b426f1c49950ed~mv2.png" alt="Smart Elimu Connect Logo">
