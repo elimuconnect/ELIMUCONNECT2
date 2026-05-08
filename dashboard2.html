@@ -396,7 +396,7 @@ function paySchool(schoolId) {
 
   const pending = {
     school_id: schoolId,
-    amount: 10000
+    amount: 8000
   };
 
   localStorage.setItem("pending_payment", JSON.stringify(pending));
@@ -491,7 +491,7 @@ function paySchool(schoolId) {
     .insert({
       school_id: pending.school_id,
       marketer_id,
-      amount: pending.amount * 0.2,
+      amount: pending.amount * 0.4,
       term,
     year
     });
