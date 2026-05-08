@@ -701,7 +701,12 @@ const status = document.getElementById("status");
   let competencyCount = 0;
 
   
-	
+	const { data: school } = await supabase
+  .from("schools")
+  .select("name, po_box, postal_code, town, phone, email, logo_url")
+  .limit(1)
+  .single();
+
 	
 /* ========== LOAD TERMS ========== */
 const { data: terms } = await supabase
