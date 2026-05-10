@@ -120,7 +120,9 @@ user-select:none;
     <button id="updateBtn">Update Password</button>
   </div>
 
-
+<p style="margin-top:10px;">
+  <a href="#" onclick="resetPassword()">Forgot Password?</a>
+</p>
 
 <script>
 function togglePassword(id,el){
@@ -192,6 +194,26 @@ async function login() {
 }
 
 
+async function resetPassword() {
+  const email = document.getElementById("email").value.trim();
+
+  if (!email) {
+    alert("Enter your email first");
+    return;
+  }
+
+  const { error } = await client.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + "/reset-password.html"
+  });
+
+  if (error) {
+    alert(error.message);
+  } else {
+    alert("Password reset email sent");
+  }
+}
+
+  
 
 document.getElementById("updateBtn").onclick = async () => {
   const newPass = document.getElementById("newPassword").value;
