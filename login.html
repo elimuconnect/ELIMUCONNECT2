@@ -41,48 +41,16 @@
 </head>
 
 <body>
+
 <div class="box">
   <h2>Login</h2>
 
-  <div class="input-group">
-    <input id="email" type="email" placeholder="Email">
-  </div>
+  <input id="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Password">
 
-  <div class="input-group">
-    <input id="password" type="password" placeholder="Password">
-    <span class="toggle" onclick="togglePassword('password', this)">Show</span>
-  </div>
-
-  <button id="loginBtn">Login</button>
-
-  <p class="footer-text">Secure login powered by Supabase</p>
-
-  <div class="input-group">
-    <input id="newPassword" type="password" placeholder="New Password">
-    <span class="toggle" onclick="togglePassword('newPassword', this)">Show</span>
-  </div>
-
-  <button id="updateBtn">Update Password</button>
+  <button onclick="login()">Login</button>
 </div>
 
-
-<script>
-function togglePassword(id,el){
-
-const input=document.getElementById(id);
-
-if(input.type==="password"){
-input.type="text";
-el.innerText="Hide";
-}else{
-input.type="password";
-el.innerText="Show";
-}
-
-}
-
-
-  
 <script>
 const SUPABASE_URL = "https://hhtplinfcdwgahlhurhx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_cOXipkG4wSKIkIHwkP04JA_KunvG7T5";
@@ -134,22 +102,6 @@ async function login() {
     window.location.href = "dashboard.html";
   }
 }
-
-
-  
-    document.getElementById("updateBtn").onclick = async () => {
-  const newPass = document.getElementById("newPassword").value;
-
-  const { error } = await supabase.auth.updateUser({
-    password: newPass
-  });
-
-  if (error) {
-    alert(error.message);
-  } else {
-    alert("Password updated successfully");
-  }
-};
 </script>
 </body>
 </html>
