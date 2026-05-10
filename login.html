@@ -41,25 +41,29 @@
 </head>
 
 <body>
-
 <div class="box">
   <h2>Login</h2>
 
-  <input id="email" placeholder="Email">
- <span class="toggle" onclick="togglePassword('password',this)">Show</span>
-</div>
-    <button id="loginBtn">Login</button>
-
-    <p class="footer-text">Secure login powered by Supabase</p>
-
-    <div class="input-group">
-<input id="newPassword" type="password" placeholder="New Password">
-<span class="toggle" onclick="togglePassword('newPassword',this)">Show</span>
-</div>
-    <button id="updateBtn">Update Password</button>
+  <div class="input-group">
+    <input id="email" type="email" placeholder="Email">
   </div>
 
+  <div class="input-group">
+    <input id="password" type="password" placeholder="Password">
+    <span class="toggle" onclick="togglePassword('password', this)">Show</span>
+  </div>
 
+  <button id="loginBtn">Login</button>
+
+  <p class="footer-text">Secure login powered by Supabase</p>
+
+  <div class="input-group">
+    <input id="newPassword" type="password" placeholder="New Password">
+    <span class="toggle" onclick="togglePassword('newPassword', this)">Show</span>
+  </div>
+
+  <button id="updateBtn">Update Password</button>
+</div>
 
 
 <script>
