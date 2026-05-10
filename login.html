@@ -193,11 +193,15 @@ async function login() {
 
 
 
-
-    document.getElementById("updateBtn").onclick = async () => {
+document.getElementById("updateBtn").onclick = async () => {
   const newPass = document.getElementById("newPassword").value;
 
-  const { error } = await supabase.auth.updateUser({
+  if (!newPass) {
+    alert("Enter new password");
+    return;
+  }
+
+  const { error } = await client.auth.updateUser({
     password: newPass
   });
 
