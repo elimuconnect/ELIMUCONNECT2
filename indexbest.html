@@ -129,9 +129,8 @@ user-select:none;
     <button id="updateBtn">Update Password</button>
   </div>
 
-
 <p style="margin-top:10px;">
-  <a href="#" onclick="resetPassword()">Forgot Password?</a>
+  <a href="#" id="forgotLink">Forgot Password?</a>
 </p>
 
 <script>
@@ -232,7 +231,6 @@ if (profile.role === "teacher") {
 
 
 
-
 async function resetPassword() {
   const email = document.getElementById("email").value.trim();
 
@@ -241,7 +239,7 @@ async function resetPassword() {
     return;
   }
 
-  const { error } = await client.auth.resetPasswordForEmail(email, {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: window.location.origin + "/reset-password.html"
   });
 
@@ -252,7 +250,10 @@ async function resetPassword() {
   }
 }
 
-
+document.getElementById("forgotLink").onclick = async (e) => {
+  e.preventDefault();
+  resetPassword();
+};
 
     
     document.getElementById("updateBtn").onclick = async () => {
