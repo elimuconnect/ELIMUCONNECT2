@@ -15,31 +15,90 @@
       height: 100vh;
     }
 
-    .box {
-      background: white;
+     .login-container {
+    background: white;
+    padding: 40px;
+    border-radius: 18px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+    width: 92%;
+    max-width: 460px; /* bigger desktop */
+    min-width: 280px;
+
+    text-align: center;
+  }
+
+  h2 {
+    margin-bottom: 26px;
+    font-size: 28px;
+  }
+
+  input {
+    width: 100%;
+    padding: 18px;
+    margin: 12px 0;
+
+    border: 1px solid #ccc;
+    border-radius: 10px;
+
+    font-size: 18px;
+  }
+
+  button {
+    width: 100%;
+    padding: 18px;
+    background: #0066ff;
+    border: none;
+    border-radius: 10px;
+
+    color: white;
+    font-size: 18px;
+
+    margin-top: 14px;
+  }
+
+  .footer-text {
+    margin-top: 18px;
+    font-size: 14px;
+    color: #666;
+  }
+
+  /* Mobile extra boost */
+  @media (max-width: 600px) {
+    .login-container {
+      width: 96%;
+      padding: 36px;
+    }
+
+    h2 {
+      font-size: 30px;
+    }
+
+    input, button {
+      font-size: 19px;
       padding: 20px;
-      border-radius: 10px;
-      width: 300px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
+  }
 
-    input {
-      width: 100%;
-      padding: 10px;
-      margin: 8px 0;
-    }
 
-    button {
-      width: 100%;
-      padding: 10px;
-      background: green;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-  </style>
-</head>
 
+  .input-group{
+position:relative;
+width:100%;
+margin:12px 0;
+}
+
+.toggle{
+position:absolute;
+right:15px;
+top:50%;
+transform:translateY(-50%);
+cursor:pointer;
+font-size:14px;
+color:#0066ff;
+user-select:none;
+}
+</style>
 <body>
 
   <div class="login-container">
@@ -61,6 +120,22 @@
     <button id="updateBtn">Update Password</button>
   </div>
 
+
+
+<script>
+function togglePassword(id,el){
+
+const input=document.getElementById(id);
+
+if(input.type==="password"){
+input.type="text";
+el.innerText="Hide";
+}else{
+input.type="password";
+el.innerText="Show";
+}
+
+}
 
 
 <script>
