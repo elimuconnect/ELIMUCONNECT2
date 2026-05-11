@@ -233,7 +233,7 @@ async function resetPassword() {
   if (!email) return alert("Enter your email first");
 
   const { error } = await client.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.origin + "/reset-password.html"
+    redirectTo: "https://elimuconnect.github.io/ELIMUCONNECT2/reset-password2.html"
   });
 
   if (error) alert(error.message);
