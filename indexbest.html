@@ -3,197 +3,158 @@
 <head>
   <title>Smart Elimu Connect CBE Assessment & Reporting System</title>
 
-<style>
-  * {
-    box-sizing: border-box;
-  }
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-  html, body {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-  }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+    }
 
-  body {
-    font-family: Arial, sans-serif;
-    background: #f4f6fb;
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6fb;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
 
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-
-  .login-container {
-    background: white;
-    padding: 40px;
-    border-radius: 18px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-
-    width: 92%;
-    max-width: 460px; /* bigger desktop */
-    min-width: 280px;
-
-    text-align: center;
-  }
-
-  h2 {
-    margin-bottom: 26px;
-    font-size: 28px;
-  }
-
-  input {
-    width: 100%;
-    padding: 18px;
-    margin: 12px 0;
-
-    border: 1px solid #ccc;
-    border-radius: 10px;
-
-    font-size: 18px;
-  }
-
-  button {
-    width: 100%;
-    padding: 18px;
-    background: #0066ff;
-    border: none;
-    border-radius: 10px;
-
-    color: white;
-    font-size: 18px;
-
-    margin-top: 14px;
-  }
-
-  .footer-text {
-    margin-top: 18px;
-    font-size: 14px;
-    color: #666;
-  }
-
-  /* Mobile extra boost */
-  @media (max-width: 600px) {
     .login-container {
-      width: 96%;
-      padding: 36px;
+      background: white;
+      padding: 40px;
+      border-radius: 18px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      width: 92%;
+      max-width: 460px;
+      text-align: center;
     }
 
     h2 {
-      font-size: 30px;
+      margin-bottom: 26px;
+      font-size: 28px;
     }
 
-    input, button {
-      font-size: 19px;
-      padding: 20px;
+    input {
+      width: 100%;
+      padding: 18px;
+      margin: 12px 0;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      font-size: 18px;
     }
-  }
 
+    button {
+      width: 100%;
+      padding: 18px;
+      background: #0066ff;
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-size: 18px;
+      margin-top: 14px;
+      cursor: pointer;
+    }
 
+    .input-group {
+      position: relative;
+      width: 100%;
+      margin: 12px 0;
+    }
 
-  .input-group{
-position:relative;
-width:100%;
-margin:12px 0;
-}
+    .toggle {
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      font-size: 14px;
+      color: #0066ff;
+    }
 
-.toggle{
-position:absolute;
-right:15px;
-top:50%;
-transform:translateY(-50%);
-cursor:pointer;
-font-size:14px;
-color:#0066ff;
-user-select:none;
-}
+    .forgot-wrapper {
+      width: 100%;
+      text-align: right;
+      margin-top: 10px;
+    }
 
+    .forgot-link {
+      color: #0066ff;
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 600;
+    }
 
+    .forgot-link:hover {
+      color: #0047b3;
+      text-decoration: underline;
+    }
 
-```css id="m0zw8y"
-.forgot-wrapper{
-  width:100%;
-  text-align:right;
-  margin-top:14px;
-}
+    .update-section {
+      display: none;
+      margin-top: 20px;
+    }
+  </style>
+</head>
 
-.forgot-link{
-  color:#0066ff;
-  text-decoration:none;
-  font-size:15px;
-  font-weight:600;
-
-  transition:0.3s;
-}
-
-.forgot-link:hover{
-  color:#0047b3;
-  text-decoration:underline;
-}
-```
-
-  
-</style>
 <body>
 
-  <div class="login-container">
-    <h2>Login</h2>
+<div class="login-container">
+  <h2>Login</h2>
 
- <input id="email" type="email" placeholder="Email">
+  <input id="email" type="email" placeholder="Email">
 
-<div class="input-group">
-  <input id="password" type="password" placeholder="Password">
-  <span class="toggle" onclick="togglePassword('password',this)">Show</span>
+  <div class="input-group">
+    <input id="password" type="password" placeholder="Password">
+    <span class="toggle" onclick="togglePassword('password',this)">Show</span>
+  </div>
+
+  <div class="forgot-wrapper">
+    <a href="#" id="forgotLink" class="forgot-link">Forgot Password?</a>
+  </div>
+
+  <button id="loginBtn">Login</button>
+
+  <div class="update-section">
+    <h3>Change Password</h3>
+
+    <div class="input-group">
+      <input id="newPassword" type="password" placeholder="New Password">
+      <span class="toggle" onclick="togglePassword('newPassword',this)">Show</span>
+    </div>
+
+    <button id="updateBtn">Update Password</button>
+  </div>
 </div>
 
-
-<div class="forgot-wrapper">
-  <a href="#" id="forgotLink" class="forgot-link">
-    Forgot Password?
-  </a>
-</div>
-
-
-<button id="loginBtn">Login</button>
-
-
-
-<div class="update-section" style="display:none;">
-
-<h3>Change Password</h3>
-
-<div class="input-group">
-  <input id="newPassword" type="password" placeholder="New Password">
-  <span class="toggle" onclick="togglePassword('newPassword',this)">Show</span>
-</div>
-
-<button id="updateBtn">Update Password</button>
-
-</div>
 <script>
-function togglePassword(id,el){
+function togglePassword(id, el) {
+  const input = document.getElementById(id);
 
-const input=document.getElementById(id);
-
-if(input.type==="password"){
-input.type="text";
-el.innerText="Hide";
-}else{
-input.type="password";
-el.innerText="Show";
-}
-
+  if (input.type === "password") {
+    input.type = "text";
+    el.innerText = "Hide";
+  } else {
+    input.type = "password";
+    el.innerText = "Show";
+  }
 }
 </script>
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-    const supabase = createClient(
-      "https://zcmzuetusvpmvubbjlmx.supabase.co",
-      "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
-    );
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-  
+const supabase = createClient(
+  "https://zcmzuetusvpmvubbjlmx.supabase.co",
+  "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
+);
+
+//
+// LOGIN
+//
 document.getElementById("loginBtn").onclick = async () => {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
@@ -208,7 +169,7 @@ document.getElementById("loginBtn").onclick = async () => {
     return;
   }
 
-  // ✅ confirm session
+  // confirm session
   const { data: sessionData } = await supabase.auth.getSession();
 
   if (!sessionData.session) {
@@ -216,7 +177,7 @@ document.getElementById("loginBtn").onclick = async () => {
     return;
   }
 
-  // ✅ show update section AFTER login success
+  // show update password section
   document.querySelector(".update-section").style.display = "block";
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -228,33 +189,23 @@ document.getElementById("loginBtn").onclick = async () => {
     .single();
 
   if (profileError || !profile) {
-    alert("Profile not found. Contact admin.");
+    alert("Profile not found");
     return;
   }
 
   if (profile.role === "superadmin") {
     window.location.href = "superadmin.html";
-    return;
-  }
-
-  if (profile.role === "teacher") {
-    const { data: school, error: schoolError } = await supabase
+  } else if (profile.role === "teacher") {
+    const { data: school } = await supabase
       .from("schools")
       .select("package_type")
       .eq("id", profile.school_id)
       .single();
 
-    if (schoolError || !school) {
-      alert("School not found.");
-      return;
-    }
-
     if (school.package_type === "A") {
       window.location.href = "teacher2.html";
-    } else if (school.package_type === "B") {
-      window.location.href = "teacher3.html";
     } else {
-      alert("Invalid school package");
+      window.location.href = "teacher3.html";
     }
 
   } else if (profile.role === "parent") {
@@ -262,26 +213,22 @@ document.getElementById("loginBtn").onclick = async () => {
 
   } else if (profile.role === "admin") {
     window.location.href = "admin.html";
-  
 
-} else {
-  alert("Unknown role");
-}
-      
-    };
+  } else {
+    alert("Unknown role");
+  }
+};
 
-const { data: sessionData } = await supabase.auth.getSession();
+//
+// FORGOT PASSWORD
+//
+document.getElementById("forgotLink").onclick = async (e) => {
+  e.preventDefault();
 
-if (sessionData.session) {
-  document.querySelector(".update-section").style.display = "block";
-}
-
-
-async function resetPassword() {
   const email = document.getElementById("email").value.trim();
 
   if (!email) {
-    alert("Enter your email first");
+    alert("Enter email first");
     return;
   }
 
@@ -289,19 +236,14 @@ async function resetPassword() {
     redirectTo: "https://elimuconnect.github.io/ELIMUCONNECT2/reset-password.html"
   });
 
-  if (error) {
-    alert(error.message);
-  } else {
-    alert("Password reset email sent");
-  }
-}
-
-document.getElementById("forgotLink").onclick = async (e) => {
-  e.preventDefault();
-  resetPassword();
+  if (error) alert(error.message);
+  else alert("Reset email sent");
 };
 
-    document.getElementById("updateBtn").onclick = async () => {
+//
+// UPDATE PASSWORD
+//
+document.getElementById("updateBtn").onclick = async () => {
 
   const { data: { session } } = await supabase.auth.getSession();
 
@@ -327,8 +269,7 @@ document.getElementById("forgotLink").onclick = async (e) => {
     alert("Password updated successfully");
   }
 };
-    
-  </script>
+</script>
 
 </body>
 </html>
