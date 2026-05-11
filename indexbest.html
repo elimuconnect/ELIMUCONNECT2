@@ -139,32 +139,33 @@ user-select:none;
   <div class="login-container">
     <h2>Login</h2>
 
-    <input id="email" type="email" placeholder="Email">
-  <div class="input-group">
-<input id="password" type="password" placeholder="Password">
-<span class="toggle" onclick="togglePassword('password',this)">Show</span>
+ <input id="email" type="email" placeholder="Email">
+
+<div class="input-group">
+  <input id="password" type="password" placeholder="Password">
+  <span class="toggle" onclick="togglePassword('password',this)">Show</span>
 </div>
-    <button id="loginBtn">Login</button>
 
-    <p class="footer-text">Secure login powered by Supabase</p>
 
-    <div class="input-group">
-<input id="newPassword" type="password" placeholder="New Password">
-<span class="toggle" onclick="togglePassword('newPassword',this)">Show</span>
-</div>
-    <button id="updateBtn">Update Password</button>
-  </div>
-
-```html id="b3rm6n"
 <div class="forgot-wrapper">
   <a href="#" id="forgotLink" class="forgot-link">
     Forgot Password?
   </a>
 </div>
-```
+
+
+<button id="loginBtn">Login</button>
 
 
 
+<h3>Change Password</h3>
+
+<div class="input-group">
+  <input id="newPassword" type="password" placeholder="New Password">
+  <span class="toggle" onclick="togglePassword('newPassword',this)">Show</span>
+</div>
+
+<button id="updateBtn">Update Password</button>
 <script>
 function togglePassword(id,el){
 
@@ -201,7 +202,7 @@ el.innerText="Show";
         alert(error.message);
         return;
       }
-
+document.querySelector(".update-section").style.display = "block";
 
 
 
@@ -297,12 +298,23 @@ document.getElementById("forgotLink").onclick = async (e) => {
 
   if (error) {
     alert(error.message);
+    
   } else {
     alert("Password updated successfully");
   }
 };
 
 
+
+
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+if (user) {
+  document.querySelector(".update-section").style.display = "block";
+} else {
+  document.querySelector(".update-section").style.display = "none";
+}
     
   </script>
 
