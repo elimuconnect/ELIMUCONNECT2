@@ -107,6 +107,32 @@ font-size:14px;
 color:#0066ff;
 user-select:none;
 }
+
+
+
+```css id="m0zw8y"
+.forgot-wrapper{
+  width:100%;
+  text-align:right;
+  margin-top:14px;
+}
+
+.forgot-link{
+  color:#0066ff;
+  text-decoration:none;
+  font-size:15px;
+  font-weight:600;
+
+  transition:0.3s;
+}
+
+.forgot-link:hover{
+  color:#0047b3;
+  text-decoration:underline;
+}
+```
+
+  
 </style>
 <body>
 
@@ -129,9 +155,15 @@ user-select:none;
     <button id="updateBtn">Update Password</button>
   </div>
 
-<p style="margin-top:10px;">
-  <a href="#" id="forgotLink">Forgot Password?</a>
-</p>
+```html id="b3rm6n"
+<div class="forgot-wrapper">
+  <a href="#" id="forgotLink" class="forgot-link">
+    Forgot Password?
+  </a>
+</div>
+```
+
+
 
 <script>
 function togglePassword(id,el){
