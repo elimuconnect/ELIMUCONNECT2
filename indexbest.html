@@ -194,7 +194,6 @@ el.innerText="Show";
     );
 
   
-
 document.getElementById("loginBtn").onclick = async () => {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
@@ -209,66 +208,61 @@ document.getElementById("loginBtn").onclick = async () => {
     return;
   }
 
-  // 🔥 FORCE SESSION REFRESH
+  // ✅ confirm session
   const { data: sessionData } = await supabase.auth.getSession();
 
   if (!sessionData.session) {
-    alert("Login failed: no session created");
+    alert("Login failed: no session");
     return;
   }
 
+  // ✅ show update section AFTER login success
   document.querySelector(".update-section").style.display = "block";
 
   const { data: { user } } = await supabase.auth.getUser();
 
-      
-      const { data: { user } } = await supabase.auth.getUser();
-const { data: profile, error: profileError } = await supabase
-  .from("profiles")
-  .select("role, school_id")
-  .eq("auth_id", user.id)
-  .single();
-    
-if (profileError || !profile) {
-  alert("Profile not found. Contact admin.");
-  return;
-}
-
-
-if (profile.role === "superadmin") {
-  window.location.href = "superadmin.html";
-  return;
-}
-
-      
-if (profile.role === "teacher") {
-
-  // 🔹 Get school package type
-  const { data: school, error: schoolError } = await supabase
-    .from("schools")
-    .select("package_type")
-    .eq("id", profile.school_id)
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role, school_id")
+    .eq("auth_id", user.id)
     .single();
 
-  if (schoolError || !school) {
-    alert("School not found.");
+  if (profileError || !profile) {
+    alert("Profile not found. Contact admin.");
     return;
   }
 
-  // 🔹 Redirect based on package
-  if (school.package_type === "A") {
-    window.location.href = "teacher2.html";   // 8 levels
-  } else if (school.package_type === "B") {
-    window.location.href = "teacher3.html";  // 4 levels
-  } else {
-    alert("Invalid school package");
+  if (profile.role === "superadmin") {
+    window.location.href = "superadmin.html";
+    return;
   }
 
-} else if (profile.role === "parent") {
-  window.location.href = "parent.html";
+  if (profile.role === "teacher") {
+    const { data: school, error: schoolError } = await supabase
+      .from("schools")
+      .select("package_type")
+      .eq("id", profile.school_id)
+      .single();
 
-} else if (profile.role === "admin") {
-  window.location.href = "admin.html";
+    if (schoolError || !school) {
+      alert("School not found.");
+      return;
+    }
+
+    if (school.package_type === "A") {
+      window.location.href = "teacher2.html";
+    } else if (school.package_type === "B") {
+      window.location.href = "teacher3.html";
+    } else {
+      alert("Invalid school package");
+    }
+
+  } else if (profile.role === "parent") {
+    window.location.href = "parent.html";
+
+  } else if (profile.role === "admin") {
+    window.location.href = "admin.html";
+  
 
 } else {
   alert("Unknown role");
@@ -276,7 +270,11 @@ if (profile.role === "teacher") {
       
     };
 
+const { data: sessionData } = await supabase.auth.getSession();
 
+if (sessionData.session) {
+  document.querySelector(".update-section").style.display = "block";
+}
 
 
 async function resetPassword() {
@@ -303,22 +301,19 @@ document.getElementById("forgotLink").onclick = async (e) => {
   resetPassword();
 };
 
-    
-    
-    
     document.getElementById("updateBtn").onclick = async () => {
 
   const { data: { session } } = await supabase.auth.getSession();
 
   if (!session) {
-    alert("No active session. Please login again.");
+    alert("You are not logged in");
     return;
   }
 
-  const newPass = document.getElementById("newPassword").value;
+  const newPass = document.getElementById("newPassword").value.trim();
 
   if (!newPass) {
-    alert("Enter a new password");
+    alert("Enter new password");
     return;
   }
 
