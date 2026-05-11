@@ -292,8 +292,15 @@ document.getElementById("forgotLink").onclick = async (e) => {
   resetPassword();
 };
 
-    
     document.getElementById("updateBtn").onclick = async () => {
+
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    alert("You are not logged in");
+    return;
+  }
+
   const newPass = document.getElementById("newPassword").value;
 
   const { error } = await supabase.auth.updateUser({
@@ -302,25 +309,10 @@ document.getElementById("forgotLink").onclick = async (e) => {
 
   if (error) {
     alert(error.message);
-    
   } else {
     alert("Password updated successfully");
   }
 };
-
-
-async function checkUser() {
-  const { data: { user } } = await supabase.auth.getUser();
-
-  const section = document.querySelector(".update-section");
-
-  if (!section) return;
-
-  section.style.display = user ? "block" : "none";
-}
-
-checkUser();
-    
   </script>
 
 </body>
