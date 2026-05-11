@@ -306,15 +306,18 @@ document.getElementById("forgotLink").onclick = async (e) => {
 
 
 
+<div class="update-section" style="display:none;">
 
+<h3>Change Password</h3>
 
-    const { data: { user } } = await supabase.auth.getUser();
+<div class="input-group">
+  <input id="newPassword" type="password" placeholder="New Password">
+  <span class="toggle" onclick="togglePassword('newPassword',this)">Show</span>
+</div>
 
-if (user) {
-  document.querySelector(".update-section").style.display = "block";
-} else {
-  document.querySelector(".update-section").style.display = "none";
-}
+<button id="updateBtn">Update Password</button>
+
+</div>
     
   </script>
 
