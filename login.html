@@ -98,6 +98,34 @@ font-size:14px;
 color:#0066ff;
 user-select:none;
 }
+
+
+
+<style>
+.update-section {
+  display: none;
+  margin-top: 20px;
+  padding: 20px;
+  border-radius: 12px;
+  background: #f9fbff;
+  border: 1px solid #e0e8ff;
+}
+
+.update-section h3 {
+  margin-bottom: 12px;
+  font-size: 18px;
+  color: #333;
+}
+
+.update-section button {
+  background: #28a745;
+}
+
+.update-section button:hover {
+  background: #218838;
+}
+</style>
+    
 </style>
 <body>
 
@@ -125,23 +153,6 @@ user-select:none;
 </p>
 
 <script>
-function togglePassword(id,el){
-
-const input=document.getElementById(id);
-
-if(input.type==="password"){
-input.type="text";
-el.innerText="Hide";
-}else{
-input.type="password";
-el.innerText="Show";
-}
-
-}
-</script>
-
-
-<script>
 const SUPABASE_URL = "https://hhtplinfcdwgahlhurhx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_cOXipkG4wSKIkIHwkP04JA_KunvG7T5";
 
@@ -151,6 +162,9 @@ const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   }
 });
 
+//
+// LOGIN (UNCHANGED)
+//
 async function login() {
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
@@ -160,7 +174,6 @@ async function login() {
     return;
   }
 
-  // 1. Login
   const { data, error } = await client.auth.signInWithPassword({
     email,
     password
@@ -173,7 +186,6 @@ async function login() {
 
   const user = data.user;
 
-  // 2. Find role in marketers table
   const { data: profile, error: profileError } = await client
     .from("marketers")
     .select("*")
@@ -185,7 +197,7 @@ async function login() {
     return;
   }
 
-  // 3. Redirect based on role
+  // 🚨 DO NOT CHANGE YOUR REDIRECT LOGIC
   if (profile.role === "admin") {
     window.location.href = "adminmarketer.html";
   } else {
@@ -193,7 +205,9 @@ async function login() {
   }
 }
 
-
+//
+// RESET PASSWORD (UNCHANGED)
+//
 async function resetPassword() {
   const email = document.getElementById("email").value.trim();
 
@@ -213,10 +227,19 @@ async function resetPassword() {
   }
 }
 
-  
-
+//
+// UPDATE PASSWORD (FIXED)
+//
 document.getElementById("updateBtn").onclick = async () => {
-  const newPass = document.getElementById("newPassword").value;
+
+  const { data: { session } } = await client.auth.getSession();
+
+  if (!session) {
+    alert("You are not logged in");
+    return;
+  }
+
+  const newPass = document.getElementById("newPassword").value.trim();
 
   if (!newPass) {
     alert("Enter new password");
@@ -233,6 +256,22 @@ document.getElementById("updateBtn").onclick = async () => {
     alert("Password updated successfully");
   }
 };
+
+//
+// 🔥 SESSION CHECK ON PAGE LOAD (IMPORTANT)
+//
+async function checkAuthOnLoad() {
+  const { data: { session } } = await client.auth.getSession();
+
+  const section = document.querySelector(".update-section");
+
+  if (!section) return;
+
+  section.style.display = session ? "block" : "none";
+}
+
+checkAuthOnLoad();
+
 
 </script>
 </body>
