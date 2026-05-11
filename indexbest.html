@@ -158,6 +158,8 @@ user-select:none;
 
 
 
+<div class="update-section" style="display:none;">
+
 <h3>Change Password</h3>
 
 <div class="input-group">
@@ -166,6 +168,8 @@ user-select:none;
 </div>
 
 <button id="updateBtn">Update Password</button>
+
+</div>
 <script>
 function togglePassword(id,el){
 
@@ -305,19 +309,17 @@ document.getElementById("forgotLink").onclick = async (e) => {
 };
 
 
+async function checkUser() {
+  const { data: { user } } = await supabase.auth.getUser();
 
-<div class="update-section" style="display:none;">
+  const section = document.querySelector(".update-section");
 
-<h3>Change Password</h3>
+  if (!section) return;
 
-<div class="input-group">
-  <input id="newPassword" type="password" placeholder="New Password">
-  <span class="toggle" onclick="togglePassword('newPassword',this)">Show</span>
-</div>
+  section.style.display = user ? "block" : "none";
+}
 
-<button id="updateBtn">Update Password</button>
-
-</div>
+checkUser();
     
   </script>
 
