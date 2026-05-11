@@ -269,6 +269,25 @@ document.getElementById("updateBtn").onclick = async () => {
     alert("Password updated successfully");
   }
 };
+
+
+
+
+
+
+async function checkAuthOnLoad() {
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (session) {
+    document.querySelector(".update-section").style.display = "block";
+  } else {
+    document.querySelector(".update-section").style.display = "none";
+  }
+}
+
+checkAuthOnLoad();
+
+  
 </script>
 
 </body>
