@@ -193,22 +193,33 @@ el.innerText="Show";
       "sb_publishable_-BGJLAySaH7bQ5lBIZF9zg_eohK-xEn"
     );
 
-    document.getElementById("loginBtn").onclick = async () => {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
+  
 
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
+document.getElementById("loginBtn").onclick = async () => {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
 
-      if (error) {
-        alert(error.message);
-        return;
-      }
-document.querySelector(".update-section").style.display = "block";
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  });
 
+  if (error) {
+    alert(error.message);
+    return;
+  }
 
+  // 🔥 FORCE SESSION REFRESH
+  const { data: sessionData } = await supabase.auth.getSession();
+
+  if (!sessionData.session) {
+    alert("Login failed: no session created");
+    return;
+  }
+
+  document.querySelector(".update-section").style.display = "block";
+
+  const { data: { user } } = await supabase.auth.getUser();
 
       
       const { data: { user } } = await supabase.auth.getUser();
@@ -292,16 +303,24 @@ document.getElementById("forgotLink").onclick = async (e) => {
   resetPassword();
 };
 
+    
+    
+    
     document.getElementById("updateBtn").onclick = async () => {
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
 
-  if (!user) {
-    alert("You are not logged in");
+  if (!session) {
+    alert("No active session. Please login again.");
     return;
   }
 
   const newPass = document.getElementById("newPassword").value;
+
+  if (!newPass) {
+    alert("Enter a new password");
+    return;
+  }
 
   const { error } = await supabase.auth.updateUser({
     password: newPass
@@ -313,6 +332,7 @@ document.getElementById("forgotLink").onclick = async (e) => {
     alert("Password updated successfully");
   }
 };
+    
   </script>
 
 </body>
