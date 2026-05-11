@@ -240,7 +240,7 @@ async function resetPassword() {
   }
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.origin + "/reset-password.html"
+    redirectTo: "https://elimuconnect.github.io/ELIMUCONNECT2/reset-password.html"
   });
 
   if (error) {
