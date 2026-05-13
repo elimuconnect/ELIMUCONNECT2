@@ -184,6 +184,49 @@ color:#3730a3;
 </div>
 
 
+
+
+<div class="card">
+  <h3>📤 Upload Verification Documents</h3>
+
+  <input id="docTitle" placeholder="Document Title (Optional)">
+  
+  <select id="docType" style="
+    width:100%;
+    padding:10px;
+    border-radius:8px;
+    border:1px solid #ddd;
+    margin-bottom:10px;
+  ">
+    <option value="National ID">National ID *</option>
+    <option value="KCSE Certificate">KCSE Certificate *</option>
+    <option value="KCPE Certificate">KCPE Certificate</option>
+    <option value="Leaving Certificate">Leaving Certificate *</option>
+    <option value="Diploma Certificate">Diploma Certificate (Optional)</option>
+    <option value="Degree Certificate">Degree Certificate (Optional)</option>
+    <option value="CV">CV</option>
+    <option value="Other">Other</option>
+  </select>
+
+  <input 
+    type="file" 
+    id="docFile"
+    accept="image/*,.pdf,.doc,.docx"
+  >
+
+  <small style="color:#64748b; display:block; margin-bottom:10px;">
+    * Required documents: National ID, KCSE Certificate, Leaving Certificate
+  </small>
+
+  <button onclick="uploadDocument()">
+    Upload Document
+  </button>
+
+  <p id="docStatus"></p>
+</div>
+
+
+  
 <h3>📚 Training Materials</h3>
 <div id="materials"></div>
 
@@ -673,6 +716,90 @@ async function downloadFile(fileUrl, filename) {
   }
 }
 
+
+async function uploadDocument() {
+
+  if (!marketer) return;
+
+  const title = document.getElementById("docTitle").value.trim();
+  const type = document.getElementById("docType").value;
+  const file = document.getElementById("docFile").files[0];
+  const statusEl = document.getElementById("docStatus");
+
+  if (!file) {
+    alert("Select file first");
+    return;
+  }
+
+  // REQUIRED DOCUMENTS NOTICE
+  const requiredDocs = [
+    "National ID",
+    "KCSE Certificate",
+    "Leaving Certificate"
+  ];
+
+  statusEl.innerHTML = "Uploading...";
+  statusEl.style.color = "#2563eb";
+
+  try {
+
+    const safeName = file.name.replace(/\s/g, "_");
+
+    const filePath =
+      `marketer-documents/${marketer.id}_${Date.now()}_${safeName}`;
+
+    // UPLOAD TO SAME BUCKET
+    const { error: uploadError } = await client.storage
+      .from("training-files")
+      .upload(filePath, file, {
+        contentType: file.type,
+        upsert: false
+      });
+
+    if (uploadError) throw uploadError;
+
+    // GET PUBLIC URL
+    const { data: urlData } = client.storage
+      .from("training-files")
+      .getPublicUrl(filePath);
+
+    const file_url = urlData.publicUrl;
+
+    // SAVE TO DATABASE
+    const { error: dbError } = await client
+      .from("marketer_documents")
+      .insert({
+        marketer_id: marketer.id,
+        title: title || type,
+        document_type: type,
+        file_url,
+        file_type: file.type,
+        is_required: requiredDocs.includes(type)
+      });
+
+    if (dbError) throw dbError;
+
+    statusEl.innerHTML = `
+      ✅ ${type} uploaded successfully
+      ${requiredDocs.includes(type)
+        ? "(Required Document)"
+        : "(Optional Document)"}
+    `;
+
+    statusEl.style.color = "#16a34a";
+
+    // RESET
+    document.getElementById("docTitle").value = "";
+    document.getElementById("docFile").value = "";
+
+  } catch (err) {
+
+    console.log(err);
+
+    statusEl.innerHTML = "❌ Upload failed";
+    statusEl.style.color = "#dc2626";
+  }
+}
   
   
 window.onload = async function () {
