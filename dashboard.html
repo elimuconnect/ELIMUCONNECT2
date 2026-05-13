@@ -225,7 +225,10 @@ color:#3730a3;
   <p id="docStatus"></p>
 </div>
 
+<h3>📂 My Uploaded Documents</h3>
+<div id="myDocuments"></div>
 
+  
   
 <h3>📚 Training Materials</h3>
 <div id="materials"></div>
@@ -305,6 +308,7 @@ async function init() {
   loadSchools();
   loadEarnings();
    loadMaterials();
+  loadMyDocuments();
 }
 
 const ref = new URLSearchParams(location.search).get("reference");
@@ -717,6 +721,8 @@ async function downloadFile(fileUrl, filename) {
 }
 
 
+
+
 async function uploadDocument() {
 
   if (!marketer) return;
@@ -731,7 +737,7 @@ async function uploadDocument() {
     return;
   }
 
-  // REQUIRED DOCUMENTS NOTICE
+  // REQUIRED DOCUMENTS
   const requiredDocs = [
     "National ID",
     "KCSE Certificate",
@@ -748,7 +754,7 @@ async function uploadDocument() {
     const filePath =
       `marketer-documents/${marketer.id}_${Date.now()}_${safeName}`;
 
-    // UPLOAD TO SAME BUCKET
+    // UPLOAD FILE
     const { error: uploadError } = await client.storage
       .from("training-files")
       .upload(filePath, file, {
@@ -758,14 +764,14 @@ async function uploadDocument() {
 
     if (uploadError) throw uploadError;
 
-    // GET PUBLIC URL
+    // PUBLIC URL
     const { data: urlData } = client.storage
       .from("training-files")
       .getPublicUrl(filePath);
 
     const file_url = urlData.publicUrl;
 
-    // SAVE TO DATABASE
+    // SAVE TO DB
     const { error: dbError } = await client
       .from("marketer_documents")
       .insert({
@@ -792,6 +798,9 @@ async function uploadDocument() {
     document.getElementById("docTitle").value = "";
     document.getElementById("docFile").value = "";
 
+    // REFRESH DOCUMENTS
+    loadMyDocuments();
+
   } catch (err) {
 
     console.log(err);
@@ -800,6 +809,112 @@ async function uploadDocument() {
     statusEl.style.color = "#dc2626";
   }
 }
+
+
+
+/* ===========================
+   LOAD MY DOCUMENTS
+=========================== */
+
+async function loadMyDocuments() {
+
+  const { data, error } = await client
+    .from("marketer_documents")
+    .select("*")
+    .eq("marketer_id", marketer.id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.log(error);
+    return;
+  }
+
+  let html = "";
+
+  data.forEach(doc => {
+
+    html += `
+      <div class="card">
+
+        <h4>${doc.title}</h4>
+
+        <p>
+          <b>Type:</b> ${doc.document_type}
+        </p>
+
+        <a href="${doc.file_url}" 
+           target="_blank"
+           style="color:#2563eb;">
+          📂 Open Document
+        </a>
+
+        <br><br>
+
+        <button 
+          onclick="deleteDocument('${doc.id}', '${doc.file_url}')"
+          style="
+            background:#ef4444;
+            width:auto;
+            padding:8px 14px;
+          ">
+          🗑 Delete
+        </button>
+
+      </div>
+    `;
+  });
+
+  document.getElementById("myDocuments").innerHTML = html;
+}
+
+
+
+/* ===========================
+   DELETE DOCUMENT
+=========================== */
+
+async function deleteDocument(id, fileUrl) {
+
+  const confirmDelete = confirm(
+    "Delete this document?"
+  );
+
+  if (!confirmDelete) return;
+
+  try {
+
+    // STORAGE PATH
+    const path =
+      fileUrl.split("/training-files/")[1];
+
+    // DELETE FROM STORAGE
+    await client.storage
+      .from("training-files")
+      .remove([path]);
+
+    // DELETE FROM DATABASE
+    const { error } = await client
+      .from("marketer_documents")
+      .delete()
+      .eq("id", id)
+      .eq("marketer_id", marketer.id);
+
+    if (error) throw error;
+
+    alert("✅ Document deleted");
+
+    loadMyDocuments();
+
+  } catch (err) {
+
+    console.log(err);
+
+    alert("❌ Delete failed");
+  }
+}
+
+
+
   
   
 window.onload = async function () {
