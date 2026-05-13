@@ -550,10 +550,13 @@ statusEl.innerHTML = '<span class="loader"></span> Uploading document...';
     const filePath = `training/${Date.now()}_${safeName}`;
 
     // 1. upload file
-    const { error } = await client
-      .storage
-      .from("training-files")
-      .upload(filePath, file);
+   const { error } = await client
+  .storage
+  .from("training-files")
+  .upload(filePath, file, {
+    contentType: file.type,
+    upsert: false
+  });
 
     if (error) throw error;
 
