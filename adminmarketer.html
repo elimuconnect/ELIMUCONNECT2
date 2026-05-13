@@ -213,6 +213,7 @@
 <input id="search" placeholder="Search marketers..." oninput="renderMarketers()">
 
 <div id="detail"></div>
+ <div id="marketerDocs"></div> 
 
 <div id="tables">
 
@@ -433,7 +434,7 @@ async function viewMarketer(id) {
 
   const mySchools = schools.filter(s => s.marketer_id === id);
 
-  // 🔥 GET COMMISSIONS (correct source)
+  // COMMISSIONS
   const { data } = await client
     .from("commissions")
     .select("amount")
@@ -447,6 +448,47 @@ async function viewMarketer(id) {
     });
   }
 
+  // LOAD DOCUMENTS FOR THIS MARKETER
+  const { data: docs } = await client
+    .from("marketer_documents")
+    .select("*")
+    .eq("marketer_id", id)
+    .order("created_at", { ascending: false });
+
+  let docsHtml = `<h3>📂 Documents</h3>`;
+
+  if (!docs || docs.length === 0) {
+    docsHtml += `<p>No documents uploaded.</p>`;
+  } else {
+
+    docs.forEach(d => {
+
+      docsHtml += `
+        <div class="card">
+
+          <h4>${d.title}</h4>
+
+          <p><b>Type:</b> ${d.document_type}</p>
+
+          <p>
+            ${d.is_required ? "✅ Required" : "📌 Optional"}
+          </p>
+
+          <a href="${d.file_url}" target="_blank">
+            📂 View File
+          </a>
+
+          <br><br>
+
+          <button onclick="downloadAdminDocument('${d.file_url}', '${d.title}')">
+            ⬇ Download
+          </button>
+
+        </div>
+      `;
+    });
+  }
+
   document.getElementById("detail").innerHTML = `
     <div class="card">
       <h3>${selectedMarketer.name}</h3>
@@ -456,8 +498,10 @@ async function viewMarketer(id) {
       <p><b>Schools:</b> ${mySchools.length}</p>
     </div>
   `;
-}
 
+  // SHOW DOCUMENTS UNDER IT
+  document.getElementById("marketerDocs").innerHTML = docsHtml;
+}
   
 /* ---------------- SCHOOLS ---------------- */
 
@@ -650,6 +694,34 @@ async function loadMaterials() {
   document.getElementById("materials").innerHTML = html;
 }
 
+
+
+async function downloadAdminDocument(fileUrl, filename) {
+
+  const path = fileUrl.split("/training-files/")[1];
+
+  const { data, error } = await client.storage
+    .from("training-files")
+    .download(path);
+
+  if (error) {
+    alert("Download failed");
+    return;
+  }
+
+  const blobUrl = URL.createObjectURL(data);
+
+  const a = document.createElement("a");
+  a.href = blobUrl;
+  a.download = filename || "document";
+
+  document.body.appendChild(a);
+  a.click();
+
+  a.remove();
+  URL.revokeObjectURL(blobUrl);
+}
+  
 
 async function deleteMaterial(id, fileUrl) {
 
