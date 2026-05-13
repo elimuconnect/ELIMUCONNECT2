@@ -517,7 +517,6 @@ function paySchool(schoolId) {
   alert("Payment successful!");
 }
 
-
 async function loadMaterials() {
 
   const { data, error } = await client
@@ -536,71 +535,111 @@ async function loadMaterials() {
 
     const type = (m.file_type || "").toLowerCase();
 
-   
-   html += `
-  <div class="card">
+    html += `
+      <div class="card">
 
-    <h4>📘 ${m.title}</h4>
-    <p>${m.description || "No description provided"}</p>
+        <h4>📘 ${m.title}</h4>
+        <p>${m.description || "No description provided"}</p>
 
-    <!-- FILE TYPE BADGE -->
-    <div style="margin-bottom:10px;">
-      <span style="
-        background:#e0e7ff;
-        color:#3730a3;
-        padding:4px 10px;
-        border-radius:20px;
-        font-size:12px;
-        font-weight:bold;
-      ">
-        ${type.includes("pdf") ? "PDF Document" :
-          type.includes("video") ? "Video Training" :
-          type.includes("image") ? "Image File" :
-          "File"}
-      </span>
-    </div>
+        <!-- FILE TYPE BADGE -->
+        <div style="margin-bottom:10px;">
+          <span style="
+            background:#e0e7ff;
+            color:#3730a3;
+            padding:4px 10px;
+            border-radius:20px;
+            font-size:12px;
+            font-weight:bold;
+          ">
+            ${type.includes("pdf") ? "PDF Document" :
+              type.includes("video") ? "Video Training" :
+              type.includes("image") ? "Image File" :
+              "File"}
+          </span>
+        </div>
 
-    ${type.includes("pdf") ? `
-      <a href="${m.file_url}" target="_blank" style="color:#2563eb; display:block; margin-bottom:8px;">
-        📄 Open PDF
-      </a>
+        <!-- IMAGE PREVIEW -->
+        ${type.includes("image") ? `
+          <img 
+            src="${m.file_url}"
+            style="
+              max-width:100%;
+              max-height:250px;
+              object-fit:cover;
+              border-radius:10px;
+              margin-bottom:10px;
+            "
+          >
 
-      <button onclick="downloadFile('${m.file_url}', '${m.title}.pdf')">
-        ⬇️ Download PDF
-      </button>
-    ` : ""}
+          <a href="${m.file_url}" target="_blank" style="
+            color:#2563eb;
+            display:block;
+            margin-bottom:8px;
+          ">
+            🖼️ Open Image
+          </a>
 
-    ${type.includes("video") ? `
-      <a href="${m.file_url}" target="_blank" style="color:#2563eb; display:block; margin-bottom:8px;">
-        🎥 Watch / Open Video
-      </a>
+          <button onclick="downloadFile('${m.file_url}', '${m.title}')">
+            ⬇️ Download Image
+          </button>
+        ` : ""}
 
-      <button onclick="downloadFile('${m.file_url}', '${m.title}.mp4')">
-        ⬇️ Download Video
-      </button>
-    ` : ""}
+        <!-- PDF -->
+        ${type.includes("pdf") ? `
+          <a href="${m.file_url}" target="_blank" style="
+            color:#2563eb;
+            display:block;
+            margin-bottom:8px;
+          ">
+            📄 Open PDF
+          </a>
 
-    ${!type.includes("pdf") && !type.includes("video") ? `
-      <button onclick="downloadFile('${m.file_url}', '${m.title}')">
-        📁 Download File
-      </button>
-    ` : ""}
+          <button onclick="downloadFile('${m.file_url}', '${m.title}.pdf')">
+            ⬇️ Download PDF
+          </button>
+        ` : ""}
 
-  </div>
-`;
+        <!-- VIDEO -->
+        ${type.includes("video") ? `
+          <video controls width="100%" style="margin-bottom:10px;">
+            <source src="${m.file_url}" type="${m.file_type}">
+          </video>
+
+          <a href="${m.file_url}" target="_blank" style="
+            color:#2563eb;
+            display:block;
+            margin-bottom:8px;
+          ">
+            🎥 Watch / Open Video
+          </a>
+
+          <button onclick="downloadFile('${m.file_url}', '${m.title}.mp4')">
+            ⬇️ Download Video
+          </button>
+        ` : ""}
+
+        <!-- OTHER FILES -->
+        ${!type.includes("pdf") &&
+          !type.includes("video") &&
+          !type.includes("image") ? `
+          <button onclick="downloadFile('${m.file_url}', '${m.title}')">
+            📁 Download File
+          </button>
+        ` : ""}
+
+      </div>
+    `;
   });
 
   document.getElementById("materials").innerHTML = html;
 }
 
 
-
-
 async function downloadFile(fileUrl, filename) {
 
   try {
 
-    // 1. convert public URL to storage path
+    // get storage path
     const path = fileUrl.split("/training-files/")[1];
 
     const { data, error } = await client.storage
@@ -613,17 +652,19 @@ async function downloadFile(fileUrl, filename) {
       return;
     }
 
-    // 2. create blob download
-    const blob = new Blob([data]);
-    const url = window.URL.createObjectURL(blob);
+    // IMPORTANT:
+    // data is ALREADY a Blob
+    const url = window.URL.createObjectURL(data);
 
     const a = document.createElement("a");
     a.href = url;
     a.download = filename || "file";
+
     document.body.appendChild(a);
     a.click();
 
     a.remove();
+
     window.URL.revokeObjectURL(url);
 
   } catch (err) {
@@ -631,7 +672,6 @@ async function downloadFile(fileUrl, filename) {
     alert("Download error");
   }
 }
-
 
   
   
