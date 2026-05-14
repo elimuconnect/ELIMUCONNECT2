@@ -299,6 +299,10 @@ html, body {
     </button>
   </a>
 </div>
+
+
+<h3>🌐 Developed School Websites</h3>
+<div id="schoolWebsites"></div>
   
 <h3>📚 Training Materials</h3>
 <div id="materials"></div>
@@ -379,6 +383,7 @@ async function init() {
   loadEarnings();
    loadMaterials();
   loadMyDocuments();
+  loadSchoolWebsites();
 }
 
 const ref = new URLSearchParams(location.search).get("reference");
@@ -984,7 +989,47 @@ async function deleteDocument(id, fileUrl) {
 }
 
 
+async function loadSchoolWebsites() {
 
+  const { data, error } = await client
+    .from("school_websites")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.log(error);
+    return;
+  }
+
+  let html = "";
+
+  data.forEach(site => {
+
+    html += `
+      <div class="card">
+
+        <h4>🏫 ${site.school_name}</h4>
+
+        <p>
+          ${site.description || "School website developed by ELIMU CONNECT"}
+        </p>
+
+        <a 
+          href="${site.website_url}" 
+          target="_blank"
+          style="text-decoration:none;"
+        >
+          <button>
+            🌍 View Website
+          </button>
+        </a>
+
+      </div>
+    `;
+  });
+
+  document.getElementById("schoolWebsites").innerHTML = html;
+}
   
   
 window.onload = async function () {
