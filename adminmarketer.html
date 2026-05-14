@@ -207,6 +207,24 @@
 
 
 
+
+<h3>🌐 Add Developed School Website</h3>
+
+<div class="card">
+  <input id="siteName" placeholder="School Name">
+  <input id="siteUrl" placeholder="Website URL">
+  <input id="siteDesc" placeholder="Description">
+
+  <button onclick="addWebsite()">Add Website</button>
+
+  <p id="siteStatus"></p>
+</div>
+
+<h3>🌐 Developed School Websites</h3>
+<div id="schoolWebsites"></div>
+
+
+  
   
 <div class="grid" id="stats"></div>
 
@@ -281,6 +299,7 @@ async function init() {
   await loadAll();
   loadStats();
  loadMaterials();
+  loadSchoolWebsites();
 }
 
 /* ---------------- LOAD ALL DATA ---------------- */
@@ -755,6 +774,140 @@ async function deleteMaterial(id, fileUrl) {
   }
 }
 
+
+
+
+async function addWebsite() {
+
+  const school_name = document.getElementById("siteName").value;
+  const website_url = document.getElementById("siteUrl").value;
+  const description = document.getElementById("siteDesc").value;
+  const status = document.getElementById("siteStatus");
+
+  if (!school_name || !website_url) {
+    alert("Fill school name and URL");
+    return;
+  }
+
+  const { error } = await client
+    .from("school_websites")
+    .insert([{
+      school_name,
+      website_url,
+      description
+    }]);
+
+  if (error) {
+    console.log(error);
+    status.innerText = "❌ Failed to add website";
+    status.style.color = "red";
+    return;
+  }
+
+  status.innerText = "✅ Website added successfully!";
+  status.style.color = "green";
+
+  document.getElementById("siteName").value = "";
+  document.getElementById("siteUrl").value = "";
+  document.getElementById("siteDesc").value = "";
+
+  loadSchoolWebsites();
+}
+
+async function loadSchoolWebsites() {
+
+  const { data, error } = await client
+    .from("school_websites")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.log(error);
+    return;
+  }
+
+  let html = "";
+
+  data.forEach(site => {
+
+    html += `
+      <div class="card">
+
+        <h4>🏫 ${site.school_name}</h4>
+        <p>${site.description || ""}</p>
+
+        <a href="${site.website_url}" target="_blank">
+          🌍 Visit Website
+        </a>
+
+        <div style="margin-top:10px; display:flex; gap:10px;">
+
+          <button onclick="editWebsite('${site.id}', '${site.school_name}', '${site.website_url}', '${site.description || ""}')">
+            ✏️ Edit
+          </button>
+
+          <button style="background:#ef4444;" onclick="deleteWebsite('${site.id}')">
+            🗑 Delete
+          </button>
+
+        </div>
+
+      </div>
+    `;
+  });
+
+  document.getElementById("schoolWebsites").innerHTML = html;
+}
+
+
+async function editWebsite(id, name, url, desc) {
+
+  const newName = prompt("Edit School Name:", name);
+  if (newName === null) return;
+
+  const newUrl = prompt("Edit Website URL:", url);
+  if (newUrl === null) return;
+
+  const newDesc = prompt("Edit Description:", desc);
+
+  const { error } = await client
+    .from("school_websites")
+    .update({
+      school_name: newName,
+      website_url: newUrl,
+      description: newDesc
+    })
+    .eq("id", id);
+
+  if (error) {
+    alert("❌ Update failed");
+    console.log(error);
+    return;
+  }
+
+  alert("✅ Website updated successfully");
+  loadSchoolWebsites();
+}
+
+async function deleteWebsite(id) {
+
+  const confirmDelete = confirm("Are you sure you want to delete this website?");
+  if (!confirmDelete) return;
+
+  const { error } = await client
+    .from("school_websites")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    alert("❌ Delete failed");
+    console.log(error);
+    return;
+  }
+
+  alert("🗑 Website deleted");
+  loadSchoolWebsites();
+}
   
 /* ---------------- START ---------------- */
 init();
