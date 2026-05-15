@@ -487,10 +487,14 @@ const { data: payments } = await client
   .eq("year", year);
 
 
-
-const { data: visits } = await client
+const { data: visits } =
+await client
 .from("school_visits")
-.select("school_id");
+.select("school_id")
+.eq(
+"marketer_id",
+marketer.id
+);
 
 
   
@@ -737,17 +741,12 @@ schoolId
 
 if(!navigator.geolocation){
 
-alert(
-"GPS not supported"
-);
-
+alert("GPS not supported");
 return;
 
 }
 
-
-navigator.geolocation
-.getCurrentPosition(
+navigator.geolocation.getCurrentPosition(
 
 async(position)=>{
 
@@ -759,7 +758,6 @@ position.coords.longitude;
 
 const accuracy =
 position.coords.accuracy;
-
 
 const {error}
 =
@@ -788,21 +786,16 @@ new Date()
 
 });
 
-
 if(error){
 
-alert(
-error.message
-);
-
+alert(error.message);
 return;
 
 }
 
+alert("✅ Visit Recorded");
 
-alert(
-"✅ Visit Recorded"
-);
+loadSchools();   // IMPORTANT
 
 },
 
@@ -815,18 +808,13 @@ alert(
 },
 
 {
-
 enableHighAccuracy:true,
-
 timeout:10000
-
 }
 
 );
 
 }
-
-
 
 
   
