@@ -626,6 +626,27 @@ paySchool(
 
 </button>
 
+
+<button
+onclick="
+recordVisit(
+'${s.id}'
+)
+"
+
+style="
+margin-top:10px;
+background:#16a34a;
+">
+
+📍 Record School Visit
+
+</button>
+
+
+
+
+
 </div>
 
 `;
@@ -681,7 +702,100 @@ loadSchools();
 
 
 
+async function recordVisit(
+schoolId
+){
 
+if(!navigator.geolocation){
+
+alert(
+"GPS not supported"
+);
+
+return;
+
+}
+
+
+navigator.geolocation
+.getCurrentPosition(
+
+async(position)=>{
+
+const lat =
+position.coords.latitude;
+
+const lng =
+position.coords.longitude;
+
+const accuracy =
+position.coords.accuracy;
+
+
+const {error}
+=
+await client
+.from("school_visits")
+.insert({
+
+school_id:
+schoolId,
+
+marketer_id:
+marketer.id,
+
+latitude:
+lat,
+
+longitude:
+lng,
+
+accuracy:
+accuracy,
+
+visited_at:
+new Date()
+.toISOString()
+
+});
+
+
+if(error){
+
+alert(
+error.message
+);
+
+return;
+
+}
+
+
+alert(
+"✅ Visit Recorded"
+);
+
+},
+
+()=>{
+
+alert(
+"Allow location access"
+);
+
+},
+
+{
+
+enableHighAccuracy:true,
+
+timeout:10000
+
+}
+
+);
+
+}
 
 
 
