@@ -229,6 +229,39 @@ html, body {
   <input id="phone" placeholder="Phone">
   <input id="county" placeholder="County">
 
+<select id="status"
+style="
+width:100%;
+padding:10px;
+border-radius:8px;
+margin-bottom:10px;
+">
+
+<option value="Contacted">
+📞 Contacted
+</option>
+
+<option value="Meeting Booked">
+📅 Meeting Booked
+</option>
+
+<option value="Demo Done">
+🖥 Demo Done
+</option>
+
+<option value="Subscribed">
+🟢 Subscribed
+</option>
+
+<option value="Rejected">
+🔴 Rejected
+</option>
+
+</select>
+
+
+  
+
   <button onclick="addSchool()">Add School</button>
 </div>
 
@@ -415,7 +448,13 @@ async function addSchool() {
     phone: document.getElementById("phone").value.trim(),
     county: document.getElementById("county").value.trim(),
     marketer_id: marketer.id, // IMPORTANT FIX (better than code)
-    marketer_code: marketer.code
+ marketer_code:
+marketer.code,
+
+status:
+document.getElementById(
+"status"
+).value
   });
 
   if (error) {
@@ -462,37 +501,102 @@ const { data: payments } = await client
     paymentMap[p.school_id] = p.reference;
   });
 
-  let html = "";
+ html += `
+<div class="card">
 
-  schoolsData?.forEach(s => {
+<h3>${s.school_name}</h3>
 
-    const ref = paymentMap[s.id];
+<span class="
+status ${ref ? "paid" : "not-paid"}
+">
+${status}
+</span>
 
-    const status = ref ? "✅ PAID" : "❌ NOT PAID";
-    const refText = ref ? `Ref: ${ref}` : "";
+<p>${refText}</p>
 
-    const schoolTotal = commissionMap[s.id] || 0;
+<p>
+<b>👤 Contact:</b>
+${s.contact_person}
+</p>
 
-   html += `
-  <div class="card">
-    <h3>${s.school_name}</h3>
+<p>
+<b>📞 Phone:</b>
+${s.phone}
+</p>
 
-    <span class="status ${ref ? "paid" : "not-paid"}">
-      ${status}
-    </span>
 
-    <p>${refText}</p>
+<!-- ADD HERE -->
+<p><b>Lead Status:</b></p>
 
-    <p><b>👤 Contact:</b> ${s.contact_person}</p>
-    <p><b>📞 Phone:</b> ${s.phone}</p>
+<select
+onchange="
+updateStatus(
+'${s.id}',
+this.value
+)"
 
-    <p><b>💰 Commission:</b> Ksh ${schoolTotal}</p>
+style="
+width:100%;
+padding:8px;
+border-radius:8px;
+margin-bottom:10px;
+">
 
-    <button onclick="paySchool('${s.id}')">
-    💳 Pay System Subscription
-    </button>
-  </div>
-    `;
+<option
+${s.status==="Contacted"
+?"selected":""
+}>
+Contacted
+</option>
+
+<option
+${s.status==="Meeting Booked"
+?"selected":""
+}>
+Meeting Booked
+</option>
+
+<option
+${s.status==="Demo Done"
+?"selected":""
+}>
+Demo Done
+</option>
+
+<option
+${s.status==="Subscribed"
+?"selected":""
+}>
+Subscribed
+</option>
+
+<option
+${s.status==="Rejected"
+?"selected":""
+}>
+Rejected
+</option>
+
+</select>
+
+
+<p>
+<b>💰 Commission:</b>
+Ksh ${schoolTotal}
+</p>
+
+<button onclick="
+paySchool(
+'${s.id}'
+)
+">
+
+💳 Pay System Subscription
+
+</button>
+
+</div>
+`;
   });
 
   document.getElementById("schools").innerHTML = html; 
@@ -1102,7 +1206,38 @@ document.getElementById(
 
 }
 
+async function updateStatus(
+schoolId,
+status
+){
 
+const {error}
+=
+await client
+.from("schools")
+.update({
+
+status
+
+})
+.eq(
+"id",
+schoolId
+);
+
+if(error){
+
+alert(
+error.message
+);
+
+return;
+
+}
+
+loadSchools();
+
+}
 
 
 
