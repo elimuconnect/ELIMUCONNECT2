@@ -486,17 +486,16 @@ const { data: payments } = await client
   .eq("term", term)
   .eq("year", year);
 
-
 const { data: visits } =
 await client
 .from("school_visits")
-.select("school_id")
+.select(
+"school_id, visited_at"
+)
 .eq(
 "marketer_id",
 marketer.id
 );
-
-
   
 
   // COMMISSION MAP
@@ -514,14 +513,21 @@ marketer.id
 
 
 const visitMap = {};
+const lastVisitMap = {};
 
 visits?.forEach(v=>{
 
 visitMap[v.school_id] =
 (visitMap[v.school_id]||0)+1;
 
-});
+lastVisitMap[
+v.school_id
+] =
+new Date(
+v.visited_at
+).toLocaleDateString();
 
+});
   
 
  let html = "";
@@ -580,7 +586,14 @@ ${visitMap[s.id] || 0}
 
 </p>
 
+<p>
 
+<b>🕒 Last Visit:</b>
+
+${lastVisitMap[s.id]
+|| "Never"}
+
+</p>
 
 <p>
 <b>Lead Status:</b>
