@@ -488,6 +488,13 @@ const { data: payments } = await client
 
 
 
+const { data: visits } = await client
+.from("school_visits")
+.select("school_id");
+
+
+  
+
   // COMMISSION MAP
   const commissionMap = {};
   commissions?.forEach(c => {
@@ -500,6 +507,18 @@ const { data: payments } = await client
   payments?.forEach(p => {
     paymentMap[p.school_id] = p.reference;
   });
+
+
+const visitMap = {};
+
+visits?.forEach(v=>{
+
+visitMap[v.school_id] =
+(visitMap[v.school_id]||0)+1;
+
+});
+
+  
 
  let html = "";
 
@@ -547,6 +566,16 @@ ${s.contact_person}
 <b>📞 Phone:</b>
 ${s.phone}
 </p>
+
+
+<p>
+
+<b>📍 Visits:</b>
+
+${visitMap[s.id] || 0}
+
+</p>
+
 
 
 <p>
