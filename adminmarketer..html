@@ -937,15 +937,11 @@ async function deleteWebsite(id) {
 
 
 
+async function loadVisits() {
 
-async function loadVisits(){
-
-const {data,error}
-=
+const { data, error } =
 await client
-
 .from("school_visits")
-
 .select(`
 latitude,
 longitude,
@@ -958,9 +954,7 @@ school_name
 marketers(
 name
 )
-
 `)
-
 .order(
 "visited_at",
 {
@@ -968,50 +962,47 @@ ascending:false
 }
 );
 
-
-if(error){
-
+if (error) {
 console.log(error);
 return;
-
 }
 
 
+// Create map
 const map =
 L.map("map")
-.setView([-1.2,36.8],6);
-
+.setView([0,0],13);
 
 L.tileLayer(
-
-'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-
+'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+{
+attribution:
+'© OpenStreetMap contributors'
+}
 ).addTo(map);
 
 
 let html = "";
+let bounds = [];
 
 
-data.forEach(v=>{
+data.forEach(v => {
 
 html += `
 
 <div class="card">
 
 <b>School:</b>
+${v.schools?.school_name || "Unknown"}
 
-${v.schools?.school_name}
-
-<br>
+<br><br>
 
 <b>Marketer:</b>
+${v.marketers?.name || "Unknown"}
 
-${v.marketers?.name}
-
-<br>
+<br><br>
 
 <b>Date:</b>
-
 ${new Date(
 v.visited_at
 ).toLocaleString()}
@@ -1030,17 +1021,45 @@ v.longitude
 
 .bindPopup(`
 
-${v.schools?.school_name}
+<b>
+${v.schools?.school_name || "Unknown"}
+</b>
 
 <br>
 
 Visited by:
 
-${v.marketers?.name}
+${v.marketers?.name || "Unknown"}
+
+<br><br>
+
+${new Date(
+v.visited_at
+).toLocaleString()}
 
 `);
 
+
+// save coordinates for zooming
+bounds.push([
+v.latitude,
+v.longitude
+]);
+
 });
+
+
+// auto zoom to exact visit locations
+if (bounds.length > 0) {
+
+map.fitBounds(
+bounds,
+{
+padding:[50,50]
+}
+);
+
+}
 
 
 document.getElementById(
@@ -1049,7 +1068,6 @@ document.getElementById(
 html;
 
 }
-
 
 /* ---------------- START ---------------- */
 init();
