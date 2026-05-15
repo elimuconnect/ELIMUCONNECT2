@@ -501,15 +501,39 @@ const { data: payments } = await client
     paymentMap[p.school_id] = p.reference;
   });
 
- html += `
+ let html = "";
+
+schoolsData?.forEach(s => {
+
+const ref = paymentMap[s.id];
+
+const status =
+ref
+? "✅ PAID"
+: "❌ NOT PAID";
+
+const refText =
+ref
+? `Ref: ${ref}`
+: "";
+
+const schoolTotal =
+commissionMap[s.id] || 0;
+
+
+html += `
+
 <div class="card">
 
 <h3>${s.school_name}</h3>
 
 <span class="
-status ${ref ? "paid" : "not-paid"}
+status
+${ref ? "paid":"not-paid"}
 ">
+
 ${status}
+
 </span>
 
 <p>${refText}</p>
@@ -525,15 +549,17 @@ ${s.phone}
 </p>
 
 
-<!-- ADD HERE -->
-<p><b>Lead Status:</b></p>
+<p>
+<b>Lead Status:</b>
+</p>
 
 <select
 onchange="
 updateStatus(
 '${s.id}',
 this.value
-)"
+)
+"
 
 style="
 width:100%;
@@ -581,11 +607,16 @@ Rejected
 
 
 <p>
+
 <b>💰 Commission:</b>
+
 Ksh ${schoolTotal}
+
 </p>
 
-<button onclick="
+
+<button
+onclick="
 paySchool(
 '${s.id}'
 )
@@ -596,13 +627,66 @@ paySchool(
 </button>
 
 </div>
-`;
-  });
 
-  document.getElementById("schools").innerHTML = html; 
-}
+`;
+
+});
+
+
+document.getElementById(
+"schools"
+).innerHTML = html;
   
 
+
+
+
+
+
+
+async function updateStatus(
+schoolId,
+status
+){
+
+const {error}
+=
+await client
+.from("schools")
+.update({
+
+status
+
+})
+.eq(
+"id",
+schoolId
+);
+
+if(error){
+
+alert(
+error.message
+);
+
+return;
+
+}
+
+loadSchools();
+
+}
+
+
+
+
+
+
+
+
+
+
+  
 async function loadEarnings() {
 
 
@@ -1205,40 +1289,6 @@ document.getElementById(
 ).innerHTML=html;
 
 }
-
-async function updateStatus(
-schoolId,
-status
-){
-
-const {error}
-=
-await client
-.from("schools")
-.update({
-
-status
-
-})
-.eq(
-"id",
-schoolId
-);
-
-if(error){
-
-alert(
-error.message
-);
-
-return;
-
-}
-
-loadSchools();
-
-}
-
 
 
 
