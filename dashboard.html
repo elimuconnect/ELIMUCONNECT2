@@ -296,11 +296,10 @@ margin-bottom:10px;
     <option value="Other">Other</option>
   </select>
 
-  <input 
-    type="file" 
-    id="docFile"
-    accept="image/*,.pdf,.doc,.docx"
-  >
+<input
+type="file"
+id="docFile"
+accept=".png,.jpg,.jpeg,image/png,image/jpeg,.pdf,.doc,.docx">
 
   <small style="color:#64748b; display:block; margin-bottom:10px;">
     * Required documents: National ID, KCSE Certificate, Leaving Certificate
@@ -1142,94 +1141,165 @@ async function downloadFile(fileUrl, filename) {
 
 
 
-
 async function uploadDocument() {
 
   if (!marketer) return;
 
-  const title = document.getElementById("docTitle").value.trim();
-  const type = document.getElementById("docType").value;
-  const file = document.getElementById("docFile").files[0];
-  const statusEl = document.getElementById("docStatus");
+  const title =
+    document.getElementById("docTitle").value.trim();
+
+  const type =
+    document.getElementById("docType").value;
+
+  const file =
+    document.getElementById("docFile").files[0];
+
+  const statusEl =
+    document.getElementById("docStatus");
 
   if (!file) {
     alert("Select file first");
     return;
   }
 
-  // REQUIRED DOCUMENTS
+  // ALLOWED FILE TYPES
+  const allowed = [
+    "image/png",
+    "image/jpeg",
+    "image/jpg",
+    "image/pjpeg",
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  ];
+
+  // fallback using extension
+  const ext =
+    file.name.split(".").pop().toLowerCase();
+
+  const allowedExt =
+    ["png","jpg","jpeg","pdf","doc","docx"];
+
+  if (
+    !allowed.includes(file.type)
+    &&
+    !allowedExt.includes(ext)
+  ) {
+
+    alert(
+      "Only PNG, JPG, JPEG, PDF, DOC and DOCX allowed"
+    );
+
+    return;
+  }
+
   const requiredDocs = [
     "National ID",
     "KCSE Certificate",
     "Leaving Certificate"
   ];
 
-  statusEl.innerHTML = "Uploading...";
-  statusEl.style.color = "#2563eb";
+  statusEl.innerHTML =
+    "Uploading...";
+
+  statusEl.style.color =
+    "#2563eb";
 
   try {
 
-    const safeName = file.name.replace(/\s/g, "_");
+    const safeName =
+      file.name.replace(/\s/g,"_");
 
     const filePath =
       `marketer-documents/${marketer.id}_${Date.now()}_${safeName}`;
 
-    // UPLOAD FILE
-    const { error: uploadError } = await client.storage
+    const { error: uploadError } =
+      await client.storage
       .from("training-files")
-      .upload(filePath, file, {
-        contentType: file.type,
-        upsert: false
-      });
+      .upload(
+        filePath,
+        file,
+        {
+          upsert:false,
+          contentType:
+            file.type ||
+            (
+              ext==="jpg" ||
+              ext==="jpeg"
+            )
+            ? "image/jpeg"
+            : "image/png"
+        }
+      );
 
-    if (uploadError) throw uploadError;
+    if(uploadError)
+      throw uploadError;
 
-    // PUBLIC URL
-    const { data: urlData } = client.storage
+    const { data:urlData } =
+      client.storage
       .from("training-files")
       .getPublicUrl(filePath);
 
-    const file_url = urlData.publicUrl;
+    const file_url =
+      urlData.publicUrl;
 
-    // SAVE TO DB
-    const { error: dbError } = await client
+    const { error: dbError } =
+      await client
       .from("marketer_documents")
       .insert({
-        marketer_id: marketer.id,
-        title: title || type,
-        document_type: type,
+
+        marketer_id:
+          marketer.id,
+
+        title:
+          title || type,
+
+        document_type:
+          type,
+
         file_url,
-        file_type: file.type,
-        is_required: requiredDocs.includes(type)
+
+        file_type:
+          file.type || ext,
+
+        is_required:
+          requiredDocs.includes(type)
+
       });
 
-    if (dbError) throw dbError;
+    if(dbError)
+      throw dbError;
 
-    statusEl.innerHTML = `
-      ✅ ${type} uploaded successfully
-      ${requiredDocs.includes(type)
-        ? "(Required Document)"
-        : "(Optional Document)"}
-    `;
+    statusEl.innerHTML =
+      "✅ Upload successful";
 
-    statusEl.style.color = "#16a34a";
+    statusEl.style.color =
+      "#16a34a";
 
-    // RESET
-    document.getElementById("docTitle").value = "";
-    document.getElementById("docFile").value = "";
+    document.getElementById(
+      "docTitle"
+    ).value="";
 
-    // REFRESH DOCUMENTS
+    document.getElementById(
+      "docFile"
+    ).value="";
+
     loadMyDocuments();
 
-  } catch (err) {
+  }
+  catch(err){
 
     console.log(err);
 
-    statusEl.innerHTML = "❌ Upload failed";
-    statusEl.style.color = "#dc2626";
-  }
-}
+    statusEl.innerHTML =
+      "❌ Upload failed";
 
+    statusEl.style.color =
+      "#dc2626";
+
+  }
+
+}
 
 
 /* ===========================
