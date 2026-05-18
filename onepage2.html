@@ -3132,8 +3132,6 @@ function getTrend(currentAvg, previousAvg) {
 }
 
 
-
-
 window.downloadPDF = async function () {
   if (!reportDiv.innerHTML.trim()) {
     alert("No report to download");
@@ -3158,63 +3156,33 @@ window.downloadPDF = async function () {
     parent.removeChild(page);
   });
 
+  clone.style.width = "200mm";
+  clone.style.margin = "0 auto";
+  clone.style.padding = "0";
+  clone.style.boxSizing = "border-box";
+  clone.style.fontSize = "12px";
 
-
-
-
-clone.style.width = "200mm";      // wider use of page
-clone.style.margin = "0 auto";
-clone.style.padding = "0";
-clone.style.boxSizing = "border-box";
-clone.style.fontSize = "12px";    // shrink everything slightly
-
-
-
-// REMOVE ALL PAGE BREAKS
-clone.querySelectorAll("*").forEach(el => {
-
+  // REMOVE ALL DEFAULT PAGE BREAKS FIRST
+  clone.querySelectorAll("*").forEach(el => {
     el.style.pageBreakInside = "auto";
     el.style.pageBreakBefore = "auto";
     el.style.pageBreakAfter = "auto";
-
     el.style.breakInside = "auto";
     el.style.breakBefore = "auto";
     el.style.breakAfter = "auto";
+  });
 
-});
+  const cards = clone.querySelectorAll(".learner-card");
 
+  cards.forEach((card, index) => {
+    card.style.margin = "0";
+    card.style.padding = "0";
+    card.style.boxSizing = "border-box";
+    card.style.width = "100%";
 
-
-const cards = clone.querySelectorAll(".learner-card");
-
-cards.forEach((card,index)=>{
-
-    card.style.margin="0";
-    card.style.padding="0";
-
-    card.style.boxSizing="border-box";
-
-   card.style.transform="scale(1.05)";
-card.style.width="100%";
-
-card.style.fontSize="16px";
-card.style.lineHeight="1.5";
-
-    // remove forced breaks
-    card.style.pageBreakInside="auto";
-    card.style.pageBreakAfter="auto";
-    card.style.pageBreakBefore="auto";
-
-    card.style.breakInside="auto";
-    card.style.breakAfter="auto";
-    card.style.breakBefore="auto";
-
-    // reduce font globally
-    card.style.fontSize="12px";
-    card.style.lineHeight="1.3";
-
-
-
+    // Reduce font globally
+    card.style.fontSize = "12px";
+    card.style.lineHeight = "1.3";
 
     // Remove old table blocks
     card.querySelectorAll(".subject-block, .trend-box").forEach(el => el.remove());
@@ -3230,23 +3198,20 @@ card.style.lineHeight="1.5";
     const numericScoresMap = {};
     const numericScores = [];
 
-   Object.entries(subjectData).forEach(([subject, d]) => {
-  const score = levelToScore(d.achievement_level) || 0; // fallback to 0
-  numericScoresMap[subject] = score; // include all subjects
-  if (!isNaN(score) && score > 0) numericScores.push(score); // only >0 for overallAvg
-});
+    Object.entries(subjectData).forEach(([subject, d]) => {
+      const score = levelToScore(d.achievement_level) || 0;
+      numericScoresMap[subject] = score;
+      if (!isNaN(score) && score > 0) numericScores.push(score);
+    });
 
     let overallAvg = numericScores.length
       ? numericScores.reduce((a, b) => a + b, 0) / numericScores.length
       : 0;
     overallAvg = Number(overallAvg.toFixed(2));
-	
-	
-	
-	const totalSubjects = numericScores.length;
-const totalScore = numericScores.reduce((a, b) => a + b, 0);
-const maxTotal = totalSubjects * 8;
-	
+
+    const totalSubjects = numericScores.length;
+    const totalScore = numericScores.reduce((a, b) => a + b, 0);
+    const maxTotal = totalSubjects * 8;
 
     const subjectsArray = Object.entries(numericScoresMap)
       .map(([subject, score]) => ({ subject, score }))
@@ -3255,412 +3220,219 @@ const maxTotal = totalSubjects * 8;
     let strengths = [];
     if (subjectsArray.length > 1 && subjectsArray[0].score - subjectsArray[1].score >= 0.5) {
       strengths.push(subjectsArray[0].subject);
-	} else {
-  strengths = [];
-}
+    }
 
-function overallLevel(score) {
-  return getAchievementLabel(score);
-}
+    function overallLevel(score) {
+      return getAchievementLabel(score);
+    }
 
+    const swahiliSubjects = ["Kiswahili", "Kiswahili Lugha", "Fasihi ya Kiswahili"];
 
- 
-  // Get first Kiswahili subject for translations
-const firstKiswahiliSubject = Object.keys(avgMap?.[studentName] || {})
-  .find(s => ["Kiswahili", "Kiswahili Lugha", "Fasihi ya Kiswahili"].includes(s));
-  
-  
-  
-  const swahiliSubjects = ["Kiswahili", "Kiswahili Lugha", "Fasihi ya Kiswahili"];
+    function maybeTranslate(comment, subject) {
+      if (swahiliSubjects.includes(subject)) {
+        const translations = {
+          "Outstanding mastery.": "Umahiri wa hali ya juu.",
+          "Very strong performance.": "Utendaji bora sana.",
+          "Consistently meets expectations.": "Hufikia matarajio kila mara.",
+          "Good progress.": "Maendeleo mazuri.",
+          "Approaching expectations.": "Anakaribia kufikia matarajio.",
+          "Developing understanding.": "Anaendelea kukuza uelewa.",
+          "Below expectations.": "Chini ya matarajio.",
+          "Significant support needed.": "Anahitaji msaada mkubwa.",
+          "Outstanding work.": "Kazi bora sana.",
+          "Very good work.": "Kazi nzuri sana.",
+          "Meets expectations.": "Inafikia matarajio.",
+          "Needs more practice.": "Anahitaji mazoezi zaidi.",
+          "Keep working.": "Endelea kujitahidi.",
+          "Needs support.": "Anahitaji msaada.",
+          "Significant improvement needed.": "Anahitaji kuboresha sana."
+        };
+        return translations[comment] || comment;
+      }
+      return comment;
+    }
 
-function maybeTranslate(comment, subject) {
-  if (swahiliSubjects.includes(subject)) {
-    const translations = {
-      "Outstanding mastery.": "Umahiri wa hali ya juu.",
-      "Very strong performance.": "Utendaji bora sana.",
-      "Consistently meets expectations.": "Hufikia matarajio kila mara.",
-      "Good progress.": "Maendeleo mazuri.",
-      "Approaching expectations.": "Anakaribia kufikia matarajio.",
-      "Developing understanding.": "Anaendelea kukuza uelewa.",
-      "Below expectations.": "Chini ya matarajio.",
-      "Significant support needed.": "Anahitaji msaada mkubwa.",
+    function generalComment(score, subject) {
+      const level = getAchievementLabel(score);
+      let comment;
+      switch(level) {
+        case "EE1": comment = "Outstanding mastery."; break;
+        case "EE2": comment = "Very strong performance."; break;
+        case "ME1": comment = "Consistently meets expectations."; break;
+        case "ME2": comment = "Good progress."; break;
+        case "AE1": comment = "Approaching expectations."; break;
+        case "AE2": comment = "Developing understanding."; break;
+        case "BE1": comment = "Below expectations."; break;
+        case "BE2": comment = "Significant support needed."; break;
+        default: comment = "No data available.";
+      }
+      return maybeTranslate(comment, subject);
+    }
 
-      "Outstanding work.": "Kazi bora sana.",
-      "Very good work.": "Kazi nzuri sana.",
-      "Meets expectations.": "Inafikia matarajio.",
-      "Needs more practice.": "Anahitaji mazoezi zaidi.",
-      "Keep working.": "Endelea kujitahidi.",
-      "Needs support.": "Anahitaji msaada.",
-      "Significant improvement needed.": "Anahitaji kuboresha sana."
-    };
+    function commentFromScore(score, subject) {
+      const level = getAchievementLabel(score);
+      let comment;
+      switch(level) {
+        case "EE1": comment = "Outstanding work."; break;
+        case "EE2": comment = "Very good work."; break;
+        case "ME1": comment = "Meets expectations."; break;
+        case "ME2": comment = "Good progress."; break;
+        case "AE1": comment = "Needs more practice."; break;
+        case "AE2": comment = "Keep working."; break;
+        case "BE1": comment = "Needs support."; break;
+        case "BE2": comment = "Significant improvement needed."; break;
+        default: comment = "";
+      }
+      return maybeTranslate(comment, subject);
+    }
 
-    return translations[comment] || comment;
+    // Build subject table
+    const table = document.createElement("table");
+    table.style.width = "100%";
+    table.style.borderCollapse = "collapse";
+    table.style.marginTop = "3px";
+    table.style.fontSize = "15px";
+    table.style.tableLayout = "fixed";
+
+    table.innerHTML = `
+    <thead>
+    <tr>
+    <th style="border:1px solid #000;padding:4px;width:25%;font-size:15px;">Learning Area</th>
+    <th style="border:1px solid #000;padding:3px;width:25%;font-size:15px;">Performance</th>
+    <th style="border:1px solid #000;padding:3px;width:35%;font-size:15px;">Comment</th>
+    </tr>
+    </thead>
+    <tbody>
+    ${Object.entries(subjectData).map(([subject, d]) => {
+      const avg = numericScoresMap[subject] || 0;
+      return `
+      <tr>
+      <td style="border:1px solid #000;padding:3px;font-size:15px;line-height:1.5;">${subject}</td>
+      <td style="border:1px solid #000;padding:3px;font-size:15px;">${avg}/8 (${d.achievement_level})</td>
+      <td style="border:1px solid #000;padding:3px;font-size:15px;line-height:1.5;">${commentFromScore(avg, subject)}</td>
+      </tr>
+      `;
+    }).join("")}
+    </tbody>
+    `;
+
+    const generalBlock = document.createElement("div");
+    generalBlock.style.marginTop = "4px";
+    generalBlock.style.fontSize = "15px";
+    generalBlock.style.lineHeight = "1.3";
+
+    generalBlock.innerHTML = `
+    <table style="width:100%;border-collapse:collapse;margin-top:2.5px;font-size:15px;">
+    <tr>
+    <td style="border:1px solid #000;padding:4px;width:40%;"><strong>General Performance</strong></td>
+    <td style="border:1px solid #000;padding:4px;">${overallLevel(overallAvg)} (${totalScore}/${maxTotal})</td>
+    </tr>
+    <tr>
+    <td style="border:1px solid #000;padding:5px;"><strong>Teacher Comment</strong></td>
+    <td style="border:1px solid #000;padding:5px;">${generalComment(overallAvg)}</td>
+    </tr>
+    </table>
+    `;
+
+    const signatures = document.createElement("div");
+    signatures.style.marginTop = "30px";
+    signatures.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;font-size:14px;">
+    <div>Class Teacher Signature: ____________</div>
+    <div>H.O.I Stamp: ____________</div>
+    <div>H.O.I Signature: ____________</div>
+    </div>
+    `;
+
+    const footer = document.createElement("div");
+    footer.style.fontSize = "10px";
+    footer.style.textAlign = "center";
+    footer.style.marginTop = "15px";
+    footer.style.borderTop = "1px solid #ddd";
+    footer.style.paddingTop = "6px";
+    footer.innerText = "Assessment is competency-based and evidence-driven, guided by KICD CBE curriculum designs.";
+
+    const tableWrapper = document.createElement("div");
+    tableWrapper.appendChild(table);
+    tableWrapper.appendChild(generalBlock);
+
+    const teacherBlock = card.querySelector('.split-block[style*="border-left"]');
+    let insertTarget = teacherBlock;
+
+    while (insertTarget && insertTarget.parentElement !== card) {
+      insertTarget = insertTarget.parentElement;
+    }
+
+    if (insertTarget) {
+      card.insertBefore(tableWrapper, insertTarget);
+    } else {
+      card.appendChild(tableWrapper);
+    }
+
+    card.appendChild(signatures);
+    card.appendChild(footer);
+  });
+
+  const batchSize = 15;
+  let batchNum = 1;
+
+  for (let i = 0; i < cards.length; i += batchSize) {
+    const batchContainer = document.createElement("div");
+    batchContainer.style.width = "198mm";
+    batchContainer.style.margin = "0 auto";
+
+    const batch = Array.from(cards).slice(i, i + batchSize);
+    const batchFilename = `Summary_Report_${term}_Batch_${batchNum}.pdf`;
+
+    batch.forEach((learnerCard, cardIdx) => {
+      const cleanCard = learnerCard.cloneNode(true);
+      cleanCard.classList.remove('a4-page', 'learner-page');
+      
+      cleanCard.style.width = "100%";
+      cleanCard.style.boxSizing = "border-box";
+
+      // CRITICAL FIX: Only add page break before if it is NOT the first card in the document
+      if (i === 0 && cardIdx === 0) {
+        cleanCard.style.pageBreakBefore = "avoid";
+        cleanCard.style.breakBefore = "auto";
+      } else {
+        cleanCard.style.pageBreakBefore = "always";
+        cleanCard.style.breakBefore = "page";
+      }
+
+      // Avoid breaking inside student records
+      cleanCard.style.pageBreakInside = "avoid";
+      cleanCard.style.breakInside = "avoid";
+      cleanCard.style.pageBreakAfter = "auto";
+      cleanCard.style.breakAfter = "auto";
+
+      batchContainer.appendChild(cleanCard);
+    });
+
+    await html2pdf().set({
+      margin: [10, 8, 10, 8], // Safe margins (Top, Left, Bottom, Right)
+      filename: batchFilename,
+      pagebreak: { mode: ['css'] },
+      image: { type: "jpeg", quality: 1 },
+      html2canvas: {
+        scale: 2, // High resolution crisp text rendering
+        useCORS: true,
+        logging: false
+        // scrollY: 0 is removed here to stop clipping positions
+      },
+      jsPDF: {
+        unit: "mm",
+        format: "a4",
+        orientation: "portrait"
+      }
+    })
+    .from(batchContainer)
+    .save();
+
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    batchNum++;
   }
-  return comment;
-}
-
-
-function generalComment(score, subject) {
-  const level = getAchievementLabel(score);
-
-  let comment;
-  switch(level) {
-    case "EE1": comment = "Outstanding mastery."; break;
-    case "EE2": comment = "Very strong performance."; break;
-    case "ME1": comment = "Consistently meets expectations."; break;
-    case "ME2": comment = "Good progress."; break;
-    case "AE1": comment = "Approaching expectations."; break;
-    case "AE2": comment = "Developing understanding."; break;
-    case "BE1": comment = "Below expectations."; break;
-    case "BE2": comment = "Significant support needed."; break;
-    default: comment = "No data available.";
-  }
-
-  return maybeTranslate(comment, subject);
-}
-
-
-
-	  function commentFromScore(score, subject) {
-  const level = getAchievementLabel(score);
-
-  let comment;
-  switch(level) {
-    case "EE1": comment = "Outstanding work."; break;
-    case "EE2": comment = "Very good work."; break;
-    case "ME1": comment = "Meets expectations."; break;
-    case "ME2": comment = "Good progress."; break;
-    case "AE1": comment = "Needs more practice."; break;
-    case "AE2": comment = "Keep working."; break;
-    case "BE1": comment = "Needs support."; break;
-    case "BE2": comment = "Significant improvement needed."; break;
-    default: comment = "";
-  }
-
-  return maybeTranslate(comment, subject);
-}
-
-
-	  
-// Build subject table
-const table = document.createElement("table");
-
-table.style.width = "100%";
-table.style.borderCollapse = "collapse";
-table.style.marginTop = "3px";
-table.style.fontSize = "15px";
-table.style.tableLayout = "fixed";
-
-table.innerHTML = `
-<thead>
-<tr>
-
-<th style="border:1px solid #000;padding:4px;width:25%;font-size:15px;">
-Learning Area
-</th>
-
-<th style="border:1px solid #000;padding:3px;width:25%;font-size:15px;">
-Performance
-</th>
-
-<th style="border:1px solid #000;padding:3px;width:35%;font-size:15px;">
-Comment
-</th>
-
-</tr>
-</thead>
-
-<tbody>
-
-${Object.entries(subjectData).map(([subject,d])=>{
-
-const avg=numericScoresMap[subject]||0;
-
-return`
-
-<tr>
-
-<td style="
-border:1px solid #000;
-padding:3px;
-font-size:15px;
-line-height:1.5;
-">
-${subject}
-</td>
-
-
-<td style="
-border:1px solid #000;
-padding:3px;
-font-size:15px;
-">
-${avg}/8 (${d.achievement_level})
-</td>
-
-
-<td style="
-border:1px solid #000;
-padding:3px;
-font-size:15px;
-line-height:1.5;
-">
-${commentFromScore(avg,subject)}
-</td>
-</tr>
-
-`;
-
-}).join("")}
-
-</tbody>
-`;
-
-
-const generalBlock = document.createElement("div");
-
-generalBlock.style.marginTop = "4px";
-generalBlock.style.fontSize = "15px";
-generalBlock.style.lineHeight = "1.3";
-
-generalBlock.innerHTML = `
-
-<table style="
-width:100%;
-border-collapse:collapse;
-margin-top:2.5px;
-font-size:15px;
-">
-
-<tr>
-<td style="border:1px solid #000;padding:4px;width:40%;">
-<strong>General Performance</strong>
-</td>
-
-<td style="border:1px solid #000;padding:4px;">
-${overallLevel(overallAvg)}
-(${totalScore}/${maxTotal})
-</td>
-</tr>
-
-<tr>
-
-<td style="border:1px solid #000;padding:5px;">
-<strong>Teacher Comment</strong>
-</td>
-
-<td style="border:1px solid #000;padding:5px;">
-${generalComment(overallAvg)}
-</td>
-
-</tr>
-
-</table>
-
-`;
-
-
-/* signatures */
-const signatures = document.createElement("div");
-
-signatures.style.marginTop = "30px";
-
-signatures.innerHTML = `
-
-<div style="
-display:flex;
-justify-content:space-between;
-align-items:center;
-font-size:14px;
-">
-
-<div>
-Class Teacher Signature: ____________
-</div>
-
-<div>
-H.O.I Stamp: ____________
-</div>
-
-<div>
-H.O.I Signature: ____________
-</div>
-
-</div>
-
-`;
-
-
-/* footer */
-const footer = document.createElement("div");
-
-footer.style.fontSize="10px";
-footer.style.textAlign="center";
-footer.style.marginTop="15px";
-footer.style.borderTop="1px solid #ddd";
-footer.style.paddingTop="6px";
-
-footer.innerText =
-"Assessment is competency-based and evidence-driven, guided by KICD CBE curriculum designs.";
-
-
-/* wrapper */
-const tableWrapper =
-document.createElement("div");
-
-tableWrapper.appendChild(table);
-tableWrapper.appendChild(generalBlock);
-
-
-/* locate recommendation section */
-const teacherBlock =
-card.querySelector(
-'.split-block[style*="border-left"]'
-);
-
-let insertTarget = teacherBlock;
-
-while(
-insertTarget &&
-insertTarget.parentElement !== card
-){
-insertTarget =
-insertTarget.parentElement;
-}
-
-
-/* insert table */
-if(insertTarget){
-
-card.insertBefore(
-tableWrapper,
-insertTarget
-);
-
-}else{
-
-card.appendChild(
-tableWrapper
-);
-
-}
-
-
-/* always add signatures + footer last */
-card.appendChild(signatures);
-card.appendChild(footer);
-	 });
-
-const batchSize=15;
-let batchNum=1;
-
-
-
-for(let i=0;i<cards.length;i+=batchSize){
-
-const batchContainer=document.createElement("div");
-
-batchContainer.style.width="198mm";
-batchContainer.style.margin="0 auto";
-
-
-const batch=
-Array.from(cards).slice(i,i+batchSize);
-
-
-const batchFilename=
-`Summary_Report_${term}_Batch_${batchNum}.pdf`;
-
-
-
-batch.forEach((learnerCard)=>{
-
-learnerCard.classList.remove(
-'a4-page',
-'learner-page'
-);
-
-
-/* compress whole learner report */
-
-learnerCard.style.transform="scale(.96)";
-learnerCard.style.transformOrigin="top left";
-learnerCard.style.width="104%";
-
-
-/* FORCE NEW PAGE FOR EACH LEARNER */
-
-learnerCard.style.pageBreakBefore = "always";
-learnerCard.style.breakBefore = "page";
-
-learnerCard.style.pageBreakAfter = "always";
-learnerCard.style.breakAfter = "page";
-
-learnerCard.style.pageBreakInside = "avoid";
-learnerCard.style.breakInside = "avoid";
-
-
-batchContainer.appendChild(
-learnerCard.cloneNode(true)
-);
-
-});
-
-
-
-await html2pdf().set({
-
-margin:[8,8,8,8],
-
-filename:batchFilename,
-
-pagebreak:{
-    mode:["css","legacy"]
-},
-
-image:{
-type:"jpeg",
-quality:1
-},
-
-html2canvas:{
-
-scale:1.25,
-
-useCORS:true,
-
-scrollY:0
-
-},
-
-jsPDF:{
-
-unit:"mm",
-
-format:"a4",
-
-orientation:"portrait"
-
-}
-
-})
-
-.from(batchContainer)
-
-.save();
-
-
-
-await new Promise(
-resolve=>setTimeout(resolve,1000)
-);
-
-batchNum++;
-
-}
 };
-
-
 
   
   window.downloadSchoolAnalyticsPDF = async function () {
