@@ -1795,39 +1795,38 @@ ${needs.join(", ")}
 </div>
 
 
-
 <div style="
 display:flex;
-gap:8px;
+gap:6px;
 align-items:flex-start;
 flex-wrap:wrap;
 margin-top:4px;
-font-size:15px;
+font-size:12px;
 ">
 
-<div style="flex:2;">
+<div style="flex:1.2;">   <!-- smaller than flex:2 -->
 
 ${[
 
 recommendations.teacher.length ? `
 <div class="split-block"
 style="
-margin:4px 0;
-padding:6px 10px;
-border-left:4px solid #3498db;
+margin:3px 0;
+padding:4px 7px;
+border-left:3px solid #3498db;
 background:#f8fbff;
-font-size:15px;
+font-size:12px;
 ">
 
-<strong style="font-size:16px;">
+<strong style="font-size:13px;">
 👩🏽‍🏫 Teacher Actions
 </strong>
 
 <ul style="
-margin:4px 0 0 16px;
+margin:3px 0 0 14px;
 padding:0;
-line-height:1.35;
-font-size:15px;
+line-height:1.2;
+font-size:12px;
 ">
 ${recommendations.teacher.map(r=>`<li>${r}</li>`).join('')}
 </ul>
@@ -1835,25 +1834,26 @@ ${recommendations.teacher.map(r=>`<li>${r}</li>`).join('')}
 </div>`:'',
 
 
+
 recommendations.parent.length ? `
 <div class="split-block"
 style="
-margin:4px 0;
-padding:6px 10px;
-border-left:4px solid #f39c12;
+margin:3px 0;
+padding:4px 7px;
+border-left:3px solid #f39c12;
 background:#fffaf3;
-font-size:15px;
+font-size:12px;
 ">
 
-<strong style="font-size:16px;">
+<strong style="font-size:13px;">
 🏠 Parent Support
 </strong>
 
 <ul style="
-margin:4px 0 0 16px;
+margin:3px 0 0 14px;
 padding:0;
-line-height:1.35;
-font-size:15px;
+line-height:1.2;
+font-size:12px;
 ">
 ${recommendations.parent.map(r=>`<li>${r}</li>`).join('')}
 </ul>
@@ -1861,25 +1861,26 @@ ${recommendations.parent.map(r=>`<li>${r}</li>`).join('')}
 </div>`:'',
 
 
+
 recommendations.learner.length ? `
 <div class="split-block"
 style="
-margin:4px 0;
-padding:6px 10px;
-border-left:4px solid #2ecc71;
+margin:3px 0;
+padding:4px 7px;
+border-left:3px solid #2ecc71;
 background:#f6fffa;
-font-size:15px;
+font-size:12px;
 ">
 
-<strong style="font-size:16px;">
+<strong style="font-size:13px;">
 🎯 Learner Focus
 </strong>
 
 <ul style="
-margin:4px 0 0 16px;
+margin:3px 0 0 14px;
 padding:0;
-line-height:1.35;
-font-size:15px;
+line-height:1.2;
+font-size:12px;
 ">
 ${recommendations.learner.map(r=>`<li>${r}</li>`).join('')}
 </ul>
@@ -1889,6 +1890,7 @@ ${recommendations.learner.map(r=>`<li>${r}</li>`).join('')}
 ].filter(Boolean).join('')}
 
 </div>
+
 
 ${renderAchievementGuide()}
 
