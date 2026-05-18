@@ -1030,12 +1030,12 @@ strandData?.forEach(row => {
  return `
     <div class="report-overview" style="
       border-bottom: 2px solid #333;
-      padding-bottom: 10px;
-      margin-bottom: 12px;
+      padding-bottom: 5px;
+      margin-bottom: 6px;
       page-break-inside: avoid; 
       break-inside: avoid;
       /* ✅ ADD THIS: Extra padding at the top to protect the logo */
-      padding-top: 15px; 
+      padding-top: 6px; 
     ">
       <div style="
         display:flex;
@@ -1045,38 +1045,50 @@ strandData?.forEach(row => {
         text-align:center;
       ">
         ${logo ? `
-          <div class="logo-container" style="
-            page-break-inside: avoid;
-            break-inside: avoid;
-            /* ✅ ADD THIS: Margin around the logo container */
-            margin: 10px 0; 
-          ">
-            <img src="${logo}"
-                 style="
-                   width:200px !important; 
-                   height:120px !important; 
-                   object-fit:contain;
-                   /* ✅ ADD THIS: Internal margin to ensure it's not at the absolute edge */
-                   margin-top: 5px; 
-                 "
-                 onerror="this.style.display='none';"
-            />
-          </div>
+         <div class="logo-container" style="
+margin:2px 0;
+">
+
+<img src="${logo}"
+style="
+width:45px !important;
+height:45px !important;
+
+object-fit:contain;
+
+display:block;
+margin:auto;
+
+opacity:.9;
+"
+onerror="this.style.display='none';"
+/>
+
+</div>
         ` : ""}
 
         <div style="text-align:center;">
-          <h2 style="margin:0; font-size: 1.4em; color: #000;">${school}</h2>
-          <div style="font-size:0.9em; color:#333; margin-top: 4px; line-height: 1.4;">
+         <h2 style="
+margin:0;
+font-size:1em;
+line-height:1.1;
+color:#000;
+">${school}</h2>
+         <div style="
+font-size:.7em;
+margin-top:1px;
+line-height:1.1;
+">
             <strong>P.O. Box:</strong> ${poBox} - ${postal}, ${town}<br/>
             <strong>Tel:</strong> ${phone} ${email ? `| <strong>Email:</strong> ${email}` : ""}
           </div>
           <div style="
             display: inline-block;
-            margin-top: 10px;
-            padding: 5px 15px;
+            margin-top: 4px;
+            padding: 2px 8px;
             background: #f4f4f4;
             border-radius: 4px;
-            font-size: 0.95em;
+            font-size: 7em;
             font-weight: bold;
           ">
             CLASS: ${className} | TERM: ${term} – ${year}
