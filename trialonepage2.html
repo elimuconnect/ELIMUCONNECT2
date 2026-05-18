@@ -3462,10 +3462,11 @@ tableWrapper.appendChild(footer);
 
 
 /* Find recommendations + achievement guide section */
+/* Find Teacher Actions block */
 const recommendationsSection =
 card.querySelector(
-'div[style*="display:flex"][style*="gap:8px"]'
-);
+'.split-block[style*="border-left"]'
+)?.parentElement;
 
 
 /* Put tables BEFORE recommendations */
