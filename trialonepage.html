@@ -3303,46 +3303,54 @@ ${generalComment(overallAvg)}
 
 </table>
 
-<div>
-Teacher Signature:
-_____________
-</div>
 
-<div>
-HOI Stamp:
-_____________
-</div>
+<div style="margin-top:20px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-top:18px;">
+    
 
-<div>
-HOI Signature:
-_____________
-</div>
 
+
+
+    
+<div style="margin-top:20px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-top:18px;">
+    
+    <!-- Left: Class Teacher -->
+    <div>
+      <div>Class Teacher Signature: ____________________</div>
+    </div>
+
+    <!-- Center: HOI Stamp -->
+    <div style="text-align:center;">
+      <div>H.O.I Stamp: ____________________</div>
+    </div>
+
+    <!-- Right: HOI Signature -->
+    <div>
+      <div>H.O.I Signature: ____________________</div>
+    </div>
+
+  </div>
 </div>
 
 `;
 
 
+    const footer = document.createElement("div");
+    footer.style.fontSize = "10px";
+    footer.style.textAlign = "center";
+    footer.style.marginTop = "12px";
+    footer.style.borderTop = "1px solid #ddd";
+    footer.style.paddingTop = "6px";
+    footer.innerText = "Assessment is competency-based and evidence-driven, guided by KICD CBE curriculum designs.";
 
-const footer=document.createElement("div");
+    const tableWrapper = document.createElement("div");
+    tableWrapper.appendChild(table);
+    tableWrapper.appendChild(generalBlock);
+    tableWrapper.appendChild(footer);
 
-footer.style.fontSize="10px";
-footer.style.textAlign="center";
-footer.style.marginTop="3px";
-
-footer.innerText=
-"Assessment is competency-based and evidence-driven.";
-
-
-const tableWrapper=document.createElement("div");
-
-tableWrapper.appendChild(table);
-tableWrapper.appendChild(generalBlock);
-tableWrapper.appendChild(footer);
-
-card.appendChild(tableWrapper);
-
-});
+    card.appendChild(tableWrapper);
+  });
 
 
 
