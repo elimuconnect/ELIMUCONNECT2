@@ -1022,10 +1022,13 @@ strandData?.forEach(row => {
   });
 });
  
- 
-  function renderOverviewHeader({
-  school, poBox, postal, town, phone, email,
-  className, term, year, logo
+
+
+function renderOverviewHeader({
+  school, poBox, postal, town,
+  phone, email,
+  className, term,
+  year, logo
 }) {
 
 return `
@@ -1034,61 +1037,121 @@ return `
 style="
 display:flex;
 align-items:center;
-gap:10px;
-border-bottom:1px solid #333;
-padding-bottom:5px;
-margin-bottom:6px;
+gap:12px;
+
+border-bottom:2px solid #333;
+
+padding:
+10px 0 8px 0;
+
+margin-bottom:10px;
+
+page-break-inside:avoid;
+break-inside:avoid;
+
+overflow:hidden;
 ">
 
 ${logo ? `
 
-<img src="${logo}"
-style="
-width:45px;
-height:45px;
-object-fit:contain;
+<div style="
 flex-shrink:0;
+
+page-break-inside:avoid;
+break-inside:avoid;
+
+padding-top:2px;
+">
+
+<img
+src="${logo}"
+
+style="
+width:70px;
+height:70px;
+
+object-fit:contain;
+
+display:block;
+
+margin:auto;
+
+page-break-inside:avoid;
+break-inside:avoid;
 "
-onerror="this.style.display='none';"
+
+onerror="
+this.style.display='none';
+"
 />
 
-`:""}
+</div>
 
-<div style="flex:1;">
+` : ""}
+
+
+
+<div style="
+flex:1;
+text-align:center;
+
+page-break-inside:avoid;
+break-inside:avoid;
+">
 
 <h2 style="
 margin:0;
-font-size:14px;
-line-height:1.1;
+font-size:18px;
+line-height:1.2;
+font-weight:bold;
 ">
+
 ${school}
+
 </h2>
 
+
 <div style="
-font-size:9px;
-line-height:1.2;
+font-size:11px;
+margin-top:3px;
+line-height:1.4;
 ">
 
-P.O Box:
+<strong>P.O Box:</strong>
+
 ${poBox}-${postal},
+
 ${town}
 
 <br>
 
-Tel:
+<strong>Tel:</strong>
+
 ${phone}
 
-${email ?
-` | ${email}`
-:
-""
+${email
+? ` | <strong>Email:</strong> ${email}`
+: ""
 }
 
 </div>
 
+
+
 <div style="
-margin-top:4px;
-font-size:9px;
+margin-top:8px;
+
+display:inline-block;
+
+padding:
+5px 12px;
+
+background:#f4f4f4;
+
+border-radius:4px;
+
+font-size:11px;
+
 font-weight:bold;
 ">
 
@@ -1106,6 +1169,7 @@ ${year}
 
 </div>
 
+
 </div>
 
 </div>
@@ -1114,6 +1178,8 @@ ${year}
 
 }
 
+
+	
 function calculateTermIntelligence(records, previousRecords, previousTerm) {
 
   if (!previousTerm || !previousRecords?.length) {
@@ -3134,6 +3200,7 @@ function getTrend(currentAvg, previousAvg) {
 
 
 
+
 window.downloadPDF = async function () {
   if (!reportDiv.innerHTML.trim()) {
     alert("No report to download");
@@ -3158,25 +3225,16 @@ window.downloadPDF = async function () {
     parent.removeChild(page);
   });
 
-
-
-
-
-clone.style.width = "200mm";      // wider use of page
-clone.style.margin = "0 auto";
-clone.style.padding = "0";
-clone.style.boxSizing = "border-box";
-clone.style.fontSize = "12px";    // shrink everything slightly
-
-
-
-
-  // Prevent header/logo from splitting
+  clone.style.width = "200mm";
+  clone.style.margin = "0 auto";
+  clone.style.padding = "0";
+  clone.style.boxSizing = "border-box";
+  clone.style.fontSize = "12px";
+// Prevent header/logo from splitting
   clone.querySelectorAll(".report-overview").forEach(el => {
     el.style.pageBreakInside = "avoid";
     el.style.breakInside = "avoid";
   });
-
 
   const cards = clone.querySelectorAll(".learner-card");
 
@@ -3189,6 +3247,12 @@ clone.style.fontSize = "12px";    // shrink everything slightly
 // Instead of index === 0 ? "auto" : "always"
 card.style.pageBreakInside = "avoid"; // Keeps the student card together
 card.style.pageBreakBefore = "auto";  // Allows it to follow the header naturally
+
+
+
+    // Reduce font globally
+    card.style.fontSize = "12px";
+    card.style.lineHeight = "1.3";
 
     // Remove old table blocks
     card.querySelectorAll(".subject-block, .trend-box").forEach(el => el.remove());
@@ -3204,23 +3268,20 @@ card.style.pageBreakBefore = "auto";  // Allows it to follow the header naturall
     const numericScoresMap = {};
     const numericScores = [];
 
-   Object.entries(subjectData).forEach(([subject, d]) => {
-  const score = levelToScore(d.achievement_level) || 0; // fallback to 0
-  numericScoresMap[subject] = score; // include all subjects
-  if (!isNaN(score) && score > 0) numericScores.push(score); // only >0 for overallAvg
-});
+    Object.entries(subjectData).forEach(([subject, d]) => {
+      const score = levelToScore(d.achievement_level) || 0;
+      numericScoresMap[subject] = score;
+      if (!isNaN(score) && score > 0) numericScores.push(score);
+    });
 
     let overallAvg = numericScores.length
       ? numericScores.reduce((a, b) => a + b, 0) / numericScores.length
       : 0;
     overallAvg = Number(overallAvg.toFixed(2));
-	
-	
-	
-	const totalSubjects = numericScores.length;
-const totalScore = numericScores.reduce((a, b) => a + b, 0);
-const maxTotal = totalSubjects * 8;
-	
+
+    const totalSubjects = numericScores.length;
+    const totalScore = numericScores.reduce((a, b) => a + b, 0);
+    const maxTotal = totalSubjects * 8;
 
     const subjectsArray = Object.entries(numericScoresMap)
       .map(([subject, score]) => ({ subject, score }))
@@ -3229,218 +3290,125 @@ const maxTotal = totalSubjects * 8;
     let strengths = [];
     if (subjectsArray.length > 1 && subjectsArray[0].score - subjectsArray[1].score >= 0.5) {
       strengths.push(subjectsArray[0].subject);
-	} else {
-  strengths = [];
-}
+    }
 
-function overallLevel(score) {
-  return getAchievementLabel(score);
-}
+    function overallLevel(score) {
+      return getAchievementLabel(score);
+    }
 
+    const swahiliSubjects = ["Kiswahili", "Kiswahili Lugha", "Fasihi ya Kiswahili"];
 
- 
-  // Get first Kiswahili subject for translations
-const firstKiswahiliSubject = Object.keys(avgMap?.[studentName] || {})
-  .find(s => ["Kiswahili", "Kiswahili Lugha", "Fasihi ya Kiswahili"].includes(s));
-  
-  
-  
-  const swahiliSubjects = ["Kiswahili", "Kiswahili Lugha", "Fasihi ya Kiswahili"];
+    function maybeTranslate(comment, subject) {
+      if (swahiliSubjects.includes(subject)) {
+        const translations = {
+          "Outstanding mastery.": "Umahiri wa hali ya juu.",
+          "Very strong performance.": "Utendaji bora sana.",
+          "Consistently meets expectations.": "Hufikia matarajio kila mara.",
+          "Good progress.": "Maendeleo mazuri.",
+          "Approaching expectations.": "Anakaribia kufikia matarajio.",
+          "Developing understanding.": "Anaendelea kukuza uelewa.",
+          "Below expectations.": "Chini ya matarajio.",
+          "Significant support needed.": "Anahitaji msaada mkubwa.",
+          "Outstanding work.": "Kazi bora sana.",
+          "Very good work.": "Kazi nzuri sana.",
+          "Meets expectations.": "Inafikia matarajio.",
+          "Needs more practice.": "Anahitaji mazoezi zaidi.",
+          "Keep working.": "Endelea kujitahidi.",
+          "Needs support.": "Anahitaji msaada.",
+          "Significant improvement needed.": "Anahitaji kuboresha sana."
+        };
+        return translations[comment] || comment;
+      }
+      return comment;
+    }
 
-function maybeTranslate(comment, subject) {
-  if (swahiliSubjects.includes(subject)) {
-    const translations = {
-      "Outstanding mastery.": "Umahiri wa hali ya juu.",
-      "Very strong performance.": "Utendaji bora sana.",
-      "Consistently meets expectations.": "Hufikia matarajio kila mara.",
-      "Good progress.": "Maendeleo mazuri.",
-      "Approaching expectations.": "Anakaribia kufikia matarajio.",
-      "Developing understanding.": "Anaendelea kukuza uelewa.",
-      "Below expectations.": "Chini ya matarajio.",
-      "Significant support needed.": "Anahitaji msaada mkubwa.",
+    function generalComment(score, subject) {
+      const level = getAchievementLabel(score);
+      let comment;
+      switch(level) {
+        case "EE1": comment = "Outstanding mastery."; break;
+        case "EE2": comment = "Very strong performance."; break;
+        case "ME1": comment = "Consistently meets expectations."; break;
+        case "ME2": comment = "Good progress."; break;
+        case "AE1": comment = "Approaching expectations."; break;
+        case "AE2": comment = "Developing understanding."; break;
+        case "BE1": comment = "Below expectations."; break;
+        case "BE2": comment = "Significant support needed."; break;
+        default: comment = "No data available.";
+      }
+      return maybeTranslate(comment, subject);
+    }
 
-      "Outstanding work.": "Kazi bora sana.",
-      "Very good work.": "Kazi nzuri sana.",
-      "Meets expectations.": "Inafikia matarajio.",
-      "Needs more practice.": "Anahitaji mazoezi zaidi.",
-      "Keep working.": "Endelea kujitahidi.",
-      "Needs support.": "Anahitaji msaada.",
-      "Significant improvement needed.": "Anahitaji kuboresha sana."
-    };
+    function commentFromScore(score, subject) {
+      const level = getAchievementLabel(score);
+      let comment;
+      switch(level) {
+        case "EE1": comment = "Outstanding work."; break;
+        case "EE2": comment = "Very good work."; break;
+        case "ME1": comment = "Meets expectations."; break;
+        case "ME2": comment = "Good progress."; break;
+        case "AE1": comment = "Needs more practice."; break;
+        case "AE2": comment = "Keep working."; break;
+        case "BE1": comment = "Needs support."; break;
+        case "BE2": comment = "Significant improvement needed."; break;
+        default: comment = "";
+      }
+      return maybeTranslate(comment, subject);
+    }
 
-    return translations[comment] || comment;
-  }
-  return comment;
-}
+    // Build subject table
+    const table = document.createElement("table");
+    table.style.width = "100%";
+    table.style.borderCollapse = "collapse";
+    table.style.marginTop = "3px";
+    table.style.fontSize = "15px";
+    table.style.tableLayout = "fixed";
 
+    table.innerHTML = `
+    <thead>
+    <tr>
+    <th style="border:1px solid #000;padding:4px;width:25%;font-size:15px;">Learning Area</th>
+    <th style="border:1px solid #000;padding:3px;width:25%;font-size:15px;">Performance</th>
+    <th style="border:1px solid #000;padding:3px;width:35%;font-size:15px;">Comment</th>
+    </tr>
+    </thead>
+    <tbody>
+    ${Object.entries(subjectData).map(([subject, d]) => {
+      const avg = numericScoresMap[subject] || 0;
+      return `
+      <tr>
+      <td style="border:1px solid #000;padding:3px;font-size:15px;line-height:1.5;">${subject}</td>
+      <td style="border:1px solid #000;padding:3px;font-size:15px;">${avg}/8 (${d.achievement_level})</td>
+      <td style="border:1px solid #000;padding:3px;font-size:15px;line-height:1.5;">${commentFromScore(avg, subject)}</td>
+      </tr>
+      `;
+    }).join("")}
+    </tbody>
+    `;
 
-function generalComment(score, subject) {
-  const level = getAchievementLabel(score);
+    const generalBlock = document.createElement("div");
+    generalBlock.style.marginTop = "4px";
+    generalBlock.style.fontSize = "15px";
+    generalBlock.style.lineHeight = "1.3";
 
-  let comment;
-  switch(level) {
-    case "EE1": comment = "Outstanding mastery."; break;
-    case "EE2": comment = "Very strong performance."; break;
-    case "ME1": comment = "Consistently meets expectations."; break;
-    case "ME2": comment = "Good progress."; break;
-    case "AE1": comment = "Approaching expectations."; break;
-    case "AE2": comment = "Developing understanding."; break;
-    case "BE1": comment = "Below expectations."; break;
-    case "BE2": comment = "Significant support needed."; break;
-    default: comment = "No data available.";
-  }
+    generalBlock.innerHTML = `
+    <table style="width:100%;border-collapse:collapse;margin-top:2.5px;font-size:15px;">
+    <tr>
+    <td style="border:1px solid #000;padding:4px;width:40%;"><strong>General Performance</strong></td>
+    <td style="border:1px solid #000;padding:4px;">${overallLevel(overallAvg)} (${totalScore}/${maxTotal})</td>
+    </tr>
+    <tr>
+    <td style="border:1px solid #000;padding:5px;"><strong>Teacher Comment</strong></td>
+    <td style="border:1px solid #000;padding:5px;">${generalComment(overallAvg)}</td>
+    </tr>
+    </table>
+    `;
 
-  return maybeTranslate(comment, subject);
-}
-
-
-
-	  function commentFromScore(score, subject) {
-  const level = getAchievementLabel(score);
-
-  let comment;
-  switch(level) {
-    case "EE1": comment = "Outstanding work."; break;
-    case "EE2": comment = "Very good work."; break;
-    case "ME1": comment = "Meets expectations."; break;
-    case "ME2": comment = "Good progress."; break;
-    case "AE1": comment = "Needs more practice."; break;
-    case "AE2": comment = "Keep working."; break;
-    case "BE1": comment = "Needs support."; break;
-    case "BE2": comment = "Significant improvement needed."; break;
-    default: comment = "";
-  }
-
-  return maybeTranslate(comment, subject);
-}
-
-
-	  
-// Build subject table
-const table = document.createElement("table");
-
-table.style.width = "100%";
-table.style.borderCollapse = "collapse";
-table.style.marginTop = "3px";
-table.style.fontSize = "15px";
-table.style.tableLayout = "fixed";
-
-table.innerHTML = `
-<thead>
-<tr>
-
-<th style="border:1px solid #000;padding:4px;width:25%;font-size:15px;">
-Learning Area
-</th>
-
-<th style="border:1px solid #000;padding:3px;width:25%;font-size:15px;">
-Performance
-</th>
-
-<th style="border:1px solid #000;padding:3px;width:35%;font-size:15px;">
-Comment
-</th>
-
-</tr>
-</thead>
-
-<tbody>
-
-${Object.entries(subjectData).map(([subject,d])=>{
-
-const avg=numericScoresMap[subject]||0;
-
-return`
-
-<tr>
-
-<td style="
-border:1px solid #000;
-padding:3px;
-font-size:15px;
-line-height:1.5;
-">
-${subject}
-</td>
-
-
-<td style="
-border:1px solid #000;
-padding:3px;
-font-size:15px;
-">
-${avg}/8 (${d.achievement_level})
-</td>
-
-
-<td style="
-border:1px solid #000;
-padding:3px;
-font-size:15px;
-line-height:1.5;
-">
-${commentFromScore(avg,subject)}
-</td>
-</tr>
-
-`;
-
-}).join("")}
-
-</tbody>
-`;
-
-
-
-const generalBlock=document.createElement("div");
-
-generalBlock.style.marginTop="4px";
-generalBlock.style.fontSize="15px";
-generalBlock.style.lineHeight="1.3";
-
-generalBlock.innerHTML=`
-
-<table style="
-width:100%;
-border-collapse:collapse;
-margin-top:2.5px;
-font-size:15px;
-">
-
-<tr>
-
-<td style="border:1px solid #000;padding:4px;width:40%;">
-<strong>General Performance</strong>
-</td>
-
-<td style="border:1px solid #000;padding:px;">
-
-${overallLevel(overallAvg)}
-(${totalScore}/${maxTotal})
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="border:1px solid #000;padding:5px;">
-<strong>Teacher Comment</strong>
-</td>
-
-<td style="border:1px solid #000;padding:5px;">
-${generalComment(overallAvg)}
-</td>
-
-</tr>
-
-</table>
-
-    
-<div style="margin-top:20px;">
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;">
-    
-    <!-- Left: Class Teacher -->
+    const signatures = document.createElement("div");
+    signatures.style.marginTop = "30px";
+    signatures.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;font-size:14px;">
+      <!-- Left: Class Teacher -->
     <div>
       <div>Class Teacher Signature: ____________________</div>
     </div>
@@ -3454,17 +3422,13 @@ ${generalComment(overallAvg)}
     <div>
       <div>H.O.I Signature: ____________________</div>
     </div>
-
-  </div>
-</div>
-
-`;
-
+    </div>
+    `;
 
     const footer = document.createElement("div");
     footer.style.fontSize = "10px";
     footer.style.textAlign = "center";
-    footer.style.marginTop = "12px";
+    footer.style.marginTop = "15px";
     footer.style.borderTop = "1px solid #ddd";
     footer.style.paddingTop = "6px";
     footer.innerText = "Assessment is competency-based and evidence-driven, guided by KICD CBE curriculum designs.";
@@ -3472,69 +3436,114 @@ ${generalComment(overallAvg)}
     const tableWrapper = document.createElement("div");
     tableWrapper.appendChild(table);
     tableWrapper.appendChild(generalBlock);
-    tableWrapper.appendChild(footer);
 
-    card.appendChild(tableWrapper);
+    const teacherBlock = card.querySelector('.split-block[style*="border-left"]');
+    let insertTarget = teacherBlock;
+
+    while (insertTarget && insertTarget.parentElement !== card) {
+      insertTarget = insertTarget.parentElement;
+    }
+
+    if (insertTarget) {
+      card.insertBefore(tableWrapper, insertTarget);
+    } else {
+      card.appendChild(tableWrapper);
+    }
+
+    card.appendChild(signatures);
+    card.appendChild(footer);
   });
 
-
-
-const batchSize=15;
-let batchNum=1;
-
-
+ const batchSize = 15;
+let batchNum = 1;
 
 for(let i=0;i<cards.length;i+=batchSize){
 
-const batchContainer=document.createElement("div");
+const batchContainer =
+document.createElement("div");
 
 batchContainer.style.width="198mm";
 batchContainer.style.margin="0 auto";
 
-
-const batch=
+const batch =
 Array.from(cards).slice(i,i+batchSize);
 
-
-const batchFilename=
+const batchFilename =
 `Summary_Report_${term}_Batch_${batchNum}.pdf`;
 
 
+batch.forEach((learnerCard,index)=>{
 
-batch.forEach((learnerCard)=>{
+const wrapper =
+document.createElement("div");
 
- learnerCard.classList.remove('a4-page', 'learner-page');
+const cleanCard =
+learnerCard.cloneNode(true);
+
+cleanCard.classList.remove(
+'a4-page',
+'learner-page'
+);
+
+/* KEEP YOUR ORIGINAL SIZES */
+
+cleanCard.style.transform="scale(.96)";
+cleanCard.style.transformOrigin="top left";
+cleanCard.style.width="104%";
 
 
-/* compress whole learner report */
+/* PREVENT STUDENT SPLITTING */
 
-learnerCard.style.transform="scale(.96)";
-learnerCard.style.transformOrigin="top left";
-learnerCard.style.width="104%";
+cleanCard.style.pageBreakInside="avoid";
+cleanCard.style.breakInside="avoid";
 
-/* REMOVE PAGE BREAKS */
 
-learnerCard.style.pageBreakAfter="auto";
-learnerCard.style.breakAfter="auto";
+/*
+ONE LEARNER PER PAGE
+BUT NO BLANK LAST PAGE
+*/
+
+if(index < batch.length-1){
+
+wrapper.style.pageBreakAfter="always";
+wrapper.style.breakAfter="page";
+
+}else{
+
+wrapper.style.pageBreakAfter="avoid";
+wrapper.style.breakAfter="avoid";
+
+}
+
+
+/* no extra spacing */
+
+wrapper.style.margin="0";
+wrapper.style.padding="0";
+
+
+wrapper.appendChild(cleanCard);
 
 batchContainer.appendChild(
-learnerCard.cloneNode(true)
+wrapper
 );
 
 });
 
 
+batchContainer.style.pageBreakAfter =
+"avoid";
+
 
 await html2pdf().set({
 
-margin:[8,8,8,8],
+margin:[8,8,8,8],      // KEEP YOUR MARGINS
 
 filename:batchFilename,
 
 pagebreak:{
-mode:[]
+mode:["css"]
 },
-
 
 image:{
 type:"jpeg",
@@ -3543,7 +3552,7 @@ quality:1
 
 html2canvas:{
 
-scale:1.25,
+scale:1.25,            // KEEP ORIGINAL
 
 useCORS:true,
 
@@ -3568,7 +3577,6 @@ orientation:"portrait"
 .save();
 
 
-
 await new Promise(
 resolve=>setTimeout(resolve,1000)
 );
@@ -3577,7 +3585,6 @@ batchNum++;
 
 }
 };
-
 
 
 
