@@ -2477,60 +2477,53 @@ generateBroadsheet(records, avgMap, mode);
 
 
 
-	
+
+
 function renderAchievementGuide() {
   return `
     <div style="
-      flex:1;
+      flex:2;               /* wider card */
+      min-width:260px;      /* prevent squeezing */
       font-size:12px;
-      line-height:1.4;
-      padding:10px;
+      line-height:1.6;
+      padding:12px;
+
       border:1px solid #ddd;
       border-radius:6px;
       background:#fafafa;
+
+      white-space:nowrap;   /* keep text on one line */
     ">
 
-      <strong style="font-size:13px;">
+      <strong style="
+      font-size:14px;
+      display:block;
+      margin-bottom:8px;
+      ">
       Achievement Levels Guide
       </strong>
 
-      <hr style="margin:6px 0;">
+      <div><strong>EE1</strong>-Exceeding Expectations 1 (8/8, 90–100%)</div>
 
-      <div style="margin-bottom:4px;">
-      <strong>EE1</strong> — Exceeding Expectations 1 (8/8, 90–100%)
-      </div>
+      <div><strong>EE2</strong>-Exceeding Expectations 2 (7/8, 80–89%)</div>
 
-      <div style="margin-bottom:4px;">
-      <strong>EE2</strong> — Exceeding Expectations 2 (7/8, 80–89%)
-      </div>
+      <div><strong>ME1</strong>-Meeting Expectations 1 (6/8, 70–79%)</div>
 
-      <div style="margin-bottom:4px;">
-      <strong>ME1</strong> — Meeting Expectations 1 (6/8, 70–79%)
-      </div>
+      <div><strong>ME2</strong>-Meeting Expectations 2 (5/8, 56–69%)</div>
 
-      <div style="margin-bottom:4px;">
-      <strong>ME2</strong> — Meeting Expectations 2 (5/8, 56–69%)
-      </div>
+      <div><strong>AE1</strong>-Approaching Expectations 1 (4/8, 40–55%)</div>
 
-      <div style="margin-bottom:4px;">
-      <strong>AE1</strong> — Approaching Expectations 1 (4/8, 40–55%)
-      </div>
+      <div><strong>AE2</strong>-Approaching Expectations 2 (3/8, 20–39%)</div>
 
-      <div style="margin-bottom:4px;">
-      <strong>AE2</strong> — Approaching Expectations 2 (3/8, 20–39%)
-      </div>
+      <div><strong>BE1</strong>-Below Expectations 1 (2/8, 10–19%)</div>
 
-      <div style="margin-bottom:4px;">
-      <strong>BE1</strong> — Below Expectations 1 (2/8, 10–19%)
-      </div>
-
-      <div>
-      <strong>BE2</strong> — Below Expectations 2 (1/8, 1–9%)
-      </div>
+      <div><strong>BE2</strong>-Below Expectations 2 (1/8, 1–9%)</div>
 
     </div>
   `;
 }
+
+	
 function generateInsight(student, subjects) {
 
   const subjectScores = {};
