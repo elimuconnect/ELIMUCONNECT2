@@ -3453,24 +3453,22 @@ ${generalComment(overallAvg)}
     footer.style.paddingTop = "6px";
     footer.innerText = "Assessment is competency-based and evidence-driven, guided by KICD CBE curriculum designs.";
 
-    
-    tableWrapper.appendChild(table);
-    tableWrapper.appendChild(generalBlock);
-    tableWrapper.appendChild(footer);
+   /* CREATE table wrapper FIRST */
 const tableWrapper = document.createElement("div");
+
 tableWrapper.appendChild(table);
 tableWrapper.appendChild(generalBlock);
 tableWrapper.appendChild(footer);
 
 
-/* FIND recommendations container */
+/* Find recommendations + achievement guide section */
 const recommendationsSection =
 card.querySelector(
 'div[style*="display:flex"][style*="gap:8px"]'
 );
 
 
-/* INSERT tables BEFORE recommendations */
+/* Put tables BEFORE recommendations */
 if(recommendationsSection){
 
     card.insertBefore(
@@ -3485,7 +3483,6 @@ if(recommendationsSection){
     );
 
 }
-  
   });
 
 
