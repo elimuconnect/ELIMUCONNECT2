@@ -1657,67 +1657,88 @@ year: SYSTEM_YEAR,
 })}
 
    <div class="split-block learner-header"
-     style="
-     display:flex;
-     justify-content:space-between;
-     align-items:center;
-     flex-wrap:wrap;
-     margin-bottom:4px;
+style="
+display:flex;
+justify-content:space-between;
+align-items:center;
+flex-wrap:wrap;
+margin-bottom:4px;
+font-size:15px;
 ">
-  <h4 style="margin:0;">
-    👤 ${student}
-    <small>(<strong>Adm: ${admission}</strong>)</small>
-  </h4>
 
-  <div style="font-weight:bold;">
-    ${supportFlag}
-  </div>
+<h4 style="
+margin:0;
+font-size:20px;
+">
+👤 ${student}
+<small style="font-size:15px;">
+(<strong>Adm: ${admission}</strong>)
+</small>
+</h4>
+
+<div style="
+font-weight:bold;
+font-size:15px;
+">
+${supportFlag}
 </div>
 
-
-<div class="split-block" style="margin-bottom:4px;">
-  <p style="
-     margin:2px 0;
-     font-weight:bold;
-  ">
-    📊 Progress Trend: ${trend}
-  </p>
-
-  ${insight}
 </div>
 
 
 <div class="split-block"
-     style="
-     display:flex;
-     gap:8px;
-     flex-wrap:wrap;
-     margin-bottom:4px;
+style="
+margin-bottom:4px;
+font-size:15px;
 ">
-  ${strengths.length
-      ? `<p style="margin:0;">
-          <strong>💪 Strengths:</strong>
-          ${strengths.join(", ")}
-        </p>`
-      : ""}
 
-  ${needs.length
-      ? `<p style="margin:0;">
-          <strong>🎯 Areas for Improvement:</strong>
-          ${needs.join(", ")}
-        </p>`
-      : ""}
+<p style="
+margin:2px 0;
+font-weight:bold;
+font-size:15px;
+">
+📊 Progress Trend: ${trend}
+</p>
+
+${insight}
+
 </div>
-   
- <div style="
+
+
+<div class="split-block"
+style="
+display:flex;
+gap:8px;
+flex-wrap:wrap;
+margin-bottom:4px;
+font-size:15px;
+">
+
+${strengths.length
+? `<p style="margin:0;font-size:15px;">
+<strong>💪 Strengths:</strong>
+${strengths.join(", ")}
+</p>` : ""}
+
+${needs.length
+? `<p style="margin:0;font-size:15px;">
+<strong>🎯 Areas for Improvement:</strong>
+${needs.join(", ")}
+</p>` : ""}
+
+</div>
+
+
+
+<div style="
 display:flex;
 gap:8px;
 align-items:flex-start;
 flex-wrap:wrap;
 margin-top:4px;
+font-size:15px;
 ">
 
-<!-- LEFT SIDE -->
 <div style="flex:2;">
 
 ${[
@@ -1726,61 +1747,73 @@ recommendations.teacher.length ? `
 <div class="split-block"
 style="
 margin:4px 0;
-padding:5px 8px;
+padding:6px 10px;
 border-left:4px solid #3498db;
 background:#f8fbff;
+font-size:15px;
 ">
 
-<strong>👩🏽‍🏫 Teacher Actions</strong>
+<strong style="font-size:16px;">
+👩🏽‍🏫 Teacher Actions
+</strong>
 
 <ul style="
-margin:2px 0 0 14px;
+margin:4px 0 0 16px;
 padding:0;
-line-height:1.2;
+line-height:1.35;
+font-size:15px;
 ">
 ${recommendations.teacher.map(r=>`<li>${r}</li>`).join('')}
 </ul>
 
-</div>`:'' ,
+</div>`:'',
 
 
 recommendations.parent.length ? `
 <div class="split-block"
 style="
 margin:4px 0;
-padding:5px 8px;
+padding:6px 10px;
 border-left:4px solid #f39c12;
 background:#fffaf3;
+font-size:15px;
 ">
 
-<strong>🏠 Parent Support</strong>
+<strong style="font-size:16px;">
+🏠 Parent Support
+</strong>
 
 <ul style="
-margin:2px 0 0 14px;
+margin:4px 0 0 16px;
 padding:0;
-line-height:1.2;
+line-height:1.35;
+font-size:15px;
 ">
 ${recommendations.parent.map(r=>`<li>${r}</li>`).join('')}
 </ul>
 
-</div>`:'' ,
+</div>`:'',
 
 
 recommendations.learner.length ? `
 <div class="split-block"
 style="
 margin:4px 0;
-padding:5px 8px;
+padding:6px 10px;
 border-left:4px solid #2ecc71;
 background:#f6fffa;
+font-size:15px;
 ">
 
-<strong>🎯 Learner Focus</strong>
+<strong style="font-size:16px;">
+🎯 Learner Focus
+</strong>
 
 <ul style="
-margin:2px 0 0 14px;
+margin:4px 0 0 16px;
 padding:0;
-line-height:1.2;
+line-height:1.35;
+font-size:15px;
 ">
 ${recommendations.learner.map(r=>`<li>${r}</li>`).join('')}
 </ul>
@@ -1791,13 +1824,9 @@ ${recommendations.learner.map(r=>`<li>${r}</li>`).join('')}
 
 </div>
 
-
-<!-- RIGHT SIDE -->
 ${renderAchievementGuide()}
 
 </div>
-   
-
     <!-- SUBJECTS -->
    ${Object.entries(subjects).map(([subject, rows]) => {
   if (subject === "__admission") return "";
@@ -2388,21 +2417,21 @@ function renderAchievementGuide() {
   return `
     <div style="
       flex: 1; 
-      font-size: 13px; 
+      font-size: 12px; 
       line-height: 1.3; 
-      padding: 16px; 
+      padding: 12px; 
       border: 1px solid #ddd; 
       border-radius: 6px; 
       background: #fafafa;
     ">
-      <strong style="font-size:14px;">Achievement Levels Guide</strong><br><br>
-      <div style="margin-bottom:5px;">EE1 – Exceeding Expectations1(90-100%)</div>
-      <div style="margin-bottom:5px;">EE2 – Exceeding Expectations2(80-89%)</div>
-      <div style="margin-bottom:5px;">ME1 – Meeting Expectations1(70-79)</div>
-      <div style="margin-bottom:5px;">ME2 – Meeting Expectations2(56-69)</div>
-      <div style="margin-bottom:5px;">AE1 – Approaching Expectations1(40-55%)</div>
-      <div style="margin-bottom:5px;">AE2 – Approaching Expectations2(20-39%)</div>
-      <div style="margin-bottom:5px;">BE1 – Below Expectations1(10-19%)</div>
+      <strong style="font-size:12px;">Achievement Levels Guide</strong><br><br>
+      <div style="margin-bottom:3px;">EE1 – Exceeding Expectations1(90-100%)</div>
+      <div style="margin-bottom:3px;">EE2 – Exceeding Expectations2(80-89%)</div>
+      <div style="margin-bottom:3px;">ME1 – Meeting Expectations1(70-79)</div>
+      <div style="margin-bottom:3px;">ME2 – Meeting Expectations2(56-69)</div>
+      <div style="margin-bottom:3px;">AE1 – Approaching Expectations1(40-55%)</div>
+      <div style="margin-bottom:3px;">AE2 – Approaching Expectations2(20-39%)</div>
+      <div style="margin-bottom:3px;">BE1 – Below Expectations1(10-19%)</div>
       <div>BE2 – Below Expectations2(1-9%)</div>
     </div>
   `;
