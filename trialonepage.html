@@ -2465,7 +2465,6 @@ function generateSupportFlag(student, subjects) {
 
 
 
-
 function generateRecommendations(student, subjects, trend, supportFlag) {
 
   const teacher = [];
@@ -2475,72 +2474,151 @@ function generateRecommendations(student, subjects, trend, supportFlag) {
   const { strengths, needs } =
       generateStrengthsAndNeeds(student, subjects);
 
-  /* TEACHER */
+
+  /* ================= TEACHER ================= */
+
   if (supportFlag.includes("Needs Learning Support")) {
       teacher.push(
-        "Provide targeted support and extra practice."
+        "Provide targeted remediation on core competencies."
       );
-  }
-  else if (trend === "📉 Declining") {
+
       teacher.push(
-        "Monitor progress closely and give guidance."
-      );
-  }
-  else if (strengths.length) {
-      teacher.push(
-        `Challenge learner further in ${strengths[0]}.`
-      );
-  }
-  else {
-      teacher.push(
-        "Encourage active participation."
+        "Apply differentiated instruction for personalized support."
       );
   }
 
-  /* PARENT */
+  if (trend === "📉 Declining") {
+      teacher.push(
+        "Conduct one-on-one reviews to bridge learning gaps."
+      );
+  }
+
+  if (strengths.length) {
+      teacher.push(
+        `Further challenge the learner in ${strengths.slice(0,2).join(", ")}.`
+      );
+  }
+
+
+
+  /* ================= PARENT ================= */
+
   if (needs.length) {
       parent.push(
-        `Support revision in ${needs[0]}.`
-      );
-  }
-  else if (trend === "📉 Declining") {
-      parent.push(
-        "Monitor daily study habits."
-      );
-  }
-  else {
-      parent.push(
-        "Maintain a supportive study environment."
+        `Provide extra practice materials for ${needs.slice(0,2).join(", ")}.`
       );
   }
 
-  /* LEARNER */
+  if (trend === "📉 Declining") {
+      parent.push(
+        "Closely monitor daily study habits and revision."
+      );
+  }
+
+  parent.push(
+      "Regularly consult with teachers on learner progress."
+  );
+
+
+
+  /* ================= LEARNER ================= */
+
+  if (strengths.length) {
+      learner.push(
+        `Maintain strong effort in ${strengths.slice(0,2).join(", ")}.`
+      );
+  }
+
   if (needs.length) {
       learner.push(
-        `Improve effort in ${needs[0]}.`
-      );
-  }
-  else if (strengths.length) {
-      learner.push(
-        `Maintain strong performance in ${strengths[0]}.`
-      );
-  }
-  else {
-      learner.push(
-        "Complete assignments consistently."
+        `Dedicate more time to revising ${needs.slice(0,2).join(", ")}.`
       );
   }
 
-  const wrapCards =
-      arr => arr.map(text =>
-          `<div class="card">${text}</div>`
-      );
+  learner.push(
+      "Seek clarification immediately when concepts are unclear."
+  );
+
+
+
+  /* ================= DEFAULTS ================= */
+
+  const teacherDefault = [
+
+      "Encourage active participation in class.",
+
+      "Monitor progress through continuous assessment."
+
+  ];
+
+
+  const parentDefault = [
+
+      "Provide a conducive home study environment.",
+
+      "Encourage daily reading and revision."
+
+  ];
+
+
+  const learnerDefault = [
+
+      "Complete assignments on time.",
+
+      "Participate actively during lessons."
+
+  ];
+
+
+
+  /* ========= Ensure exactly 2 recommendations ========= */
+
+  function ensureTwo(arr, defaults){
+
+      const result = [...arr];
+
+      for(
+          let i=0;
+          result.length<2 && i<defaults.length;
+          i++
+      ){
+
+          if(!result.includes(defaults[i])){
+
+              result.push(defaults[i]);
+
+          }
+
+      }
+
+      return result.slice(0,2);
+
+  }
+
+
 
   return {
-      teacher: wrapCards(teacher),
-      parent: wrapCards(parent),
-      learner: wrapCards(learner)
+
+      teacher:
+          ensureTwo(
+              teacher,
+              teacherDefault
+          ),
+
+      parent:
+          ensureTwo(
+              parent,
+              parentDefault
+          ),
+
+      learner:
+          ensureTwo(
+              learner,
+              learnerDefault
+          )
+
   };
+
 }
 
 	
