@@ -2476,6 +2476,8 @@ generateBroadsheet(records, avgMap, mode);
 
 
 
+
+	
 function renderAchievementGuide() {
   return `
     <div style="
@@ -2495,59 +2497,40 @@ function renderAchievementGuide() {
       <hr style="margin:6px 0;">
 
       <div style="margin-bottom:4px;">
-      <strong>EE1</strong> — Exceeding Expectations 1
-      <br>Points: <strong>8/8</strong>
-      (90–100%)
+      <strong>EE1</strong> — Exceeding Expectations 1 (8/8, 90–100%)
       </div>
 
       <div style="margin-bottom:4px;">
-      <strong>EE2</strong> — Exceeding Expectations 2
-      <br>Points: <strong>7/8</strong>
-      (80–89%)
+      <strong>EE2</strong> — Exceeding Expectations 2 (7/8, 80–89%)
       </div>
 
       <div style="margin-bottom:4px;">
-      <strong>ME1</strong> — Meeting Expectations 1
-      <br>Points: <strong>6/8</strong>
-      (70–79%)
+      <strong>ME1</strong> — Meeting Expectations 1 (6/8, 70–79%)
       </div>
 
       <div style="margin-bottom:4px;">
-      <strong>ME2</strong> — Meeting Expectations 2
-      <br>Points: <strong>5/8</strong>
-      (56–69%)
+      <strong>ME2</strong> — Meeting Expectations 2 (5/8, 56–69%)
       </div>
 
       <div style="margin-bottom:4px;">
-      <strong>AE1</strong> — Approaching Expectations 1
-      <br>Points: <strong>4/8</strong>
-      (40–55%)
+      <strong>AE1</strong> — Approaching Expectations 1 (4/8, 40–55%)
       </div>
 
       <div style="margin-bottom:4px;">
-      <strong>AE2</strong> — Approaching Expectations 2
-      <br>Points: <strong>3/8</strong>
-      (20–39%)
+      <strong>AE2</strong> — Approaching Expectations 2 (3/8, 20–39%)
       </div>
 
       <div style="margin-bottom:4px;">
-      <strong>BE1</strong> — Below Expectations 1
-      <br>Points: <strong>2/8</strong>
-      (10–19%)
+      <strong>BE1</strong> — Below Expectations 1 (2/8, 10–19%)
       </div>
 
       <div>
-      <strong>BE2</strong> — Below Expectations 2
-      <br>Points: <strong>1/8</strong>
-      (1–9%)
+      <strong>BE2</strong> — Below Expectations 2 (1/8, 1–9%)
       </div>
 
     </div>
   `;
 }
-
-  
-  
 function generateInsight(student, subjects) {
 
   const subjectScores = {};
