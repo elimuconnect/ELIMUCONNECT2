@@ -3461,20 +3461,31 @@ tableWrapper.appendChild(generalBlock);
 tableWrapper.appendChild(footer);
 
 
-/* Find recommendations + achievement guide section */
-/* Find Teacher Actions block */
-const recommendationsSection =
+/* find Teacher Actions block */
+const teacherBlock =
 card.querySelector(
 '.split-block[style*="border-left"]'
-)?.parentElement;
+);
 
 
-/* Put tables BEFORE recommendations */
-if(recommendationsSection){
+/* move upward until direct child of learner-card */
+let insertTarget = teacherBlock;
+
+while(
+    insertTarget &&
+    insertTarget.parentElement !== card
+){
+    insertTarget =
+    insertTarget.parentElement;
+}
+
+
+/* insert */
+if(insertTarget){
 
     card.insertBefore(
         tableWrapper,
-        recommendationsSection
+        insertTarget
     );
 
 }else{
