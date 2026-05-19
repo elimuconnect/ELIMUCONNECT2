@@ -3320,11 +3320,17 @@ card.style.pageBreakBefore = "auto";  // Allows it to follow the header naturall
     // Remove old table blocks
     card.querySelectorAll(".subject-block, .trend-box").forEach(el => el.remove());
 
-    const studentName = card.querySelector("h4")?.innerText
-      .replace("👤", "")
-      .replace(/\(.*?\)/, "")
-      .trim();
+   const headerText =
+card.querySelector("h4")?.innerText || "";
 
+const studentName =
+headerText
+.replace("👤","")
+.replace(/\(.*?\)/,"")
+.trim();
+
+const admission =
+headerText.match(/Adm:\s*(.*?)\)/)?.[1]?.trim();
     const subjectData = avgMap?.[studentName];
     if (!subjectData) return;
 
@@ -3478,15 +3484,6 @@ const avg =
 numericScoresMap[subject] || 0;
 
 
-// get learner admission number
-const admission =
-Object.keys(grouped || {})
-.find(name => name === studentName)
-? grouped[studentName]?.__admission
-: null;
-
-
-// previous term scores
 const prevScores =
 previousSubjectMap?.[admission]?.[subject]
 || [];
@@ -3499,12 +3496,8 @@ prevScores.length
 : null;
 
 
-// trend arrow
 const trend =
-getSubjectTrend(
-avg,
-prevAvg
-);
+getSubjectTrend(avg, prevAvg);
 
 
 return `
