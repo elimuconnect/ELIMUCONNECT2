@@ -673,7 +673,8 @@ let avgMap = {}; // make it global so downloadPDF can access it
  let learnerSummary = {};
 let previousRecords = [];
 let previousAverages = {};
-
+let previousLearnerMap = {};
+let previousSubjectMap = {};
 
   
 const levelColor = {
@@ -778,7 +779,33 @@ const uniqueCategories = [...new Set(categories.map(c => c.category))];
 categorySelect.innerHTML =
   `<option value="">Select category</option>` +
   uniqueCategories.map(c => `<option value="${c}">${c}</option>`).join("");
- 
+
+
+
+
+
+function getSubjectTrend(currentAvg, previousAvg){
+
+   if(previousAvg == null){
+      return "⟺";   // no previous data
+   }
+
+   const diff =
+   currentAvg - previousAvg;
+
+   if(diff >= 0.15){
+      return "⭧";   // improved
+   }
+
+   if(diff <= -0.15){
+      return "⭨";   // declined
+   }
+
+   return "⟺";      // maintained
+}
+
+
+	
 /* ========== MAIN LOAD ========== */
 async function loadReport() {
   reportDiv.innerHTML = "";
@@ -902,7 +929,7 @@ if (previousTerm) {
 
 
 
-let previousLearnerMap = {};
+previousLearnerMap = {};
 
 previousRecords?.forEach(r => {
   const adm = r.admission_number;
@@ -914,6 +941,34 @@ previousRecords?.forEach(r => {
 
   previousLearnerMap[adm].push(score);
 });
+
+
+
+previousSubjectMap = {};
+
+previousRecords?.forEach(r => {
+
+  const adm = r.admission_number;
+  const subject = r.subject;
+  const score = levelToScore(r.achievement_level);
+
+  if (!score) return;
+
+  if (!previousSubjectMap[adm]) {
+      previousSubjectMap[adm] = {};
+  }
+
+  if (!previousSubjectMap[adm][subject]) {
+      previousSubjectMap[adm][subject] = [];
+  }
+
+  previousSubjectMap[adm][subject].push(score);
+
+});
+	
+
+
+	
 const hasPreviousData = Object.keys(previousLearnerMap || {}).length > 0;
 
 	
@@ -1912,7 +1967,7 @@ ${recommendations.learner.map(r=>`<li>${r}</li>`).join('')}
 
 
 ${renderAchievementGuide()}
- 
+ </div>
 
 
 
@@ -1928,9 +1983,29 @@ const subjectKey = subject.trim().toLowerCase();
 const subjectData = Object.entries(avgMap?.[student] || {})
   .find(([key]) => key.trim().toLowerCase() === subjectKey)?.[1];
 
-const subjectAvg = subjectData?.average_score ?? null;
-const subjectLevel = subjectData?.achievement_level ?? null;
+const subjectAvg =
+subjectData?.average_score ?? null;
 
+const subjectLevel =
+subjectData?.achievement_level ?? null;
+
+
+// ADD BELOW (new)
+const prevScores =
+previousSubjectMap?.[admission]?.[subject]
+|| [];
+
+const prevSubjectAvg =
+prevScores.length
+? prevScores.reduce((a,b)=>a+b,0)
+/ prevScores.length
+: null;
+
+const trendArrow =
+getSubjectTrend(
+Number(subjectAvg),
+prevSubjectAvg
+);
 
      
   function getAvgColor(score) {
@@ -2069,18 +2144,31 @@ border-left:4px solid ${
 <tfoot>
   <tr style="font-weight:bold; background:#f0f0f0;">
     <td>SUBJECT/LEARNING AREA PERFORMANCE</td>
-    <td colspan="2">
-     <span style="
-  padding: 3px 8px;
-  border-radius: 12px;
-  font-weight:bold;
-  color:white;
-  background:${getAvgColor(subjectAvg)};
-  white-space: nowrap;
+   <td colspan="2">
+
+<span style="
+padding:3px 8px;
+border-radius:12px;
+font-weight:bold;
+color:white;
+background:${getAvgColor(subjectAvg)};
+white-space:nowrap;
 ">
-  ${getAchievementLabel(subjectAvg)}
+
+${getAchievementLabel(subjectAvg)}
+
 </span>
-    </td>
+
+<span style="
+margin-left:8px;
+font-size:20px;
+">
+
+${trendArrow}
+
+</span>
+
+</td>
   </tr>
 </tfoot>`
           : ""
@@ -3508,9 +3596,31 @@ table.innerHTML = `
 
 <tbody>
 
+
 ${Object.entries(subjectData).map(([subject,d])=>{
 
-const avg=Number(d.average_score);
+const avg =
+numericScoresMap[subject] || 0;
+
+
+// get admission number from heading
+const admission =
+card.querySelector("h4")
+?.innerText.match(/Adm:\s*(.*?)\)/)?.[1]
+?.trim();
+
+const prevScores =
+previousSubjectMap?.[admission]?.[subject]
+|| [];
+
+const prevAvg =
+prevScores.length
+? prevScores.reduce((a,b)=>a+b,0)
+/ prevScores.length
+: null;
+
+const trendArrow =
+getSubjectTrend(avg, prevAvg);
 
 return `
 
@@ -3528,8 +3638,24 @@ text-align:center;
 ${avg}/4
 </td>
 
-<td style="border:1px solid #000;padding:6px;">
+
+<td style="
+border:1px solid #000;
+padding:3px;
+font-size:15px;
+">
+
 ${d.achievement_level}
+
+<span style="
+margin-left:6px;
+font-size:18px;
+">
+
+${trendArrow}
+
+</span>
+
 </td>
 
 <td style="border:1px solid #000;padding:6px;">
@@ -3592,6 +3718,8 @@ const signatures = document.createElement("div");
     </div>
     `;
 
+
+	  
     const footer = document.createElement("div");
     footer.style.fontSize = "10px";
     footer.style.textAlign = "center";
