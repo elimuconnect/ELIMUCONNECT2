@@ -3474,7 +3474,38 @@ Comment
 
 ${Object.entries(subjectData).map(([subject,d])=>{
 
-const avg = numericScoresMap[subject] || 0;
+const avg =
+numericScoresMap[subject] || 0;
+
+
+// get learner admission number
+const admission =
+Object.keys(grouped || {})
+.find(name => name === studentName)
+? grouped[studentName]?.__admission
+: null;
+
+
+// previous term scores
+const prevScores =
+previousSubjectMap?.[admission]?.[subject]
+|| [];
+
+
+const prevAvg =
+prevScores.length
+? prevScores.reduce((a,b)=>a+b,0)
+/ prevScores.length
+: null;
+
+
+// trend arrow
+const trend =
+getSubjectTrend(
+avg,
+prevAvg
+);
+
 
 return `
 
