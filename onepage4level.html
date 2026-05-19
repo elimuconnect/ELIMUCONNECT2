@@ -794,17 +794,24 @@ function getSubjectTrend(currentAvg, previousAvg){
    const diff =
       currentAvg - previousAvg;
 
+  function getSubjectTrend(currentAvg, previousAvg){
+
+   if(previousAvg == null){
+      return "⭤";
+   }
+
+   const diff = currentAvg - previousAvg;
+
    if(diff >= 0.15){
-      return "⬆️";
+      return "⭧";   // thick up-right
    }
 
    if(diff <= -0.15){
-      return "⬇️";
+      return "⭨";   // thick down-right
    }
 
-   return "➖";
+   return "⟺";
 }
-
 
 
 
