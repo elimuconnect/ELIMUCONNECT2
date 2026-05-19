@@ -2464,35 +2464,55 @@ const mode = document.getElementById("broadsheetMode").value;
 
 generateBroadsheet(records, avgMap, mode);
 
+
 function renderAchievementGuide() {
   return `
     <div style="
-      flex:2;
-      min-width:300px;
-      min-height:220px;   /* increased height */
-
-      font-size:15px;     /* larger text */
-      line-height:2;      /* more spacing */
-
-      padding:18px;
-
-      border:1px solid #ddd;
-      border-radius:8px;
-      background:#fafafa;
-
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
+      flex: 1; 
+      font-size: 16px; 
+      line-height: 1.6; 
+      padding: 20px; 
+      border: 1px solid #ddd; 
+      border-radius: 6px; 
+      background: #fafafa;
     ">
 
-      <strong style="
-        font-size:18px;    /* larger heading */
-        display:block;
-        margin-bottom:18px;
-        text-align:center;
-      ">
-        Achievement Levels Guide
-      </strong>
+ <strong style="font-size:18px;">Achievement Levels Guide</strong><br><br>
+
+     
+      <div style="margin-bottom:10px;">
+        <strong>4</strong> - Exceeding Expectations (4/4)
+      </div>
+
+      <div style="margin-bottom:10px;">
+        <strong>3</strong> - Meeting Expectations (3/4)
+      </div>
+
+      <div style="margin-bottom:10px;">
+        <strong>2</strong> - Approaching Expectations (2/4)
+      </div>
+
+      <div>
+        <strong>1</strong> - Below Expectations (1/4)
+      </div>
+
+    </div>
+  `;
+}
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
 
       <div style="margin-bottom:10px;">
         <strong>4</strong> - Exceeding Expectations (4/4)
