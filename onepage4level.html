@@ -784,36 +784,25 @@ categorySelect.innerHTML =
 
 
 
-
 function getSubjectTrend(currentAvg, previousAvg){
 
    if(previousAvg == null){
-      return "➖";
+      return "⟺";   // no previous data
    }
 
    const diff =
-      currentAvg - previousAvg;
-
-  function getSubjectTrend(currentAvg, previousAvg){
-
-   if(previousAvg == null){
-      return "⭤";
-   }
-
-   const diff = currentAvg - previousAvg;
+   currentAvg - previousAvg;
 
    if(diff >= 0.15){
-      return "⭧";   // thick up-right
+      return "⭧";   // improved
    }
 
    if(diff <= -0.15){
-      return "⭨";   // thick down-right
+      return "⭨";   // declined
    }
 
-   return "⟺";
+   return "⟺";      // maintained
 }
-
-
 
 
 	
