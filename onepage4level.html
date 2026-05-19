@@ -2698,158 +2698,94 @@ function generateStrengthsAndNeeds(subjects) {
 
 
 
-function generateRecommendations(student, subjects, trend, supportFlag) {
 
+
+function generateRecommendations(subjects, trend, supportFlag) {
   const teacher = [];
   const parent = [];
   const learner = [];
 
-  const { strengths, needs } =
-      generateStrengthsAndNeeds(student, subjects);
+  const { strengths, needs } = generateStrengthsAndNeeds(subjects);
 
-
-  /* ================= TEACHER ================= */
-
+  /* ===== TEACHER ===== */
   if (supportFlag.includes("Needs Learning Support")) {
-
-      teacher.push(
-        "Provide targeted support on weak competencies."
-      );
-
-      teacher.push(
-        "Use differentiated instruction."
-      );
+    teacher.push("Provide targeted support on weak competencies.");
+    teacher.push("Use differentiated instruction and quick assessments.");
   }
 
   if (trend === "📉 Declining") {
-
-      teacher.push(
-        "Review assessments to address gaps."
-      );
+    teacher.push("Review recent assessments to address gaps.");
   }
 
   if (strengths.length) {
-
-      teacher.push(
-        `Encourage strengths in ${strengths.slice(0,2).join(", ")}.`
-      );
+    teacher.push(`Encourage strengths in ${strengths.join(", ")}.`);
   }
 
-
-
-  /* ================= PARENT ================= */
-
+  /* ===== PARENT ===== */
   if (needs.length) {
-
-      parent.push(
-        `Support practice in ${needs.slice(0,2).join(", ")} at home.`
-      );
+    parent.push(`Support practice in ${needs.join(", ")} at home.`);
   }
 
   if (trend === "📉 Declining") {
-
-      parent.push(
-        "Monitor homework and revision."
-      );
+    parent.push("Monitor homework and daily study time.");
   }
 
-  parent.push(
-      "Maintain communication with teachers."
-  );
+  parent.push("Maintain regular communication with the teacher.");
 
-
-
-  /* ================= LEARNER ================= */
-
+  /* ===== LEARNER ===== */
   if (strengths.length) {
-
-      learner.push(
-        `Build confidence in ${strengths.slice(0,2).join(", ")}.`
-      );
+    learner.push(`Build confidence using strengths in ${strengths.join(", ")}.`);
   }
 
   if (needs.length) {
-
-      learner.push(
-        `Revise ${needs.slice(0,2).join(", ")} more often.`
-      );
+    learner.push(`Focus revision on ${needs.join(", ")}.`);
   }
 
-  learner.push(
-      "Ask for help when unsure."
-  );
+  learner.push("Ask for help when concepts are unclear.");
 
-
-
-  /* ================= DEFAULTS ================= */
-
+  /* ===== DEFAULTS (3 each) ===== */
   const teacherDefault = [
-
-      "Encourage class participation.",
-
-      "Monitor learner progress."
-
+    "Encourage active participation in lessons.",
+    "Monitor progress with regular assessments.",
+    "Provide feedback to support improvement."
   ];
 
-
   const parentDefault = [
-
-      "Support daily study.",
-
-      "Provide a good study environment."
-
+    "Ensure a quiet study environment at home.",
+    "Encourage daily reading and revision.",
+    "Support completion of homework."
   ];
 
 
   const learnerDefault = [
-
-      "Complete assignments on time.",
-
-      "Participate actively in lessons."
-
+    "Submit all assignments and projects on time.",
+    "Be proactive in asking questions during lessons.",
+    "Participate actively in all learning activities."
   ];
 
+ const ensureTwo = (arr, defaults) => {
+  const result = [...arr];
 
-  /* ===== ENSURE EXACTLY 2 ===== */
+  for (let i = 0; result.length < 2 && i < defaults.length; i++) {
+    if (!result.includes(defaults[i])) {
+      result.push(defaults[i]);
+    }
+  }
 
-  const ensureTwo = (arr, defaults) => {
-
-      const result = [...new Set(arr)];
-
-      for(
-        let i=0;
-        result.length<2 && i<defaults.length;
-        i++
-      ){
-
-          if(!result.includes(defaults[i])){
-
-              result.push(defaults[i]);
-
-          }
-
-      }
-
-      return result.slice(0,2);
-
-  };
-
-
-  return {
-
-      teacher:
-          ensureTwo(teacher, teacherDefault),
-
-      parent:
-          ensureTwo(parent, parentDefault),
-
-      learner:
-          ensureTwo(learner, learnerDefault)
-
-  };
-
+  return result.slice(0, 2);
+};
+ return {
+  teacher: ensureTwo(teacher, teacherDefault),
+  parent: ensureTwo(parent, parentDefault),
+  learner: ensureTwo(learner, learnerDefault)
+};
 }
 
+
+
+
+
+	
 
 function getEvidenceStatus(rows) {
   const count = rows.length;
