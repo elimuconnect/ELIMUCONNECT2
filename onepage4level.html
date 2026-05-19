@@ -2297,6 +2297,7 @@ function generateBroadsheet(records, avgMap, mode = "grade") {
     .sort((a, b) => b.avg - a.avg); // ✅ rank by average
 
 
+    
     return `
       <h3 style="margin-top:15px;">${title}</h3>
       <div class="table-wrapper">
@@ -2385,7 +2386,7 @@ ${subjects.map(s => `
 			   
               `).join("")}
 
-    
+
 <td style="width:70px;">${Math.round(s.total)}</td>
  <td>${s.avg.toFixed(2)}</td>
 <td style="width:80px;">
