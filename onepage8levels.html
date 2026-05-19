@@ -3325,17 +3325,11 @@ card.style.pageBreakBefore = "auto";  // Allows it to follow the header naturall
     // Remove old table blocks
     card.querySelectorAll(".subject-block, .trend-box").forEach(el => el.remove());
 
-   const headerText =
-card.querySelector("h4")?.innerText || "";
+    const studentName = card.querySelector("h4")?.innerText
+      .replace("👤", "")
+      .replace(/\(.*?\)/, "")
+      .trim();
 
-const studentName =
-headerText
-.replace("👤","")
-.replace(/\(.*?\)/,"")
-.trim();
-
-const admission =
-headerText.match(/Adm:\s*(.*?)\)/)?.[1]?.trim();
     const subjectData = avgMap?.[studentName];
     if (!subjectData) return;
 
@@ -3483,16 +3477,22 @@ Comment
 
 <tbody>
 
+
 ${Object.entries(subjectData).map(([subject,d])=>{
 
 const avg =
 numericScoresMap[subject] || 0;
 
 
+// get admission number from heading
+const admission =
+card.querySelector("h4")
+?.innerText.match(/Adm:\s*(.*?)\)/)?.[1]
+?.trim();
+
 const prevScores =
 previousSubjectMap?.[admission]?.[subject]
 || [];
-
 
 const prevAvg =
 prevScores.length
@@ -3500,12 +3500,13 @@ prevScores.length
 / prevScores.length
 : null;
 
-
-const trend =
+const trendArrow =
 getSubjectTrend(avg, prevAvg);
 
-
 return `
+
+
+
 
 <tr>
 
@@ -3523,29 +3524,31 @@ border:1px solid #000;
 padding:3px;
 font-size:15px;
 text-align:center;
-white-space:nowrap;
 ">
-
 ${avg}/8
-
-<span style="
-font-size:18px;
-margin-left:4px;
-">
-
-${trend}
-
-</span>
-
 </td>
+
+
 
 <td style="
 border:1px solid #000;
 padding:3px;
 font-size:15px;
 ">
+
 ${d.achievement_level}
+
+<span style="
+margin-left:6px;
+font-size:18px;
+">
+
+${trendArrow}
+
+</span>
+
 </td>
+
 
 <td style="
 border:1px solid #000;
@@ -3746,9 +3749,6 @@ batchNum++;
 
 }
 };
-
-
-
   
   window.downloadSchoolAnalyticsPDF = async function () {
 
