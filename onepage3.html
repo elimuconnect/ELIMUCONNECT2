@@ -681,7 +681,8 @@ let avgMap = {}; // make it global so downloadPDF can access it
  let learnerSummary = {};
 let previousRecords = [];
 let previousAverages = {};
-
+let previousLearnerMap = {};
+let previousSubjectMap = {};
 
   
 
@@ -893,7 +894,7 @@ async function loadReport() {
 
 
 
-let previousLearnerMap = {};
+previousLearnerMap = {};
 
 previousRecords?.forEach(r => {
   const adm = r.admission_number;
@@ -909,7 +910,7 @@ previousRecords?.forEach(r => {
 
 
 
-let previousSubjectMap = {};
+previousSubjectMap = {};
 
 previousRecords?.forEach(r => {
 
