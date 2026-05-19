@@ -801,6 +801,33 @@ categorySelect.innerHTML =
   `<option value="">Select category</option>` +
   uniqueCategories.map(c => `<option value="${c}">${c}</option>`).join("");
 
+
+
+
+
+
+function getSubjectTrend(currentAvg, previousAvg){
+
+   if(previousAvg == null){
+      return "➖";
+   }
+
+   const diff =
+      currentAvg - previousAvg;
+
+   if(diff >= 0.3){
+      return "⬆️";
+   }
+
+   if(diff <= -0.3){
+      return "⬇️";
+   }
+
+   return "➖";
+}
+
+
+	
 /* ========== MAIN LOAD ========== */
 async function loadReport() {
   reportDiv.innerHTML = "";
@@ -1205,29 +1232,6 @@ ${year}
 
 `;
 
-}
-
-
-
-
-function getSubjectTrend(currentAvg, previousAvg){
-
-   if(previousAvg == null){
-      return "➖";
-   }
-
-   const diff =
-      currentAvg - previousAvg;
-
-   if(diff >= 0.3){
-      return "⬆️";
-   }
-
-   if(diff <= -0.3){
-      return "⬇️";
-   }
-
-   return "➖";
 }
 
 
