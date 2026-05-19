@@ -1811,36 +1811,105 @@ year: SYSTEM_YEAR,
 
 
 
- 
- <div style="display:flex; gap:25px; align-items:flex-start; flex-wrap:wrap; margin-top:20px;">
+<div style="
+display:flex;
+gap:6px;
+align-items:flex-start;
+flex-wrap:wrap;
+margin-top:4px;
+font-size:12px;
+">
 
-  <!-- LEFT SIDE: Recommendations -->
-  <div style="flex:2;">
-    ${[ 
-      recommendations.teacher.length ? `
-      <div class="split-block" style="margin:10px 0;padding:10px;border-left:4px solid #3498db;background:#f8fbff;">
-        <strong>👩🏽‍🏫 Teacher Actions</strong>
-        <ul>${recommendations.teacher.map(r => `<li>${r}</li>`).join('')}</ul>
-      </div>` : '',
+<div style="flex:1.2;">   <!-- smaller than flex:2 -->
 
-      recommendations.parent.length ? `
-      <div class="split-block" style="margin:10px 0;padding:10px;border-left:4px solid #f39c12;background:#fffaf3;">
-        <strong>🏠 Parent Support</strong>
-        <ul>${recommendations.parent.map(r => `<li>${r}</li>`).join('')}</ul>
-      </div>` : '',
+${[
 
-      recommendations.learner.length ? `
-      <div class="split-block" style="margin:10px 0;padding:10px;border-left:4px solid #2ecc71;background:#f6fffa;">
-        <strong>🎯 Learner Focus</strong>
-        <ul>${recommendations.learner.map(r => `<li>${r}</li>`).join('')}</ul>
-      </div>` : ''
-    ].filter(Boolean).join('')}
-  </div>
+recommendations.teacher.length ? `
+<div class="split-block"
+style="
+margin:3px 0;
+padding:4px 7px;
+border-left:3px solid #3498db;
+background:#f8fbff;
+font-size:12px;
+">
 
-  <!-- RIGHT SIDE: Achievement Guide -->
-  ${renderAchievementGuide()}
+<strong style="font-size:13px;">
+👩🏽‍🏫 Teacher Actions
+</strong>
+
+<ul style="
+margin:3px 0 0 14px;
+padding:0;
+line-height:1.2;
+font-size:12px;
+">
+${recommendations.teacher.map(r=>`<li>${r}</li>`).join('')}
+</ul>
+
+</div>`:'',
+
+
+
+recommendations.parent.length ? `
+<div class="split-block"
+style="
+margin:3px 0;
+padding:4px 7px;
+border-left:3px solid #f39c12;
+background:#fffaf3;
+font-size:12px;
+">
+
+<strong style="font-size:13px;">
+🏠 Parent Support
+</strong>
+
+<ul style="
+margin:3px 0 0 14px;
+padding:0;
+line-height:1.2;
+font-size:12px;
+">
+${recommendations.parent.map(r=>`<li>${r}</li>`).join('')}
+</ul>
+
+</div>`:'',
+
+
+
+recommendations.learner.length ? `
+<div class="split-block"
+style="
+margin:3px 0;
+padding:4px 7px;
+border-left:3px solid #2ecc71;
+background:#f6fffa;
+font-size:12px;
+">
+
+<strong style="font-size:13px;">
+🎯 Learner Focus
+</strong>
+
+<ul style="
+margin:3px 0 0 14px;
+padding:0;
+line-height:1.2;
+font-size:12px;
+">
+${recommendations.learner.map(r=>`<li>${r}</li>`).join('')}
+</ul>
+
+</div>`:''
+
+].filter(Boolean).join('')}
 
 </div>
+
+
+${renderAchievementGuide()}
+ 
 
 
 
@@ -2399,26 +2468,46 @@ generateBroadsheet(records, avgMap, mode);
 function renderAchievementGuide() {
   return `
     <div style="
-      flex: 1; 
-      font-size: 16px; 
-      line-height: 1.6; 
-      padding: 20px; 
-      border: 1px solid #ddd; 
-      border-radius: 6px; 
-      background: #fafafa;
-    ">
-      <strong style="font-size:18px;">Achievement Levels Guide</strong><br><br>
+      flex:2;
+      min-width:260px;
+      font-size:12px;
+      line-height:1.7;
+      padding:12px;
 
-      <div style="margin-bottom:10px;">4 – Exceeding Expectations</div>
-      <div style="margin-bottom:10px;">3 – Meeting Expectations</div>
-      <div style="margin-bottom:10px;">2 – Approaching Expectations</div>
-      <div>1 – Below Expectations</div>
+      border:1px solid #ddd;
+      border-radius:6px;
+      background:#fafafa;
+
+      white-space:nowrap;
+    ">
+
+      <strong style="
+        font-size:14px;
+        display:block;
+        margin-bottom:10px;
+      ">
+        Achievement Levels Guide
+      </strong>
+
+      <div>
+        <strong>4</strong> - Exceeding Expectations (4/4)
+      </div>
+
+      <div>
+        <strong>3</strong> - Meeting Expectations (3/4)
+      </div>
+
+      <div>
+        <strong>2</strong> - Approaching Expectations (2/4)
+      </div>
+
+      <div>
+        <strong>1</strong> - Below Expectations (1/4)
+      </div>
 
     </div>
   `;
 }
-
-
 
   
 
