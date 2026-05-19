@@ -1796,13 +1796,13 @@ year: SYSTEM_YEAR,
     </div>
 
     <div class="split-block">
-      <p style="margin:6px 0 5px 0;font-weight:bold;">
+      <p style="margin:6px 0 3px 0;font-weight:bold;">
         📊 Progress Trend: ${trend}
       </p>
       ${insight}
     </div>
 
-    <div class="split-block" style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:5px;">
+    <div class="split-block" style="display:flex;gap:1px;flex-wrap:wrap;margin-bottom:5px;">
       ${strengths.length ? `<p><strong>💪 Strengths:</strong> ${strengths.join(", ")}</p>` : ""}
       ${needs.length ? `<p><strong>🎯 Areas for Improvement:</strong> ${needs.join(", ")}</p>` : ""}
     </div>
@@ -1813,11 +1813,11 @@ year: SYSTEM_YEAR,
 
 <div style="
 display:flex;
-gap:3;
+gap:2;
 align-items:flex-start;
 flex-wrap:wrap;
-margin-top:3px;
-font-size:12px;
+margin-top:2px;
+font-size:11px;
 ">
 
 <div style="flex:1.2;">   <!-- smaller than flex:2 -->
@@ -1828,7 +1828,7 @@ recommendations.teacher.length ? `
 <div class="split-block"
 style="
 margin:3px 0;
-padding:3px 5px;
+padding:3px 3;
 border-left:3px solid #3498db;
 background:#f8fbff;
 font-size:12px;
@@ -1839,10 +1839,10 @@ font-size:12px;
 </strong>
 
 <ul style="
-margin:3px 0 0 14px;
+margin:3px 0 0 2;
 padding:0;
-line-height:1.2;
-font-size:12px;
+line-height:1.1;
+font-size:11px;
 ">
 ${recommendations.teacher.map(r=>`<li>${r}</li>`).join('')}
 </ul>
@@ -1855,21 +1855,21 @@ recommendations.parent.length ? `
 <div class="split-block"
 style="
 margin:3px 0;
-padding:4px 7px;
+padding:4px 6px;
 border-left:3px solid #f39c12;
 background:#fffaf3;
 font-size:12px;
 ">
 
-<strong style="font-size:13px;">
+<strong style="font-size:12px;">
 🏠 Parent Support
 </strong>
 
 <ul style="
 margin:3px 0 0 14px;
 padding:0;
-line-height:1.2;
-font-size:12px;
+line-height:1.1;
+font-size:11px;
 ">
 ${recommendations.parent.map(r=>`<li>${r}</li>`).join('')}
 </ul>
@@ -1882,10 +1882,10 @@ recommendations.learner.length ? `
 <div class="split-block"
 style="
 margin:3px 0;
-padding:4px 7px;
+padding:4px 6px;
 border-left:3px solid #2ecc71;
 background:#f6fffa;
-font-size:12px;
+font-size:11px;
 ">
 
 <strong style="font-size:13px;">
@@ -1895,8 +1895,8 @@ font-size:12px;
 <ul style="
 margin:3px 0 0 14px;
 padding:0;
-line-height:1.2;
-font-size:12px;
+line-height:1.1;
+font-size:11px;
 ">
 ${recommendations.learner.map(r=>`<li>${r}</li>`).join('')}
 </ul>
@@ -3466,8 +3466,8 @@ function commentFromScore(score, subject) {
     const table = document.createElement("table");
     table.style.width = "100%";
     table.style.borderCollapse = "collapse";
-    table.style.marginTop = "3px";
-    table.style.fontSize = "15px";
+    table.style.marginTop = "2px";
+    table.style.fontSize = "12px";
     table.style.tableLayout = "fixed";
 
 
@@ -3475,19 +3475,19 @@ table.innerHTML = `
 <thead>
   <tr>
 
-    <th style="border:1px solid #000;padding:3px;width:30%;font-size:15px;">
+    <th style="border:1px solid #000;padding:2px;width:30%;font-size:15px;">
       Learning Area
     </th>
 
-    <th style="border:1px solid #000;padding:3px;width:12%;font-size:15px;">
+    <th style="border:1px solid #000;padding:2px;width:12%;font-size:15px;">
       Score
     </th>
 
-    <th style="border:1px solid #000;padding:3px;width:35%;font-size:15px;">
+    <th style="border:1px solid #000;padding:2px;width:35%;font-size:15px;">
       Level
     </th>
 
-    <th style="border:1px solid #000;padding:3px;width:23%;font-size:15px;">
+    <th style="border:1px solid #000;padding:2px;width:23%;font-size:15px;">
       Comment
     </th>
 
@@ -3504,23 +3504,23 @@ return `
 
 <tr>
 
-<td style="border:1px solid #000;padding:8px;">
+<td style="border:1px solid #000;padding:6px;">
 ${subject}
 </td>
 
 <td style="
 border:1px solid #000;
-padding:8px;
+padding:6px;
 text-align:center;
 ">
 ${avg}/4
 </td>
 
-<td style="border:1px solid #000;padding:8px;">
+<td style="border:1px solid #000;padding:6px;">
 ${d.achievement_level}
 </td>
 
-<td style="border:1px solid #000;padding:8px;">
+<td style="border:1px solid #000;padding:6px;">
 ${commentFromScore(avg)}
 </td>
 
@@ -3539,11 +3539,11 @@ ${commentFromScore(avg)}
   
     const generalBlock = document.createElement("div");
     generalBlock.style.marginTop = "4px";
-    generalBlock.style.fontSize = "15px";
+    generalBlock.style.fontSize = "12px";
     generalBlock.style.lineHeight = "1.3";
 
     generalBlock.innerHTML = `
-      <table style="width:100%;border-collapse:collapse;margin-top:15px;">
+      <table style="width:100%;border-collapse:collapse;margin-top:10px;">
         <tr>
           <td style="border:1px solid #000;padding:4px;width:40%;"><strong>Learner's General Performance Level</strong></td>
         <td style="border:1px solid #000;padding:4px;">
@@ -3551,8 +3551,8 @@ ${commentFromScore(avg)}
 </td>
         </tr>
         <tr>
-          <td style="border:1px solid #000;padding:5px;"><strong>Teacher's General Comment</strong></td>
-          <td style="border:1px solid #000;padding:5px;">${generalComment(overallAvg)}</td>
+          <td style="border:1px solid #000;padding:3px;"><strong>Teacher's General Comment</strong></td>
+          <td style="border:1px solid #000;padding:3px;">${generalComment(overallAvg)}</td>
         </tr>
       </table>
  `;
@@ -3560,7 +3560,7 @@ ${commentFromScore(avg)}
 
 	  
 const signatures = document.createElement("div");
-    signatures.style.marginTop = "12px";
+    signatures.style.marginTop = "10px";
     signatures.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;font-size:14px;">
       <!-- Left: Class Teacher -->
@@ -3585,7 +3585,7 @@ const signatures = document.createElement("div");
     footer.style.textAlign = "center";
     footer.style.marginTop = "6px";
     footer.style.borderTop = "1px solid #ddd";
-    footer.style.paddingTop = "3px";
+    footer.style.paddingTop = "2px";
     footer.innerText = "Assessment is competency-based and evidence-driven, guided by KICD CBE curriculum designs.";
 
     const tableWrapper = document.createElement("div");
