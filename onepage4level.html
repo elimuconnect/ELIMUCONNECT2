@@ -2388,7 +2388,15 @@ ${subjects.map(s => `
     
 <td style="width:70px;">${Math.round(s.total)}</td>
  <td>${s.avg.toFixed(2)}</td>
-<td style="width:80px;">${getAchievementLabel(s.avg)}</td>
+<td style="width:80px;">
+${(
+    getAchievementLabel(s.avg)
+      .replace("Exceeding Expectations","E.E")
+      .replace("Meeting Expectations","M.E")
+      .replace("Approaching Expectations","A.E")
+      .replace("Below Expectations","B.E")
+)}
+</td>
             </tr>
           `).join("")}
         </tbody>
@@ -3779,7 +3787,6 @@ batchNum++;
   
 
   
-  
 document.getElementById("downloadBroadsheetBtn").addEventListener("click", async () => {
   const container = document.getElementById("report");
   if (!container || container.innerHTML.trim() === "") {
@@ -3842,7 +3849,10 @@ document.getElementById("downloadBroadsheetBtn").addEventListener("click", async
     document.body.removeChild(wrapper);
   }
 });
-  
+
+
+
+	
 </script>
 </body>
 </html>
