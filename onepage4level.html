@@ -3471,53 +3471,67 @@ function commentFromScore(score, subject) {
     table.style.tableLayout = "fixed";
 
 
-
-
-
-    table.innerHTML = `
-     <thead>
+table.innerHTML = `
+<thead>
   <tr>
-    <th style="border:1px solid #000;padding:3px;width:25%;font-size:15px;">
+
+    <th style="border:1px solid #000;padding:3px;width:30%;font-size:15px;">
       Learning Area
     </th>
 
-    <th style="border:1px solid #000;padding:3px;width:10%;font-size:15px;">
+    <th style="border:1px solid #000;padding:3px;width:12%;font-size:15px;">
       Score
     </th>
 
-    <th style="border:1px solid #000;padding:3px;width:20%;font-size:15px;">
+    <th style="border:1px solid #000;padding:3px;width:23%;font-size:15px;">
       Level
     </th>
 
-    <th style="border:1px solid #000;padding:3px;width:25%;font-size:15px;">
+    <th style="border:1px solid #000;padding:3px;width:35%;font-size:15px;">
       Comment
     </th>
+
   </tr>
 </thead>
-      <tbody>
-   
-        ${Object.entries(subjectData).map(([subject, d]) => {
-          const avg = Number(d.average_score);
-          return `
-            <tr>
-             
-			 <td style="border:1px solid #000;padding:8px;text-align:center;">
-  ${avg} / 4
+
+<tbody>
+
+${Object.entries(subjectData).map(([subject,d])=>{
+
+const avg=Number(d.average_score);
+
+return `
+
+<tr>
+
+<td style="border:1px solid #000;padding:8px;">
+${subject}
+</td>
+
+<td style="
+border:1px solid #000;
+padding:8px;
+text-align:center;
+">
+${avg}/4
 </td>
 
 <td style="border:1px solid #000;padding:8px;">
-  ${d.achievement_level}
+${d.achievement_level}
 </td>
 
 <td style="border:1px solid #000;padding:8px;">
-  ${commentFromScore(avg)}
+${commentFromScore(avg)}
 </td>
-             
-            </tr>
-          `;
-        }).join("")}
-      </tbody>
-    `;
+
+</tr>
+
+`;
+
+}).join("")}
+
+</tbody>
+`;
 
     /* =========================
        GENERAL PERFORMANCE BLOCK
