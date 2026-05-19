@@ -2710,139 +2710,102 @@ function generateRecommendations(subjects, trend, supportFlag) {
 
   /* ===== TEACHER ===== */
 
-  if (supportFlag?.includes("Needs Learning Support")) {
+ 
+	if (supportFlag?.includes("Needs Learning Support")) {
 
-      teacher.push(
-        "Provide targeted support on weak competencies."
-      );
+    teacher.push(
+      "Provide support on weak competencies."
+    );
 
-      teacher.push(
-        "Use differentiated instruction and quick assessments."
-      );
-
-  }
-
-  if (trend === "📉 Declining") {
-
-      teacher.push(
-        "Review recent assessments to address gaps."
-      );
-
-  }
-
-  if (strengths.length) {
-
-      teacher.push(
-        `Encourage strengths in ${strengths.join(", ")}.`
-      );
-
-  }
-
-
-  /* ===== PARENT ===== */
-
-  if (needs.length) {
-
-      parent.push(
-        `Support practice in ${needs.join(", ")} at home.`
-      );
-
-  }
-
-  if (trend === "📉 Declining") {
-
-      parent.push(
-        "Monitor homework and daily study time."
-      );
-
-  }
-
-  parent.push(
-      "Maintain regular communication with the teacher."
-  );
-
-
-  /* ===== LEARNER ===== */
-
-  if (strengths.length) {
-
-      learner.push(
-        `Build confidence using strengths in ${strengths.join(", ")}.`
-      );
-
-  }
-
-  if (needs.length) {
-
-      learner.push(
-        `Focus revision on ${needs.join(", ")}.`
-      );
-
-  }
-
-  learner.push(
-      "Ask for help when concepts are unclear."
-  );
-
-
-  const teacherDefault = [
-      "Encourage active participation in lessons.",
-      "Monitor progress with regular assessments.",
-      "Provide feedback to support improvement."
-  ];
-
-  const parentDefault = [
-      "Ensure a quiet study environment at home.",
-      "Encourage daily reading and revision.",
-      "Support completion of homework."
-  ];
-
-  const learnerDefault = [
-      "Submit assignments on time.",
-      "Ask questions during lessons.",
-      "Participate actively."
-  ];
-
-
-  const ensureTwo = (arr, defaults) => {
-
-      const result=[...arr];
-
-      for(
-          let i=0;
-          result.length<2 && i<defaults.length;
-          i++
-      ){
-
-          if(!result.includes(defaults[i])){
-
-              result.push(defaults[i]);
-
-          }
-
-      }
-
-      return result.slice(0,2);
-
-  };
-
-
-  return {
-
-      teacher:
-        ensureTwo(teacher, teacherDefault),
-
-      parent:
-        ensureTwo(parent, parentDefault),
-
-      learner:
-        ensureTwo(learner, learnerDefault)
-
-  };
+    teacher.push(
+      "Use differentiated instruction."
+    );
 
 }
 
-	
+if (trend === "📉 Declining") {
+
+    teacher.push(
+      "Review assessments to address gaps."
+    );
+
+}
+
+if (strengths.length) {
+
+    teacher.push(
+      `Encourage strengths in ${strengths.join(", ")}.`
+    );
+
+}
+
+
+
+/* ===== PARENT ===== */
+
+if (needs.length) {
+
+    parent.push(
+      `Support practice in ${needs.join(", ")}.`
+    );
+
+}
+
+if (trend === "📉 Declining") {
+
+    parent.push(
+      "Monitor homework and study time."
+    );
+
+}
+
+parent.push(
+    "Maintain communication with teachers."
+);
+
+
+
+/* ===== LEARNER ===== */
+
+if (strengths.length) {
+
+    learner.push(
+      `Build confidence in ${strengths.join(", ")}.`
+    );
+
+}
+
+if (needs.length) {
+
+    learner.push(
+      `Revise ${needs.join(", ")} more often.`
+    );
+
+}
+
+learner.push(
+    "Ask for help when unsure."
+);
+
+
+
+const teacherDefault = [
+    "Encourage participation.",
+    "Monitor progress.",
+    "Provide feedback."
+];
+
+const parentDefault = [
+    "Provide study support.",
+    "Encourage daily revision.",
+    "Support homework."
+];
+
+const learnerDefault = [
+    "Submit work on time.",
+    "Ask questions in class.",
+    "Participate actively."
+];
 
 function getEvidenceStatus(rows) {
   const count = rows.length;
