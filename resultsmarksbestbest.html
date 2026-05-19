@@ -1771,36 +1771,22 @@ ${insight}
 </div>
 
 
-<div class="split-block"
-style="
-display:flex;
-gap:8px;
-flex-wrap:wrap;
-margin-bottom:4px;
-font-size:15px;
-">
 
-${strengths.length
-? `<p style="margin:0;font-size:15px;">
-<strong>💪 Strengths:</strong>
-${strengths.join(", ")}
-</p>` : ""}
+    <div class="split-block" style="display:flex;gap:1px;flex-wrap:wrap;margin-bottom:5px;">
+      ${strengths.length ? `<p><strong>💪 Strengths:</strong> ${strengths.join(", ")}</p>` : ""}
+      ${needs.length ? `<p><strong>🎯 Areas for Improvement:</strong> ${needs.join(", ")}</p>` : ""}
+    </div>
 
-${needs.length
-? `<p style="margin:0;font-size:15px;">
-<strong>🎯 Areas for Improvement:</strong>
-${needs.join(", ")}
-</p>` : ""}
 
-</div>
+
 
 
 <div style="
 display:flex;
-gap:6px;
+gap:2;
 align-items:flex-start;
 flex-wrap:wrap;
-margin-top:4px;
+margin-top:2px;
 font-size:12px;
 ">
 
@@ -1812,7 +1798,7 @@ recommendations.teacher.length ? `
 <div class="split-block"
 style="
 margin:3px 0;
-padding:4px 7px;
+padding:3px 3;
 border-left:3px solid #3498db;
 background:#f8fbff;
 font-size:12px;
@@ -1822,12 +1808,15 @@ font-size:12px;
 👩🏽‍🏫 Teacher Actions
 </strong>
 
+
 <ul style="
 margin:3px 0 0 14px;
 padding:0;
-line-height:1.2;
+line-height:1.1;
 font-size:12px;
 ">
+
+
 ${recommendations.teacher.map(r=>`<li>${r}</li>`).join('')}
 </ul>
 
@@ -1839,20 +1828,20 @@ recommendations.parent.length ? `
 <div class="split-block"
 style="
 margin:3px 0;
-padding:4px 7px;
+padding:4px 6px;
 border-left:3px solid #f39c12;
 background:#fffaf3;
 font-size:12px;
 ">
 
-<strong style="font-size:13px;">
+<strong style="font-size:12px;">
 🏠 Parent Support
 </strong>
 
 <ul style="
 margin:3px 0 0 14px;
 padding:0;
-line-height:1.2;
+line-height:1.1;
 font-size:12px;
 ">
 ${recommendations.parent.map(r=>`<li>${r}</li>`).join('')}
@@ -1866,7 +1855,7 @@ recommendations.learner.length ? `
 <div class="split-block"
 style="
 margin:3px 0;
-padding:4px 7px;
+padding:4px 6px;
 border-left:3px solid #2ecc71;
 background:#f6fffa;
 font-size:12px;
@@ -1879,7 +1868,7 @@ font-size:12px;
 <ul style="
 margin:3px 0 0 14px;
 padding:0;
-line-height:1.2;
+line-height:1.1;
 font-size:12px;
 ">
 ${recommendations.learner.map(r=>`<li>${r}</li>`).join('')}
@@ -2487,7 +2476,7 @@ function renderAchievementGuide() {
       flex:2;               /* wider card */
       min-width:260px;      /* prevent squeezing */
       font-size:12px;
-      line-height:1.6;
+      line-height:1.2;
       padding:12px;
 
       border:1px solid #ddd;
@@ -2498,7 +2487,7 @@ function renderAchievementGuide() {
     ">
 
       <strong style="
-      font-size:14px;
+      font-size:12px;
       display:block;
       margin-bottom:8px;
       ">
@@ -2585,9 +2574,7 @@ function generateInsight(student, subjects) {
  
   
   
- 
-
-function generateSupportFlag(student, subjects) {
+ function generateSupportFlag(student, subjects) {
 
   const subjectAverages = [];
 
@@ -2597,39 +2584,56 @@ function generateSupportFlag(student, subjects) {
     const subjectData = avgMap?.[student]?.[subject];
     if (!subjectData) return;
 
-    const score = Number(subjectData.average_score);
-    if (!isNaN(score)) {
-      subjectAverages.push(score);
+    let score = subjectData.average_score;
+
+    if (typeof score === "string") {
+        score = levelToScore(score);
+    } else {
+        score = Number(score);
+    }
+
+    if (!isNaN(score) && score > 0) {
+        subjectAverages.push(score);
     }
   });
 
   if (!subjectAverages.length) return "";
 
-  const overall = subjectAverages.reduce((a,b)=>a+b,0) / subjectAverages.length;
+  const overall =
+      subjectAverages.reduce((a,b)=>a+b,0) /
+      subjectAverages.length;
 
-  const belowCount = subjectAverages.filter(a => a <= 2).length;
+  const belowCount =
+      subjectAverages.filter(a => a <= 3).length;
 
-  /* 🔴 NEEDS SUPPORT */
+  // 🔴 Needs Support
   if (
-    overall < 2.3 ||          // overall struggling
-    belowCount >= 2           // weak in 2+ subjects
-  ) {
-    return `<span style="color:#c0392b;font-weight:bold;">🔴 Needs Learning Support</span>`;
+      overall < 3.5 ||
+      belowCount >= 2
+  ){
+      return `
+      <span style="color:#c0392b;font-weight:bold;">
+      🔴 Needs Learning Support
+      </span>`;
   }
 
-  /* 🟢 HIGH POTENTIAL */
+  // 🟢 High Potential
   if (
-    overall >= 3.5 &&
-    subjectAverages.every(a => a >= 3) &&
-    subjectAverages.some(a => a >= 4)
-  ) {
-    return `<span style="color:#1e8449;font-weight:bold;">🟢 High Potential</span>`;
+      overall >= 6 &&
+      subjectAverages.every(a=>a>=5)
+  ){
+      return `
+      <span style="color:#1e8449;font-weight:bold;">
+      🟢 High Potential
+      </span>`;
   }
 
-  /* 🟡 DEFAULT */
-  return `<span style="color:#b9770e;font-weight:bold;">🟡 On Track</span>`;
+  // 🟡 On Track
+  return `
+  <span style="color:#b9770e;font-weight:bold;">
+  🟡 On Track
+  </span>`;
 }
-
 
 
 
@@ -3338,52 +3342,109 @@ card.style.pageBreakBefore = "auto";  // Allows it to follow the header naturall
     const table = document.createElement("table");
     table.style.width = "100%";
     table.style.borderCollapse = "collapse";
-    table.style.marginTop = "3px";
-    table.style.fontSize = "15px";
+    table.style.marginTop = "2px";
+    table.style.fontSize = "12px";
     table.style.tableLayout = "fixed";
 
-    table.innerHTML = `
-    <thead>
-    <tr>
-    <th style="border:1px solid #000;padding:4px;width:25%;font-size:15px;">Learning Area</th>
-    <th style="border:1px solid #000;padding:3px;width:25%;font-size:15px;">Performance</th>
-    <th style="border:1px solid #000;padding:3px;width:35%;font-size:15px;">Comment</th>
-    </tr>
-    </thead>
-    <tbody>
-    ${Object.entries(subjectData).map(([subject, d]) => {
-      const avg = numericScoresMap[subject] || 0;
-      return `
-      <tr>
-      <td style="border:1px solid #000;padding:3px;font-size:15px;line-height:1.5;">${subject}</td>
-      <td style="border:1px solid #000;padding:3px;font-size:15px;">${avg}/8 (${d.achievement_level})</td>
-      <td style="border:1px solid #000;padding:3px;font-size:15px;line-height:1.5;">${commentFromScore(avg, subject)}</td>
-      </tr>
-      `;
-    }).join("")}
-    </tbody>
-    `;
+   table.innerHTML = `
+<thead>
+<tr>
 
-    const generalBlock = document.createElement("div");
-    generalBlock.style.marginTop = "4px";
-    generalBlock.style.fontSize = "15px";
-    generalBlock.style.lineHeight = "1.3";
+<th style="
+border:1px solid #000;
+padding:2px;
+width:30%;
+font-size:15px;
+">
+Learning Area
+</th>
 
-    generalBlock.innerHTML = `
-    <table style="width:100%;border-collapse:collapse;margin-top:2.5px;font-size:15px;">
-    <tr>
-    <td style="border:1px solid #000;padding:4px;width:40%;"><strong>General Performance</strong></td>
-    <td style="border:1px solid #000;padding:4px;">${overallLevel(overallAvg)} (${totalScore}/${maxTotal})</td>
-    </tr>
-    <tr>
-    <td style="border:1px solid #000;padding:5px;"><strong>Teacher Comment</strong></td>
-    <td style="border:1px solid #000;padding:5px;">${generalComment(overallAvg)}</td>
-    </tr>
-    </table>
-    `;
+<th style="
+border:1px solid #000;
+padding:2px;
+width:12%;
+font-size:15px;
+">
+Score
+</th>
+
+<th style="
+border:1px solid #000;
+padding:2px;
+width:25%;
+font-size:15px;
+">
+Level
+</th>
+
+<th style="
+border:1px solid #000;
+padding:2px;
+width:33%;
+font-size:15px;
+">
+Comment
+</th>
+
+</tr>
+</thead>
+
+<tbody>
+
+${Object.entries(subjectData).map(([subject,d])=>{
+
+const avg = numericScoresMap[subject] || 0;
+
+return `
+
+<tr>
+
+<td style="
+border:1px solid #000;
+padding:3px;
+font-size:15px;
+line-height:1.5;
+">
+${subject}
+</td>
+
+<td style="
+border:1px solid #000;
+padding:3px;
+font-size:15px;
+text-align:center;
+">
+${avg}/8
+</td>
+
+<td style="
+border:1px solid #000;
+padding:3px;
+font-size:15px;
+">
+${d.achievement_level}
+</td>
+
+<td style="
+border:1px solid #000;
+padding:3px;
+font-size:15px;
+line-height:1.5;
+">
+${commentFromScore(avg, subject)}
+</td>
+
+</tr>
+
+`;
+
+}).join("")}
+
+</tbody>
+`;
 
     const signatures = document.createElement("div");
-    signatures.style.marginTop = "20px";
+    signatures.style.marginTop = "10px";
     signatures.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;font-size:14px;">
       <!-- Left: Class Teacher -->
@@ -3406,9 +3467,9 @@ card.style.pageBreakBefore = "auto";  // Allows it to follow the header naturall
     const footer = document.createElement("div");
     footer.style.fontSize = "10px";
     footer.style.textAlign = "center";
-    footer.style.marginTop = "10px";
+    footer.style.marginTop = "6px";
     footer.style.borderTop = "1px solid #ddd";
-    footer.style.paddingTop = "5px";
+    footer.style.paddingTop = "2px";
     footer.innerText = "Assessment is competency-based and evidence-driven, guided by KICD CBE curriculum designs.";
 
     const tableWrapper = document.createElement("div");
