@@ -806,26 +806,26 @@ categorySelect.innerHTML =
 
 
 
+
 function getSubjectTrend(currentAvg, previousAvg){
 
    if(previousAvg == null){
-      return "➖";
+      return "⟺";   // no previous data
    }
 
    const diff =
-      currentAvg - previousAvg;
+   currentAvg - previousAvg;
 
    if(diff >= 0.3){
-      return "⬆️";
+      return "⭧";   // improved
    }
 
    if(diff <= -0.3){
-      return "⬇️";
+      return "⭨";   // declined
    }
 
-   return "➖";
+   return "⟺";      // maintained
 }
-
 
 	
 /* ========== MAIN LOAD ========== */
