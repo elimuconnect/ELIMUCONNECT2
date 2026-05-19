@@ -2827,6 +2827,61 @@ const learnerDefault = [
     "Participate actively."
 ];
 
+  /* ========= Ensure exactly 2 recommendations ========= */
+
+  function ensureTwo(arr, defaults){
+
+      const result = [...arr];
+
+      for(
+          let i=0;
+          result.length<2 && i<defaults.length;
+          i++
+      ){
+
+          if(!result.includes(defaults[i])){
+
+              result.push(defaults[i]);
+
+          }
+
+      }
+
+      return result.slice(0,2);
+
+  }
+
+
+
+  return {
+
+      teacher:
+          ensureTwo(
+              teacher,
+              teacherDefault
+          ),
+
+      parent:
+          ensureTwo(
+              parent,
+              parentDefault
+          ),
+
+      learner:
+          ensureTwo(
+              learner,
+              learnerDefault
+          )
+
+  };
+
+}
+
+
+
+
+
+	
 function getEvidenceStatus(rows) {
   const count = rows.length;
 
