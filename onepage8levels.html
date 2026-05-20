@@ -2657,8 +2657,11 @@ function generateInsight(student, subjects) {
 </p>
 `;
 }
- 
-  function generateSupportFlag(student, subjects){
+
+
+
+
+function generateSupportFlag(student, subjects){
 
     let total = 0;
     let count = 0;
@@ -2670,26 +2673,22 @@ function generateInsight(student, subjects) {
         const data = avgMap?.[student]?.[subject];
         if(!data) return;
 
-        let score = data.average_score;
+        // USE ACHIEVEMENT LEVEL, NOT average_score
+        let score =
+            levelToScore(data.achievement_level);
 
-        score =
-            typeof score === "string"
-            ? levelToScore(score)
-            : Number(score);
-
-        if(isNaN(score) || score <= 0) return;
+        if(!score) return;
 
         total += score;
         count++;
-
     });
 
     if(count === 0) return "";
 
-    // Average over ONLY subjects done
     const overall = total / count;
 
-    // 🔴 Needs Support
+    console.log(student, overall); // debug
+
     if(overall < 3.5){
         return `
         <span style="color:#c0392b;font-weight:bold;">
@@ -2697,7 +2696,6 @@ function generateInsight(student, subjects) {
         </span>`;
     }
 
-    // 🟡 On Track
     if(overall < 6.5){
         return `
         <span style="color:#b9770e;font-weight:bold;">
@@ -2705,13 +2703,15 @@ function generateInsight(student, subjects) {
         </span>`;
     }
 
-    // 🟢 High Potential
     return `
     <span style="color:#1e8449;font-weight:bold;">
     🟢 High Potential
     </span>`;
 }
 
+
+
+	
 
 	function generateStrengthsAndNeeds(student, subjects) {
   let strengths = [];
