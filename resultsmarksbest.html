@@ -1044,7 +1044,7 @@ grade_name: r.grade_name,
 grade_id: r.grade_id,
 	class_id: r.class_id,
   subject: r.subject,
-
+pathway: r.pathway,
   core_competencies: r.core_competencies,
   subject_competencies: r.subject_competencies,
 
@@ -1707,6 +1707,47 @@ const firstRow = (typeof records !== "undefined" && records.length)
 
     const admission = subjects.__admission || "N/A";
 
+
+
+
+
+
+const pathwayCounts = {};
+
+Object.entries(subjects).forEach(([subject, rows]) => {
+
+   if(subject === "__admission") return;
+
+   rows.forEach(r => {
+
+      if(!r.pathway) return;
+      if(r.pathway === "Core") return;
+
+      pathwayCounts[r.pathway] =
+         (pathwayCounts[r.pathway] || 0) + 1;
+   });
+
+});
+  
+
+let learnerPathway =
+Object.keys(pathwayCounts).length
+? Object.entries(pathwayCounts)
+   .sort((a,b)=>b[1]-a[1])[0][0]
+: "Undetermined";
+
+
+if(
+   Object.keys(pathwayCounts).length > 1 &&
+   new Set(Object.values(pathwayCounts)).size === 1
+){
+   learnerPathway = "Mixed";
+}
+
+
+
+
+
 	  
 // get the current student's class
 // --- OLD ---
@@ -1798,11 +1839,25 @@ font-size:20px;
 </small>
 </h4>
 
-<div style="
+ <div style="
 font-weight:bold;
 font-size:15px;
 ">
+
 ${supportFlag}
+
+<br>
+
+<span style="
+font-size:14px;
+color:#2980b9;
+">
+
+🧭 Pathway:
+${learnerPathway || "—"}
+
+</span>
+
 </div>
 
 </div>
