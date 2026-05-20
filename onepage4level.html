@@ -1065,6 +1065,7 @@ const records = data.map(r => ({
 grade_id: r.grade_id,
 	class_id: r.class_id,
   subject: r.subject,
+	pathway: r.pathway,
 
   core_competencies: r.core_competencies,
   subject_competencies: r.subject_competencies,
@@ -1733,7 +1734,15 @@ const firstRow = (typeof records !== "undefined" && records.length)
   return Object.entries(grouped).map(([student, subjects]) => {
 
     const admission = subjects.__admission || "N/A";
-
+const learnerPathways =
+[
+ ...new Set(
+   Object.values(subjects)
+   .flat()
+   .map(r => r.pathway)
+   .filter(Boolean)
+ )
+];
 
     
 	// get the current student's class
@@ -1847,7 +1856,26 @@ year: SYSTEM_YEAR,
     <div class="split-block learner-header"
          style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
       <h4>👤 ${student} <small>(<strong>Adm: ${admission}</strong>)</small></h4>
-      <div style="font-weight:bold;">${supportFlag}</div>
+     <div style="
+font-weight:bold;
+font-size:15px;
+">
+
+${supportFlag}
+
+<br>
+
+<span style="
+font-size:14px;
+color:#2980b9;
+">
+
+🧭 Pathway:
+${learnerPathways.join(", ") || "—"}
+
+</span>
+
+</div>
     </div>
 
     <div class="split-block">
