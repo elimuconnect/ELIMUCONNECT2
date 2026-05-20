@@ -2659,82 +2659,54 @@ const overall = getAchievementLabel(overallAvg);
 `;
 }
 
+function generateSupportFlag(subjects){
 
-function generateSupportFlag(subjects) {
+    let total = 0;
+    let count = 0;
 
-  let scores = [];
-  let belowCount = 0;
-  let subjectAverages = [];
+    Object.entries(subjects).forEach(([subject, rows]) => {
 
-  Object.entries(subjects).forEach(([subject, rows]) => {
+        if(subject === "__admission") return;
 
-    if(subject==="__admission") return;
+        rows.forEach(r => {
 
-    let subjectScores=[];
+            const score = levelToScore(r.level);
 
-    rows.forEach(r=>{
+            if(score > 0){
+                total += score;
+                count++;
+            }
 
-      const score=levelToScore(r.level);
-
-      if(score>0){
-
-        scores.push(score);
-        subjectScores.push(score);
-
-        if(score===1)
-          belowCount++;
-
-      }
+        });
 
     });
 
-    if(subjectScores.length){
+    if(count === 0) return "";
 
-      subjectAverages.push(
-        subjectScores.reduce((a,b)=>a+b,0)/
-        subjectScores.length
-      );
+    // average all completed assessments/subjects
+    const overall = total / count;
 
+    // 🔴 Needs Support
+    if(overall < 2){
+        return `
+        <span style="color:#c0392b;font-weight:bold;">
+        🔴 Needs Learning Support
+        </span>`;
     }
 
-  });
+    // 🟡 On Track
+    if(overall < 3.5){
+        return `
+        <span style="color:#b9770e;font-weight:bold;">
+        🟡 On Track
+        </span>`;
+    }
 
-  if(!scores.length) return "";
-
-  const overall =
-    scores.reduce((a,b)=>a+b,0)/
-    scores.length;
-
-  // 🔴 Needs support
-  if(
-      overall < 2.3 ||
-      belowCount >= 3 ||
-      subjectAverages.filter(a=>a<=2).length>=2
-  ){
-
-      return `
-      <span style="color:#c0392b;font-weight:bold;">
-      🔴 Needs Learning Support
-      </span>`;
-  }
-
-  // 🟢 High potential
-  if(
-      overall >= 3.4 &&
-      subjectAverages.filter(a=>a<=2).length===0
-  ){
-
-      return `
-      <span style="color:#1e8449;font-weight:bold;">
-      🟢 High Potential
-      </span>`;
-  }
-
-  // 🟡 On track
-  return `
-  <span style="color:#b9770e;font-weight:bold;">
-  🟡 On Track
-  </span>`;
+    // 🟢 High Potential
+    return `
+    <span style="color:#1e8449;font-weight:bold;">
+        🟢 High Potential
+    </span>`;
 }
 
 
