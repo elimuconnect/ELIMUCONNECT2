@@ -1753,7 +1753,31 @@ Object.entries(subjects).forEach(([subject, rows]) => {
    });
 
 });
-console.log(subjects);
+
+
+
+
+
+
+Object.entries(subjects).forEach(([subject, rows]) => {
+
+   if(subject==="__admission") return;
+
+   rows.forEach(r=>{
+      console.log(
+         student,
+         r.subject,
+         r.pathway
+      );
+   });
+
+});
+
+
+
+
+
+	  
 
 let learnerPathway =
 Object.keys(pathwayCounts).length
