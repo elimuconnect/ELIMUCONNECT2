@@ -746,7 +746,7 @@ const status = document.getElementById("status");
   
 /* ========== AUTH ========== */
 const { data: { user } } = await supabase.auth.getUser();
-if (!user) location.href = "index.html";
+if (!user) location.href = "indexbest.html";
 
 
 
@@ -859,7 +859,7 @@ async function loadReport() {
   while (true) {
     const { data: avgBatch, error: avgErr } = await supabase
       .from("term_subject_report_view2")
-      .select("full_name, subject_name, average_score, achievement_level")
+      .select("full_name, subject_name, average_score, achievement_level, subject_teacher")
       .eq("term", termName)
 		 .eq("assessment_category", selectedCategory)
       .range(avgFrom, avgFrom + avgBatchSize - 1);
@@ -876,9 +876,11 @@ async function loadReport() {
       if (!avgMap[student]) avgMap[student] = {};
       
       avgMap[student][subj] = {
-        achievement_level: a.achievement_level,
-        average_score: a.average_score
-      };
+    achievement_level: a.achievement_level,
+    average_score: a.average_score,
+    subject_teacher: a.subject_teacher,   // ADD
+   
+};
     });
 
     if (avgBatch.length < avgBatchSize) break;
@@ -1045,6 +1047,7 @@ grade_id: r.grade_id,
 	class_id: r.class_id,
   subject: r.subject,
 pathway: r.pathway,
+	subject_teacher: r.subject_teacher,
   core_competencies: r.core_competencies,
   subject_competencies: r.subject_competencies,
 
@@ -1708,6 +1711,8 @@ const firstRow = (typeof records !== "undefined" && records.length)
     const admission = subjects.__admission || "N/A";
 
 
+
+
 const pathwayCounts = {};
 
 Object.entries(subjects).forEach(([subject, rows]) => {
@@ -1725,7 +1730,30 @@ Object.entries(subjects).forEach(([subject, rows]) => {
 
 });
 
-  
+
+
+
+
+
+Object.entries(subjects).forEach(([subject, rows]) => {
+
+   if(subject==="__admission") return;
+
+   rows.forEach(r=>{
+      console.log(
+         student,
+         r.subject,
+         r.pathway
+      );
+   });
+
+});
+
+
+
+
+
+	  
 
 let learnerPathway =
 Object.keys(pathwayCounts).length
@@ -1835,6 +1863,7 @@ font-size:20px;
 (<strong>Adm: ${admission}</strong>)
 </small>
 </h4>
+
 <div style="
 font-weight:bold;
 font-size:15px;
@@ -2148,6 +2177,7 @@ const strandOutcomes = assessmentId ? (strandMap?.[assessmentId] || []) : [];
 <th style="width:20%">Achievement</th>
  <th style="width:20%">Assessment Type</th> <!-- NEW -->
         <th style="width:25%">Category</th>        <!-- NEW -->
+		<th style="width:25%">Subject Teacher</th>
 
         </tr>
       </thead>
@@ -2183,7 +2213,7 @@ border-left:4px solid ${
           <td>${r.level || "—"}</td> 
            <td>${r.assessment_type || "—"}</td> <!-- NEW -->
           <td>${r.assessment_category || "—"}</td> <!-- NEW -->
-		  
+		  <td>${r.subject_teacher || "—"}</td>
           </tr>`).join("")}
       </tbody>
 
@@ -2708,9 +2738,11 @@ function generateInsight(student, subjects) {
 </p>
 `;
 }
- 
-  
-  function generateSupportFlag(student, subjects){
+
+
+
+
+function generateSupportFlag(student, subjects){
 
     let total = 0;
     let count = 0;
@@ -2757,6 +2789,10 @@ function generateInsight(student, subjects) {
     🟢 High Potential
     </span>`;
 }
+
+
+
+	
 
 	function generateStrengthsAndNeeds(student, subjects) {
   let strengths = [];
@@ -3471,10 +3507,11 @@ card.style.pageBreakBefore = "auto";  // Allows it to follow the header naturall
 <thead>
 <tr>
 
+
 <th style="
 border:1px solid #000;
 padding:2px;
-width:30%;
+width:28%;
 font-size:15px;
 ">
 Learning Area
@@ -3483,7 +3520,7 @@ Learning Area
 <th style="
 border:1px solid #000;
 padding:2px;
-width:12%;
+width:10%;
 font-size:15px;
 ">
 Score
@@ -3492,7 +3529,7 @@ Score
 <th style="
 border:1px solid #000;
 padding:2px;
-width:25%;
+width:18%;
 font-size:15px;
 ">
 Level
@@ -3501,12 +3538,20 @@ Level
 <th style="
 border:1px solid #000;
 padding:2px;
-width:33%;
+width:30%;
 font-size:15px;
 ">
 Comment
 </th>
 
+<th style="
+border:1px solid #000;
+padding:2px;
+width:14%;
+font-size:15px;
+">
+Teacher
+</th>
 </tr>
 </thead>
 
@@ -3584,14 +3629,24 @@ ${trendArrow}
 
 </td>
 
+<td style="
+border:1px solid #000;
+padding:3px;
+font-size:14px;
+line-height:1.2;
+white-space:nowrap;
+">
+
+${commentFromScore(avg, subject)}
+</td>
 
 <td style="
 border:1px solid #000;
 padding:3px;
-font-size:15px;
-line-height:1.5;
+font-size:14px;
+text-align:center;
 ">
-${commentFromScore(avg, subject)}
+${d.subject_teacher || "—"}
 </td>
 
 </tr>
