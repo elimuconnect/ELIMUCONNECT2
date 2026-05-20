@@ -2658,17 +2658,12 @@ function generateInsight(student, subjects) {
 `;
 }
  
-  
-
-
-function generateSupportFlag(student, subjects){
+  function generateSupportFlag(student, subjects){
 
     let total = 0;
     let count = 0;
-    let weakCount = 0;
-    let strongCount = 0;
 
-    Object.entries(subjects).forEach(([subject])=>{
+    Object.entries(subjects).forEach(([subject]) => {
 
         if(subject === "__admission") return;
 
@@ -2682,51 +2677,41 @@ function generateSupportFlag(student, subjects){
             ? levelToScore(score)
             : Number(score);
 
-        // Ignore missing/null/invalid scores
         if(isNaN(score) || score <= 0) return;
 
         total += score;
         count++;
 
-        if(score <= 2) weakCount++;   // BE1, BE2
-        if(score >= 6) strongCount++; // ME1 and above
-
     });
 
     if(count === 0) return "";
 
-    // Average ONLY over subjects done
+    // Average over ONLY subjects done
     const overall = total / count;
 
     // 🔴 Needs Support
-    if(
-        overall < 3 ||
-        weakCount >= Math.ceil(count/2)
-    ){
+    if(overall < 3.5){
         return `
-        <span style="color:#c0392b;font-weight:bold">
+        <span style="color:#c0392b;font-weight:bold;">
         🔴 Needs Learning Support
         </span>`;
     }
 
-    // 🟢 High Potential
-    if(
-        overall >= 6 &&
-        strongCount >= Math.ceil(count*0.7)
-    ){
+    // 🟡 On Track
+    if(overall < 6.5){
         return `
-        <span style="color:#1e8449;font-weight:bold">
-        🟢 High Potential
+        <span style="color:#b9770e;font-weight:bold;">
+        🟡 On Track
         </span>`;
     }
 
-    // 🟡 On Track
+    // 🟢 High Potential
     return `
-    <span style="color:#b9770e;font-weight:bold">
-    🟡 On Track
+    <span style="color:#1e8449;font-weight:bold;">
+    🟢 High Potential
     </span>`;
 }
-	
+
 
 	function generateStrengthsAndNeeds(student, subjects) {
   let strengths = [];
