@@ -859,7 +859,7 @@ async function loadReport() {
   while (true) {
     const { data: avgBatch, error: avgErr } = await supabase
       .from("term_subject_report_view2")
-      .select("full_name, subject_name, average_score, achievement_level")
+      .select("full_name, subject_name, average_score, achievement_level, subject_teacher")
       .eq("term", termName)
 		 .eq("assessment_category", selectedCategory)
       .range(avgFrom, avgFrom + avgBatchSize - 1);
