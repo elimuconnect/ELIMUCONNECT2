@@ -1066,7 +1066,7 @@ grade_id: r.grade_id,
 	class_id: r.class_id,
   subject: r.subject,
 	pathway: r.pathway,
-
+subject_teacher: r.subject_teacher,
   core_competencies: r.core_competencies,
   subject_competencies: r.subject_competencies,
 
@@ -2179,6 +2179,7 @@ const strandOutcomes = assessmentId ? (strandMap?.[assessmentId] || []) : [];
 <th style="width:20%">Achievement</th>
  <th style="width:20%">Assessment Type</th> <!-- NEW -->
         <th style="width:25%">Category</th>        <!-- NEW -->
+		<th style="width:25%">Subject Teacher</th>
 
         </tr>
       </thead>
@@ -2210,7 +2211,7 @@ border-left:4px solid ${
           <td>${r.level || "—"}</td>
  <td>${r.assessment_type || "—"}</td> <!-- NEW -->
           <td>${r.assessment_category || "—"}</td> <!-- NEW -->
-		  
+		  <td>${r.subject_teacher || "—"}</td>
           
           </tr>`).join("")}
       </tbody>
