@@ -1734,16 +1734,40 @@ const firstRow = (typeof records !== "undefined" && records.length)
   return Object.entries(grouped).map(([student, subjects]) => {
 
     const admission = subjects.__admission || "N/A";
-const learnerPathways =
-[
- ...new Set(
-   Object.values(subjects)
-   .flat()
-   .map(r => r.pathway)
-   .filter(Boolean)
- )
-];
 
+const pathwayCounts = {};
+
+Object.values(subjects)
+.flat()
+.forEach(r => {
+
+   if(!r.pathway) return;
+
+   // Ignore compulsory subjects
+   if(r.pathway === "Core") return;
+
+   pathwayCounts[r.pathway] =
+      (pathwayCounts[r.pathway] || 0) + 1;
+});
+
+let learnerPathway =
+Object.keys(pathwayCounts).length
+? Object.entries(pathwayCounts)
+    .sort((a,b)=>b[1]-a[1])[0][0]
+: "Undetermined";
+
+
+// Equal numbers from multiple pathways
+if(
+   Object.keys(pathwayCounts).length > 1 &&
+   new Set(Object.values(pathwayCounts)).size === 1
+){
+   learnerPathway = "Mixed";
+}
+
+
+
+	  
     
 	// get the current student's class
 
