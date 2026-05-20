@@ -2659,69 +2659,53 @@ function generateInsight(student, subjects) {
 }
  
   
-  
- function generateSupportFlag(student, subjects) {
+  function generateSupportFlag(student, subjects){
 
-  const subjectAverages = [];
+    let total = 0;
+    let count = 0;
 
-  Object.entries(subjects).forEach(([subject]) => {
-    if (subject === "__admission") return;
+    Object.entries(subjects).forEach(([subject]) => {
 
-    const subjectData = avgMap?.[student]?.[subject];
-    if (!subjectData) return;
+        if(subject === "__admission") return;
 
-    let score = subjectData.average_score;
+        const data = avgMap?.[student]?.[subject];
+        if(!data) return;
 
-    if (typeof score === "string") {
-        score = levelToScore(score);
-    } else {
-        score = Number(score);
+        // USE ACHIEVEMENT LEVEL, NOT average_score
+        let score =
+            levelToScore(data.achievement_level);
+
+        if(!score) return;
+
+        total += score;
+        count++;
+    });
+
+    if(count === 0) return "";
+
+    const overall = total / count;
+
+    console.log(student, overall); // debug
+
+    if(overall < 3.5){
+        return `
+        <span style="color:#c0392b;font-weight:bold;">
+        🔴 Needs Learning Support
+        </span>`;
     }
 
-    if (!isNaN(score) && score > 0) {
-        subjectAverages.push(score);
+    if(overall < 6.5){
+        return `
+        <span style="color:#b9770e;font-weight:bold;">
+        🟡 On Track
+        </span>`;
     }
-  });
 
-  if (!subjectAverages.length) return "";
-
-  const overall =
-      subjectAverages.reduce((a,b)=>a+b,0) /
-      subjectAverages.length;
-
-  const belowCount =
-      subjectAverages.filter(a => a <= 3).length;
-
-  // 🔴 Needs Support
-  if (
-      overall < 3.5 ||
-      belowCount >= 2
-  ){
-      return `
-      <span style="color:#c0392b;font-weight:bold;">
-      🔴 Needs Learning Support
-      </span>`;
-  }
-
-  // 🟢 High Potential
-  if (
-      overall >= 6 &&
-      subjectAverages.every(a=>a>=5)
-  ){
-      return `
-      <span style="color:#1e8449;font-weight:bold;">
-      🟢 High Potential
-      </span>`;
-  }
-
-  // 🟡 On Track
-  return `
-  <span style="color:#b9770e;font-weight:bold;">
-  🟡 On Track
-  </span>`;
+    return `
+    <span style="color:#1e8449;font-weight:bold;">
+    🟢 High Potential
+    </span>`;
 }
-
-
 
 	function generateStrengthsAndNeeds(student, subjects) {
   let strengths = [];
