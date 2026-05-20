@@ -876,9 +876,11 @@ async function loadReport() {
       if (!avgMap[student]) avgMap[student] = {};
       
       avgMap[student][subj] = {
-        achievement_level: a.achievement_level,
-        average_score: a.average_score
-      };
+    achievement_level: a.achievement_level,
+    average_score: a.average_score,
+    subject_teacher: a.subject_teacher,   // ADD
+   
+};
     });
 
     if (avgBatch.length < avgBatchSize) break;
@@ -3535,10 +3537,19 @@ Level
 <th style="
 border:1px solid #000;
 padding:2px;
-width:33%;
+width:24%;
 font-size:15px;
 ">
 Comment
+</th>
+
+<th style="
+border:1px solid #000;
+padding:2px;
+width:18%;
+font-size:15px;
+">
+Teacher
 </th>
 
 </tr>
@@ -3626,6 +3637,15 @@ font-size:15px;
 line-height:1.5;
 ">
 ${commentFromScore(avg, subject)}
+</td>
+
+<td style="
+border:1px solid #000;
+padding:3px;
+font-size:14px;
+text-align:center;
+">
+${d.subject_teacher || "—"}
 </td>
 
 </tr>
