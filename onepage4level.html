@@ -3630,9 +3630,8 @@ function commentFromScore(score, subject) {
 <th style="
 border:1px solid #000;
 padding:2px;
-width:28%;
-font-size:15px;
-">
+width:30%;
+font-size:15px;">
 Learning Area
 </th>
 
@@ -3640,41 +3639,36 @@ Learning Area
 border:1px solid #000;
 padding:2px;
 width:8%;
-font-size:15px;
-">
+font-size:15px;">
 Score
 </th>
 
 <th style="
 border:1px solid #000;
 padding:2px;
-width:22%;
-font-size:15px;
-">
+width:35%;
+font-size:15px;">
 Level
 </th>
 
 <th style="
 border:1px solid #000;
 padding:2px;
-width:28%;
-font-size:15px;
-">
+width:35%;
+font-size:15px;">
 Comment
 </th>
 
 <th style="
 border:1px solid #000;
 padding:2px;
-width:14%;
-font-size:15px;
-">
+width:12%;
+font-size:15px;">
 Teacher
 </th>
 
 </tr>
 </thead>
-
 <tbody>
 
 ${Object.entries(subjectData).map(([subject,d])=>{
@@ -3722,8 +3716,9 @@ ${avg}/4
 
 <td style="
 border:1px solid #000;
-padding:4px;
+padding:3px;
 font-size:14px;
+white-space:nowrap;
 ">
 
 ${d.achievement_level}
