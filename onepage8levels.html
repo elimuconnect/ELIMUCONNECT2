@@ -1408,7 +1408,13 @@ function renderSchoolAnalytics(
     (gradeClassMap[grade][r.className] ??= []).push(score);
 
     // SUBJECT
-    (gradeSubjectMap[grade][r.subject] ??= []).push(score);
+  // SUBJECT + TEACHER
+gradeSubjectMap[grade][r.subject] ??= {
+  scores: [],
+  teacher: r.subject_teacher || "—"
+};
+
+gradeSubjectMap[grade][r.subject].scores.push(score);
 
     // LEARNER
     (gradeLearnerMap[grade][r.admission] ??= []).push(score);
@@ -1473,14 +1479,17 @@ function renderSchoolAnalytics(
   });
 
   // ===== SUBJECT SUMMARY =====
-  let subjectSummaryHTML = "";
+// ===== SUBJECT SUMMARY =====
+let subjectSummaryHTML = "";
 
-  Object.entries(gradeSubjectMap).forEach(([grade, subjects]) => {
+Object.entries(gradeSubjectMap).forEach(([grade, subjects]) => {
 
-    const rows = Object.entries(subjects)
-      .map(([sub, scores]) => {
-        const mean = avg(scores);
-        const band = getAchievementLabel(mean);
+const rows = Object.entries(subjects)
+.map(([sub, info]) => {
+
+const mean = avg(info.scores);
+const band = getAchievementLabel(mean);
+const teacher = info.teacher;
 
         let alert = "";
 
@@ -1489,14 +1498,24 @@ function renderSchoolAnalytics(
         } else if (band === "AE1") {
           alert = `<span style="color:#f39c12;font-weight:bold;">⚠ Monitor Closely</span>`;
         }
+return { sub, mean, html: `
+<tr>
+<td>${sub}</td>
 
-        return { sub, mean, html: `
-          <tr>
-            <td>${sub}</td>
-            <td>${mean.toFixed(2)} / 8 (${band})</td>
-            <td>${alert}</td>
-          </tr>
-        `};
+<td>
+${teacher || "—"}
+</td>
+
+<td>
+${mean.toFixed(2)} / 8 (${band})
+</td>
+
+<td>
+${alert}
+</td>
+
+</tr>
+`};
       })
       .sort((a, b) => b.mean - a.mean)
       .map(r => r.html)
@@ -1506,12 +1525,13 @@ function renderSchoolAnalytics(
       <h5 style="margin-top:15px;">📘 ${grade}</h5>
       <table>
         <thead>
-          <tr>
-            <th>Subject</th>
-            <th>Performance Level</th>
-            <th>Alert</th>
-          </tr>
-        </thead>
+<tr>
+<th>Subject</th>
+<th>Teacher</th>
+<th>Performance Level</th>
+<th>Alert</th>
+</tr>
+</thead>
         <tbody>${rows}</tbody>
       </table>
     `;
