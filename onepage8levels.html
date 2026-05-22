@@ -1495,7 +1495,7 @@ const rows = Object.entries(subjects)
 .map(([sub, info]) => {
 
 const mean = avg(info.scores);
-const band = getAchievementLabel(mean);
+const band = getAchievementLabel(mean)
 const teacher =
 [...info.teachers].join(" / ") || "—";
 
