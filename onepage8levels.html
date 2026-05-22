@@ -1414,11 +1414,18 @@ gradeSubjectMap[grade][r.subject] ??= {
   teacher: r.subject_teacher || "—"
 };
 
+gradeSubjectMap[grade][r.subject] ??= {
+  scores: [],
+  teachers: new Set()
+};
+
 gradeSubjectMap[grade][r.subject].scores.push(score);
 
-    // LEARNER
-    (gradeLearnerMap[grade][r.admission] ??= []).push(score);
-  }
+if (r.subject_teacher) {
+  gradeSubjectMap[grade][r.subject]
+  .teachers
+  .add(r.subject_teacher);
+}
 
   // ===== AVERAGE FUNCTION =====
   function avg(arr) {
@@ -1489,7 +1496,8 @@ const rows = Object.entries(subjects)
 
 const mean = avg(info.scores);
 const band = getAchievementLabel(mean);
-const teacher = info.teacher;
+const teacher =
+[...info.teachers].join(" / ") || "—";
 
         let alert = "";
 
