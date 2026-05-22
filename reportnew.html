@@ -845,7 +845,7 @@ while (true) {
 
   const { data: avgBatch, error: avgErr } = await supabase
     .from("term_subject_report_view3")
-    .select("full_name,subject_name,average_score,achievement_level")
+    .select("full_name,subject_name,average_score,achievement_level,subject_teacher")
     .eq("term", termName)
 	   .eq("assessment_category", selectedCategory)
     .eq("school_id", teacherSchoolId)
@@ -864,7 +864,8 @@ while (true) {
 
     avgMap[student][subj] = {
       achievement_level: a.achievement_level,
-      average_score: a.average_score
+      average_score: a.average_score,
+		subject_teacher: a.subject_teacher,
     };
 
   });
@@ -1066,7 +1067,7 @@ grade_id: r.grade_id,
 	class_id: r.class_id,
   subject: r.subject,
 	pathway: r.pathway,
-
+subject_teacher: r.subject_teacher,
   core_competencies: r.core_competencies,
   subject_competencies: r.subject_competencies,
 
@@ -1435,11 +1436,20 @@ gradeLearnerMap[grade][r.admission].push(score);
     gradeClassMap[grade][r.className] ??= [];
     gradeClassMap[grade][r.className].push(score);
 
-    // ===== SUBJECT =====
-    gradeSubjectMap[grade][r.subject] ??= [];
-  
-	  gradeSubjectMap[grade][r.subject].push(score);
+   // ===== SUBJECT + MULTIPLE TEACHERS =====
+gradeSubjectMap[grade][r.subject] ??= {
+  scores: [],
+  teachers: new Set()
+};
 
+gradeSubjectMap[grade][r.subject]
+.scores.push(score);
+
+if (r.subject_teacher) {
+  gradeSubjectMap[grade][r.subject]
+  .teachers
+  .add(r.subject_teacher);
+}
 });
 
 	  
@@ -1532,9 +1542,15 @@ Object.entries(gradeLearnerMap).forEach(([grade, learners]) => {
 
   Object.entries(gradeSubjectMap).forEach(([grade, subjects]) => {
 
-    const rows = Object.entries(subjects)
-      .map(([sub, scores]) => {
-        const mean = avg(scores);
+   const rows = Object.entries(subjects)
+.map(([sub, info]) => {
+
+const mean =
+avg(info.scores);
+
+const teacher =
+[...info.teachers]
+.join(" / ") || "—";
 
         let level, alert = "";
 
@@ -1549,10 +1565,24 @@ Object.entries(gradeLearnerMap).forEach(([grade, learners]) => {
         }
 
         return { sub, mean, html: `
-          <tr>
-            <td>${sub}</td>
-            <td>${mean.toFixed(2)} / 4 (${level})</td>
-            <td>${alert}</td>
+<tr>
+
+<td>
+${sub}
+</td>
+
+<td>
+${teacher}
+</td>
+
+<td>
+${mean.toFixed(2)}
+/ 4 (${level})
+</td>
+
+<td>
+${alert}
+</td>
           </tr>
         `};
       })
@@ -1564,12 +1594,13 @@ Object.entries(gradeLearnerMap).forEach(([grade, learners]) => {
       <h5 style="margin-top:15px;">📘 ${grade}</h5>
       <table>
         <thead>
-          <tr>
-            <th>Subject</th>
-            <th>Performance Level</th>
-            <th>Alert</th>
-          </tr>
-        </thead>
+<tr>
+<th>Subject</th>
+<th>Teacher</th>
+<th>Performance Level</th>
+<th>Alert</th>
+</tr>
+</thead>
         <tbody>
           ${rows}
         </tbody>
@@ -2179,6 +2210,7 @@ const strandOutcomes = assessmentId ? (strandMap?.[assessmentId] || []) : [];
 <th style="width:20%">Achievement</th>
  <th style="width:20%">Assessment Type</th> <!-- NEW -->
         <th style="width:25%">Category</th>        <!-- NEW -->
+		<th style="width:25%">Subject Teacher</th>
 
         </tr>
       </thead>
@@ -2210,7 +2242,7 @@ border-left:4px solid ${
           <td>${r.level || "—"}</td>
  <td>${r.assessment_type || "—"}</td> <!-- NEW -->
           <td>${r.assessment_category || "—"}</td> <!-- NEW -->
-		  
+		  <td>${r.subject_teacher || "—"}</td>
           
           </tr>`).join("")}
       </tbody>
@@ -3610,7 +3642,9 @@ function commentFromScore(score, subject) {
 
   return maybeTranslate(comment, subject);
 }
-   
+
+
+
     // Build subject table
     const table = document.createElement("table");
     table.style.width = "100%";
@@ -3618,41 +3652,59 @@ function commentFromScore(score, subject) {
     table.style.marginTop = "2px";
     table.style.fontSize = "12px";
     table.style.tableLayout = "fixed";
-
-
-table.innerHTML = `
+  
+	  table.innerHTML = `
 <thead>
-  <tr>
+<tr>
 
-    <th style="border:1px solid #000;padding:2px;width:30%;font-size:15px;">
-      Learning Area
-    </th>
+<th style="
+border:1px solid #000;
+padding:2px;
+width:30%;
+font-size:15px;">
+Learning Area
+</th>
 
-    <th style="border:1px solid #000;padding:2px;width:12%;font-size:15px;">
-      Score
-    </th>
+<th style="
+border:1px solid #000;
+padding:2px;
+width:8%;
+font-size:15px;">
+Score
+</th>
 
-    <th style="border:1px solid #000;padding:2px;width:35%;font-size:15px;">
-      Level
-    </th>
+<th style="
+border:1px solid #000;
+padding:2px;
+width:38%;
+font-size:15px;">
+Level
+</th>
 
-    <th style="border:1px solid #000;padding:2px;width:23%;font-size:15px;">
-      Comment
-    </th>
+<th style="
+border:1px solid #000;
+padding:2px;
+width:39%;
+font-size:15px;">
+Comment
+</th>
 
-  </tr>
+<th style="
+border:1px solid #000;
+padding:2px;
+width:15%;
+font-size:15px;">
+Teacher
+</th>
+
+</tr>
 </thead>
-
 <tbody>
-
 
 ${Object.entries(subjectData).map(([subject,d])=>{
 
-const avg =
-numericScoresMap[subject] || 0;
+const avg = numericScoresMap[subject] || 0;
 
-
-// get admission number from heading
 const admission =
 card.querySelector("h4")
 ?.innerText.match(/Adm:\s*(.*?)\)/)?.[1]
@@ -3673,42 +3725,78 @@ getSubjectTrend(avg, prevAvg);
 
 return `
 
+
 <tr>
 
-<td style="border:1px solid #000;padding:6px;">
+<td style="
+border:1px solid #000;
+padding:5px;
+font-size:12px;
+white-space:nowrap;
+overflow:hidden;
+text-overflow:ellipsis;
+max-width:0;
+">
 ${subject}
 </td>
 
 <td style="
 border:1px solid #000;
-padding:6px;
+padding:4px;
 text-align:center;
+font-size:14px;
+white-space:nowrap;
+overflow:hidden;
+max-width:0;
 ">
 ${avg}/4
 </td>
 
-
 <td style="
 border:1px solid #000;
 padding:3px;
-font-size:15px;
+font-size:12px;
+white-space:nowrap;
+overflow:hidden;
+text-overflow:ellipsis;
+max-width:0;
 ">
 
 ${d.achievement_level}
 
 <span style="
-margin-left:6px;
-font-size:18px;
+margin-left:4px;
+font-size:12px;
 ">
-
 ${trendArrow}
-
 </span>
 
 </td>
 
-<td style="border:1px solid #000;padding:6px;">
-${commentFromScore(avg)}
+<td style="
+border:1px solid #000;
+padding:4px;
+font-size:15px;
+line-height:1.3;
+white-space:nowrap;
+overflow:hidden;
+text-overflow:ellipsis;
+max-width:0;
+">
+${commentFromScore(avg, subject)}
+</td>
+
+<td style="
+border:1px solid #000;
+padding:3px;
+font-size:13px;
+text-align:center;
+white-space:nowrap;
+overflow:hidden;
+text-overflow:ellipsis;
+max-width:0;
+">
+${d.subject_teacher || "—"}
 </td>
 
 </tr>
@@ -3719,7 +3807,6 @@ ${commentFromScore(avg)}
 
 </tbody>
 `;
-
     /* =========================
        GENERAL PERFORMANCE BLOCK
     ========================== */
