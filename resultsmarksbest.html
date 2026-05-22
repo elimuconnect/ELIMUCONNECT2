@@ -1399,30 +1399,44 @@ function renderSchoolAnalytics(
       : `Grade ${r.grade_name}`)
   : "Unknown";
 
-    // INIT
-    gradeClassMap[grade] ??= {};
-    gradeSubjectMap[grade] ??= {};
-    gradeLearnerMap[grade] ??= {};
+   
+	// INIT
+gradeClassMap[grade] ??= {};
+gradeSubjectMap[grade] ??= {};
+gradeLearnerMap[grade] ??= {};
 
-    // CLASS
-    (gradeClassMap[grade][r.className] ??= []).push(score);
+// CLASS
+(gradeClassMap[grade][r.className] ??= [])
+.push(score);
 
-    // SUBJECT
-    (gradeSubjectMap[grade][r.subject] ??= []).push(score);
+// SUBJECT + MULTIPLE TEACHERS
+gradeSubjectMap[grade][r.subject] ??= {
+  scores: [],
+  teachers: new Set()
+};
 
-    // LEARNER
-    (gradeLearnerMap[grade][r.admission] ??= []).push(score);
-  }
+gradeSubjectMap[grade][r.subject]
+.scores.push(score);
 
-  // ===== AVERAGE FUNCTION =====
-  function avg(arr) {
-    return arr.length
-      ? arr.reduce((a, b) => a + b, 0) / arr.length
-      : 0;
-  }
+if (r.subject_teacher) {
+  gradeSubjectMap[grade][r.subject]
+  .teachers
+  .add(r.subject_teacher);
+}
+
+// LEARNER
+(gradeLearnerMap[grade][r.admission] ??= [])
+.push(score);
+
+} // closes: for (const r of records)
 
 
-	
+// ===== AVERAGE FUNCTION =====
+function avg(arr) {
+  return arr.length
+    ? arr.reduce((a, b) => a + b, 0) / arr.length
+    : 0;
+}
   // ===== CLASS SUMMARY =====
   let classSummaryHTML = "";
 
@@ -1473,14 +1487,18 @@ function renderSchoolAnalytics(
   });
 
   // ===== SUBJECT SUMMARY =====
-  let subjectSummaryHTML = "";
+// ===== SUBJECT SUMMARY =====
+let subjectSummaryHTML = "";
 
-  Object.entries(gradeSubjectMap).forEach(([grade, subjects]) => {
+Object.entries(gradeSubjectMap).forEach(([grade, subjects]) => {
 
-    const rows = Object.entries(subjects)
-      .map(([sub, scores]) => {
-        const mean = avg(scores);
-        const band = getAchievementLabel(mean);
+const rows = Object.entries(subjects)
+.map(([sub, info]) => {
+
+const mean = avg(info.scores);
+const band = getAchievementLabel(mean)
+const teacher =
+[...info.teachers].join(" / ") || "—";
 
         let alert = "";
 
@@ -1489,14 +1507,24 @@ function renderSchoolAnalytics(
         } else if (band === "AE1") {
           alert = `<span style="color:#f39c12;font-weight:bold;">⚠ Monitor Closely</span>`;
         }
+return { sub, mean, html: `
+<tr>
+<td>${sub}</td>
 
-        return { sub, mean, html: `
-          <tr>
-            <td>${sub}</td>
-            <td>${mean.toFixed(2)} / 8 (${band})</td>
-            <td>${alert}</td>
-          </tr>
-        `};
+<td>
+${teacher || "—"}
+</td>
+
+<td>
+${mean.toFixed(2)} / 8 (${band})
+</td>
+
+<td>
+${alert}
+</td>
+
+</tr>
+`};
       })
       .sort((a, b) => b.mean - a.mean)
       .map(r => r.html)
@@ -1506,12 +1534,13 @@ function renderSchoolAnalytics(
       <h5 style="margin-top:15px;">📘 ${grade}</h5>
       <table>
         <thead>
-          <tr>
-            <th>Subject</th>
-            <th>Performance Level</th>
-            <th>Alert</th>
-          </tr>
-        </thead>
+<tr>
+<th>Subject</th>
+<th>Teacher</th>
+<th>Performance Level</th>
+<th>Alert</th>
+</tr>
+</thead>
         <tbody>${rows}</tbody>
       </table>
     `;
@@ -3504,15 +3533,15 @@ card.style.pageBreakBefore = "auto";  // Allows it to follow the header naturall
     table.style.tableLayout = "fixed";
 
    table.innerHTML = `
+
 <thead>
 <tr>
-
 
 <th style="
 border:1px solid #000;
 padding:2px;
-width:28%;
-font-size:15px;
+width:34%;
+font-size:14px;
 ">
 Learning Area
 </th>
@@ -3520,8 +3549,8 @@ Learning Area
 <th style="
 border:1px solid #000;
 padding:2px;
-width:10%;
-font-size:15px;
+width:8%;
+font-size:14px;
 ">
 Score
 </th>
@@ -3529,8 +3558,8 @@ Score
 <th style="
 border:1px solid #000;
 padding:2px;
-width:18%;
-font-size:15px;
+width:14%;
+font-size:14px;
 ">
 Level
 </th>
@@ -3539,7 +3568,7 @@ Level
 border:1px solid #000;
 padding:2px;
 width:30%;
-font-size:15px;
+font-size:14px;
 ">
 Comment
 </th>
@@ -3548,23 +3577,20 @@ Comment
 border:1px solid #000;
 padding:2px;
 width:14%;
-font-size:15px;
+font-size:14px;
 ">
 Teacher
 </th>
+
 </tr>
 </thead>
 
 <tbody>
 
-
 ${Object.entries(subjectData).map(([subject,d])=>{
 
-const avg =
-numericScoresMap[subject] || 0;
+const avg = numericScoresMap[subject] || 0;
 
-
-// get admission number from heading
 const admission =
 card.querySelector("h4")
 ?.innerText.match(/Adm:\s*(.*?)\)/)?.[1]
@@ -3585,66 +3611,75 @@ getSubjectTrend(avg, prevAvg);
 
 return `
 
-
-
-
 <tr>
 
 <td style="
 border:1px solid #000;
-padding:3px;
-font-size:15px;
-line-height:1.5;
+padding:4px;
+font-size:14px;
+white-space:nowrap;
+overflow:hidden;
+text-overflow:ellipsis;
+max-width:0;
 ">
 ${subject}
 </td>
 
+
 <td style="
 border:1px solid #000;
-padding:3px;
-font-size:15px;
+padding:4px;
+font-size:13px;
 text-align:center;
+white-space:nowrap;
 ">
-${avg}/8
+${avg}/4
 </td>
 
 
-
 <td style="
 border:1px solid #000;
-padding:3px;
-font-size:15px;
+padding:4px;
+font-size:13px;
+text-align:center;
+white-space:nowrap;
+overflow:hidden;
 ">
 
 ${d.achievement_level}
 
 <span style="
-margin-left:6px;
-font-size:18px;
+margin-left:3px;
+font-size:13px;
 ">
-
 ${trendArrow}
-
 </span>
 
 </td>
 
+
 <td style="
 border:1px solid #000;
-padding:3px;
+padding:4px;
 font-size:14px;
-line-height:1.2;
 white-space:nowrap;
+overflow:hidden;
+text-overflow:ellipsis;
+max-width:0;
 ">
-
 ${commentFromScore(avg, subject)}
 </td>
 
+
 <td style="
 border:1px solid #000;
-padding:3px;
-font-size:14px;
+padding:4px;
+font-size:13px;
 text-align:center;
+white-space:nowrap;
+overflow:hidden;
+text-overflow:ellipsis;
+max-width:0;
 ">
 ${d.subject_teacher || "—"}
 </td>
@@ -3657,6 +3692,7 @@ ${d.subject_teacher || "—"}
 
 </tbody>
 `;
+
 
 
   /* =========================
