@@ -1399,27 +1399,24 @@ function renderSchoolAnalytics(
       : `Grade ${r.grade_name}`)
   : "Unknown";
 
-    // INIT
-    gradeClassMap[grade] ??= {};
-    gradeSubjectMap[grade] ??= {};
-    gradeLearnerMap[grade] ??= {};
+   
+	// INIT
+gradeClassMap[grade] ??= {};
+gradeSubjectMap[grade] ??= {};
+gradeLearnerMap[grade] ??= {};
 
-    // CLASS
-    (gradeClassMap[grade][r.className] ??= []).push(score);
+// CLASS
+(gradeClassMap[grade][r.className] ??= [])
+.push(score);
 
-    // SUBJECT
-  // SUBJECT + TEACHER
-gradeSubjectMap[grade][r.subject] ??= {
-  scores: [],
-  teacher: r.subject_teacher || "—"
-};
-
+// SUBJECT + MULTIPLE TEACHERS
 gradeSubjectMap[grade][r.subject] ??= {
   scores: [],
   teachers: new Set()
 };
 
-gradeSubjectMap[grade][r.subject].scores.push(score);
+gradeSubjectMap[grade][r.subject]
+.scores.push(score);
 
 if (r.subject_teacher) {
   gradeSubjectMap[grade][r.subject]
@@ -1427,15 +1424,19 @@ if (r.subject_teacher) {
   .add(r.subject_teacher);
 }
 
-  // ===== AVERAGE FUNCTION =====
-  function avg(arr) {
-    return arr.length
-      ? arr.reduce((a, b) => a + b, 0) / arr.length
-      : 0;
-  }
+// LEARNER
+(gradeLearnerMap[grade][r.admission] ??= [])
+.push(score);
+
+} // closes: for (const r of records)
 
 
-	
+// ===== AVERAGE FUNCTION =====
+function avg(arr) {
+  return arr.length
+    ? arr.reduce((a, b) => a + b, 0) / arr.length
+    : 0;
+}
   // ===== CLASS SUMMARY =====
   let classSummaryHTML = "";
 
