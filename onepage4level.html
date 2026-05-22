@@ -1436,11 +1436,20 @@ gradeLearnerMap[grade][r.admission].push(score);
     gradeClassMap[grade][r.className] ??= [];
     gradeClassMap[grade][r.className].push(score);
 
-    // ===== SUBJECT =====
-    gradeSubjectMap[grade][r.subject] ??= [];
-  
-	  gradeSubjectMap[grade][r.subject].push(score);
+   // ===== SUBJECT + MULTIPLE TEACHERS =====
+gradeSubjectMap[grade][r.subject] ??= {
+  scores: [],
+  teachers: new Set()
+};
 
+gradeSubjectMap[grade][r.subject]
+.scores.push(score);
+
+if (r.subject_teacher) {
+  gradeSubjectMap[grade][r.subject]
+  .teachers
+  .add(r.subject_teacher);
+}
 });
 
 	  
@@ -1533,9 +1542,15 @@ Object.entries(gradeLearnerMap).forEach(([grade, learners]) => {
 
   Object.entries(gradeSubjectMap).forEach(([grade, subjects]) => {
 
-    const rows = Object.entries(subjects)
-      .map(([sub, scores]) => {
-        const mean = avg(scores);
+   const rows = Object.entries(subjects)
+.map(([sub, info]) => {
+
+const mean =
+avg(info.scores);
+
+const teacher =
+[...info.teachers]
+.join(" / ") || "—";
 
         let level, alert = "";
 
@@ -1550,10 +1565,24 @@ Object.entries(gradeLearnerMap).forEach(([grade, learners]) => {
         }
 
         return { sub, mean, html: `
-          <tr>
-            <td>${sub}</td>
-            <td>${mean.toFixed(2)} / 4 (${level})</td>
-            <td>${alert}</td>
+<tr>
+
+<td>
+${sub}
+</td>
+
+<td>
+${teacher}
+</td>
+
+<td>
+${mean.toFixed(2)}
+/ 4 (${level})
+</td>
+
+<td>
+${alert}
+</td>
           </tr>
         `};
       })
@@ -1565,12 +1594,13 @@ Object.entries(gradeLearnerMap).forEach(([grade, learners]) => {
       <h5 style="margin-top:15px;">📘 ${grade}</h5>
       <table>
         <thead>
-          <tr>
-            <th>Subject</th>
-            <th>Performance Level</th>
-            <th>Alert</th>
-          </tr>
-        </thead>
+<tr>
+<th>Subject</th>
+<th>Teacher</th>
+<th>Performance Level</th>
+<th>Alert</th>
+</tr>
+</thead>
         <tbody>
           ${rows}
         </tbody>
