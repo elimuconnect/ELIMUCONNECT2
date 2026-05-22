@@ -3612,7 +3612,18 @@ function commentFromScore(score, subject) {
 
   return maybeTranslate(comment, subject);
 }
-   table.innerHTML = `
+
+
+
+    // Build subject table
+    const table = document.createElement("table");
+    table.style.width = "100%";
+    table.style.borderCollapse = "collapse";
+    table.style.marginTop = "2px";
+    table.style.fontSize = "12px";
+    table.style.tableLayout = "fixed";
+  
+	  table.innerHTML = `
 <thead>
 <tr>
 
