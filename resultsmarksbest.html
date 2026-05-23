@@ -1521,8 +1521,29 @@ const rows = Object.entries(subjects)
 
 const mean = avg(info.scores);
 const band = getAchievementLabel(mean)
+
+const teacherList = [...info.teachers];
+
 const teacher =
-[...info.teachers].join(", ") || "—";
+teacherList.length
+? teacherList.reduce((arr, t, i) => {
+
+    if (i % 2 === 0)
+      arr.push([t]);
+    else
+      arr[arr.length - 1].push(t);
+
+    return arr;
+
+}, [])
+
+.map(pair => pair.join(" , "))
+.join("<br>")
+
+: "—";
+
+
+	
         let alert = "";
 
         if (["AE2","BE1","BE2"].includes(band)) {
@@ -1535,10 +1556,8 @@ return { sub, mean, html: `
 <td>${sub}</td>
 
 <td style="
-white-space:nowrap;
-overflow:hidden;
-text-overflow:ellipsis;
-max-width:180px;
+line-height:1.4;
+font-size:13px;
 ">
 ${teacher || "—"}
 </td>
