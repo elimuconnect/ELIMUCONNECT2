@@ -1823,12 +1823,14 @@ if(
 }
 	  
 
+const studentRows =
+Object.entries(subjects)
+.filter(([k]) => k !== "__admission")
+.flatMap(([_, rows]) => rows);
 
-	const class_teacher =
-  Object.values(subjects)
-    .flat()
-    .find(r => r.class_teacher && r.class_teacher.trim())
-    ?.class_teacher || "—";  
+const classTeacher =
+studentRows.find(r => r.class_teacher)
+?.class_teacher || "—";
 
 	  
 	  
@@ -1942,7 +1944,7 @@ ${learnerPathway || "—"}
 <br>
 
 👨🏽‍🏫 Class Teacher:
-<strong>${class_teacher || "—"}</strong>
+<strong>${classTeacher}</strong>
 
 </span>
 
