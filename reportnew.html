@@ -1405,6 +1405,7 @@ function renderSchoolAnalytics(
   let gradeBandMap = {};
   let gradeRiskMap = {};
 	let gradeLearnerMap = {};
+	let gradeClassTeacherMap = {};
 
   // ===== PROCESS DATA =====
   records.forEach(r => {
@@ -1433,20 +1434,13 @@ gradeLearnerMap[grade] ??= {};
 gradeLearnerMap[grade][r.admission] ??= [];
 gradeLearnerMap[grade][r.admission].push(score);
 	  
-   // ===== CLASS + CLASS TEACHER =====
-gradeClassMap[grade][r.className] ??= {
-  scores: [],
-  teachers: new Set()
-};
+  gradeClassMap[grade][r.className] ??= [];
+gradeClassMap[grade][r.className].push(score);
 
-gradeClassMap[grade][r.className]
-.scores.push(score);
-
-if (r.class_teacher) {
-  gradeClassMap[grade][r.className]
-  .teachers
-  .add(r.class_teacher);
-}
+// store class teacher
+gradeClassTeacherMap[grade] ??= {};
+gradeClassTeacherMap[grade][r.className] =
+    r.class_teacher || "—";
 
    // ===== SUBJECT + MULTIPLE TEACHERS =====
 gradeSubjectMap[grade][r.subject] ??= {
@@ -1529,29 +1523,24 @@ const classTeacher =
           risk = `<span style="color:#c0392b;font-weight:bold;">🔴 Needs Intervention</span>`;
         }
 
-        return {
-cls,
-mean,
-html: `
-<tr>
+    const classTeacher =
+gradeClassTeacherMap?.[grade]?.[cls] || "—";
 
-<td>
-${cls}
-</td>
+return { cls, mean, html: `
+<tr>
+<td>${cls}</td>
 
 <td>
 ${classTeacher}
 </td>
 
 <td>
-${mean.toFixed(2)}
-/ 4 (${level})
+${mean.toFixed(2)} / 4 (${level})
 </td>
 
 <td>
 ${risk}
 </td>
-
 </tr>
         `};
       })
