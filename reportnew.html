@@ -1632,9 +1632,25 @@ ${rows}
 const mean =
 avg(info.scores);
 
+const teacherList = [...info.teachers];
+
 const teacher =
-[...info.teachers]
-.join(" / ") || "—";
+teacherList.length
+? teacherList.reduce((arr, t, i) => {
+
+    if (i % 2 === 0)
+      arr.push([t]);
+    else
+      arr[arr.length - 1].push(t);
+
+    return arr;
+
+}, [])
+
+.map(pair => pair.join(" , "))
+.join("<br>")
+
+: "—";
 
         let level, alert = "";
 
@@ -1655,7 +1671,10 @@ const teacher =
 ${sub}
 </td>
 
-<td>
+<td style="
+line-height:1.4;
+font-size:13px;
+">
 ${teacher}
 </td>
 
