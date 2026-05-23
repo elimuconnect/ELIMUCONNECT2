@@ -1909,7 +1909,14 @@ const previousLevel = getDominantLevel(previousLearnerMap[admission] || []);
   else if (currentRank < previousRank) trend = "Declining";
   else trend = "Stable";
 }
-	  
+
+
+
+	const class_teacher =
+  Object.values(subjects)
+    .flat()
+    .find(r => r.class_teacher && r.class_teacher.trim())
+    ?.class_teacher || "—";  
    
     const supportFlag = generateSupportFlag(subjects);
     const insight = generateInsight(subjects);
