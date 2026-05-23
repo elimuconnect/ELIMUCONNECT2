@@ -474,19 +474,26 @@ document.getElementById("addStudentBtn").onclick = async () => {
 const parent_name = document.getElementById("parentName").value.trim();
 const parent_phone = document.getElementById("parentPhone").value.trim();
 
+
+const class_teacher =
+document.getElementById("classTeacher")
+.value.trim();
+
+	
   const date_of_birth = document.getElementById("dob").value;
   const admission_year = document.getElementById("admissionYear").value;
   const class_id = studentClass.value;
-
- if (
-  !full_name ||
-  !admission_number ||
-  !parent_name ||
-  !parent_phone ||
-  !class_id
+if (
+ !full_name ||
+ !admission_number ||
+ !parent_name ||
+ !parent_phone ||
+ !class_teacher ||
+ !class_id
 ){
+
    document.getElementById("studentStatus").innerText =
-    "Fill required fields (Name, Admission No, Parent Name, Parent Phone, Class)";
+    "Fill required fields (Name, Admission No, Parent Name, Parent Phone, Class Teacher, Class)";
   return;
 }
 
@@ -497,6 +504,7 @@ const { error } = await supabase.from("students").insert([
   {
     school_id: adminProfile.school_id,
     class_id,
+	  class_teacher,
     full_name,
     admission_number,
     parent_name,
@@ -565,7 +573,8 @@ await loadStudentClasses();
       !row.full_name ||
       !row.admission_number ||
       !row.parent_name ||
-      !row.parent_phone
+     !row.parent_phone ||
+    !row.class_teacher
     );
 
     if (invalidRows.length > 0) {
@@ -582,6 +591,7 @@ await loadStudentClasses();
       admission_number: row.admission_number?.trim(),
       parent_name: row.parent_name?.trim(),
       parent_phone: row.parent_phone?.trim(),
+	  class_teacher: row.class_teacher?.trim(),
       date_of_birth: row.date_of_birth || null,
       admission_year: row.admission_year
         ? parseInt(row.admission_year)
