@@ -663,6 +663,7 @@ document.getElementById("loadStudentsBtn").onclick = async () => {
      <th>Admission No</th>
 <th>Parent Name</th>
 <th>Parent Phone</th>
+<th>Class Teacher</th>
 <th>DOB</th>
 <th>Year</th>
       <th>Action</th>
@@ -686,7 +687,7 @@ document.getElementById("loadStudentsBtn").onclick = async () => {
 
 <td><input value="${s.parent_phone || ''}" data-field="parent_phone"></td>
 
-		
+	<td><input value="${s.class_teacher || ''}" data-field="class_teacher"></td>	
         
         <td><input type="date" value="${s.date_of_birth || ''}" data-field="date_of_birth"></td>
         
