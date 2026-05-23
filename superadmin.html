@@ -231,6 +231,9 @@ input[type="file"] {
      <input type="text" id="parentPhone" placeholder="Parent Phone Number">
 
 
+<input type="text"
+id="classTeacher"
+placeholder="Class Teacher">
 
       <input type="date" id="dob">
       <input type="number" id="admissionYear" placeholder="Admission Year">
@@ -297,7 +300,7 @@ const schoolSelect = document.getElementById("schoolSelect");
 const studentName = document.getElementById("studentName");
 const studentGender = document.getElementById("studentGender");
 const admissionNumber = document.getElementById("admissionNumber");
-
+const class_teacher = document.getElementById("classTeacher").value.trim();
 
 const dob = document.getElementById("dob");
 const admissionYear = document.getElementById("admissionYear");
@@ -633,7 +636,8 @@ document.getElementById("addStudentBtn").onclick = async () => {
     !admission_number ||
     !parent_name ||
     !parent_phone ||
-    !class_id
+    !class_id ||
+  !class_teacher
   ) {
     studentStatus.innerText =
       "Fill required fields (Name, Admission No, Parent Name, Parent Phone, Class)";
@@ -648,6 +652,7 @@ document.getElementById("addStudentBtn").onclick = async () => {
       admission_number,
       parent_name,
       parent_phone,
+	  class_teacher,
       gender: gender || null,
       date_of_birth: date_of_birth || null,
       admission_year: admission_year ? parseInt(admission_year) : null
@@ -730,7 +735,8 @@ document.getElementById("uploadExcelBtn").onclick = async () => {
       !(row.full_name || row.name) ||
       !row.admission_number ||
       !row.parent_name ||
-      !row.parent_phone
+      !row.parent_phone ||
+		!row.class_teacher								
     );
 
     if (invalidRows.length > 0) {
@@ -747,7 +753,7 @@ document.getElementById("uploadExcelBtn").onclick = async () => {
       full_name: (row.full_name || row.name || "").trim(),
       gender: row.gender || null,
       admission_number: (row.admission_number || "").trim(),
-
+       class_teacher: row.class_teacher?.trim(),
       // parent details
       parent_name: (row.parent_name || "").trim(),
       parent_phone: (row.parent_phone || "").toString().trim(),
@@ -838,6 +844,7 @@ document.getElementById("loadStudentsBtn").onclick = async () => {
      <th>Admission No</th>
 <th>Parent Name</th>
 <th>Parent Phone</th>
+<th>Class Teacher</th>
 <th>DOB</th>
 <th>Year</th>
       <th>Action</th>
@@ -862,7 +869,7 @@ document.getElementById("loadStudentsBtn").onclick = async () => {
 
 <td><input value="${s.parent_phone || ''}" data-field="parent_phone"></td>
 
-
+<td><input value="${s.class_teacher || ''}" data-field="class_teacher"></td>
         
         <td><input type="date" value="${s.date_of_birth || ''}" data-field="date_of_birth"></td>
         
