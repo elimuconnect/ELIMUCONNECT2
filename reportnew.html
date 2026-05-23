@@ -1825,7 +1825,16 @@ if(
    learnerPathway = "Multiple Pathways";
 }
 	  
-    
+
+
+	const class_teacher =
+  Object.values(subjects)
+    .flat()
+    .find(r => r.class_teacher && r.class_teacher.trim())
+    ?.class_teacher || "—";  
+
+
+	  
 	// get the current student's class
 
 const studentRecord = Object.entries(subjects)
@@ -1912,11 +1921,6 @@ const previousLevel = getDominantLevel(previousLearnerMap[admission] || []);
 
 
 
-	const class_teacher =
-  Object.values(subjects)
-    .flat()
-    .find(r => r.class_teacher && r.class_teacher.trim())
-    ?.class_teacher || "—";  
    
     const supportFlag = generateSupportFlag(subjects);
     const insight = generateInsight(subjects);
