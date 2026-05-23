@@ -1433,9 +1433,20 @@ gradeLearnerMap[grade] ??= {};
 gradeLearnerMap[grade][r.admission] ??= [];
 gradeLearnerMap[grade][r.admission].push(score);
 	  
-    // ===== CLASS =====
-    gradeClassMap[grade][r.className] ??= [];
-    gradeClassMap[grade][r.className].push(score);
+   // ===== CLASS + CLASS TEACHER =====
+gradeClassMap[grade][r.className] ??= {
+  scores: [],
+  teachers: new Set()
+};
+
+gradeClassMap[grade][r.className]
+.scores.push(score);
+
+if (r.class_teacher) {
+  gradeClassMap[grade][r.className]
+  .teachers
+  .add(r.class_teacher);
+}
 
    // ===== SUBJECT + MULTIPLE TEACHERS =====
 gradeSubjectMap[grade][r.subject] ??= {
@@ -1489,9 +1500,18 @@ Object.entries(gradeLearnerMap).forEach(([grade, learners]) => {
 
   Object.entries(gradeClassMap).forEach(([grade, classes]) => {
 
-    const rows = Object.entries(classes)
-      .map(([cls, scores]) => {
-        const mean = avg(scores);
+
+
+Object.entries(classes)
+.map(([cls, info]) => {
+
+const mean =
+avg(info.scores);
+
+const classTeacher =
+[...info.teachers]
+.join(" / ") || "—";
+	  
 
         let level, risk;
 
@@ -1509,12 +1529,30 @@ Object.entries(gradeLearnerMap).forEach(([grade, learners]) => {
           risk = `<span style="color:#c0392b;font-weight:bold;">🔴 Needs Intervention</span>`;
         }
 
-        return { cls, mean, html: `
-          <tr>
-            <td>${cls}</td>
-            <td>${mean.toFixed(2)} / 4 (${level})</td>
-            <td>${risk}</td>
-          </tr>
+        return {
+cls,
+mean,
+html: `
+<tr>
+
+<td>
+${cls}
+</td>
+
+<td>
+${classTeacher}
+</td>
+
+<td>
+${mean.toFixed(2)}
+/ 4 (${level})
+</td>
+
+<td>
+${risk}
+</td>
+
+</tr>
         `};
       })
       .sort((a, b) => b.mean - a.mean)
@@ -1525,11 +1563,12 @@ Object.entries(gradeLearnerMap).forEach(([grade, learners]) => {
       <h5 style="margin-top:15px;">📘 ${grade}</h5>
       <table>
         <thead>
-          <tr>
-            <th>Class</th>
-            <th>Performance Level</th>
-            <th>Status</th>
-          </tr>
+         <tr>
+<th>Class</th>
+<th>Class Teacher</th>
+<th>Performance Level</th>
+<th>Status</th>
+</tr>
         </thead>
         <tbody>
           ${rows}
