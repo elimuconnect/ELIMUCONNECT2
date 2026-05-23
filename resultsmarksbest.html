@@ -1047,6 +1047,7 @@ grade_id: r.grade_id,
 	class_id: r.class_id,
   subject: r.subject,
 pathway: r.pathway,
+	class_teacher: r.class_teacher,
 	subject_teacher: r.subject_teacher,
   core_competencies: r.core_competencies,
   subject_competencies: r.subject_competencies,
@@ -1800,6 +1801,11 @@ if(
 	  
 
 
+	const class_teacher =
+  Object.values(subjects)
+    .flat()
+    .find(r => r.class_teacher && r.class_teacher.trim())
+    ?.class_teacher || "—";  
 
 	  
 	  
@@ -1909,6 +1915,11 @@ color:#2980b9;
 
 🧭 Pathway:
 ${learnerPathway || "—"}
+
+<br>
+
+👨🏽‍🏫 Class Teacher:
+<strong>${class_teacher || "—"}</strong>
 
 </span>
 
