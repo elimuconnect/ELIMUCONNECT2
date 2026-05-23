@@ -300,7 +300,6 @@ const schoolSelect = document.getElementById("schoolSelect");
 const studentName = document.getElementById("studentName");
 const studentGender = document.getElementById("studentGender");
 const admissionNumber = document.getElementById("admissionNumber");
-const class_teacher = document.getElementById("classTeacher").value.trim();
 
 const dob = document.getElementById("dob");
 const admissionYear = document.getElementById("admissionYear");
@@ -623,6 +622,7 @@ document.getElementById("addStudentBtn").onclick = async () => {
 
   const parent_name = document.getElementById("parentName").value.trim();
   const parent_phone = document.getElementById("parentPhone").value.trim();
+ const class_teacher = document.getElementById("classTeacher").value.trim();
 
   const date_of_birth = document.getElementById("dob").value;
   const admission_year = document.getElementById("admissionYear").value;
