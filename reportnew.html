@@ -1066,7 +1066,7 @@ const records = data.map(r => ({
 grade_id: r.grade_id,
 	class_id: r.class_id,
   subject: r.subject,
-	pathway: r.pathway,
+	
 	class_teacher: r.class_teacher,
 subject_teacher: r.subject_teacher,
   core_competencies: r.core_competencies,
@@ -1870,65 +1870,6 @@ const firstRow = (typeof records !== "undefined" && records.length)
     const admission = subjects.__admission || "N/A";
 
 
-
-const pathwayCounts = {};
-
-Object.entries(subjects).forEach(([subject, rows]) => {
-
-   if(subject === "__admission") return;
-
-   rows.forEach(r => {
-
-      if(!r.pathway) return;
-      if(r.pathway === "Core") return;
-
-      pathwayCounts[r.pathway] =
-         (pathwayCounts[r.pathway] || 0) + 1;
-   });
-
-});
-
-
-
-
-
-
-Object.entries(subjects).forEach(([subject, rows]) => {
-
-   if(subject==="__admission") return;
-
-   rows.forEach(r=>{
-      console.log(
-         student,
-         r.subject,
-         r.pathway
-      );
-   });
-
-});
-
-
-
-
-
-	  
-
-let learnerPathway =
-Object.keys(pathwayCounts).length
-? Object.entries(pathwayCounts)
-   .sort((a,b)=>b[1]-a[1])[0][0]
-: "Undetermined";
-
-
-if(
-   Object.keys(pathwayCounts).length > 1 &&
-   new Set(Object.values(pathwayCounts)).size === 1
-){
-   learnerPathway = "Multiple Pathways";
-}
-	  
-
-
 	
 const studentRows =
 Object.entries(subjects)
@@ -2067,12 +2008,6 @@ ${supportFlag}
 font-size:14px;
 color:#2980b9;
 ">
-
-🧭 Pathway:
-${learnerPathway || "—"}
-
-<br>
-
 👨🏽‍🏫 Class Teacher:
 <strong>${classTeacher}</strong>
 
