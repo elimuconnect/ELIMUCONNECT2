@@ -1047,9 +1047,8 @@ if (isConsolidated) {
   query = supabase
     .from("consolidated_term_subject_report_view")
     .select("*")
-    .eq("term", termName)              // ✅ KEEP THIS (PER TERM)
-    .eq("academic_year", SYSTEM_YEAR)
-    .eq("school_id", teacherSchoolId);
+    .eq("term", termName)
+    .eq("academic_year", SYSTEM_YEAR); // ❌ REMOVE school_id
 
 } else {
 
