@@ -1025,7 +1025,7 @@ if (selectedCategory === "Consolidated") {
 
   // 🔥 USE CONSOLIDATED VIEW
   query = supabase
-    .from("consolidated_term_subject_report_view")
+    .from("consolidated_term_subject_report_view2")
     .select("*")
     .eq("term", termName)
     .eq("academic_year", SYSTEM_YEAR)
