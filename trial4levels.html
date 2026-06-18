@@ -1041,19 +1041,20 @@ const batchSize = 1000;
 
 let query;
 
-if (selectedCategory === "Consolidated") {
+const isConsolidated =
+  selectedCategory?.toLowerCase() === "consolidated";
 
-  // 🔥 USE CONSOLIDATED VIEW
+if (isConsolidated) {
+
   query = supabase
-    .from("consolidated_term_subject_report_view2")
+    .from("consolidated_term_subject_report_view")
     .select("*")
-    .eq("term", termName)
+    .eq("term", termName)              // ✅ KEEP THIS (PER TERM)
     .eq("academic_year", SYSTEM_YEAR)
     .eq("school_id", teacherSchoolId);
 
 } else {
 
-  // 🔥 NORMAL RESULTS VIEW
   query = supabase
     .from("results3_report_view")
     .select("*")
