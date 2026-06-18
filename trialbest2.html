@@ -1002,7 +1002,7 @@ let allResults = [];
 if (isConsolidated) {
 
   const { data: consolidatedData, error } = await supabase
-    .from("consolidated_results_view")
+    .from("consolidated_results_view2")
     .select("*")
     .eq("term_id", term_id);
 
