@@ -163,7 +163,7 @@ input[type="file"] {
 <body>
 
 <div class="header">
-  School Admin Dashboard
+  SuperAdmin Dashboard
 </div>
 
 
@@ -819,19 +819,19 @@ if (!isSuperadmin) {
 
 
 
-// ====================================
-// AUTO LOAD CLASS TEACHER
-// ====================================
 studentClass.addEventListener("change", async () => {
 
   const classId = studentClass.value;
 
-  if (!classId) return;
+  if (!classId) {
+    document.getElementById("classTeacher").value = "";
+    return;
+  }
 
   const { data, error } = await supabase
     .from("students")
     .select("class_teacher")
-    .eq("school_id", adminProfile.school_id)
+    .eq("school_id", activeSchoolId) // ✅ use active school
     .eq("class_id", classId)
     .not("class_teacher", "is", null)
     .limit(1);
@@ -843,10 +843,7 @@ studentClass.addEventListener("change", async () => {
 
   document.getElementById("classTeacher").value =
     data?.[0]?.class_teacher || "";
-
 });
-
-
 	
 document.getElementById("loadStudentsBtn").onclick = async () => {
   const class_id = manageClass.value;
