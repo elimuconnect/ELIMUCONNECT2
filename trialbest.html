@@ -589,17 +589,10 @@ button {
         <input value="2026" disabled />
       </div>
 
-
-<div class="form-group">
-  <label>Category</label>
-  <select id="categorySelect">
-    <option value="">Select Category</option>
-    <option value="Consolidated">
-      Consolidated (40% Midterm + 60% Endterm)
-    </option>
-  </select>
-</div>
-		
+ <div class="form-group">
+        <label>Category</label>
+        <select id="categorySelect"></select>
+      </div>
 
       <div class="form-group">
         <label>Term</label>
@@ -794,22 +787,36 @@ termSelect.innerHTML =
   `<option value="">Select term</option>` +
   terms.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
 
-const categorySelect = document.getElementById("categorySelect");
 
+/* ========== LOAD CATEGORIES ========== */
 const { data: categories } = await supabase
   .from("assessments")
   .select("category")
   .not("category", "is", null);
 
-const uniqueCategories = [...new Set(categories.map(c => c.category))];
+// remove duplicates safely
+let uniqueCategories = [
+  ...new Set((categories || []).map(c => c.category))
+];
 
-uniqueCategories.push("Consolidated");
+// inject frontend-only option
+if (!uniqueCategories.includes("Consolidated")) {
+  uniqueCategories.push("Consolidated");
+}
 
 categorySelect.innerHTML =
-  `<option value="">Select category</option>` +
-  uniqueCategories.map(c => `<option value="${c}">${c}</option>`).join("");
+  `<option value="">Select Category</option>` +
+  uniqueCategories.map(c => {
 
+    const label =
+      c === "Consolidated"
+        ? "Consolidated (40% Midterm + 60% Endterm)"
+        : c;
 
+    return `<option value="${c}">${label}</option>`;
+  }).join("");
+
+	
 function getSubjectTrend(currentAvg, previousAvg){
 
    if(previousAvg == null){
