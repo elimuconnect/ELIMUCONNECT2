@@ -1066,7 +1066,7 @@ console.log("Term:", termName);
 console.log("School ID:", teacherSchoolId);
 
 const test = await supabase
-  .from("consolidated_term_subject_report_view2")
+  .from("consolidated_term_subject_report_view3")
   .select("*")
   .eq("term", termName);
 
