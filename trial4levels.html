@@ -765,7 +765,6 @@ termSelect.innerHTML =
   terms.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
 
 
-
 const categorySelect = document.getElementById("categorySelect");
 
 const { data: categories } = await supabase
@@ -773,27 +772,48 @@ const { data: categories } = await supabase
   .select("category")
   .not("category", "is", null);
 
-// remove duplicates
-const uniqueCategories = [...new Set((categories || []).map(c => c.category))];
+// 🔥 normalize (fix case + trim)
+const normalized = (categories || []).map(c => ({
+  raw: c.category,
+  clean: c.category.trim().toLowerCase()
+}));
 
-// inject frontend + view category
-if (!uniqueCategories.includes("Midterm")) uniqueCategories.push("Midterm");
-if (!uniqueCategories.includes("Endterm")) uniqueCategories.push("Endterm");
-if (!uniqueCategories.includes("Consolidated")) uniqueCategories.push("Consolidated");
+// remove duplicates using clean value
+const uniqueMap = new Map();
 
+normalized.forEach(c => {
+  if (!uniqueMap.has(c.clean)) {
+    uniqueMap.set(c.clean, c.raw); // keep original display
+  }
+});
+
+let uniqueCategories = Array.from(uniqueMap.values());
+
+// inject missing system categories
+if (!uniqueCategories.some(c => c.toLowerCase() === "midterm")) {
+  uniqueCategories.push("Midterm");
+}
+
+if (!uniqueCategories.some(c => c.toLowerCase() === "endterm")) {
+  uniqueCategories.push("Endterm");
+}
+
+if (!uniqueCategories.some(c => c.toLowerCase() === "consolidated")) {
+  uniqueCategories.push("Consolidated");
+}
+
+// render
 categorySelect.innerHTML =
   `<option value="">Select category</option>` +
   uniqueCategories.map(c => {
 
     const label =
-      c === "Consolidated"
+      c.toLowerCase() === "consolidated"
         ? "Consolidated (Auto 40% + 60%)"
         : c;
 
     return `<option value="${c}">${label}</option>`;
   }).join("");
-
-
 
 
 function getSubjectTrend(currentAvg, previousAvg){
