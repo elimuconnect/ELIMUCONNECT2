@@ -1062,6 +1062,18 @@ if (isConsolidated) {
     .eq("school_id", teacherSchoolId);
 }
 
+console.log("Selected Category:", selectedCategory);
+console.log("Term:", termName);
+console.log("School ID:", teacherSchoolId);
+
+const test = await supabase
+  .from("consolidated_term_subject_report_view2")
+  .select("*")
+  .eq("term", termName);
+
+console.log("TEST CONSOLIDATED:", test);
+
+	
 while (true) {
 
   const response = await query.range(from, from + batchSize - 1);
