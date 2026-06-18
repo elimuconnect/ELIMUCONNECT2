@@ -202,6 +202,9 @@ input[type="file"] {
     <h2>Add Student (Single Entry)</h2>
 
     <div class="form-grid">
+<select id="studentClass">
+  <option value="">Select Class</option>
+</select>
       <input type="text" id="studentName" placeholder="Full Name">
       <select id="studentGender">
         <option value="">Select Gender</option>
@@ -217,7 +220,7 @@ id="classTeacher"
 placeholder="Class Teacher">
       <input type="date" id="dob">
       <input type="number" id="admissionYear" placeholder="Admission Year">
-      <select id="studentClass"></select>
+     
 		
       <button id="addStudentBtn">Add Student</button>
     </div>
@@ -464,6 +467,36 @@ async function loadStudentClasses() {
 }
 
 
+// ====================================
+// AUTO LOAD CLASS TEACHER
+// ====================================
+studentClass.addEventListener("change", async () => {
+
+  const classId = studentClass.value;
+
+  if (!classId) return;
+
+  const { data, error } = await supabase
+    .from("students")
+    .select("class_teacher")
+    .eq("school_id", adminProfile.school_id)
+    .eq("class_id", classId)
+    .not("class_teacher", "is", null)
+    .limit(1);
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  document.getElementById("classTeacher").value =
+    data?.[0]?.class_teacher || "";
+
+});
+
+
+
+
 document.getElementById("addStudentBtn").onclick = async () => {
 
   const full_name = document.getElementById("studentName").value;
@@ -548,6 +581,7 @@ await loadTeachers();
 await loadClasses();
 await loadSubjects();
 await loadStudentClasses();
+studentClass.dispatchEvent(new Event("change"));
 
 
   document.getElementById("uploadExcelBtn").onclick = async () => {
