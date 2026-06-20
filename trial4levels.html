@@ -1502,7 +1502,19 @@ function renderSchoolAnalytics(
   // ===== PROCESS DATA =====
   records.forEach(r => {
 
-    const subjectData = avgMap?.[r.student]?.[r.subject];
+
+
+let score = subjectData.average_score;
+
+// 🔥 NORMALIZE IF CONSOLIDATED (0–100 → 1–4)
+if (score > 4) {
+  if (score >= 80) score = 4;
+  else if (score >= 50) score = 3;
+  else if (score >= 30) score = 2;
+  else score = 1;
+}
+
+	
     if (!subjectData) return;
 
     const score = subjectData.average_score;
