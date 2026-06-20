@@ -1044,11 +1044,35 @@ let query;
 
 if (isConsolidated) {
 
-  query = supabase
+  const { data: consBatch, error } = await supabase
     .from("consolidated_term_subject_report_view3")
     .select("*")
     .eq("term", termName)
-    .eq("academic_year", SYSTEM_YEAR); // ❌ REMOVE school_id
+    .eq("academic_year", SYSTEM_YEAR);
+
+  if (error) {
+    console.error("Consolidated fetch error:", error);
+  }
+
+  avgMap = {};
+
+  consBatch?.forEach(a => {
+
+    const student = a.full_name?.trim();
+    const subj = a.subject;
+
+    if (!student || !subj) return;
+
+    if (!avgMap[student]) avgMap[student] = {};
+
+    avgMap[student][subj] = {
+      achievement_level: a.achievement_level,
+      average_score: a.average_score,
+      subject_teacher: a.subject_teacher
+    };
+
+  });
+ query = null;
 
 } else {
 
