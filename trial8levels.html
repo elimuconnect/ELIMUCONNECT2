@@ -1062,18 +1062,36 @@ const batchSize = 1000;
 
 if (isConsolidated) {
 
-  const { data: consData, error } = await supabase
-    .from("consolidated_results2_view")
-    .select("*")
-    .eq("term", termName)
-    .eq("academic_year", SYSTEM_YEAR)
-    .eq("school_id", teacherSchoolId);
+  let consFrom = 0;
+  const consBatchSize = 1000;
+  let consDataAll = [];
 
-  if (error) {
-    console.error(error);
+  while (true) {
+
+    const { data: consBatch, error } = await supabase
+      .from("consolidated_results2_view")
+      .select("*")
+      .eq("term", termName)
+      .eq("academic_year", SYSTEM_YEAR)
+      .eq("school_id", teacherSchoolId)
+      .range(consFrom, consFrom + consBatchSize - 1);
+
+    if (error) {
+      console.error("Consolidated fetch error:", error);
+      break;
+    }
+
+    if (!consBatch || consBatch.length === 0) break;
+
+    consDataAll = consDataAll.concat(consBatch);
+
+    if (consBatch.length < consBatchSize) break;
+
+    consFrom += consBatchSize;
   }
 
-  allResults = consData || [];
+  allResults = consDataAll;
+
 
 } else {
 
