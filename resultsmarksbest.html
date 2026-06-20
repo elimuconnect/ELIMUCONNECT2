@@ -884,31 +884,33 @@ async function loadReport() {
     while (true) {
       const { data: avgBatch, error: avgErr } = await supabase
         .from("consolidated_results2_view")
-       .select(`
-          full_name,
-          subject_name,
-          average_score,
-          achievement_level,
-          subject_teacher
-        `)
+        .select(`
+  full_name,
+  subject,
+  average_score,
+  achievement_level,
+  subject_teacher
+`)
         .eq("term", termName)
-        .eq("assessment_category", selectedCategory)
+        .eq("academic_year", SYSTEM_YEAR)
+        .eq("school_id", teacherSchoolId)
         .range(avgFrom, avgFrom + avgBatchSize - 1);
 
       if (avgErr || !avgBatch || avgBatch.length === 0) break;
 
       avgBatch.forEach(a => {
-        if (!a.full_name) return;
-        const student = a.full_name.trim();
-        const subj = a.subject_name;
+        const student = a.full_name?.trim();
+        const subj = a.subject;
 
+        if (!student || !subj) return;
         if (!avgMap[student]) avgMap[student] = {};
 
-        avgMap[student][subj] = {
-          achievement_level: a.achievement_level,
-          average_score: a.average_score,
-          subject_teacher: a.subject_teacher
-        };
+       avgMap[student][subj] = {
+  achievement_level: a.achievement_level,
+  average_score: a.average_score,
+  subject_teacher: a.subject_teacher
+};
+       
       });
 
       if (avgBatch.length < avgBatchSize) break;
@@ -1086,7 +1088,6 @@ async function loadReport() {
   // Assign the loaded rows back to the window context variables
   data = allResults;
   results = allResults;
-
 console.log("Total Records Loaded:", data.length);
 
 
