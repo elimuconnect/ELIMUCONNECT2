@@ -692,14 +692,12 @@ function getAchievementLabel(score) {
   return "Below Expectations";
 }
 
-
-function convertMarksToLevel(mark) {
-  if (mark >= 80) return "Exceeding Expectations";
-  if (mark >= 50) return "Meeting Expectations";
-  if (mark >= 30) return "Approaching Expectations";
-  return "Below Expectations";
+function marksToLevelScore(mark) {
+  if (mark >= 80) return 4;
+  if (mark >= 50) return 3;
+  if (mark >= 30) return 2;
+  return 1;
 }
-	
 
 function levelToScore(level) {
   if (!level) return 0;
@@ -1512,21 +1510,18 @@ records.forEach(r => {
   const subjectData = avgMap?.[r.student]?.[r.subject];
   if (!subjectData) return;
 
-  let score = subjectData.average_score;
+ let score = subjectData.average_score;
 
-  // 🚨 FIRST validate
-  if (score === null || score === undefined) return;
+if (score === null || score === undefined) return;
 
-  // ensure numeric
-  score = Number(score);
-  if (isNaN(score)) return;
+score = Number(score);
+if (isNaN(score)) return;
 
-  // Consolidated = 0–100, Others = 1–4
-  if (!isConsolidated) {
-    score = score * 25; // 1–4 → 0–100
-  }
+// 🔥 normalize EVERYTHING to 1–4 scale
+if (isConsolidated) {
+  score = marksToLevelScore(score); // 0–100 → 1–4
+}
 
-  const level = convertMarksToLevel(score);
 
   const grade = r.grade_name
     ? (String(r.grade_name).startsWith("Grade")
