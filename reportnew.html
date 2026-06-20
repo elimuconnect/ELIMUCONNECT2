@@ -942,7 +942,7 @@ if (previousTerm) {
  const { data: prevData } = await supabase
   .from(
       isConsolidated
-        ? "consolidated_results3_view"
+        ? "consolidated_term_subject_report_view3"
         : "results3_report_view"
     )
   .select("*")
@@ -1096,17 +1096,6 @@ if (isConsolidated) {
     .eq("academic_year", SYSTEM_YEAR)
     .eq("school_id", teacherSchoolId);
 }
-
-console.log("Selected Category:", selectedCategory);
-console.log("Term:", termName);
-console.log("School ID:", teacherSchoolId);
-
-const test = await supabase
-  .from("consolidated_term_subject_report_view3")
-  .select("*")
-  .eq("term", termName);
-
-console.log("TEST CONSOLIDATED:", test);
 
 	
 // ✅ FIX ONLY THIS PART (SAFE GUARD ADDED)
