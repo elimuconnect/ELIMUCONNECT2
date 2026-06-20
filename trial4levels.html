@@ -1041,7 +1041,6 @@ const batchSize = 1000;
 
 let query;
 
-
 if (isConsolidated) {
 
   const { data: consBatch, error } = await supabase
@@ -1072,7 +1071,8 @@ if (isConsolidated) {
     };
 
   });
- query = null;
+
+  query = null;
 
 } else {
 
@@ -1097,19 +1097,24 @@ const test = await supabase
 console.log("TEST CONSOLIDATED:", test);
 
 	
-while (true) {
+// ✅ FIX ONLY THIS PART (SAFE GUARD ADDED)
+if (!isConsolidated) {
 
-  const response = await query.range(from, from + batchSize - 1);
+  while (true) {
 
-  const batch = response.data;
+    const response = await query.range(from, from + batchSize - 1);
 
-  if (response.error || !batch || batch.length === 0) break;
+    const batch = response.data;
 
-  allResults = allResults.concat(batch);
+    if (response.error || !batch || batch.length === 0) break;
 
-  if (batch.length < batchSize) break;
+    allResults = allResults.concat(batch);
 
-  from += batchSize;
+    if (batch.length < batchSize) break;
+
+    from += batchSize;
+  }
+
 }
 
 data = allResults;
