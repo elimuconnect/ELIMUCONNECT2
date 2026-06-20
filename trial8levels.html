@@ -1060,7 +1060,11 @@ const hasPreviousData = Object.keys(previousLearnerMap || {}).length > 0;
 
 /* ===== AVERAGES (BATCHED TO PREVENT MISSING SUBJECTS) ===== */
 
+et allResults = [];
 
+let from = 0;
+
+const batchSize = 1000;
 
 if (isConsolidated) {
   // FIXED: Added pagination loop so students past row 1000 aren't dropped
