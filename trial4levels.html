@@ -812,10 +812,10 @@ categorySelect.innerHTML =
   `<option value="">Select category</option>` +
   uniqueCategories.map(c => {
 
-    const label =
-      c.toLowerCase() === "consolidated"
-        ? "Consolidated (Auto 40% + 60%)"
-        : c;
+   const label =
+  c.toLowerCase() === "consolidated"
+    ? "TEST TEST TEST"
+    : c;
 
     return `<option value="${c}">${label}</option>`;
   }).join("");
