@@ -940,7 +940,11 @@ if (isFirstTerm) {
 if (previousTerm) {
 
  const { data: prevData } = await supabase
-  .from("results3_report_view")
+  .from(
+      isConsolidated
+        ? "consolidated_results2_view"
+        : "results3_report_view"
+    )
   .select("*")
   .eq("term", previousTerm)
   .eq("academic_year", SYSTEM_YEAR)
