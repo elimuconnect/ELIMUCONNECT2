@@ -693,6 +693,13 @@ function getAchievementLabel(score) {
 }
 
 
+function convertMarksToLevel(mark) {
+  if (mark >= 80) return "Exceeding Expectations";
+  if (mark >= 50) return "Meeting Expectations";
+  if (mark >= 30) return "Approaching Expectations";
+  return "Below Expectations";
+}
+	
 
 function levelToScore(level) {
   if (!level) return 0;
