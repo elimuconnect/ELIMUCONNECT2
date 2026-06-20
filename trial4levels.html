@@ -1498,23 +1498,10 @@ function renderSchoolAnalytics(
   let gradeRiskMap = {};
 	let gradeLearnerMap = {};
 	let gradeClassTeacherMap = {};
-
-  // ===== PROCESS DATA =====
+ // ===== PROCESS DATA =====
   records.forEach(r => {
 
-
-
-let score = subjectData.average_score;
-
-// 🔥 NORMALIZE IF CONSOLIDATED (0–100 → 1–4)
-if (score > 4) {
-  if (score >= 80) score = 4;
-  else if (score >= 50) score = 3;
-  else if (score >= 30) score = 2;
-  else score = 1;
-}
-
-	
+    const subjectData = avgMap?.[r.student]?.[r.subject];
     if (!subjectData) return;
 
     const score = subjectData.average_score;
@@ -1525,6 +1512,7 @@ if (score > 4) {
       ? r.grade_name
       : `Grade ${r.grade_name}`)
   : "Unknown";
+
 
 
     // ===== INIT =====
