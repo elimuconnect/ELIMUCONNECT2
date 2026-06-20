@@ -1060,6 +1060,10 @@ const hasPreviousData = Object.keys(previousLearnerMap || {}).length > 0;
 let from = 0;
 const batchSize = 1000;
 
+let allResults = [];
+let from = 0;
+const batchSize = 1000;
+
 if (isConsolidated) {
 
   let consFrom = 0;
@@ -1092,30 +1096,36 @@ if (isConsolidated) {
 
   allResults = consDataAll;
 
-
 } else {
 
   while (true) {
-    const response = await supabase
+
+    const { data: batch, error } = await supabase
       .from("results2_report_view")
       .select("*")
       .eq("term", termName)
-		 .eq("assessment_category", selectedCategory)
+      .eq("assessment_category", selectedCategory)
       .eq("academic_year", SYSTEM_YEAR)
-      .range(from, from + batchSize - 1)
-	  .eq("school_id", teacherSchoolId);
+      .eq("school_id", teacherSchoolId)
+      .range(from, from + batchSize - 1);
 
-    const batch = response.data;
-    if (response.error || !batch || batch.length === 0) break;
+    if (error) {
+      console.error("Report fetch error:", error);
+      break;
+    }
+
+    if (!batch || batch.length === 0) break;
 
     allResults = allResults.concat(batch);
+
     if (batch.length < batchSize) break;
+
     from += batchSize;
   }
 }
-  data = allResults;
-  results = allResults;
-  
+
+data = allResults;
+results = allResults;
 console.log("Total Records Loaded:", data.length);
 
 
