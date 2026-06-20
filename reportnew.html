@@ -811,7 +811,8 @@ if (!uniqueCategories.some(c => c.toLowerCase() === "consolidated")) {
 categorySelect.innerHTML =
   `<option value="">Select category</option>` +
   uniqueCategories.map(c => {
-  const label =
+
+   const label =
   c.toLowerCase() === "consolidated"
     ? "Consolidated (Auto 20% + 30% + 50%)"
     : c;
@@ -839,9 +840,6 @@ function getSubjectTrend(currentAvg, previousAvg){
 
    return "⟺";      // maintained
 }
-
-
-	
 /* ========== MAIN LOAD ========== */
 async function loadReport() {
   reportDiv.innerHTML = "";
@@ -849,278 +847,197 @@ async function loadReport() {
   status.innerText = "";
 
   const term_id = termSelect.value;
- const selectedCategory = categorySelect.value;
+  const selectedCategory = categorySelect.value;
   const isConsolidated = selectedCategory === "Consolidated";
 
   if (!term_id || !selectedCategory) {
-  status.innerText = "Please select both Term and Category.";
-  return;
-}
-  
+    status.innerText = "Please select both Term and Category.";
+    return;
+  }
 
   const termName = terms.find(t => t.id === term_id)?.name;
+  const sortedTerms = terms.map(t => t.name).sort();
+  let isFirstTerm = termName === sortedTerms[0];
 
-const sortedTerms = terms.map(t => t.name).sort();
-let isFirstTerm = termName === sortedTerms[0];
-
-/* ===== LEARNER TERM AVERAGES FOR GRAPHS ===== */
-const { data: termAverages } = await supabase
-  .from("learner_term_averages") // ✅ the view you already created
-  .select("admission_number, term, average_score")
-  .eq("academic_year", SYSTEM_YEAR);
-
-
-
-
+  /* ===== LEARNER TERM AVERAGES FOR GRAPHS ===== */
+  const { data: termAverages } = await supabase
+    .from("learner_term_averages")
+    .select("admission_number, term, average_score")
+    .eq("academic_year", SYSTEM_YEAR);
 
   avgMap = {};
+  let avgFrom = 0;
+  const avgBatchSize = 1000;
 
-let avgFrom = 0;
-const avgBatchSize = 1000;
+  /* ===== STEP 1: POPULATE AVGMAP (HANDLES BOTH VIEWS CORRECTLY) ===== */
+  while (true) {
+    let avgQuery = supabase.from(isConsolidated ? "consolidated_term_subject_report_view3" : "term_subject_report_view3");
+    
+    if (isConsolidated) {
+      avgQuery = avgQuery.select("full_name, subject, average_score, achievement_level, subject_teacher");
+    } else {
+      avgQuery = avgQuery.select("full_name, subject_name, average_score, achievement_level, subject_teacher")
+                         .eq("assessment_category", selectedCategory);
+    }
 
-while (true) {
+    const { data: avgBatch, error: avgErr } = await avgQuery
+      .eq("term", termName)
+      .eq("school_id", teacherSchoolId)
+      .range(avgFrom, avgFrom + avgBatchSize - 1);
 
-  const { data: avgBatch, error: avgErr } = await supabase
-    .from("term_subject_report_view3")
-    .select("full_name,subject_name,average_score,achievement_level,subject_teacher")
-    .eq("term", termName)
-	   .eq("assessment_category", selectedCategory)
-    .eq("school_id", teacherSchoolId)
-    .range(avgFrom, avgFrom + avgBatchSize - 1);
+    if (avgErr || !avgBatch || avgBatch.length === 0) break;
 
-  if (avgErr || !avgBatch || avgBatch.length === 0) break;
+    avgBatch.forEach(a => {
+      if (!a.full_name) return;
 
-  avgBatch.forEach(a => {
+      const student = a.full_name.trim();
+      const subj = isConsolidated ? a.subject : a.subject_name;
 
-    if (!a.full_name) return;
+      if (!avgMap[student]) avgMap[student] = {};
 
-    const student = a.full_name.trim();
-    const subj = a.subject_name;
+      avgMap[student][subj] = {
+        achievement_level: a.achievement_level,
+        average_score: a.average_score,
+        subject_teacher: a.subject_teacher,
+      };
+    });
 
-    if (!avgMap[student]) avgMap[student] = {};
+    if (avgBatch.length < avgBatchSize) break;
+    avgFrom += avgBatchSize;
+  }
 
-    avgMap[student][subj] = {
-      achievement_level: a.achievement_level,
-      average_score: a.average_score,
-		subject_teacher: a.subject_teacher,
-    };
-
+  /* ===== TRENDS AND PREVIOUS DATA ===== */
+  trendMap = {};
+  termAverages?.forEach(r => {
+    if (!trendMap[r.admission_number]) {
+      trendMap[r.admission_number] = {};
+    }
+    trendMap[r.admission_number][r.term] = Number(r.average_score);
   });
 
-  if (avgBatch.length < avgBatchSize) break;
+  const previousTerm = terms
+    .map(t => t.name)
+    .sort()
+    .filter(t => t < termName)
+    .slice(-1)[0];
 
-  avgFrom += avgBatchSize;
-}
-  
+  isFirstTerm = !previousTerm;
+  let previousRecords = [];
+  let previousAverages = {};
 
-trendMap = {};
-
-termAverages?.forEach(r => {
-  if (!trendMap[r.admission_number]) {
-    trendMap[r.admission_number] = {};
+  if (isFirstTerm) {
+    previousAverages = {};
+    previousRecords = [];
   }
-  trendMap[r.admission_number][r.term] = Number(r.average_score);
-});
 
+  if (previousTerm) {
+    const { data: prevData } = await supabase
+      .from(isConsolidated ? "consolidated_term_subject_report_view3" : "results3_report_view")
+      .select("*")
+      .eq("term", previousTerm)
+      .eq("academic_year", SYSTEM_YEAR)
+      .eq("school_id", teacherSchoolId);
 
-const previousTerm = terms
-  .map(t => t.name)
-  .sort()
-  .filter(t => t < termName)
-  .slice(-1)[0];
+    previousRecords = prevData || [];
 
- isFirstTerm = !previousTerm;
+    previousRecords.forEach(r => {
+      const adm = r.admission_number;
+      const score = levelToScore(r.achievement_level);
 
-if (isFirstTerm) {
-  previousAverages = {};
-  previousRecords = [];
-}
- 
+      if (!previousAverages[adm]) {
+        previousAverages[adm] = { total: 0, count: 0 };
+      }
 
-if (previousTerm) {
+      previousAverages[adm].total += score;
+      previousAverages[adm].count++;
+    });
+  }
 
- const { data: prevData } = await supabase
-  .from(
-      isConsolidated
-        ? "consolidated_term_subject_report_view3"
-        : "results3_report_view"
-    )
-  .select("*")
-  .eq("term", previousTerm)
-  .eq("academic_year", SYSTEM_YEAR)
-  .eq("school_id", teacherSchoolId); // ✅ ADD THIS
-
-  
-
-  previousRecords = prevData || [];
-
-  previousRecords.forEach(r => {
+  previousLearnerMap = {};
+  previousRecords?.forEach(r => {
     const adm = r.admission_number;
     const score = levelToScore(r.achievement_level);
 
-    if (!previousAverages[adm]) {
-      previousAverages[adm] = { total: 0, count: 0 };
+    if (!previousLearnerMap[adm]) {
+      previousLearnerMap[adm] = [];
     }
-
-    previousAverages[adm].total += score;
-    previousAverages[adm].count++;
+    previousLearnerMap[adm].push(score);
   });
-}
 
+  previousSubjectMap = {};
+  previousRecords?.forEach(r => {
+    const adm = r.admission_number;
+    const subject = r.subject || r.subject_name;
+    const score = levelToScore(r.achievement_level);
 
+    if (!score) return;
+    if (!previousSubjectMap[adm]) previousSubjectMap[adm] = {};
+    if (!previousSubjectMap[adm][subject]) previousSubjectMap[adm][subject] = [];
 
+    previousSubjectMap[adm][subject].push(score);
+  });
 
+  const hasPreviousData = Object.keys(previousLearnerMap || {}).length > 0;
 
-previousLearnerMap = {};
+  /* ===== STEP 2: BUILD LEARNER SUMMARY ===== */
+  learnerSummary = {};
+  Object.keys(avgMap).forEach(student => {
+    const subjects = Object.values(avgMap[student]);
+    const validAverages = subjects
+      .map(s => Number(s.average_score))
+      .filter(n => !isNaN(n));
 
-previousRecords?.forEach(r => {
-  const adm = r.admission_number;
-  const score = levelToScore(r.achievement_level);
+    const overallAvg = validAverages.length
+      ? validAverages.reduce((a, b) => a + b, 0) / validAverages.length
+      : null;
 
-  if (!previousLearnerMap[adm]) {
-    previousLearnerMap[adm] = [];
-  }
-
-  previousLearnerMap[adm].push(score);
-});
-
-
-
-previousSubjectMap = {};
-
-previousRecords?.forEach(r => {
-
-  const adm = r.admission_number;
-  const subject = r.subject;
-  const score = levelToScore(r.achievement_level);
-
-  if (!score) return;
-
-  if (!previousSubjectMap[adm]) {
-      previousSubjectMap[adm] = {};
-  }
-
-  if (!previousSubjectMap[adm][subject]) {
-      previousSubjectMap[adm][subject] = [];
-  }
-
-  previousSubjectMap[adm][subject].push(score);
-
-});
-	
-
-
-	
-const hasPreviousData = Object.keys(previousLearnerMap || {}).length > 0;
-
-	
-
-
-// ============================
-// STEP 3 — ADD THIS HERE
-// ============================
-
-learnerSummary = {};
-
-Object.keys(avgMap).forEach(student => {
-
-  const subjects = Object.values(avgMap[student]);
-
-  const validAverages = subjects
-    .map(s => Number(s.average_score))
-    .filter(n => !isNaN(n));
-
-  const overallAvg = validAverages.length
-    ? validAverages.reduce((a,b)=>a+b,0) / validAverages.length
-    : null;
-
-  learnerSummary[student] = {
-    overall_average: overallAvg,
-   overall_level: getAchievementLabel(overallAvg)
-  };
-});
-
-  
-
-  /* ===== RAW RESULTS ===== */
-let allResults = [];
-let from = 0;
-const batchSize = 1000;
-
-let query;
-
-if (isConsolidated) {
-
-  const { data: consBatch, error } = await supabase
-    .from("consolidated_term_subject_report_view3")
-    .select("*")
-    .eq("term", termName)
-    .eq("academic_year", SYSTEM_YEAR);
-
-  if (error) {
-    console.error("Consolidated fetch error:", error);
-  }
-
-  avgMap = {};
-
-  consBatch?.forEach(a => {
-
-    const student = a.full_name?.trim();
-    const subj = a.subject;
-
-    if (!student || !subj) return;
-
-    if (!avgMap[student]) avgMap[student] = {};
-
-    avgMap[student][subj] = {
-      achievement_level: a.achievement_level,
-      average_score: a.average_score,
-      subject_teacher: a.subject_teacher
+    learnerSummary[student] = {
+      overall_average: overallAvg,
+      overall_level: getAchievementLabel(overallAvg)
     };
-
   });
 
-  // 🔥 THIS IS THE FIX
-  allResults = consBatch || [];
+  /* ===== STEP 3: RAW RESULTS DISPLAY LOADING (UNIFIED LOOP FIX) ===== */
+  let allResults = [];
+  let from = 0;
+  const batchSize = 1000;
+  let query;
 
-  query = null;
+  if (isConsolidated) {
+    query = supabase
+      .from("consolidated_term_subject_report_view3")
+      .select("*")
+      .eq("term", termName)
+      .eq("academic_year", SYSTEM_YEAR)
+      .eq("school_id", teacherSchoolId); // ✅ Added missing school filter
+  } else {
+    query = supabase
+      .from("results3_report_view")
+      .select("*")
+      .eq("term", termName)
+      .eq("assessment_category", selectedCategory)
+      .eq("academic_year", SYSTEM_YEAR)
+      .eq("school_id", teacherSchoolId);
+  }
 
+  console.log("Selected Category:", selectedCategory);
+  console.log("Term:", termName);
+  console.log("School ID:", teacherSchoolId);
 
-} else {
-
-  query = supabase
-    .from("results3_report_view")
-    .select("*")
-    .eq("term", termName)
-    .eq("assessment_category", selectedCategory)
-    .eq("academic_year", SYSTEM_YEAR)
-    .eq("school_id", teacherSchoolId);
-}
-
-	
-// ✅ FIX ONLY THIS PART (SAFE GUARD ADDED)
-if (!isConsolidated) {
-
+  // ✅ Loops cleanly for BOTH options in batches of 1000 without crashing
   while (true) {
-
     const response = await query.range(from, from + batchSize - 1);
-
     const batch = response.data;
 
     if (response.error || !batch || batch.length === 0) break;
 
     allResults = allResults.concat(batch);
-
     if (batch.length < batchSize) break;
-
     from += batchSize;
   }
 
-}
-
-data = allResults;
-results = allResults;
-
+  data = allResults;
+  results = allResults;
 console.log("RAW:", data[0]);
 console.log("Total Records Loaded:", data.length);
 
