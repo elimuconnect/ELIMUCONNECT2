@@ -943,7 +943,7 @@ if (previousTerm) {
  const { data: prevData } = await supabase
    .from(
       isConsolidated
-        ? "consolidated_results2_view"
+        ? "consolidated_results3_view"
         : "results3_report_view"
     )
   .select("*")
