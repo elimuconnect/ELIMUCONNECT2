@@ -882,37 +882,78 @@ const isConsolidated =
   /* ===== AVERAGES (BATCHED TO PREVENT MISSING SUBJECTS) ===== */
   let avgFrom = 0;
   const avgBatchSize = 1000;
+if (isConsolidated) {
+
+  const { data: avgBatch, error: avgErr } = await supabase
+    .from("consolidated_results2_view")
+    .select(`
+      full_name,
+      subject,
+      average_score,
+      achievement_level
+    `)
+    .eq("term", termName)
+    .eq("academic_year", SYSTEM_YEAR)
+    .eq("school_id", teacherSchoolId);
+
+  avgMap = {};
+
+  avgBatch?.forEach(a => {
+
+    const student = a.full_name?.trim();
+    const subj = a.subject;
+
+    if (!student || !subj) return;
+
+    if (!avgMap[student]) avgMap[student] = {};
+
+    avgMap[student][subj] = {
+      achievement_level: a.achievement_level,
+      average_score: a.average_score
+    };
+  });
+
+} else {
 
   while (true) {
+
     const { data: avgBatch, error: avgErr } = await supabase
       .from("term_subject_report_view2")
-      .select("full_name, subject_name, average_score, achievement_level, subject_teacher")
+      .select(`
+        full_name,
+        subject_name,
+        average_score,
+        achievement_level,
+        subject_teacher
+      `)
       .eq("term", termName)
-		 .eq("assessment_category", selectedCategory)
+      .eq("assessment_category", selectedCategory)
       .range(avgFrom, avgFrom + avgBatchSize - 1);
 
     if (avgErr || !avgBatch || avgBatch.length === 0) break;
 
     avgBatch.forEach(a => {
-      // FIX: Added safety check to prevent crash on null names
-      if (!a.full_name) return; 
 
-      const student = a.full_name.trim(); // Trim to ensure PDF name matching
+      if (!a.full_name) return;
+
+      const student = a.full_name.trim();
       const subj = a.subject_name;
 
       if (!avgMap[student]) avgMap[student] = {};
-      
+
       avgMap[student][subj] = {
-    achievement_level: a.achievement_level,
-    average_score: a.average_score,
-    subject_teacher: a.subject_teacher,   // ADD
-   
-};
+        achievement_level: a.achievement_level,
+        average_score: a.average_score,
+        subject_teacher: a.subject_teacher
+      };
     });
 
     if (avgBatch.length < avgBatchSize) break;
+
     avgFrom += avgBatchSize;
   }
+
+}
 
   trendMap = {};
   termAverages?.forEach(r => {
@@ -930,7 +971,11 @@ const isConsolidated =
 
   if (previousTerm) {
     const { data } = await supabase
-      .from("results2_report_view")
+     .from(
+      isConsolidated
+        ? "consolidated_results2_view"
+        : "results2_report_view"
+    )
       .select("*")
       .eq("term", previousTerm)
       .eq("academic_year", SYSTEM_YEAR)
@@ -1011,85 +1056,47 @@ const hasPreviousData = Object.keys(previousLearnerMap || {}).length > 0;
     };
   });
 
-  let allResults = [];
-  let from = 0;
-  const batchSize = 1000;
+ let allResults = [];
+let from = 0;
+const batchSize = 1000;
 
 if (isConsolidated) {
 
-  const { data: avgBatch, error: avgErr } = await supabase
+  const { data: consData, error } = await supabase
     .from("consolidated_results2_view")
-    .select(`
-      full_name,
-      subject,
-      average_score,
-      achievement_level
-    `)
+    .select("*")
     .eq("term", termName)
     .eq("academic_year", SYSTEM_YEAR)
     .eq("school_id", teacherSchoolId);
 
-  avgMap = {};
+  if (error) {
+    console.error(error);
+  }
 
-  avgBatch?.forEach(a => {
-
-    const student = a.full_name?.trim();
-    const subj = a.subject;
-
-    if (!student || !subj) return;
-
-    if (!avgMap[student]) avgMap[student] = {};
-
-    avgMap[student][subj] = {
-      achievement_level: a.achievement_level,
-      average_score: a.average_score
-    };
-  });
+  allResults = consData || [];
 
 } else {
 
   while (true) {
-
-    const { data: avgBatch, error: avgErr } = await supabase
-      .from("term_subject_report_view2")
-      .select(`
-        full_name,
-        subject_name,
-        average_score,
-        achievement_level,
-        subject_teacher
-      `)
+    const response = await supabase
+      .from("results2_report_view")
+      .select("*")
       .eq("term", termName)
-      .eq("assessment_category", selectedCategory)
-      .range(avgFrom, avgFrom + avgBatchSize - 1);
+		 .eq("assessment_category", selectedCategory)
+      .eq("academic_year", SYSTEM_YEAR)
+      .range(from, from + batchSize - 1)
+	  .eq("school_id", teacherSchoolId);
 
-    if (avgErr || !avgBatch || avgBatch.length === 0) break;
+    const batch = response.data;
+    if (response.error || !batch || batch.length === 0) break;
 
-    avgBatch.forEach(a => {
-
-      if (!a.full_name) return;
-
-      const student = a.full_name.trim();
-      const subj = a.subject_name;
-
-      if (!avgMap[student]) avgMap[student] = {};
-
-      avgMap[student][subj] = {
-        achievement_level: a.achievement_level,
-        average_score: a.average_score,
-        subject_teacher: a.subject_teacher
-      };
-    });
-
-    if (avgBatch.length < avgBatchSize) break;
-
-    avgFrom += avgBatchSize;
+    allResults = allResults.concat(batch);
+    if (batch.length < batchSize) break;
+    from += batchSize;
   }
-
 }
   data = allResults;
   results = allResults;
-  
   
 console.log("Total Records Loaded:", data.length);
 
