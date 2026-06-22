@@ -718,7 +718,6 @@ termSelect.innerHTML =
   `<option value="">Select term</option>` +
   terms.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
 
-
 const categorySelect = document.getElementById("categorySelect");
 
 const { data: categories } = await supabase
@@ -758,7 +757,6 @@ categorySelect.innerHTML =
 
     return `<option value="${c}">${label}</option>`;
   }).join("");
- 
 /* ========== MAIN LOAD ========== */
 async function loadReport() {
   reportDiv.innerHTML = "";
@@ -838,7 +836,6 @@ while (true) {
   avgFrom += avgBatchSize;
 }
 
-
 trendMap = {};
 
 termAverages?.forEach(r => {
@@ -878,7 +875,6 @@ if (previousTerm) {
   .select("*")
   .eq("term", previousTerm)
   .eq("academic_year", SYSTEM_YEAR);
-
   
 
   previousRecords = prevData || [];
