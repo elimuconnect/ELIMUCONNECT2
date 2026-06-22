@@ -1005,6 +1005,7 @@ async function loadReport() {
   =============================== */
   data = allResults;
   results = allResults;
+console.log("Total Records Loaded:", data.length);
 
   const schoolDetail = {
     name: school?.name || "—",
@@ -1692,13 +1693,14 @@ document.addEventListener("click", async (e) => {
 
     const termName = terms.find(t => t.id === term_id)?.name;
 
-    /* =========================
-       STEP 1: FETCH RESULTS
+   /* =========================
+       STEP 1: FETCH RESULTS & PARENT INFO
     ========================= */
     let resultsData = [];
+    let parentInfoSource = null;
 
     if (isConsolidated) {
-
+      // 1. Fetch the actual marks/results from the consolidated view
       const { data, error } = await supabase
         .from("consolidated_results2_view")
         .select("*")
@@ -1710,11 +1712,21 @@ document.addEventListener("click", async (e) => {
         reportDiv.innerHTML = "<p style='color:red'>No results found</p>";
         return;
       }
-
       resultsData = data;
 
-    } else {
+      // 2. Fetch parent contact info from the parent view since consolidated_results2_view lacks it
+      const { data: parentData } = await supabase
+        .from("public_parent_results_view")
+        .select("parent_name, parent_phone")
+        .eq("admission_number", adm)
+        .limit(1);
+      
+      if (parentData && parentData.length > 0) {
+        parentInfoSource = parentData[0];
+      }
 
+    } else {
+      // Regular categories have everything in one view
       const { data, error } = await supabase
         .from("public_parent_results_view")
         .select("*")
@@ -1729,24 +1741,28 @@ document.addEventListener("click", async (e) => {
       }
 
       resultsData = data;
+      parentInfoSource = data[0]; // Use the first row for validation
     }
 
-    const first = resultsData[0];
+    if (!parentInfoSource) {
+      reportDiv.innerHTML = "<p style='color:red'>❌ Parent details not found in system</p>";
+      return;
+    }
 
     /* =========================
        STEP 2: VERIFY PARENT
     ========================= */
     const matchName =
-      (first.parent_name || "").trim().toLowerCase() === parentName;
+      (parentInfoSource.parent_name || "").trim().toLowerCase() === parentName;
 
     const matchPhone =
-      (first.parent_phone || "").trim() === parentPhone;
+      (parentInfoSource.parent_phone || "").trim() === parentPhone;
 
     if (!matchName || !matchPhone) {
       reportDiv.innerHTML =
         "<p style='color:red'>❌ Parent details do not match</p>";
       return;
-    }
+    } 
 
     /* =========================
        STEP 3: GROUP RESULTS
