@@ -1681,24 +1681,31 @@ document.addEventListener("click", async (e) => {
 
     const termName = terms.find(t => t.id === term_id)?.name;
 
-    const { data: resultsData, error } = await supabase
-     const { data: resultsData, error } = await supabase
+
+let query = supabase
   .from(
     selectedCategory === "Consolidated"
       ? "consolidated_term_subject_report_view3"
       : "public_parent_results_view2"
   )
-      .select("*")
-      .eq("admission_number", adm)
-      .eq("academic_year", SYSTEM_YEAR)
-      .eq("term", termName)
-      .eq("assessment_category", selectedCategory);
+  .select("*")
+  .eq("admission_number", adm)
+  .eq("academic_year", SYSTEM_YEAR)
+  .eq("term", termName);
 
-    if (error || !resultsData || resultsData.length === 0) {
-      reportDiv.innerHTML = "<p style='color:red'>No results found</p>";
-      return;
-    }
+// ONLY apply category filter for non-consolidated
+if (selectedCategory !== "Consolidated") {
+  query = query.eq("assessment_category", selectedCategory);
+}
 
+const { data: resultsData, error } = await query;
+
+if (error || !resultsData || resultsData.length === 0) {
+  reportDiv.innerHTML = "<p style='color:red'>No results found</p>";
+  return;
+}
+
+	  
     const first = resultsData[0];
 
     const matchName =
