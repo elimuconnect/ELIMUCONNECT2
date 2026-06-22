@@ -788,33 +788,32 @@ const { data: termAverages } = await supabase
 
 
 
-
-
-  avgMap = {};
+avgMap = {};
 
 let avgFrom = 0;
 const avgBatchSize = 1000;
 
 while (true) {
 
-  const { data: avgBatch, error: avgErr } = await supabase
-   let avgQuery;
+  let avgQuery;
 
-if (isConsolidated) {
-  avgQuery = supabase
-    .from("consolidated_term_subject_report_view3")
-    .select("full_name,subject,average_score,achievement_level")
-    .eq("term", termName);
-} else {
-  avgQuery = supabase
-    .from("public_parent_results_view2")
-    .select("full_name,subject_name,average_score,achievement_level")
-    .eq("term", termName)
-    .eq("assessment_category", selectedCategory);
-}
+  if (isConsolidated) {
+    avgQuery = supabase
+      .from("consolidated_term_subject_report_view3")
+      .select("full_name,subject,average_score,achievement_level")
+      .eq("term", termName)
+      .eq("academic_year", SYSTEM_YEAR);
+  } else {
+    avgQuery = supabase
+      .from("public_parent_results_view2")
+      .select("full_name,subject_name,average_score,achievement_level")
+      .eq("term", termName)
+      .eq("assessment_category", selectedCategory)
+      .eq("academic_year", SYSTEM_YEAR);
+  }
 
-const { data: avgBatch, error: avgErr } =
-  await avgQuery.range(avgFrom, avgFrom + avgBatchSize - 1);
+  const { data: avgBatch, error: avgErr } =
+    await avgQuery.range(avgFrom, avgFrom + avgBatchSize - 1);
 
   if (avgErr || !avgBatch || avgBatch.length === 0) break;
 
@@ -823,7 +822,7 @@ const { data: avgBatch, error: avgErr } =
     if (!a.full_name) return;
 
     const student = a.full_name.trim();
-   const subj = isConsolidated ? a.subject : a.subject_name;
+    const subj = isConsolidated ? a.subject : a.subject_name;
 
     if (!avgMap[student]) avgMap[student] = {};
 
@@ -838,7 +837,7 @@ const { data: avgBatch, error: avgErr } =
 
   avgFrom += avgBatchSize;
 }
-  
+
 
 trendMap = {};
 
@@ -849,7 +848,11 @@ termAverages?.forEach(r => {
   trendMap[r.admission_number][r.term] = Number(r.average_score);
 });
 
+let previousAverages = {};
+let previousRecords = [];
 
+
+	
 const previousTerm = terms
   .map(t => t.name)
   .sort()
