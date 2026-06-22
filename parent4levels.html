@@ -1682,7 +1682,12 @@ document.addEventListener("click", async (e) => {
     const termName = terms.find(t => t.id === term_id)?.name;
 
     const { data: resultsData, error } = await supabase
-      .from("public_parent_results_view2")
+     const { data: resultsData, error } = await supabase
+  .from(
+    selectedCategory === "Consolidated"
+      ? "consolidated_term_subject_report_view3"
+      : "public_parent_results_view2"
+  )
       .select("*")
       .eq("admission_number", adm)
       .eq("academic_year", SYSTEM_YEAR)
