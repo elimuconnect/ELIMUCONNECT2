@@ -707,6 +707,7 @@ const { data: school } = await supabase
   .limit(1)
   .single();
 
+
 /* ========== LOAD TERMS ========== */
 const { data: terms } = await supabase
   .from("terms")
@@ -744,23 +745,13 @@ if (error || !categories) {
     }
   });
 
-  let uniqueCategories = Array.from(uniqueMap.values());
-
-  // force add Consolidated
-  if (!uniqueCategories.some(c => c.toLowerCase() === "consolidated")) {
-    uniqueCategories.push("Consolidated");
-  }
+  const uniqueCategories = Array.from(uniqueMap.values());
 
   categorySelect.innerHTML =
     `<option value="">Select category</option>` +
-    uniqueCategories.map(c => {
-      const label =
-        c.toLowerCase() === "consolidated"
-          ? "Consolidated (Auto 20% + 30% + 50%)"
-          : c;
-
-      return `<option value="${c}">${label}</option>`;
-    }).join("");
+    uniqueCategories.map(c =>
+      `<option value="${c}">${c}</option>`
+    ).join("");
 }
 /* ========== MAIN LOAD ========== */
 async function loadReport() {
