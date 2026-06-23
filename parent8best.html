@@ -707,6 +707,7 @@ const { data: school } = await supabase
   .limit(1)
   .single();
 
+
 /* ========== LOAD TERMS ========== */
 const { data: terms } = await supabase
   .from("terms")
@@ -729,6 +730,7 @@ const uniqueCategories = [...new Set(categories.map(c => c.category))];
 categorySelect.innerHTML =
   `<option value="">Select category</option>` +
   uniqueCategories.map(c => `<option value="${c}">${c}</option>`).join("");
+
 
 
 /* ========== MAIN LOAD ========== */
