@@ -707,6 +707,7 @@ const { data: school } = await supabase
   .limit(1)
   .single();
 
+
 /* ========== LOAD TERMS ========== */
 const { data: terms } = await supabase
   .from("terms")
@@ -752,8 +753,6 @@ if (error || !categories) {
       `<option value="${c}">${c}</option>`
     ).join("");
 }
-
-
 /* ========== MAIN LOAD ========== */
 async function loadReport() {
   reportDiv.innerHTML = "";
@@ -896,6 +895,7 @@ async function loadReport() {
   data = allResults;
   results = allResults;
 
+	
   const schoolDetail = {
     name: school?.name || "—",
     po_box: school?.po_box || "—",
