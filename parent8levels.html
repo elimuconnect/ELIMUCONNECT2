@@ -895,61 +895,75 @@ async function loadReport() {
   data = allResults;
   results = allResults;
 
-  const schoolDetail = {
-    name: school?.name || "—",
-    po_box: school?.po_box || "—",
-    postal_code: school?.postal_code || "—",
-    town: school?.town || "—",
-    phone: school?.phone || "—",
-    email: school?.email || "—"
-  };
-
-  const manualLogos = {
-    "SHANZU SENIOR SECONDARY SCHOOL": "https://res.cloudinary.com/dwvt4e9o2/image/upload/v1773573305/schoollogo1_rnpce8.jpg"
-  };
-  
-  schoolLogo =
-    school?.logo_url ||
-    manualLogos[schoolDetail.name?.trim()] ||
-    null;
-
-  const records = data.map(r => ({
-    student: r.full_name,
-    admission: r.admission_number,
-    className: r.class_name,
-    schoolName: r.school_name,
-    grade_name: r.grade_name,
-    grade_id: r.grade_id,
-    class_id: r.class_id,
-    subject: r.subject,
-    core_competencies: r.core_competencies,
-    subject_competencies: r.subject_competencies,
-    level: r.achievement_level,
-    remarks: r.remarks,
-    assessment_id: r.assessment_id,
-    assessment_type: r.assessment_type,
-    assessment_category: r.assessment_category
-  }));
-
-  const assessmentIds = [...new Set(records.map(r => r.assessment_id).filter(Boolean))];
-
-  const { data: strandData } = await supabase
-    .from("assessment_strands_view")
-    .select("*")
-    .in("assessment_id", assessmentIds);
-
-  const strandMap = {};
-
-  strandData?.forEach(row => {
-    if (!row.assessment_id) return;
-
-    strandMap[row.assessment_id] ??= [];
-    strandMap[row.assessment_id].push({
-      strand: row.strand,
-      outcome: row.learning_experience
-    });
-  });
  
+const schoolDetail = {
+  name: school?.name || "—",
+  po_box: school?.po_box || "—",
+  postal_code: school?.postal_code || "—",
+  town: school?.town || "—",
+  phone: school?.phone || "—",
+  email: school?.email || "—"
+};
+
+
+
+// 2. Logo Logic (Kept as before)
+const manualLogos = {
+  "SHANZU SENIOR SECONDARY SCHOOL": "https://res.cloudinary.com/dwvt4e9o2/image/upload/v1773573305/schoollogo1_rnpce8.jpg"
+};
+schoolLogo =
+  school?.logo_url ||
+  manualLogos[schoolDetail.name?.trim()] ||
+  null;
+ 
+// normalized records
+const records = data.map(r => ({
+  student: r.full_name,
+  admission: r.admission_number,
+  className: r.class_name,
+  schoolName: r.school_name,
+grade_name: r.grade_name,
+grade_id: r.grade_id,
+	class_id: r.class_id,
+  subject: r.subject,
+pathway: r.pathway,
+	class_teacher: r.class_teacher,
+	subject_teacher: r.subject_teacher,
+  core_competencies: r.core_competencies,
+  subject_competencies: r.subject_competencies,
+
+  level: r.achievement_level,
+  remarks: r.remarks,
+  assessment_id: r.assessment_id,
+	 assessment_type: r.assessment_type,       // ✅ add this
+	  assessment_category: r.assessment_category // ✅ add this
+}));
+
+
+// Collect all assessment IDs for this term
+const assessmentIds = [...new Set(records.map(r => r.assessment_id).filter(Boolean))];
+
+  
+  const { data: strandData } = await supabase
+  .from("assessment_strands_view")
+  .select("*")
+  .in("assessment_id", assessmentIds);
+
+
+const strandMap = {};
+
+strandData?.forEach(row => {
+  if (!row.assessment_id) return;
+
+  strandMap[row.assessment_id] ??= [];
+  strandMap[row.assessment_id].push({
+    strand: row.strand,
+    outcome: row.learning_experience
+  });
+});
+ 
+
+
   
  function renderOverviewHeader({
   school, poBox, postal, town, phone, email, className, term, year, logo
