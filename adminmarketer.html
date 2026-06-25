@@ -322,7 +322,7 @@ async function init() {
 
   // 3. LOAD DATA
   await loadAll();
-  loadStats();
+ 
  loadMaterials();
   loadSchoolWebsites();
 loadVisits();
@@ -370,10 +370,11 @@ payments = p.error ? [] : p.data;
   marketers = m.data || [];
   schools = s.data || [];
   
-
-  renderMarketers();
-  renderSchools();
-  renderPayments();
+renderMarketers();
+renderSchools();
+renderPayments();
+loadStats();
+  
 }
 
 
@@ -516,8 +517,8 @@ async function deleteMarketer(id) {
   if (error) {
     alert(error.message);
   } else {
-    alert("Marketer removed");
-    loadAll();
+   alert("Marketer removed");
+await loadAll();
   }
 }
 async function updateStatus(id, status) {
@@ -532,10 +533,10 @@ async function updateStatus(id, status) {
 
   if (error) {
     alert(error.message);
-  } else {
-    alert("Status updated to " + status);
-    loadAll(); // refresh data
-  }
+ } else {
+   alert("Status updated to " + status);
+   await loadAll();
+}
 }
 
 
