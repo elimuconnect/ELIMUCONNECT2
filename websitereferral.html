@@ -146,14 +146,29 @@ const client = supabase.createClient(
 // Change this to your portfolio
 const PORTFOLIO_URL = "https://wisdomappweb.site";
 
+// GET REF
 const params = new URLSearchParams(window.location.search);
 const referralCode = params.get("ref") || "";
 
+
+/* =========================================
+   PAYSTACK AUTO DETECTION (IMPORTANT)
+========================================= */
+const ref = referralCode;
+
+if (ref && ref.startsWith("T")) {
+    handlePaystackReturn(ref);
+}
+
+
+/* =========================================
+   MAIN CLICK FUNCTION (NORMAL FLOW)
+========================================= */
 async function continueToPortfolio(){
 
     const fullName = document.getElementById("fullName").value.trim();
 
-    if(fullName===""){
+    if(fullName === ""){
         alert("Please enter your full name.");
         return;
     }
@@ -162,57 +177,117 @@ async function continueToPortfolio(){
 
     const visitDate = now.toISOString().split("T")[0];
 
-    const visitTime = now.toLocaleTimeString("en-GB",{
+    const visitTime = now.toLocaleTimeString("en-GB", {
         hour12:false
     });
 
-    document.getElementById("status").textContent="wait...";
+    document.getElementById("status").textContent = "wait...";
 
-    const {error} = await client
+    // SAVE NAME TEMP FOR PAYSTACK RETURN
+    localStorage.setItem("pending_name", fullName);
+
+    // IF IT IS A PAYSTACK REF (T...), DO NOT SAVE VISIT HERE
+    if (referralCode.startsWith("T")) {
+        return;
+    }
+
+    // NORMAL VISIT SAVE
+    const { error } = await client
         .from("portfolio_visits")
         .insert([{
-
             full_name: fullName,
-
             referral_code: referralCode,
-
             visit_date: visitDate,
-
             visit_time: visitTime,
-
             timestamp: now.toISOString(),
-
             referrer: document.referrer || "Direct"
-
         }]);
 
     if(error){
-
         console.error(error);
-
-        alert(".");
-
+        alert("Error saving visit");
         return;
-
     }
 
-    document.getElementById("status").textContent="Redirecting...";
+    redirectToPortfolio(referralCode);
+}
+
+
+/* =========================================
+   PAYSTACK RETURN HANDLER
+========================================= */
+async function handlePaystackReturn(reference){
+
+    const fullName = localStorage.getItem("pending_name");
+
+    if(!fullName){
+        console.log("No pending user name");
+        return;
+    }
+
+    // PREVENT DOUBLE SAVE
+    const savedKey = "saved_" + reference;
+    if(localStorage.getItem(savedKey)) return;
+
+    const now = new Date();
+
+    const visitDate = now.toISOString().split("T")[0];
+
+    const visitTime = now.toLocaleTimeString("en-GB", {
+        hour12:false
+    });
+
+    const code = referralCode.startsWith("T")
+        ? reference
+        : referralCode;
+
+    const { error } = await client
+        .from("portfolio_visits")
+        .insert([{
+            full_name: fullName,
+            referral_code: code,
+            visit_date: visitDate,
+            visit_time: visitTime,
+            timestamp: now.toISOString(),
+            referrer: document.referrer || "Direct",
+            payment_ref: reference
+        }]);
+
+    if(error){
+        console.error(error);
+        return;
+    }
+
+    // MARK AS SAVED
+    localStorage.setItem(savedKey, "1");
+
+    // CLEAN URL (REMOVE ?ref=TXXXX)
+    window.history.replaceState({}, document.title, window.location.pathname);
+
+    document.getElementById("status").textContent =
+        "Payment successful... redirecting";
+
+    redirectToPortfolio(code);
+}
+
+
+/* =========================================
+   REDIRECT FUNCTION
+========================================= */
+function redirectToPortfolio(code){
 
     let destination = PORTFOLIO_URL;
 
-    if(referralCode){
+    if(code){
 
         destination +=
             (PORTFOLIO_URL.includes("?") ? "&" : "?")
-            + "ref=" + encodeURIComponent(referralCode);
-
+            + "ref=" + encodeURIComponent(code);
     }
 
     window.location.href = destination;
-
 }
 
 </script>
-
 </body>
 </html>
