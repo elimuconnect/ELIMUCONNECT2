@@ -264,13 +264,10 @@ async function continueToPortfolio(){
     redirectToPortfolio(referralCode);
 }
 
-
-/* =========================================
-   PAYSTACK RETURN HANDLER (FULL FIXED)
-========================================= */
 async function handlePaystackReturn(reference) {
 
-    // 1. GET STORED NAME
+    const now = new Date();
+
     let fullName = localStorage.getItem("visitor_name");
 
     if (!fullName) {
@@ -282,26 +279,18 @@ async function handlePaystackReturn(reference) {
         return;
     }
 
-    // 2. SAVE NAME PERMANENTLY
     localStorage.setItem("visitor_name", fullName);
 
-    // 3. GET PAYMENT AMOUNT
-    let amount = localStorage.getItem("pending_amount") || 0;
+    let amount = Number(localStorage.getItem("pending_amount") || 0);
 
-    // 4. PREVENT DOUBLE PROCESSING
     const savedKey = "saved_" + reference;
     if (localStorage.getItem(savedKey)) return;
 
-    const now = new Date();
+    const code = referralCode;
 
-    // 5. REFERRAL CODE LOGIC
-    const code = referralCode.startsWith("T")
-        ? referralCode
-        : referralCode;
-
-    /* =========================================
-       SAVE VISIT
-    ========================================= */
+    /* =========================
+       SAVE VISIT (OPTIONAL)
+    ========================= */
     const { error: visitError } = await client
         .from("portfolio_visits")
         .insert([{
@@ -318,44 +307,50 @@ async function handlePaystackReturn(reference) {
         console.error("Visit error:", visitError);
     }
 
-    /* =========================================
-       GET MARKETER ID
-    ========================================= */
-    const { data: marketerData } = await client
+    /* =========================
+       GET MARKETER (IMPORTANT FIX)
+    ========================= */
+    const { data: marketerData, error: marketerError } = await client
         .from("portfolio_marketers")
         .select("id")
         .eq("code", referralCode)
         .maybeSingle();
 
-    const marketer_id = marketerData?.id || null;
+    if (marketerError || !marketerData) {
+        console.error("Marketer not found");
+        return;
+    }
 
-    /* =========================================
-       SAVE PAYMENT (YOUR TABLE FIXED)
-    ========================================= */
-    const { error: paymentError } = await client
+    const marketer_id = marketerData.id;
+
+    /* =========================
+       SAVE PAYMENT (FIXED)
+    ========================= */
+    const { data: paymentData, error: paymentError } = await client
         .from("portfolio_payments")
         .insert([{
             marketer_id: marketer_id,
             referral_code: referralCode,
             customer_name: fullName,
-            amount: Number(amount),
+            amount: amount,
             reference: reference,
             paid_at: now.toISOString()
-        }]);
+        }])
+        .select();
 
     if (paymentError) {
-        console.error("Payment error:", paymentError);
+        console.error("❌ PAYMENT FAILED:", paymentError);
+        return;
     }
 
-    /* =========================================
-       MARK AS PROCESSED
-    ========================================= */
-    localStorage.setItem(savedKey, "1");
+    console.log("✅ PAYMENT SAVED:", paymentData);
 
-    // cleanup
+    /* =========================
+       FINAL CLEANUP
+    ========================= */
+    localStorage.setItem(savedKey, "1");
     localStorage.removeItem("pending_amount");
 
-    // REMOVE REF FROM URL
     window.history.replaceState({}, document.title, window.location.pathname);
 
     document.getElementById("status").textContent =
@@ -363,7 +358,6 @@ async function handlePaystackReturn(reference) {
 
     redirectToPortfolio(code);
 }
-
 
 /* =========================================
    REDIRECT FUNCTION
