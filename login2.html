@@ -207,7 +207,7 @@ async function login() {
   const user = data.user;
 
   const { data: profile } = await client
-    .from("marketers")
+    .from("portfolio_marketers")
     .select("*")
     .eq("user_id", user.id)
     .maybeSingle();
