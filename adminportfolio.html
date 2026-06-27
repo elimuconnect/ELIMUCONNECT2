@@ -519,7 +519,7 @@ Logout
 <input
 id="searchBox"
 placeholder="🔍 Search..."
-onkeyup="searchBox()">
+onkeyup="searchMarketers()">
 
 </div>
 
@@ -803,6 +803,15 @@ async function loadSummary(){
 
     document.getElementById("totalSales").innerHTML=
         money(sales);
+
+
+  const average =
+payments.data.length > 0
+? sales / payments.data.length
+: 0;
+
+document.getElementById("averageSale").innerHTML =
+money(average);
 
     let commission=0;
 
@@ -1111,32 +1120,23 @@ SEARCH MARKETER
 
 function searchMarketers(){
 
-    const value=document
-   document.getElementById("searchBox")
-    .value
-    .toLowerCase();
+    const value = document
+        .getElementById("searchBox")
+        .value
+        .toLowerCase();
 
     document
-    .querySelectorAll("#marketersTable tr")
-    .forEach(row=>{
+        .querySelectorAll("#marketersTable tr")
+        .forEach(row=>{
 
-        row.style.display=
-        row.innerText.toLowerCase().includes(value)
-        ?"":"none";
+            row.style.display =
+                row.innerText.toLowerCase().includes(value)
+                ? ""
+                : "none";
 
-    });
+        });
 
 }
-
-
-
-const average =
-payments.data.length
-? sales / payments.data.length
-: 0;
-
-document.getElementById("averageSale").innerHTML =
-money(average);
 
 
 
