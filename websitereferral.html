@@ -140,8 +140,7 @@ style="background:#ff9800;margin-top:15px;">
 </div>
 
 
-    
-<script>
+    <script>
 
 const SUPABASE_URL = "https://hhtplinfcdwgahlhurhx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_cOXipkG4wSKIkIHwkP04JA_KunvG7T5";
@@ -160,7 +159,30 @@ const referralCode = params.get("ref") || "";
 
 
 /* =========================================
-   PAYSTACK AUTO DETECTION (IMPORTANT)
+   PAY BUTTON (ADDED FIX)
+========================================= */
+function payNow() {
+
+    const fullName = document.getElementById("fullName").value.trim();
+
+    if (!fullName) {
+        alert("Please enter your full name first.");
+        return;
+    }
+
+    // save for after payment return
+    localStorage.setItem("pending_name", fullName);
+
+    document.getElementById("status").textContent =
+        "Redirecting to payment...";
+
+    // 🔁 REPLACE WITH YOUR PAYSTACK LINK
+    window.location.href = "https://paystack.shop/pay/YOUR-LINK-HERE";
+}
+
+
+/* =========================================
+   PAYSTACK AUTO DETECTION
 ========================================= */
 const ref = referralCode;
 
@@ -170,7 +192,7 @@ if (ref && ref.startsWith("T")) {
 
 
 /* =========================================
-   MAIN CLICK FUNCTION (NORMAL FLOW)
+   MAIN CLICK FUNCTION
 ========================================= */
 async function continueToPortfolio(){
 
@@ -183,30 +205,23 @@ async function continueToPortfolio(){
 
     const now = new Date();
 
-    const visitDate = now.toISOString().split("T")[0];
-
-    const visitTime = now.toLocaleTimeString("en-GB", {
-        hour12:false
-    });
-
     document.getElementById("status").textContent = "wait...";
 
     // SAVE NAME TEMP FOR PAYSTACK RETURN
     localStorage.setItem("pending_name", fullName);
 
-    // IF IT IS A PAYSTACK REF (T...), DO NOT SAVE VISIT HERE
+    // IF PAYSTACK REF → STOP NORMAL SAVE
     if (referralCode.startsWith("T")) {
         return;
     }
 
-    // NORMAL VISIT SAVE
     const { error } = await client
         .from("portfolio_visits")
         .insert([{
             full_name: fullName,
             referral_code: referralCode,
-            visit_date: visitDate,
-            visit_time: visitTime,
+            visit_date: now.toISOString().split("T")[0],
+            visit_time: now.toLocaleTimeString("en-GB", { hour12:false }),
             timestamp: now.toISOString(),
             referrer: document.referrer || "Direct"
         }]);
@@ -233,17 +248,10 @@ async function handlePaystackReturn(reference){
         return;
     }
 
-    // PREVENT DOUBLE SAVE
     const savedKey = "saved_" + reference;
     if(localStorage.getItem(savedKey)) return;
 
     const now = new Date();
-
-    const visitDate = now.toISOString().split("T")[0];
-
-    const visitTime = now.toLocaleTimeString("en-GB", {
-        hour12:false
-    });
 
     const code = referralCode.startsWith("T")
         ? reference
@@ -254,8 +262,8 @@ async function handlePaystackReturn(reference){
         .insert([{
             full_name: fullName,
             referral_code: code,
-            visit_date: visitDate,
-            visit_time: visitTime,
+            visit_date: now.toISOString().split("T")[0],
+            visit_time: now.toLocaleTimeString("en-GB", { hour12:false }),
             timestamp: now.toISOString(),
             referrer: document.referrer || "Direct",
             payment_ref: reference
@@ -266,10 +274,9 @@ async function handlePaystackReturn(reference){
         return;
     }
 
-    // MARK AS SAVED
     localStorage.setItem(savedKey, "1");
 
-    // CLEAN URL (REMOVE ?ref=TXXXX)
+    // REMOVE ?ref=TXXXX FROM URL
     window.history.replaceState({}, document.title, window.location.pathname);
 
     document.getElementById("status").textContent =
@@ -287,7 +294,6 @@ function redirectToPortfolio(code){
     let destination = PORTFOLIO_URL;
 
     if(code){
-
         destination +=
             (PORTFOLIO_URL.includes("?") ? "&" : "?")
             + "ref=" + encodeURIComponent(code);
@@ -297,5 +303,6 @@ function redirectToPortfolio(code){
 }
 
 </script>
+
 </body>
 </html>
