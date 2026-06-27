@@ -231,7 +231,6 @@ async function login() {
   }
 
   const user = data.user;
-
   // CHECK MARKETER PROFILE
   const { data: profile, error: profError } = await client
     .from("portfolio_marketers")
@@ -245,25 +244,32 @@ async function login() {
     return;
   }
 
-  // OPTIONAL: enforce approval before login
- profile.status = profile.status || "approved";
+  // DEFAULT STATUS (ALL USERS APPROVED FOR NOW)
+  const status = profile.status || "approved";
 
-    let msg = "";
-
-    if (profile.status === "pending") msg = "⏳ Account awaiting approval";
-    if (profile.status === "suspended") msg = "⏸️ Account suspended";
-    if (profile.status === "blocked") msg = "🚫 Account blocked";
-
-    alert(msg);
-
+  // OPTIONAL STATUS CONTROL (YOU CAN ENABLE LATER)
+  /*
+  if (status === "pending") {
+    alert("⏳ Account awaiting approval");
     await client.auth.signOut();
     return;
   }
 
+  if (status === "suspended") {
+    alert("⏸️ Account suspended");
+    await client.auth.signOut();
+    return;
+  }
+
+  if (status === "blocked") {
+    alert("🚫 Account blocked");
+    await client.auth.signOut();
+    return;
+  }
+  */
+
   // SAVE SESSION OK → GO TO DASHBOARD
   window.location.href = "portfoliomarketers.html";
-}
-
 /* =========================
    RESET PASSWORD
 ========================= */
