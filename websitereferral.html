@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Welcome</title>
+<title>Continue to Portfolio</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -16,39 +16,40 @@
 }
 
 body{
-    font-family:Arial,sans-serif;
-    background:#f4f6f9;
+    font-family:Arial,Helvetica,sans-serif;
+    background:#f4f7fb;
     display:flex;
     justify-content:center;
     align-items:center;
-    height:100vh;
+    min-height:100vh;
 }
 
 .container{
-    background:white;
-    padding:40px;
     width:95%;
-    max-width:650px;
+    max-width:700px;
+    background:#fff;
+    padding:40px;
     border-radius:15px;
-    box-shadow:0 5px 20px rgba(0,0,0,.15);
     text-align:center;
+    box-shadow:0 8px 30px rgba(0,0,0,.15);
 }
 
 h1{
-    color:#0066cc;
-    font-size:42px;
-    margin-bottom:20px;
+    color:#1565c0;
+    font-size:48px;
+    margin-bottom:15px;
 }
 
 p{
-    font-size:22px;
-    margin-bottom:25px;
+    font-size:24px;
+    margin-bottom:30px;
+    color:#555;
 }
 
 input{
     width:100%;
     padding:18px;
-    font-size:22px;
+    font-size:24px;
     border:2px solid #ccc;
     border-radius:10px;
     margin-bottom:30px;
@@ -56,22 +57,30 @@ input{
 
 button{
     width:100%;
-    padding:22px;
-    font-size:34px;
+    padding:25px;
+    font-size:40px;
     font-weight:bold;
     border:none;
     border-radius:12px;
-    background:#0a8f2d;
+    background:#1b8f2e;
     color:white;
     cursor:pointer;
+    transition:.2s;
 }
 
 button:hover{
-    background:#087324;
+    transform:scale(1.02);
+    background:#147425;
+}
+
+#status{
+    margin-top:20px;
+    font-size:20px;
+    color:#1565c0;
 }
 </style>
-</head>
 
+</head>
 <body>
 
 <div class="container">
@@ -81,15 +90,98 @@ button:hover{
 <p>Please enter your full name before continuing.</p>
 
 <input
-id="fullName"
 type="text"
+id="fullName"
 placeholder="Enter your full name">
 
-<button id="continueBtn">
+<button onclick="continueToPortfolio()">
 🚀 OPEN MY PORTFOLIO 🚀
 </button>
 
+<div id="status"></div>
+
 </div>
+
+<script>
+
+const SUPABASE_URL = "https://hhtplinfcdwgahlhurhx.supabase.co";
+const SUPABASE_KEY = "sb_publishable_cOXipkG4wSKIkIHwkP04JA_KunvG7T5";
+
+const client = supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
+
+// Change this to your portfolio
+const PORTFOLIO_URL = "https://wisdomappweb.site";
+
+const params = new URLSearchParams(window.location.search);
+const referralCode = params.get("ref") || "";
+
+async function continueToPortfolio(){
+
+    const fullName = document.getElementById("fullName").value.trim();
+
+    if(fullName===""){
+        alert("Please enter your full name.");
+        return;
+    }
+
+    const now = new Date();
+
+    const visitDate = now.toISOString().split("T")[0];
+
+    const visitTime = now.toLocaleTimeString("en-GB",{
+        hour12:false
+    });
+
+    document.getElementById("status").textContent="Saving visit...";
+
+    const {error} = await client
+        .from("portfolio_visits")
+        .insert([{
+
+            full_name: fullName,
+
+            referral_code: referralCode,
+
+            visit_date: visitDate,
+
+            visit_time: visitTime,
+
+            timestamp: now.toISOString(),
+
+            referrer: document.referrer || "Direct"
+
+        }]);
+
+    if(error){
+
+        console.error(error);
+
+        alert("Unable to record your visit.");
+
+        return;
+
+    }
+
+    document.getElementById("status").textContent="Redirecting...";
+
+    let destination = PORTFOLIO_URL;
+
+    if(referralCode){
+
+        destination +=
+            (PORTFOLIO_URL.includes("?") ? "&" : "?")
+            + "ref=" + encodeURIComponent(referralCode);
+
+    }
+
+    window.location.href = destination;
+
+}
+
+</script>
 
 </body>
 </html>
