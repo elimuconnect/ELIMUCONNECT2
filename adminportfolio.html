@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Portfolio Admin Dashboard</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,Helvetica,sans-serif;
+}
+
+body{
+background:#eef2f7;
+}
+
+/*=========================
+TOPBAR
+=========================*/
+
+.topbar{
+
+background:#0f172a;
+color:white;
+
+padding:18px 30px;
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+position:sticky;
+top:0;
+z-index:100;
+
+box-shadow:0 4px 10px rgba(0,0,0,.15);
+
+}
+
+.topbar h2{
+
+font-size:26px;
+
+}
+
+.logout{
+
+background:#ef4444;
+
+color:white;
+
+border:none;
+
+padding:12px 22px;
+
+border-radius:10px;
+
+cursor:pointer;
+
+font-size:16px;
+
+font-weight:bold;
+
+}
+
+.logout:hover{
+
+background:#dc2626;
+
+}
+
+/*=========================
+MAIN
+=========================*/
+
+.main{
+
+padding:25px;
+
+max-width:1600px;
+
+margin:auto;
+
+}
+
+/*=========================
+SUMMARY
+=========================*/
+
+.summary{
+
+display:grid;
+
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+
+gap:20px;
+
+margin-bottom:30px;
+
+}
+
+.summary-card{
+
+background:white;
+
+padding:25px;
+
+border-radius:18px;
+
+box-shadow:0 4px 12px rgba(0,0,0,.08);
+
+transition:.25s;
+
+}
+
+.summary-card:hover{
+
+transform:translateY(-5px);
+
+}
+
+.summary-card h4{
+
+color:#666;
+
+margin-bottom:10px;
+
+font-size:16px;
+
+}
+
+.summary-card h2{
+
+font-size:30px;
+
+color:#1565c0;
+
+}
+
+/*=========================
+SEARCH
+=========================*/
+
+.search-box{
+
+background:white;
+
+padding:20px;
+
+border-radius:18px;
+
+margin-bottom:25px;
+
+box-shadow:0 4px 10px rgba(0,0,0,.08);
+
+}
+
+.search-box input{
+
+width:100%;
+
+padding:16px;
+
+font-size:18px;
+
+border:2px solid #ddd;
+
+border-radius:10px;
+
+}
+
+/*=========================
+CARD
+=========================*/
+
+.card{
+
+background:white;
+
+padding:25px;
+
+margin-bottom:25px;
+
+border-radius:18px;
+
+box-shadow:0 4px 10px rgba(0,0,0,.08);
+
+}
+
+.card h3{
+
+margin-bottom:20px;
+
+color:#0f172a;
+
+}
+
+/*=========================
+BUTTONS
+=========================*/
+
+button{
+
+cursor:pointer;
+
+border:none;
+
+border-radius:10px;
+
+padding:12px 18px;
+
+font-weight:bold;
+
+}
+
+.primary{
+
+background:#2563eb;
+
+color:white;
+
+}
+
+.primary:hover{
+
+background:#1d4ed8;
+
+}
+
+.success{
+
+background:#16a34a;
+
+color:white;
+
+}
+
+.success:hover{
+
+background:#15803d;
+
+}
+
+.warning{
+
+background:#d97706;
+
+color:white;
+
+}
+
+.warning:hover{
+
+background:#b45309;
+
+}
+
+/*=========================
+TABLE
+=========================*/
+
+.table-container{
+
+overflow-x:auto;
+
+}
+
+table{
+
+width:100%;
+
+border-collapse:collapse;
+
+min-width:900px;
+
+}
+
+th{
+
+background:#0f766e;
+
+color:white;
+
+padding:15px;
+
+}
+
+td{
+
+padding:15px;
+
+border-bottom:1px solid #eee;
+
+}
+
+tr:nth-child(even){
+
+background:#fafafa;
+
+}
+
+tr:hover{
+
+background:#f1f5f9;
+
+}
+
+/*=========================
+BADGES
+=========================*/
+
+.badge{
+
+padding:6px 12px;
+
+border-radius:30px;
+
+font-size:13px;
+
+font-weight:bold;
+
+}
+
+.pending{
+
+background:#fef3c7;
+
+color:#92400e;
+
+}
+
+.paid{
+
+background:#dcfce7;
+
+color:#166534;
+
+}
+
+/*=========================
+TOGGLE BOX
+=========================*/
+
+.hidden-box{
+
+display:none;
+
+margin-top:15px;
+
+}
+
+/*=========================
+FOOTER
+=========================*/
+
+.footer{
+
+text-align:center;
+
+padding:30px;
+
+color:#777;
+
+}
+
+/*=========================
+MOBILE
+=========================*/
+
+@media(max-width:768px){
+
+.topbar{
+
+flex-direction:column;
+
+gap:15px;
+
+text-align:center;
+
+}
+
+.topbar h2{
+
+font-size:22px;
+
+}
+
+.summary{
+
+grid-template-columns:1fr;
+
+}
+
+.card{
+
+padding:18px;
+
+}
+
+th,td{
+
+font-size:14px;
+
+padding:10px;
+
+}
+
+.search-box input{
+
+font-size:16px;
+
+}
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="topbar">
+
+<h2>
+🌐 Portfolio Admin Dashboard
+</h2>
+
+<button class="logout" onclick="logout()">
+Logout
+</button>
+
+</div>
+
+<div class="main">
+
+<div class="card">
+
+<h3>🏆 Top Marketers</h3>
+
+<div id="leaderboard"></div>
+
+</div>
+  
+  
+  
+  
+  <!-- SUMMARY -->
+
+<div class="summary">
+
+<div class="summary-card">
+
+<h4>Total Marketers</h4>
+
+<h2 id="totalMarketers">0</h2>
+
+</div>
+
+<div class="summary-card">
+
+
+
+<h4>Total Visits</h4>
+
+<h2 id="totalVisits">0</h2>
+
+</div>
+
+<div class="summary-card">
+
+<h4>Total Payments</h4>
+
+<h2 id="totalPayments">0</h2>
+
+</div>
+
+<div class="summary-card">
+
+<h4>Total Sales</h4>
+
+<h2 id="totalSales">KES 0</h2>
+
+</div>
+
+<div class="summary-card">
+
+<h4>Total Commission (15%)</h4>
+
+<h2 id="totalCommission">KES 0</h2>
+
+</div>
+
+<div class="summary-card">
+
+<h4>Average Sale</h4>
+
+<h2 id="averageSale">KES 0</h2>
+
+</div>
+
+</div>
+
+<!-- SEARCH -->
+
+
+<input
+id="searchBox"
+placeholder="🔍 Search..."
+onkeyup="searchBox()">
+
+</div>
+
+<!-- MARKETERS -->
+
+<div class="card">
+
+<h3>
+👥 All Marketers
+</h3>
+
+<div class="table-container">
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Name</th>
+
+<th>Email</th>
+
+<th>Referral Code</th>
+
+<th>Phone</th>
+
+<th>Actions</th>
+
+</tr>
+
+</thead>
+
+<tbody id="marketersTable">
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+<!-- VISITS -->
+
+<div class="card">
+
+<h3>
+👀 Portfolio Visits
+</h3>
+
+<button
+class="warning"
+onclick="toggleVisits()">
+
+View Visits
+
+</button>
+
+<div
+id="visitsBox"
+class="hidden-box">
+
+<div class="table-container">
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Visitor</th>
+
+<th>Referral</th>
+
+<th>Date</th>
+
+<th>Time</th>
+
+<th>Source</th>
+
+</tr>
+
+</thead>
+
+<tbody id="visitsTable">
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- PAYMENTS -->
+
+<div class="card">
+
+<h3>
+💳 Payments
+</h3>
+
+<div class="table-container">
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Customer</th>
+
+<th>Marketer</th>
+
+<th>Referral</th>
+
+<th>Amount</th>
+
+<th>Reference</th>
+
+<th>Date</th>
+
+</tr>
+
+</thead>
+
+<tbody id="paymentsTable">
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+<!-- COMMISSIONS -->
+
+<div class="card">
+
+<h3>
+💰 Commissions
+</h3>
+
+<div class="table-container">
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Marketer</th>
+
+<th>Payment</th>
+
+<th>Commission</th>
+
+<th>Status</th>
+
+<th>Date</th>
+
+<th>Action</th>
+
+</tr>
+
+</thead>
+
+<tbody id="commissionsTable">
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+<div class="footer">
+
+Portfolio Admin Dashboard © 2026
+
+</div>
+
+</div>
+
+<script>
+
+const SUPABASE_URL = "https://hhtplinfcdwgahlhurhx.supabase.co";
+const SUPABASE_KEY = "sb_publishable_cOXipkG4wSKIkIHwkP04JA_KunvG7T5"; 
+
+const client=supabase.createClient(
+SUPABASE_URL,
+SUPABASE_KEY
+);
+
+let visitsLoaded=false;
+
+
+
+function logout(){
+
+client.auth.signOut();
+
+location.href="login2.html";
+
+}
+
+
+function money(v){
+    return "KES "+Number(v||0).toLocaleString();
+}
+
+
+/*=========================
+LOAD EVERYTHING
+=========================*/
+
+window.addEventListener("DOMContentLoaded",()=>{
+
+    loadSummary();
+
+    loadPayments();
+
+    loadMarketers();
+
+    loadCommissions();
+
+    loadLeaderboard();
+
+});
+
+/*=========================
+SUMMARY
+=========================*/
+
+async function loadSummary(){
+
+    const [
+        visits,
+        payments,
+        marketers,
+        commissions
+    ]=await Promise.all([
+
+        client
+        .from("portfolio_visits")
+        .select("*",{count:"exact",head:false}),
+
+        client
+        .from("portfolio_payments")
+        .select("*",{count:"exact",head:false}),
+
+        client
+        .from("portfolio_marketers")
+        .select("*",{count:"exact",head:false}),
+
+        client
+        .from("portfolio_commissions")
+        .select("*",{count:"exact",head:false})
+
+    ]);
+
+    document.getElementById("totalVisits").innerHTML=
+        visits.data.length;
+
+    document.getElementById("totalPayments").innerHTML=
+        payments.data.length;
+
+    document.getElementById("totalMarketers").innerHTML=
+        marketers.data.length;
+
+    let sales=0;
+
+    payments.data.forEach(p=>{
+        sales+=Number(p.amount||0);
+    });
+
+    document.getElementById("totalSales").innerHTML=
+        money(sales);
+
+    let commission=0;
+
+    commissions.data.forEach(c=>{
+        commission+=Number(c.amount||0);
+    });
+
+    document.getElementById("totalCommission").innerHTML=
+        money(commission);
+
+}
+
+/*=========================
+VISITS
+=========================*/
+
+function toggleVisits(){
+
+    const box=document.getElementById("visitsBox");
+
+    if(box.style.display==="none"){
+
+        box.style.display="block";
+
+        if(!visitsLoaded){
+
+            loadVisits();
+
+            visitsLoaded=true;
+
+        }
+
+    }else{
+
+        box.style.display="none";
+
+    }
+
+}
+
+async function loadVisits(){
+
+    const {data,error}=await client
+    .from("portfolio_visits")
+    .select("*")
+    .order("timestamp",{ascending:false});
+
+    if(error){
+
+        console.log(error);
+
+        return;
+
+    }
+
+    let html="";
+
+    data.forEach(v=>{
+
+        html+=`
+
+        <tr>
+
+        <td>${v.full_name||"-"}</td>
+
+        <td>${v.referral_code||"-"}</td>
+
+        <td>${v.visit_date||"-"}</td>
+
+        <td>${v.visit_time||"-"}</td>
+
+        <td>${v.referrer||"Direct"}</td>
+
+        </tr>
+
+        `;
+
+    });
+
+    document.getElementById("visitsTable").innerHTML=html;
+
+}
+
+/*=========================
+PAYMENTS
+=========================*/
+
+async function loadPayments(){
+
+    const {data,error}=await client
+    .from("portfolio_payments")
+    .select(`
+        *,
+        portfolio_marketers(name)
+    `)
+    .order("paid_at",{ascending:false});
+
+    if(error){
+
+        console.log(error);
+
+        return;
+
+    }
+
+    let html="";
+
+    data.forEach(p=>{
+
+        html+=`
+
+        <tr>
+
+       html += `
+<tr>
+<td>${p.customer_name || "-"}</td>
+<td>${p.portfolio_marketers?.name || "-"}</td>
+<td>${p.referral_code || "-"}</td>
+<td>${money(p.amount)}</td>
+<td>${p.reference || "-"}</td>
+<td>${new Date(p.paid_at).toLocaleDateString()}</td>
+</tr>
+`;
+        </tr>
+
+        `;
+
+    });
+
+    document.getElementById("paymentsTable").innerHTML=html;
+
+}
+
+/*=========================
+MARKETERS
+=========================*/
+
+async function loadMarketers(){
+
+    const {data,error}=await client
+    .from("portfolio_marketers")
+    .select("*")
+    .order("name");
+
+    if(error){
+
+        console.log(error);
+
+        return;
+
+    }
+
+   html += `
+<tr>
+
+<td>${m.name}</td>
+
+<td>${m.email || "-"}</td>
+
+<td>${m.code}</td>
+
+<td>${m.phone || "-"}</td>
+
+<td>
+<button onclick="viewMarketer('${m.id}')">
+View
+</button>
+</td>
+
+</tr>
+`;
+
+    });
+
+    document.getElementById("marketersTable").innerHTML=html;
+
+}
+
+/*=========================
+COMMISSIONS
+=========================*/
+
+async function loadCommissions(){
+
+    const {data,error}=await client
+    .from("portfolio_commissions")
+    .select(`
+        *,
+        portfolio_marketers(name),
+        portfolio_payments(
+            customer_name,
+            amount,
+            reference
+        )
+    `)
+    .order("created_at",{ascending:false});
+
+    if(error){
+        console.log(error);
+        return;
+    }
+
+    let totalCommission=0;
+    let html="";
+
+    data.forEach(c=>{
+
+        totalCommission+=Number(c.amount||0);
+html += `
+<tr>
+
+<td>${c.portfolio_marketers?.name || "-"}</td>
+
+<td>${money(c.portfolio_payments?.amount || 0)}</td>
+
+<td>${money(c.amount)}</td>
+
+<td>${c.status}</td>
+
+<td>${new Date(c.created_at).toLocaleDateString()}</td>
+
+<td>
+
+<button onclick="markPaid('${c.id}')">
+Mark Paid
+</button>
+
+</td>
+
+</tr>
+`;
+
+    });
+
+    document.getElementById("commissionsTable").innerHTML = html;
+    document.getElementById("totalCommission").innerHTML=money(totalCommission);
+
+}
+
+/*=========================
+TOP MARKETERS
+=========================*/
+
+async function loadLeaderboard(){
+
+    const {data,error}=await client
+    .from("portfolio_commissions")
+    .select(`
+        amount,
+        portfolio_marketers(
+            id,
+            name
+        )
+    `);
+
+    if(error){
+        console.log(error);
+        return;
+    }
+
+    const totals={};
+
+    data.forEach(row=>{
+
+        if(!row.portfolio_marketers) return;
+
+        const id=row.portfolio_marketers.id;
+
+        if(!totals[id]){
+
+            totals[id]={
+
+                name:row.portfolio_marketers.name,
+
+                total:0
+
+            };
+
+        }
+
+        totals[id].total+=Number(row.amount);
+
+    });
+
+    const board=Object.values(totals)
+    .sort((a,b)=>b.total-a.total)
+    .slice(0,10);
+
+    let html="";
+
+    board.forEach((m,i)=>{
+
+        html+=`
+
+        <div class="leader">
+
+            <span>#${i+1} ${m.name}</span>
+
+            <strong>${money(m.total)}</strong>
+
+        </div>
+
+        `;
+
+    });
+
+    document.getElementById("leaderboard").innerHTML=html;
+
+}
+
+/*=========================
+SEARCH MARKETER
+=========================*/
+
+function searchMarketers(){
+
+    const value=document
+   document.getElementById("searchBox")
+    .value
+    .toLowerCase();
+
+    document
+    .querySelectorAll("#marketersTable tr")
+    .forEach(row=>{
+
+        row.style.display=
+        row.innerText.toLowerCase().includes(value)
+        ?"":"none";
+
+    });
+
+}
+
+
+
+const average =
+payments.data.length
+? sales / payments.data.length
+: 0;
+
+document.getElementById("averageSale").innerHTML =
+money(average);
+
+
+
+  
+async function markPaid(id){
+
+const {error}=await client
+.from("portfolio_commissions")
+.update({
+status:"paid"
+})
+.eq("id",id);
+
+if(error){
+
+alert(error.message);
+
+return;
+
+}
+
+loadCommissions();
+
+loadSummary();
+
+}
+  
+/*=========================
+REFRESH
+=========================*/
+
+async function refreshDashboard(){
+
+    await loadSummary();
+
+    await loadPayments();
+
+    await loadMarketers();
+
+    await loadCommissions();
+await loadLeaderboard();
+
+}
+setInterval(refreshDashboard,60000);
+
+</script>
+
+</body>
+</html>
