@@ -239,39 +239,18 @@ async function login() {
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (profError || !profile) {
-    alert("No marketer profile found. Contact admin.");
-    await client.auth.signOut();
-    return;
-  }
+  // DEFAULT APPROVAL MODE (ALL USERS ALLOWED FOR NOW)
+ // You can enforce status checks later
 
-  // DEFAULT STATUS (ALL USERS APPROVED FOR NOW)
-  const status = profile.status || "approved";
-
-  // OPTIONAL STATUS CONTROL (DISABLED FOR NOW)
-  /*
-  if (status === "pending") {
-    alert("⏳ Account awaiting approval");
-    await client.auth.signOut();
-    return;
-  }
-
-  if (status === "suspended") {
-    alert("⏸️ Account suspended");
-    await client.auth.signOut();
-    return;
-  }
-
-  if (status === "blocked") {
-    alert("🚫 Account blocked");
-    await client.auth.signOut();
-    return;
-  }
-  */
-
+if (!profile) {
+  alert("No marketer profile found. Contact admin.");
+  await client.auth.signOut();
+  return;
+}
   // SAVE SESSION OK → GO TO DASHBOARD
   window.location.href = "portfoliomarketers.html";
 }
+
 /* =========================
    RESET PASSWORD
 ========================= */
