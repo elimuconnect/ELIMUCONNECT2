@@ -613,7 +613,7 @@ async function loadMarketer() {
 
   if (!session) {
     alert("Please login first");
-    window.location.href = "login.html";
+    window.location.href = "login2.html";
     return;
   }
 
@@ -668,7 +668,7 @@ LOGOUT
 
 async function logout() {
   await client.auth.signOut();
-  window.location.href = "login.html";
+  window.location.href = "login2.html";
 }
 
 /*==========================
