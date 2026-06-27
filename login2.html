@@ -179,20 +179,46 @@ function togglePassword(id, el) {
 }
 </script>
 
+
 <script>
 const SUPABASE_URL = "https://hhtplinfcdwgahlhurhx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_cOXipkG4wSKIkIHwkP04JA_KunvG7T5";
 
 const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-  auth: { persistSession: true }
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
 });
 
-//
-// LOGIN (UNCHANGED)
-//
+/* =========================
+   TOGGLE PASSWORD
+========================= */
+function togglePassword(id, el) {
+  const input = document.getElementById(id);
+
+  if (input.type === "password") {
+    input.type = "text";
+    el.innerText = "Hide";
+  } else {
+    input.type = "password";
+    el.innerText = "Show";
+  }
+}
+
+/* =========================
+   LOGIN
+========================= */
 async function login() {
+
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
+
+  if (!email || !password) {
+    alert("Enter email and password");
+    return;
+  }
 
   const { data, error } = await client.auth.signInWithPassword({
     email,
@@ -206,31 +232,49 @@ async function login() {
 
   const user = data.user;
 
-  const { data: profile } = await client
+  // CHECK MARKETER PROFILE
+  const { data: profile, error: profError } = await client
     .from("portfolio_marketers")
     .select("*")
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (!profile) {
-    alert("No profile found");
+  if (profError || !profile) {
+    alert("No marketer profile found. Contact admin.");
+    await client.auth.signOut();
     return;
   }
 
-  if (profile.role === "admin") {
-    window.location.href = "adminmarketerportfolio.html";
-  } else {
-    window.location.href = "portfoliomarketers.html";
+  // OPTIONAL: enforce approval before login
+  if (profile.status && profile.status !== "approved") {
+
+    let msg = "";
+
+    if (profile.status === "pending") msg = "⏳ Account awaiting approval";
+    if (profile.status === "suspended") msg = "⏸️ Account suspended";
+    if (profile.status === "blocked") msg = "🚫 Account blocked";
+
+    alert(msg);
+
+    await client.auth.signOut();
+    return;
   }
+
+  // SAVE SESSION OK → GO TO DASHBOARD
+  window.location.href = "portfoliomarketers.html";
 }
 
-//
-// RESET PASSWORD
-//
+/* =========================
+   RESET PASSWORD
+========================= */
 async function resetPassword() {
+
   const email = document.getElementById("email").value.trim();
 
-  if (!email) return alert("Enter your email first");
+  if (!email) {
+    alert("Enter your email first");
+    return;
+  }
 
   const { error } = await client.auth.resetPasswordForEmail(email, {
     redirectTo: "https://elimuconnect.github.io/ELIMUCONNECT2/reset-password2.html"
@@ -240,9 +284,9 @@ async function resetPassword() {
   else alert("Reset email sent");
 }
 
-//
-// UPDATE PASSWORD
-//
+/* =========================
+   UPDATE PASSWORD
+========================= */
 document.getElementById("updateBtn").onclick = async () => {
 
   const { data: { session } } = await client.auth.getSession();
@@ -267,10 +311,11 @@ document.getElementById("updateBtn").onclick = async () => {
   else alert("Password updated successfully");
 };
 
-//
-// SHOW UPDATE IF STILL LOGGED IN
-//
+/* =========================
+   SHOW UPDATE SECTION
+========================= */
 async function checkAuth() {
+
   const { data: { session } } = await client.auth.getSession();
 
   document.querySelector(".update-section").style.display =
