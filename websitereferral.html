@@ -140,142 +140,52 @@ style="background:#ff9800;margin-top:15px;">
 </div>
 
 
-    <script>
-
+   <script>
 /* =========================================
    REMEMBER USER NAME (LOCAL STORAGE MEMORY)
 ========================================= */
 let fullName = localStorage.getItem("visitor_name") || "";
 
 window.addEventListener("DOMContentLoaded", () => {
-
     const input = document.getElementById("fullName");
-
     if (fullName && input) {
         input.value = fullName;
     }
 });
 
-
-        
-
 const SUPABASE_URL = "https://hhtplinfcdwgahlhurhx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_cOXipkG4wSKIkIHwkP04JA_KunvG7T5"; 
 
-const client = supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-);
+const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Change this to your portfolio
 const PORTFOLIO_URL = "https://wisdomappweb.site";
 
-// GET REF
+// GET REF OR PAYSTACK TRANSACTION REFERENCE
 const params = new URLSearchParams(window.location.search);
 const referralCode = params.get("ref") || "";
-
-
-function payNow() {
-
-    let name = localStorage.getItem("visitor_name");
-
-    if (!name) {
-        name = document.getElementById("fullName").value.trim();
-
-        if (!name) {
-            alert("Enter your name first");
-            return;
-        }
-
-        localStorage.setItem("visitor_name", name);
-    }
-
-    const amount = prompt("Enter amount you want to pay (KES)");
-
-    if (!amount || isNaN(amount) || Number(amount) <= 0) {
-        alert("Enter a valid amount");
-        return;
-    }
-
-    // ⭐ IMPORTANT FIX (STORE MARKETER REF)
-    localStorage.setItem("pending_referral", referralCode);
-
-    localStorage.setItem("pending_name", name);
-    localStorage.setItem("pending_amount", amount);
-
-    document.getElementById("status").textContent =
-        "Redirecting to payment...";
-
-    window.location.href = "https://paystack.shop/pay/-zx40xj39x";
-}
-
+const paystackRef = params.get("reference") || params.get("trxref") || "";
 
 /* =========================================
-   PAYSTACK AUTO DETECTION
+   REDIRECT FUNCTION
 ========================================= */
-const ref = referralCode;
-
-if (ref && ref.startsWith("T")) {
-    handlePaystackReturn(ref);
+function redirectToPortfolio(code){
+    let destination = PORTFOLIO_URL;
+    if(code){
+        destination += (PORTFOLIO_URL.includes("?") ? "&" : "?") + "ref=" + encodeURIComponent(code);
+    }
+    window.location.href = destination;
 }
-
 
 /* =========================================
-   MAIN CLICK FUNCTION
+   PAYSTACK HANDLER
 ========================================= */
-async function continueToPortfolio(){
-
-    const fullName = document.getElementById("fullName").value.trim();
-
-    if(fullName === ""){
-        alert("Please enter your full name.");
-        return;
-    }
-
-    const now = new Date();
-
-    document.getElementById("status").textContent = "wait...";
-
-    // SAVE NAME TEMP FOR PAYSTACK RETURN
-    localStorage.setItem("pending_name", fullName);
-
-    // IF PAYSTACK REF → STOP NORMAL SAVE
-    if (referralCode.startsWith("T")) {
-        return;
-    }
-
-    const { error } = await client
-        .from("portfolio_visits")
-        .insert([{
-            full_name: fullName,
-            referral_code: referralCode,
-            visit_date: now.toISOString().split("T")[0],
-            visit_time: now.toLocaleTimeString("en-GB", { hour12:false }),
-            timestamp: now.toISOString(),
-            referrer: document.referrer || "Direct"
-        }]);
-
-    if(error){
-        console.error(error);
-        alert("Error saving visit");
-        return;
-    }
-
-    redirectToPortfolio(referralCode);
-}
-
 async function handlePaystackReturn(reference) {
-
     const now = new Date();
 
-    const fullName =
-        localStorage.getItem("visitor_name") ||
-        localStorage.getItem("pending_name");
-
+    const fullName = localStorage.getItem("visitor_name") || localStorage.getItem("pending_name");
     const amount = Number(localStorage.getItem("pending_amount") || 0);
-
-    const marketerCode =
-        localStorage.getItem("pending_referral") || referralCode;
+    const marketerCode = localStorage.getItem("pending_referral") || referralCode;
 
     if (!fullName) {
         console.log("No user name found");
@@ -339,35 +249,92 @@ async function handlePaystackReturn(reference) {
        CLEANUP
     ========================= */
     localStorage.setItem(savedKey, "1");
-
     localStorage.removeItem("pending_amount");
     localStorage.removeItem("pending_name");
     localStorage.removeItem("pending_referral");
 
     window.history.replaceState({}, document.title, window.location.pathname);
 
-    document.getElementById("status").textContent =
-        "Payment successful... redirecting";
-
+    document.getElementById("status").textContent = "Payment successful... redirecting";
     redirectToPortfolio(marketerCode);
 }
-/* =========================================
-   REDIRECT FUNCTION
-========================================= */
-function redirectToPortfolio(code){
 
-    let destination = PORTFOLIO_URL;
-
-    if(code){
-        destination +=
-            (PORTFOLIO_URL.includes("?") ? "&" : "?")
-            + "ref=" + encodeURIComponent(code);
-    }
-
-    window.location.href = destination;
+// Trigger Paystack execution immediately if a transaction reference is detected
+if (paystackRef) {
+    handlePaystackReturn(paystackRef);
 }
 
-</script>
+/* =========================================
+   USER INTERACTION FUNCTIONS
+========================================= */
+function payNow() {
+    let name = localStorage.getItem("visitor_name");
 
+    if (!name) {
+        name = document.getElementById("fullName").value.trim();
+        if (!name) {
+            alert("Enter your name first");
+            return;
+        }
+        localStorage.setItem("visitor_name", name);
+    }
+
+    const amount = prompt("Enter amount you want to pay (KES)");
+    if (!amount || isNaN(amount) || Number(amount) <= 0) {
+        alert("Enter a valid amount");
+        return;
+    }
+
+    localStorage.setItem("pending_referral", referralCode);
+    localStorage.setItem("pending_name", name);
+    localStorage.setItem("pending_amount", amount);
+
+    document.getElementById("status").textContent = "Redirecting to payment...";
+
+    // Force a tiny timeout to guarantee localStorage commits to memory before leaving
+    setTimeout(() => {
+        window.location.href = "https://paystack.shop/pay/-zx40xj39x";
+    }, 100);
+} // <-- FIXED: Added the missing closing bracket here!
+
+async function continueToPortfolio(){
+    const fullName = document.getElementById("fullName").value.trim();
+
+    if(fullName === ""){
+        alert("Please enter your full name.");
+        return;
+    }
+
+    const now = new Date();
+    document.getElementById("status").textContent = "wait...";
+
+    // SAVE NAME TEMP FOR PAYSTACK RETURN
+    localStorage.setItem("pending_name", fullName);
+
+    // IF PAYSTACK REF → STOP NORMAL SAVE
+    if (referralCode.startsWith("T")) {
+        return;
+    }
+
+    const { error } = await client
+        .from("portfolio_visits")
+        .insert([{
+            full_name: fullName,
+            referral_code: referralCode,
+            visit_date: now.toISOString().split("T")[0],
+            visit_time: now.toLocaleTimeString("en-GB", { hour12:false }),
+            timestamp: now.toISOString(),
+            referrer: document.referrer || "Direct"
+        }]);
+
+    if(error){
+        console.error(error);
+        alert("Error saving visit");
+        return;
+    }
+
+    redirectToPortfolio(referralCode);
+}
+</script>
 </body>
 </html>
