@@ -471,14 +471,9 @@ min-width:800px;
     </div>
 
     <div class="summary-card">
-        <h4>Pending Commission</h4>
+        <h4>Commission</h4>
         <h2 id="pendingCommission">KES 0</h2>
-    </div>
-
-    <div class="summary-card">
-        <h4>Paid Commission</h4>
-        <h2 id="paidCommission">KES 0</h2>
-    </div>
+    </div>  
 
 </div>
 
@@ -609,7 +604,7 @@ Commission Rate: <strong>15%</strong> of every successful payment.
 
 <th>Commission</th>
 
-<th>Status</th>
+
 
 <th>Date</th>
 
@@ -874,11 +869,7 @@ async function loadCommissions() {
       <tr>
         <td>${money(c.portfolio_payments?.amount || 0)}</td>
         <td>${money(commission)}</td>
-        <td>
-          <span class="badge ${c.status}">
-            ${c.status}
-          </span>
-        </td>
+       
         <td>${new Date(c.created_at).toLocaleDateString()}</td>
       </tr>
     `;
