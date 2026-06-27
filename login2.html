@@ -231,6 +231,7 @@ async function login() {
   }
 
   const user = data.user;
+
   // CHECK MARKETER PROFILE
   const { data: profile, error: profError } = await client
     .from("portfolio_marketers")
@@ -247,7 +248,7 @@ async function login() {
   // DEFAULT STATUS (ALL USERS APPROVED FOR NOW)
   const status = profile.status || "approved";
 
-  // OPTIONAL STATUS CONTROL (YOU CAN ENABLE LATER)
+  // OPTIONAL STATUS CONTROL (DISABLED FOR NOW)
   /*
   if (status === "pending") {
     alert("⏳ Account awaiting approval");
@@ -270,6 +271,7 @@ async function login() {
 
   // SAVE SESSION OK → GO TO DASHBOARD
   window.location.href = "portfoliomarketers.html";
+}
 /* =========================
    RESET PASSWORD
 ========================= */
