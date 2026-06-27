@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Elimu Connect Payments</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+    section {
+      margin-bottom: 30px;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    h2, h3 {
+      text-align: center;
+    }
+    input, button, select {
+      padding: 10px;
+      margin: 8px 0;
+      width: 100%;
+    }
+    button {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .package {
+      border-left: 6px solid;
+      padding-left: 10px;
+      margin-bottom: 15px;
+    }
+    .green { border-color: green; }
+    .yellow { border-color: goldenrod; }
+    .red { border-color: crimson; }
+  </style>
+</head>
+<body>
+  <h2>🎉 Elimu Connect Referrals & Payments</h2>
+
+  <!-- SECTION 0: Packages -->
+  <section>
+    <h3>📦 Choose Your Package</h3>
+
+    <div class="package green">
+      <h4>🟢 Category 1 – Digital Access Only</h4>
+      <ul>
+        <li>App + Website Access</li>
+        <li>AI Academic Assistant</li>
+        <li>Video Lessons & Quizzes</li>
+        <li>Past Papers, eBooks, & Tools</li>
+      </ul>
+      <p><b>CBC / KCSE (Kenya):</b> KES 500 / USD ~4</p>
+      <p><b>International Curricula:</b> British (IGCSE), American, Indian (CBSE/ICSE), IB & more → USD ~8</p>
+      <p>✅ Great for independent learners with a device + internet.</p>
+      <p>➡️ Students can request special lessons and get a custom quote.</p>
+    </div>
+
+    <div class="package yellow">
+      <h4>🟡 Category 2 – Digital Access + Online Tutoring</h4>
+      <p>Includes Category 1 features +</p>
+      <ul>
+        <li>2 Online Tutoring Sessions per Week</li>
+        <li>Interactive Q&A & Assignments</li>
+      </ul>
+      <p><b>CBC / KCSE (Kenya):</b><br>
+        1 student: KES 700 / USD ~5.40<br>
+        2 students: KES 500 each / USD ~3.85<br>
+        5 students: KES 200 each / USD ~1.55
+      </p>
+      <p><b>International Curricula:</b><br>
+        1 student: USD ~10.80<br>
+        2 students: USD ~7.70 each<br>
+        5 students: USD ~3.1 each
+      </p>
+      <p>✅ Ideal for guided learning with regular tutor access.</p>
+      <p>➡️ Request personalized lessons and tailored quotes for groups or individuals.</p>
+    </div>
+
+    <div class="package red">
+      <h4>🔴 Category 3 – Full Package (Digital + Online + Physical)</h4>
+      <p>Includes all Category 1 features +</p>
+      <ul>
+        <li>2 Physical Tutoring Sessions per Week</li>
+        <li>Mentorship & Personal Follow-up</li>
+      </ul>
+      <p><b>CBC / KCSE (Kenya Only):</b><br>
+        1 student: KES 700 / USD ~5.40<br>
+        2 students: KES 500 each / USD ~3.85
+      </p>
+      <p>✅ Best for students who need in-person attention.</p>
+      <p>➡️ Special lessons and quotes available for schools, families, and groups.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 1: How to Pay -->
+  <section>
+    <h3>💳 How to Pay</h3>
+    <select id="region" onchange="toggleInstructions()">
+      <option value="">-- Select Your Region --</option>
+      <option value="kenya">Kenya (MPesa)</option>
+      <option value="international">International (PayPal, Remitly, Wise, Western Union)</option>
+    </select>
+
+    <!-- Kenya Payment Instructions -->
+    <div id="instructions-kenya" style="display:none;">
+      <p><strong>Kenya Students:</strong> Pay via MPesa to:</p>
+     
+      <img
+        src="https://res.cloudinary.com/dwvt4e9o2/image/upload/v1753469056/ChatGPT_Image_Jul_25_2025_08_38_48_PM_dehdsv.png"
+        alt="MPesa Payment Instructions"
+        style="width:100%; border:1px solid #ddd; border-radius:8px;"
+      />
+    </div>
+
+    <!-- International Payment Instructions -->
+    <div id="instructions-international" style="display:none;">
+      <p><strong>International Students:</strong> You can pay using:</p>
+      <ul>
+        <li>1️⃣ PayPal → <b>wamithisolomon@gmail.com</b></li>
+        <li>2️⃣ Remitly, WorldRemit, Wise, or Western Union → Send to MPesa:</li>
+      </ul>
+      <p>Phone: <b>+254769255782</b><br/>Name: <b>Solomon Ndegwa Wamithi</b></p>
+    </div>
+  </section>
+
+  <!-- SECTION 2: Confirm Payment -->
+  <section>
+    <h3>✅ Confirm Your Payment</h3>
+
+    <!-- Kenya Payment Form -->
+    <form id="form-kenya" style="display:none;">
+      <input type="text" id="name-ke" placeholder="Your Name" required />
+      <input type="text" id="phone-ke" placeholder="Phone Number" required />
+      <input type="text" id="mpesa" placeholder="MPesa Transaction Code" required />
+      <button type="button" onclick="submitPaymentProof('kenya')">Submit Kenya Payment</button>
+    </form>
+
+    <!-- International Payment Form -->
+    <form id="form-international" style="display:none;">
+      <input type="text" id="name-int" placeholder="Your Name" required />
+      <input type="email" id="email-int" placeholder="Email Used in Payment" required />
+      <input type="text" id="country-int" placeholder="Your Country" required />
+      <input type="text" id="txid-int" placeholder="Transaction ID (Last 4 digits)" required />
+      <button type="button" onclick="submitPaymentProof('international')">Submit International Payment</button>
+    </form>
+  </section>
+
+<script>
+  // Toggle instructions & forms
+  function toggleInstructions() {
+    const region = document.getElementById("region").value;
+    document.getElementById("instructions-kenya").style.display = (region === "kenya") ? "block" : "none";
+    document.getElementById("instructions-international").style.display = (region === "international") ? "block" : "none";
+    document.getElementById("form-kenya").style.display = (region === "kenya") ? "block" : "none";
+    document.getElementById("form-international").style.display = (region === "international") ? "block" : "none";
+  }
+
+  // Save referral code if present
+  window.addEventListener("DOMContentLoaded", function () {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("ref");
+    if (ref) localStorage.setItem("referral_code", ref);
+  });
+
+  // Submit payment proof
+  function submitPaymentProof(region) {
+    const referral = localStorage.getItem("referral_code") || "none";
+    let data = {};
+    let message = "";
+
+    if (region === "kenya") {
+      const name = document.getElementById("name-ke").value.trim();
+      const phone = document.getElementById("phone-ke").value.trim();
+      const mpesaCode = document.getElementById("mpesa").value.trim();
+      if (!name || !phone || !mpesaCode) return alert("Fill all MPesa details.");
+
+      data = { 
+        region: "Kenya", 
+        name, 
+        phone, 
+        mpesaCode, 
+        referral, 
+        timestamp: new Date().toISOString() 
+      };
+
+      // Kenya WhatsApp message
+      message = `NEW PAYMENT 🚀\nRegion: Kenya\nName: ${name}\nPhone: ${phone}\nMPesa Code: ${mpesaCode}\nReferral: ${referral}`;
+
+    } else {
+      const name = document.getElementById("name-int").value.trim();
+      const email = document.getElementById("email-int").value.trim();
+      const country = document.getElementById("country-int").value.trim();
+      const txid = document.getElementById("txid-int").value.trim();
+      if (!name || !email || !country || !txid) return alert("Fill all international details.");
+
+      data = { 
+        region: "International", 
+        name, 
+        email, 
+        country, 
+        txid, 
+        referral, 
+        timestamp: new Date().toISOString() 
+      };
+
+      // International WhatsApp message
+      message = `NEW PAYMENT 🚀\nRegion: International\nName: ${name}\nEmail: ${email}\nCountry: ${country}\nTransaction ID: ${txid}\nReferral: ${referral}`;
+    }
+
+    // Save in Firebase
+    fetch("https://tutor-students-mapping-default-rtdb.firebaseio.com/referrals.json", {
+      method: "POST",
+      body: JSON.stringify(data)
+    }).then(() => {
+      const encoded = encodeURIComponent(message);
+      window.location.href = `https://wa.me/254769255782?text=${encoded}`;
+    });
+  }
+</script>
+
+</body>
+</html>
