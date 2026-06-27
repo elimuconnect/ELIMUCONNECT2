@@ -183,19 +183,30 @@ function payNow() {
         name = document.getElementById("fullName").value.trim();
 
         if (!name) {
-            alert("Please enter your name first.");
+            alert("Enter your name first");
             return;
         }
 
         localStorage.setItem("visitor_name", name);
     }
 
+    // 👇 ASK AMOUNT ONLY AFTER CLICKING PAY
+    const amount = prompt("Enter amount you want to pay (KES)");
+
+    if (!amount || isNaN(amount) || Number(amount) <= 0) {
+        alert("Enter a valid amount");
+        return;
+    }
+
+    // SAVE FOR AFTER PAYMENT RETURN
     localStorage.setItem("pending_name", name);
+    localStorage.setItem("pending_amount", amount);
 
     document.getElementById("status").textContent =
         "Redirecting to payment...";
 
-    window.location.href = "https://paystack.shop/pay/-zx40xj39x";
+    // 🔁 Paystack link
+    window.location.href = "https://paystack.shop/pay/YOUR-LINK-HERE";
 }
 
 
@@ -255,51 +266,96 @@ async function continueToPortfolio(){
 
 
 /* =========================================
-   PAYSTACK RETURN HANDLER
+   PAYSTACK RETURN HANDLER (FULL FIXED)
 ========================================= */
-async function handlePaystackReturn(reference){
+async function handlePaystackReturn(reference) {
 
-   let fullName = document.getElementById("fullName").value.trim();
+    // 1. GET STORED NAME
+    let fullName = localStorage.getItem("visitor_name");
 
-// SAVE PERMANENTLY FOR FUTURE VISITS
-if (fullName) {
-    localStorage.setItem("visitor_name", fullName);
-}
+    if (!fullName) {
+        fullName = document.getElementById("fullName")?.value?.trim() || "";
+    }
 
-    if(!fullName){
-        console.log("No pending user name");
+    if (!fullName) {
+        console.log("No user name found");
         return;
     }
 
+    // 2. SAVE NAME PERMANENTLY
+    localStorage.setItem("visitor_name", fullName);
+
+    // 3. GET PAYMENT AMOUNT
+    let amount = localStorage.getItem("pending_amount") || 0;
+
+    // 4. PREVENT DOUBLE PROCESSING
     const savedKey = "saved_" + reference;
-    if(localStorage.getItem(savedKey)) return;
+    if (localStorage.getItem(savedKey)) return;
 
     const now = new Date();
 
+    // 5. REFERRAL CODE LOGIC
     const code = referralCode.startsWith("T")
-        ? reference
+        ? referralCode
         : referralCode;
 
-    const { error } = await client
+    /* =========================================
+       SAVE VISIT
+    ========================================= */
+    const { error: visitError } = await client
         .from("portfolio_visits")
         .insert([{
             full_name: fullName,
             referral_code: code,
             visit_date: now.toISOString().split("T")[0],
-            visit_time: now.toLocaleTimeString("en-GB", { hour12:false }),
+            visit_time: now.toLocaleTimeString("en-GB", { hour12: false }),
             timestamp: now.toISOString(),
             referrer: document.referrer || "Direct",
             payment_ref: reference
         }]);
 
-    if(error){
-        console.error(error);
-        return;
+    if (visitError) {
+        console.error("Visit error:", visitError);
     }
 
+    /* =========================================
+       GET MARKETER ID
+    ========================================= */
+    const { data: marketerData } = await client
+        .from("portfolio_marketers")
+        .select("id")
+        .eq("code", referralCode)
+        .maybeSingle();
+
+    const marketer_id = marketerData?.id || null;
+
+    /* =========================================
+       SAVE PAYMENT (YOUR TABLE FIXED)
+    ========================================= */
+    const { error: paymentError } = await client
+        .from("portfolio_payments")
+        .insert([{
+            marketer_id: marketer_id,
+            referral_code: referralCode,
+            customer_name: fullName,
+            amount: Number(amount),
+            reference: reference,
+            paid_at: now.toISOString()
+        }]);
+
+    if (paymentError) {
+        console.error("Payment error:", paymentError);
+    }
+
+    /* =========================================
+       MARK AS PROCESSED
+    ========================================= */
     localStorage.setItem(savedKey, "1");
 
-    // REMOVE ?ref=TXXXX FROM URL
+    // cleanup
+    localStorage.removeItem("pending_amount");
+
+    // REMOVE REF FROM URL
     window.history.replaceState({}, document.title, window.location.pathname);
 
     document.getElementById("status").textContent =
