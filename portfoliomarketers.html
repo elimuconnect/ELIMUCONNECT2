@@ -502,41 +502,54 @@ readonly>
 
 </div>
 
-<!-- RECENT VISITS -->
+
+    <!-- RECENT VISITS -->
 
 <div class="card">
 
 <h3>👀 My Referral Visits</h3>
 
-<div class="table-container">
+<!-- TOGGLE BUTTON -->
+<button onclick="toggleVisits()" style="
+  background:#0f766e;
+  color:white;
+  padding:10px 16px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  margin-bottom:12px;
+">
+  👀 View Visits
+</button>
 
-<table>
+<!-- HIDDEN CONTAINER -->
+<div id="visitsBox" style="display:none;">
 
-<thead>
+  <div class="table-container">
 
-<tr>
+    <table>
 
-<th>Visitor</th>
+      <thead>
 
-<th>Date</th>
+        <tr>
+          <th>Visitor</th>
+          <th>Date</th>
+          <th>Time</th>
+          <th>Source</th>
+        </tr>
 
-<th>Time</th>
+      </thead>
 
-<th>Source</th>
+      <tbody id="visitsTable"></tbody>
 
-</tr>
+    </table>
 
-</thead>
-
-<tbody id="visitsTable">
-
-</tbody>
-
-</table>
+  </div>
 
 </div>
 
 </div>
+  
 
 <!-- PAYMENTS -->
 
@@ -749,6 +762,35 @@ function loadDashboard() {
   loadLeaderboard();
 }
 
+
+
+
+let visitsLoaded = false;
+
+function toggleVisits() {
+
+  const box = document.getElementById("visitsBox");
+
+  if (box.style.display === "none") {
+
+    box.style.display = "block";
+
+    if (!visitsLoaded) {
+      loadVisits();
+      visitsLoaded = true;
+    }
+
+  } else {
+    box.style.display = "none";
+  }
+}
+
+
+
+
+
+
+    
 /*==========================
 VISITS
 ==========================*/
