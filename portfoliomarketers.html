@@ -651,49 +651,58 @@ Use the button below to visit your portfolio website.
 const SUPABASE_URL = "https://hhtplinfcdwgahlhurhx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_cOXipkG4wSKIkIHwkP04JA_KunvG7T5";
 
-const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
 
 let marketer = null;
 
 /*==========================
-GET REFERRAL CODE
-==========================*/
-
-const params = new URLSearchParams(window.location.search);
-const code = params.get("code");
-
-if (!code) {
-  alert("Invalid marketer link.");
-  throw new Error("No referral code.");
-}
-
-/*==========================
-LOAD MARKETER
+INIT (USER LOGIN BASED)
 ==========================*/
 
 async function loadMarketer() {
 
+  // 1. GET LOGGED IN USER
+  const { data: { session } } = await client.auth.getSession();
+
+  if (!session) {
+    alert("Please login first");
+    window.location.href = "login.html";
+    return;
+  }
+
+  const user = session.user;
+
+  // 2. GET MARKETER BY USER_ID (NOT CODE)
   const { data, error } = await client
     .from("portfolio_marketers")
     .select("*")
-    .eq("code", code)
-    .single();
+    .eq("user_id", user.id)
+    .maybeSingle();
 
   if (error || !data) {
-    alert("Marketer not found.");
+    alert("Marketer profile not found.");
+    await client.auth.signOut();
     return;
   }
 
   marketer = data;
 
-  document.getElementById("myCode").innerText = marketer.code;
+  // 3. SHOW BASIC INFO
+  document.getElementById("myCode").innerText =
+    marketer.code || "No Code";
 
   buildReferralLink();
   loadDashboard();
 }
 
 /*==========================
-REFERRAL LINK
+REFERRAL LINK (STILL OPTIONAL)
 ==========================*/
 
 function buildReferralLink() {
@@ -716,8 +725,9 @@ function copyReferralLink() {
 LOGOUT
 ==========================*/
 
-function logout() {
-  window.location.href = "index.html";
+async function logout() {
+  await client.auth.signOut();
+  window.location.href = "login.html";
 }
 
 /*==========================
@@ -729,7 +739,7 @@ function money(v) {
 }
 
 /*==========================
-LOAD DASHBOARD
+DASHBOARD
 ==========================*/
 
 function loadDashboard() {
@@ -748,7 +758,7 @@ async function loadVisits() {
   const { data, error } = await client
     .from("portfolio_referral_visits")
     .select("*")
-    .eq("referral_code", marketer.code)
+    .eq("marketer_id", marketer.id)
     .order("created_at", { ascending: false });
 
   if (error) return console.log(error);
@@ -780,7 +790,7 @@ async function loadPayments() {
   const { data, error } = await client
     .from("portfolio_payments")
     .select("*")
-    .eq("referral_code", marketer.code)
+    .eq("marketer_id", marketer.id)
     .order("paid_at", { ascending: false });
 
   if (error) return console.log(error);
@@ -862,7 +872,7 @@ async function loadLeaderboard() {
     .select(`
       amount,
       status,
-      portfolio_marketers(name, code)
+      portfolio_marketers(name, id)
     `);
 
   if (error) return console.log(error);
@@ -874,15 +884,14 @@ async function loadLeaderboard() {
     const m = r.portfolio_marketers;
     if (!m) return;
 
-    if (!totals[m.code]) {
-      totals[m.code] = {
+    if (!totals[m.id]) {
+      totals[m.id] = {
         name: m.name,
-        code: m.code,
         amount: 0
       };
     }
 
-    totals[m.code].amount += Number(r.amount || 0);
+    totals[m.id].amount += Number(r.amount || 0);
   });
 
   const board = Object.values(totals)
@@ -904,7 +913,7 @@ async function loadLeaderboard() {
 }
 
 /*==========================
-START AFTER LOAD
+START
 ==========================*/
 
 window.addEventListener("DOMContentLoaded", loadMarketer);
