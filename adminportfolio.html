@@ -908,31 +908,24 @@ async function loadPayments(){
 
     }
 
-    let html="";
+   let html = "";
 
-    data.forEach(p=>{
+data.forEach(p => {
 
-        html+=`
+    html += `
+    <tr>
+        <td>${p.customer_name || "-"}</td>
+        <td>${p.portfolio_marketers?.name || "-"}</td>
+        <td>${p.referral_code || "-"}</td>
+        <td>${money(p.amount)}</td>
+        <td>${p.reference || "-"}</td>
+        <td>${p.paid_at ? new Date(p.paid_at).toLocaleDateString() : "-"}</td>
+    </tr>
+    `;
 
-        <tr>
+});
 
-       html += `
-<tr>
-<td>${p.customer_name || "-"}</td>
-<td>${p.portfolio_marketers?.name || "-"}</td>
-<td>${p.referral_code || "-"}</td>
-<td>${money(p.amount)}</td>
-<td>${p.reference || "-"}</td>
-<td>${new Date(p.paid_at).toLocaleDateString()}</td>
-</tr>
-
-        `;
-
-    });
-
-    document.getElementById("paymentsTable").innerHTML=html;
-
-}
+document.getElementById("paymentsTable").innerHTML = html;
 
 /*=========================
 MARKETERS
