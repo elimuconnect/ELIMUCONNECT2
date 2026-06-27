@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ELIMU CONNECT Login</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6fb;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .login-container {
+      background: white;
+      padding: 40px;
+      border-radius: 18px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      width: 92%;
+      max-width: 460px;
+      text-align: center;
+    }
+
+    h2 {
+      margin-bottom: 26px;
+      font-size: 28px;
+    }
+
+    input {
+      width: 100%;
+      padding: 18px;
+      margin: 12px 0;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      font-size: 18px;
+    }
+
+    button {
+      width: 100%;
+      padding: 18px;
+      background: #0066ff;
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-size: 18px;
+      margin-top: 14px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #0052cc;
+    }
+
+    .footer-text {
+      margin-top: 18px;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .input-group {
+      position: relative;
+      width: 100%;
+      margin: 12px 0;
+    }
+
+    .toggle {
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      font-size: 14px;
+      color: #0066ff;
+      user-select: none;
+    }
+
+    .forgot-wrapper {
+      width: 100%;
+      text-align: right;
+      margin-top: 10px;
+    }
+
+    .forgot-wrapper a {
+      color: #0066ff;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .forgot-wrapper a:hover {
+      text-decoration: underline;
+    }
+
+    /* 🔥 UPDATED SECTION STYLE (MATCHS YOUR OTHER FILE) */
+    .update-section {
+      display: none;
+      margin-top: 20px;
+      padding: 20px;
+      border-radius: 12px;
+      background: #f9fbff;
+      border: 1px solid #e0e8ff;
+    }
+
+    .update-section h3 {
+      margin-bottom: 12px;
+      font-size: 18px;
+    }
+
+    @media (max-width: 600px) {
+      .login-container {
+        width: 96%;
+        padding: 36px;
+      }
+
+      h2 {
+        font-size: 30px;
+      }
+
+      input, button {
+        font-size: 19px;
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="login-container">
+  <h2>Login</h2>
+
+  <input id="email" type="email" placeholder="Email">
+
+  <div class="input-group">
+    <input id="password" type="password" placeholder="Password">
+    <span class="toggle" onclick="togglePassword('password',this)">Show</span>
+  </div>
+
+  <div class="forgot-wrapper">
+    <a href="#" onclick="resetPassword()">Forgot Password?</a>
+  </div>
+
+  <button onclick="login()">Login</button>
+
+  <p class="footer-text">Secure login powered by Supabase</p>
+
+  <!-- 🔥 UPDATED SECTION -->
+  <div class="update-section">
+    <h3>Change Password</h3>
+
+    <div class="input-group">
+      <input id="newPassword" type="password" placeholder="New Password">
+      <span class="toggle" onclick="togglePassword('newPassword',this)">Show</span>
+    </div>
+
+    <button id="updateBtn">Update Password</button>
+  </div>
+</div>
+
+<script>
+function togglePassword(id, el) {
+  const input = document.getElementById(id);
+
+  if (input.type === "password") {
+    input.type = "text";
+    el.innerText = "Hide";
+  } else {
+    input.type = "password";
+    el.innerText = "Show";
+  }
+}
+</script>
+
+<script>
+const SUPABASE_URL = "https://hhtplinfcdwgahlhurhx.supabase.co";
+const SUPABASE_KEY = "sb_publishable_cOXipkG4wSKIkIHwkP04JA_KunvG7T5";
+
+const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { persistSession: true }
+});
+
+//
+// LOGIN (UNCHANGED)
+//
+async function login() {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+
+  const { data, error } = await client.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  const user = data.user;
+
+  const { data: profile } = await client
+    .from("marketers")
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!profile) {
+    alert("No profile found");
+    return;
+  }
+
+  if (profile.role === "admin") {
+    window.location.href = "adminmarketerportfolio.html";
+  } else {
+    window.location.href = "portfoliomarketers.html";
+  }
+}
+
+//
+// RESET PASSWORD
+//
+async function resetPassword() {
+  const email = document.getElementById("email").value.trim();
+
+  if (!email) return alert("Enter your email first");
+
+  const { error } = await client.auth.resetPasswordForEmail(email, {
+    redirectTo: "https://elimuconnect.github.io/ELIMUCONNECT2/reset-password2.html"
+  });
+
+  if (error) alert(error.message);
+  else alert("Reset email sent");
+}
+
+//
+// UPDATE PASSWORD
+//
+document.getElementById("updateBtn").onclick = async () => {
+
+  const { data: { session } } = await client.auth.getSession();
+
+  if (!session) {
+    alert("You are not logged in");
+    return;
+  }
+
+  const newPass = document.getElementById("newPassword").value.trim();
+
+  if (!newPass) {
+    alert("Enter new password");
+    return;
+  }
+
+  const { error } = await client.auth.updateUser({
+    password: newPass
+  });
+
+  if (error) alert(error.message);
+  else alert("Password updated successfully");
+};
+
+//
+// SHOW UPDATE IF STILL LOGGED IN
+//
+async function checkAuth() {
+  const { data: { session } } = await client.auth.getSession();
+
+  document.querySelector(".update-section").style.display =
+    session ? "block" : "none";
+}
+
+checkAuth();
+</script>
+
+</body>
+</html>
