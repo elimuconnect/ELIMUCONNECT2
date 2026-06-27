@@ -265,16 +265,15 @@ async function handlePaystackReturn(reference) {
     localStorage.removeItem("pending_name");
     localStorage.removeItem("pending_referral");
 
-   window.history.replaceState({}, document.title, window.location.pathname);
+  window.history.replaceState({}, document.title, window.location.pathname);
 
     document.getElementById("status").textContent = "Payment successful! Opening WhatsApp...";
     
-    // Format the number with Kenya's country code (254) and drop the leading 0
     const whatsappNumber = "254769255782"; 
     const message = `Hello, my payment of KES ${amount} was successful!\n\nName: ${fullName}\nRef: ${reference}`;
     
-    // Redirect straight to WhatsApp
-    window.location.href = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+    // 🚀 MOBILE DEEP LINK: Forces the native WhatsApp app to open directly on iOS/Android
+    window.location.href = `whatsapp://send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}`;
 }
 
 // Trigger Paystack execution immediately if a transaction reference is detected
