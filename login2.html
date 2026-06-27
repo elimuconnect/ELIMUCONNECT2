@@ -246,7 +246,7 @@ async function login() {
   }
 
   // OPTIONAL: enforce approval before login
-  if (profile.status && profile.status !== "approved") {
+ profile.status = profile.status || "approved";
 
     let msg = "";
 
