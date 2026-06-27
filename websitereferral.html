@@ -271,7 +271,7 @@ window.history.replaceState({}, document.title, window.location.pathname);
     document.getElementById("status").textContent = "Payment successful! Opening WhatsApp...";
     
     const whatsappNumber = "254769255782"; 
-    const message = `Hello, my payment of KES ${amount} was successful!\n\nName: ${fullName}\nRef: ${reference}`;
+    const message = `Hello, my payment of KES ${amount} for Website Creation was successful!\n\nName: ${fullName}\nRef: ${reference}`;
     
     // 🚀 THE ULTIMATE DIRECT LINK: Bypasses the intermediate screen seamlessly on mobile devices
     window.location.href = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}`;
