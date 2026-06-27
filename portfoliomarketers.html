@@ -627,35 +627,6 @@ Commission Rate: <strong>15%</strong> of every successful payment.
 
 </div>
 
-<!-- PERFORMANCE -->
-
-<div class="card">
-
-<h3>🏆 My Performance</h3>
-
-<div id="leaderboard">
-
-Loading...
-
-</div>
-
-</div>
-
-<!-- PORTFOLIO -->
-
-<div class="card">
-
-<h3>🌍 My Portfolio</h3>
-
-<p>
-Use the button below to visit your portfolio website.
-</p>
-
-<button onclick="window.open('https://wisdomappweb.site','_blank')">
-🚀 Open Portfolio
-</button>
-
-</div>
 
 </div>
 
@@ -759,10 +730,7 @@ function loadDashboard() {
   loadVisits();
   loadPayments();
   loadCommissions();
-  loadLeaderboard();
 }
-
-
 
 
 let visitsLoaded = false;
@@ -865,15 +833,29 @@ async function loadPayments() {
 COMMISSIONS
 ==========================*/
 
+/*==========================
+COMMISSIONS
+==========================*/
+
 async function loadCommissions() {
 
   const { data, error } = await client
     .from("portfolio_commissions")
-    .select("*")
+    .select(`
+      *,
+      portfolio_payments (
+        amount,
+        customer_name,
+        reference
+      )
+    `)
     .eq("marketer_id", marketer.id)
     .order("created_at", { ascending: false });
 
-  if (error) return console.log(error);
+  if (error) {
+    console.log(error);
+    return;
+  }
 
   let pending = 0;
   let paid = 0;
@@ -881,21 +863,23 @@ async function loadCommissions() {
 
   (data || []).forEach(c => {
 
-    const amount = Number(c.amount || 0);
+    const commission = Number(c.amount || 0);
 
-    if (c.status === "paid") paid += amount;
-    else pending += amount;
+    if (c.status === "paid")
+      paid += commission;
+    else
+      pending += commission;
 
     html += `
       <tr>
-        <td>${money(amount / 0.15)}</td>
-        <td>${money(amount)}</td>
+        <td>${money(c.portfolio_payments?.amount || 0)}</td>
+        <td>${money(commission)}</td>
         <td>
-          <span class="badge ${c.status === "paid" ? "paid" : "pending"}">
+          <span class="badge ${c.status}">
             ${c.status}
           </span>
         </td>
-        <td>${c.created_at ? new Date(c.created_at).toLocaleDateString() : "-"}</td>
+        <td>${new Date(c.created_at).toLocaleDateString()}</td>
       </tr>
     `;
   });
@@ -905,56 +889,6 @@ async function loadCommissions() {
   document.getElementById("commissionsTable").innerHTML = html;
 }
 
-/*==========================
-LEADERBOARD
-==========================*/
-
-async function loadLeaderboard() {
-
-  const { data, error } = await client
-    .from("portfolio_commissions")
-    .select(`
-      amount,
-      status,
-      portfolio_marketers(name, id)
-    `);
-
-  if (error) return console.log(error);
-
-  const totals = {};
-
-  (data || []).forEach(r => {
-
-    const m = r.portfolio_marketers;
-    if (!m) return;
-
-    if (!totals[m.id]) {
-      totals[m.id] = {
-        name: m.name,
-        amount: 0
-      };
-    }
-
-    totals[m.id].amount += Number(r.amount || 0);
-  });
-
-  const board = Object.values(totals)
-    .sort((a, b) => b.amount - a.amount)
-    .slice(0, 10);
-
-  let html = "";
-
-  board.forEach((m, i) => {
-    html += `
-      <div style="display:flex;justify-content:space-between;padding:12px;margin-bottom:8px;border-radius:10px;background:#f8fafc;">
-        <div><b>#${i + 1}</b> ${m.name}</div>
-        <div>${money(m.amount)}</div>
-      </div>
-    `;
-  });
-
-  document.getElementById("leaderboard").innerHTML = html || "No data.";
-}
 
 /*==========================
 START
