@@ -239,17 +239,20 @@ async function login() {
     .eq("user_id", user.id)
     .maybeSingle();
 
-  // DEFAULT APPROVAL MODE (ALL USERS ALLOWED FOR NOW)
- // You can enforce status checks later
 
-if (!profile) {
-  alert("No marketer profile found. Contact admin.");
-  await client.auth.signOut();
-  return;
+  if (!profile) {
+    alert("No profile found");
+    return;
+  }
+
+  if (profile.role === "admin") {
+    window.location.href = "adminportfolio.html";
+  } else {
+    window.location.href = "portfoliomarketers.html";
+  }
 }
-  // SAVE SESSION OK → GO TO DASHBOARD
-  window.location.href = "portfoliomarketers.html";
-}
+
+  
 
 /* =========================
    RESET PASSWORD
