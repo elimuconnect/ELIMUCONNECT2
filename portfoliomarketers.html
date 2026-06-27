@@ -756,7 +756,7 @@ VISITS
 async function loadVisits() {
 
   const { data, error } = await client
-    .from("portfolio_referral_visits")
+    .from(".from("portfolio_visits")")
     .select("*")
     .eq("referral_code", marketer.code)
     .order("timestamp", { ascending: false });
