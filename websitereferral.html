@@ -142,6 +142,23 @@ style="background:#ff9800;margin-top:15px;">
 
     <script>
 
+/* =========================================
+   REMEMBER USER NAME (LOCAL STORAGE MEMORY)
+========================================= */
+let fullName = localStorage.getItem("visitor_name") || "";
+
+window.addEventListener("DOMContentLoaded", () => {
+
+    const input = document.getElementById("fullName");
+
+    if (fullName && input) {
+        input.value = fullName;
+    }
+});
+
+
+        
+
 const SUPABASE_URL = "https://hhtplinfcdwgahlhurhx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_cOXipkG4wSKIkIHwkP04JA_KunvG7T5";
 
@@ -158,26 +175,27 @@ const params = new URLSearchParams(window.location.search);
 const referralCode = params.get("ref") || "";
 
 
-/* =========================================
-   PAY BUTTON (ADDED FIX)
-========================================= */
 function payNow() {
 
-    const fullName = document.getElementById("fullName").value.trim();
+    let name = localStorage.getItem("visitor_name");
 
-    if (!fullName) {
-        alert("Please enter your full name first.");
-        return;
+    if (!name) {
+        name = document.getElementById("fullName").value.trim();
+
+        if (!name) {
+            alert("Please enter your name first.");
+            return;
+        }
+
+        localStorage.setItem("visitor_name", name);
     }
 
-    // save for after payment return
-    localStorage.setItem("pending_name", fullName);
+    localStorage.setItem("pending_name", name);
 
     document.getElementById("status").textContent =
         "Redirecting to payment...";
 
-    // 🔁 REPLACE WITH YOUR PAYSTACK LINK
-    window.location.href = "https://paystack.shop/pay/YOUR-LINK-HERE";
+    window.location.href = "https://paystack.shop/pay/YOUR-LINK";
 }
 
 
@@ -241,7 +259,12 @@ async function continueToPortfolio(){
 ========================================= */
 async function handlePaystackReturn(reference){
 
-    const fullName = localStorage.getItem("pending_name");
+   let fullName = document.getElementById("fullName").value.trim();
+
+// SAVE PERMANENTLY FOR FUTURE VISITS
+if (fullName) {
+    localStorage.setItem("visitor_name", fullName);
+}
 
     if(!fullName){
         console.log("No pending user name");
