@@ -648,441 +648,267 @@ Use the button below to visit your portfolio website.
 
 <script>
 
-const SUPABASE_URL="https://hhtplinfcdwgahlhurhx.supabase.co";
-const SUPABASE_KEY="sb_publishable_cOXipkG4wSKIkIHwkP04JA_KunvG7T5";
+const SUPABASE_URL = "https://hhtplinfcdwgahlhurhx.supabase.co";
+const SUPABASE_KEY = "sb_publishable_cOXipkG4wSKIkIHwkP04JA_KunvG7T5";
 
-const client=supabase.createClient(
-SUPABASE_URL,
-SUPABASE_KEY
-);
+const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let marketer=null;
+let marketer = null;
 
 /*==========================
 GET REFERRAL CODE
 ==========================*/
 
-const params=new URLSearchParams(location.search);
+const params = new URLSearchParams(window.location.search);
+const code = params.get("code");
 
-const code=params.get("code");
-
-if(!code){
-
-alert("Invalid marketer link.");
-
-throw new Error("No referral code.");
-
+if (!code) {
+  alert("Invalid marketer link.");
+  throw new Error("No referral code.");
 }
 
 /*==========================
 LOAD MARKETER
 ==========================*/
 
-async function loadMarketer(){
+async function loadMarketer() {
 
-const {data,error}=await client
+  const { data, error } = await client
+    .from("portfolio_marketers")
+    .select("*")
+    .eq("code", code)
+    .single();
 
-.from("portfolio_marketers")
+  if (error || !data) {
+    alert("Marketer not found.");
+    return;
+  }
 
-.select("*")
+  marketer = data;
 
-.eq("code",code)
+  document.getElementById("myCode").innerText = marketer.code;
 
-.single();
-
-if(error||!data){
-
-alert("Marketer not found.");
-
-return;
-
-}
-
-marketer=data;
-
-document.getElementById("welcomeName").innerHTML=
-
-"Welcome <b>"+marketer.name+"</b>";
-
-document.getElementById("myCode").innerHTML=
-
-marketer.code;
-
-buildReferralLink();
-
-loadDashboard();
-
+  buildReferralLink();
+  loadDashboard();
 }
 
 /*==========================
 REFERRAL LINK
 ==========================*/
 
-function buildReferralLink(){
-
-document.getElementById("myReferralLink").value=
-
-"https://elimuconnect.github.io/ELIMUCONNECT2/websitereferral.html?ref="
-
-+marketer.code;
-
+function buildReferralLink() {
+  document.getElementById("myReferralLink").value =
+    "https://elimuconnect.github.io/ELIMUCONNECT2/websitereferral.html?ref=" +
+    marketer.code;
 }
 
 /*==========================
 COPY LINK
 ==========================*/
 
-function copyReferralLink(){
-
-const box=document.getElementById("myReferralLink");
-
-navigator.clipboard.writeText(box.value);
-
-alert("Referral link copied.");
-
+function copyReferralLink() {
+  const box = document.getElementById("myReferralLink");
+  navigator.clipboard.writeText(box.value);
+  alert("Referral link copied.");
 }
 
 /*==========================
 LOGOUT
 ==========================*/
 
-function logout(){
-
-window.location.href="index.html";
-
+function logout() {
+  window.location.href = "index.html";
 }
 
 /*==========================
 FORMAT MONEY
 ==========================*/
 
-function money(v){
-
-return "KES "+Number(v||0).toLocaleString();
-
+function money(v) {
+  return "KES " + Number(v || 0).toLocaleString();
 }
 
 /*==========================
 LOAD DASHBOARD
 ==========================*/
 
-function loadDashboard(){
-
-loadVisits();
-
-loadPayments();
-
-loadCommissions();
-
-loadLeaderboard();
-
+function loadDashboard() {
+  loadVisits();
+  loadPayments();
+  loadCommissions();
+  loadLeaderboard();
 }
 
 /*==========================
-START
+VISITS
 ==========================*/
 
-loadMarketer();
+async function loadVisits() {
 
-/*=========================================
-LOAD MY VISITS
-=========================================*/
+  const { data, error } = await client
+    .from("portfolio_referral_visits")
+    .select("*")
+    .eq("referral_code", marketer.code)
+    .order("created_at", { ascending: false });
 
-async function loadVisits(){
+  if (error) return console.log(error);
 
-const {data,error}=await client
+  document.getElementById("totalVisits").innerText = data?.length || 0;
 
-.from("portfolio_referral_visits")
+  let html = "";
 
-.select("*")
+  (data || []).forEach(v => {
+    html += `
+      <tr>
+        <td>${v.visitor_name || "-"}</td>
+        <td>${v.visit_date || "-"}</td>
+        <td>${v.visit_time || "-"}</td>
+        <td>${v.referrer || "Direct"}</td>
+      </tr>
+    `;
+  });
 
-.eq("referral_code",marketer.code)
-
-.order("created_at",{ascending:false});
-
-if(error){
-
-console.log(error);
-
-return;
-
+  document.getElementById("visitsTable").innerHTML = html;
 }
 
-document.getElementById("totalVisits").innerHTML=data.length;
+/*==========================
+PAYMENTS
+==========================*/
 
-let html="";
+async function loadPayments() {
 
-data.forEach(v=>{
+  const { data, error } = await client
+    .from("portfolio_payments")
+    .select("*")
+    .eq("referral_code", marketer.code)
+    .order("paid_at", { ascending: false });
 
-html+=`
+  if (error) return console.log(error);
 
-<tr>
+  let sales = 0;
+  let html = "";
 
-<td>${v.visitor_name||"-"}</td>
+  (data || []).forEach(p => {
 
-<td>${v.visit_date}</td>
+    sales += Number(p.amount || 0);
 
-<td>${v.visit_time}</td>
+    html += `
+      <tr>
+        <td>${p.customer_name || "-"}</td>
+        <td>${money(p.amount)}</td>
+        <td>${p.reference || "-"}</td>
+        <td>${p.paid_at ? new Date(p.paid_at).toLocaleDateString() : "-"}</td>
+      </tr>
+    `;
+  });
 
-<td>${v.referrer||"Direct"}</td>
-
-</tr>
-
-`;
-
-});
-
-document.getElementById("visitsTable").innerHTML=html;
-
+  document.getElementById("paymentsTable").innerHTML = html;
+  document.getElementById("totalSales").innerText = money(sales);
+  document.getElementById("totalPayments").innerText = data?.length || 0;
 }
 
-/*=========================================
-LOAD PAYMENTS
-=========================================*/
+/*==========================
+COMMISSIONS
+==========================*/
 
-async function loadPayments(){
+async function loadCommissions() {
 
-const {data,error}=await client
+  const { data, error } = await client
+    .from("portfolio_commissions")
+    .select("*")
+    .eq("marketer_id", marketer.id)
+    .order("created_at", { ascending: false });
 
-.from("portfolio_payments")
+  if (error) return console.log(error);
 
-.select("*")
+  let pending = 0;
+  let paid = 0;
+  let html = "";
 
-.eq("referral_code",marketer.code)
+  (data || []).forEach(c => {
 
-.order("paid_at",{ascending:false});
+    const amount = Number(c.amount || 0);
 
-if(error){
+    if (c.status === "paid") paid += amount;
+    else pending += amount;
 
-console.log(error);
+    html += `
+      <tr>
+        <td>${money(amount / 0.15)}</td>
+        <td>${money(amount)}</td>
+        <td>
+          <span class="badge ${c.status === "paid" ? "paid" : "pending"}">
+            ${c.status}
+          </span>
+        </td>
+        <td>${c.created_at ? new Date(c.created_at).toLocaleDateString() : "-"}</td>
+      </tr>
+    `;
+  });
 
-return;
-
+  document.getElementById("pendingCommission").innerText = money(pending);
+  document.getElementById("paidCommission").innerText = money(paid);
+  document.getElementById("commissionsTable").innerHTML = html;
 }
 
-let sales=0;
-
-let html="";
-
-data.forEach(p=>{
-
-sales+=Number(p.amount);
-
-html+=`
-
-<tr>
-
-<td>${p.customer_name||"-"}</td>
-
-<td>${money(p.amount)}</td>
-
-<td>${p.reference}</td>
-
-<td>${new Date(p.paid_at).toLocaleDateString()}</td>
-
-</tr>
-
-`;
-
-});
-
-document.getElementById("paymentsTable").innerHTML=html;
-
-document.getElementById("totalSales").innerHTML=
-
-money(sales);
-
-document.getElementById("totalPayments").innerHTML=
-
-data.length;
-
-}
-/*=========================================
-LOAD COMMISSIONS
-=========================================*/
-
-async function loadCommissions(){
-
-const {data,error}=await client
-
-.from("portfolio_commissions")
-
-.select("*")
-
-.eq("marketer_id",marketer.id)
-
-.order("created_at",{ascending:false});
-
-if(error){
-
-console.log(error);
-
-return;
-
-}
-
-let pending=0;
-let paid=0;
-
-let html="";
-
-data.forEach(c=>{
-
-if(c.status==="paid"){
-
-paid+=Number(c.amount);
-
-}else{
-
-pending+=Number(c.amount);
-
-}
-
-html+=`
-
-<tr>
-
-<td>${money(c.amount/0.15)}</td>
-
-<td>${money(c.amount)}</td>
-
-<td>
-
-<span class="badge ${c.status==="paid"?"paid":"pending"}">
-
-${c.status}
-
-</span>
-
-</td>
-
-<td>${new Date(c.created_at).toLocaleDateString()}</td>
-
-</tr>
-
-`;
-
-});
-
-document.getElementById("pendingCommission").innerHTML=
-
-money(pending);
-
-document.getElementById("paidCommission").innerHTML=
-
-money(paid);
-
-document.getElementById("commissionsTable").innerHTML=
-
-html;
-
-}
-
-/*=========================================
+/*==========================
 LEADERBOARD
-=========================================*/
+==========================*/
 
-async function loadLeaderboard(){
+async function loadLeaderboard() {
 
-const {data,error}=await client
+  const { data, error } = await client
+    .from("portfolio_commissions")
+    .select(`
+      amount,
+      status,
+      portfolio_marketers(name, code)
+    `);
 
-.from("portfolio_commissions")
+  if (error) return console.log(error);
 
-.select(`
-amount,
-status,
-portfolio_marketers(
-name,
-code
-)
-`);
+  const totals = {};
 
-if(error){
+  (data || []).forEach(r => {
 
-console.log(error);
+    const m = r.portfolio_marketers;
+    if (!m) return;
 
-return;
+    if (!totals[m.code]) {
+      totals[m.code] = {
+        name: m.name,
+        code: m.code,
+        amount: 0
+      };
+    }
 
+    totals[m.code].amount += Number(r.amount || 0);
+  });
+
+  const board = Object.values(totals)
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, 10);
+
+  let html = "";
+
+  board.forEach((m, i) => {
+    html += `
+      <div style="display:flex;justify-content:space-between;padding:12px;margin-bottom:8px;border-radius:10px;background:#f8fafc;">
+        <div><b>#${i + 1}</b> ${m.name}</div>
+        <div>${money(m.amount)}</div>
+      </div>
+    `;
+  });
+
+  document.getElementById("leaderboard").innerHTML = html || "No data.";
 }
 
-const totals={};
+/*==========================
+START AFTER LOAD
+==========================*/
 
-data.forEach(r=>{
-
-const m=r.portfolio_marketers;
-
-if(!m)return;
-
-if(!totals[m.code]){
-
-totals[m.code]={
-
-name:m.name,
-
-code:m.code,
-
-amount:0
-
-};
-
-}
-
-totals[m.code].amount+=Number(r.amount);
-
-});
-
-const board=Object.values(totals)
-
-.sort((a,b)=>b.amount-a.amount)
-
-.slice(0,10);
-
-let html="";
-
-board.forEach((m,i)=>{
-
-html+=`
-
-<div style="
-
-display:flex;
-
-justify-content:space-between;
-
-padding:12px;
-
-margin-bottom:8px;
-
-border-radius:10px;
-
-background:#f8fafc;
-
-">
-
-<div>
-
-<b>#${i+1}</b>
-
-${m.name}
-
-</div>
-
-<div>
-
-${money(m.amount)}
-
-</div>
-
-</div>
-
-`;
-
-});
-
-document.getElementById("leaderboard").innerHTML=
-
-html||"No data.";
-
-}
+window.addEventListener("DOMContentLoaded", loadMarketer);
 
 </script>
+</body>
+</html>
