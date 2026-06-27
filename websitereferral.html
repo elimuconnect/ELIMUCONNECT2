@@ -135,7 +135,7 @@ async function continueToPortfolio(){
         hour12:false
     });
 
-    document.getElementById("status").textContent="Saving visit...";
+    document.getElementById("status").textContent="wait...";
 
     const {error} = await client
         .from("portfolio_visits")
@@ -159,7 +159,7 @@ async function continueToPortfolio(){
 
         console.error(error);
 
-        alert("Unable to record your visit.");
+        alert(".");
 
         return;
 
