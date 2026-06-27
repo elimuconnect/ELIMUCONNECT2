@@ -190,7 +190,6 @@ function payNow() {
         localStorage.setItem("visitor_name", name);
     }
 
-    // 👇 ASK AMOUNT ONLY AFTER CLICKING PAY
     const amount = prompt("Enter amount you want to pay (KES)");
 
     if (!amount || isNaN(amount) || Number(amount) <= 0) {
@@ -198,14 +197,15 @@ function payNow() {
         return;
     }
 
-    // SAVE FOR AFTER PAYMENT RETURN
+    // ⭐ IMPORTANT FIX (STORE MARKETER REF)
+    localStorage.setItem("pending_referral", referralCode);
+
     localStorage.setItem("pending_name", name);
     localStorage.setItem("pending_amount", amount);
 
     document.getElementById("status").textContent =
         "Redirecting to payment...";
 
-    // 🔁 Paystack link
     window.location.href = "https://paystack.shop/pay/-zx40xj39x";
 }
 
@@ -268,55 +268,46 @@ async function handlePaystackReturn(reference) {
 
     const now = new Date();
 
-    let fullName = localStorage.getItem("visitor_name");
+    const fullName =
+        localStorage.getItem("visitor_name") ||
+        localStorage.getItem("pending_name");
 
-    if (!fullName) {
-        fullName = document.getElementById("fullName")?.value?.trim() || "";
-    }
+    const amount = Number(localStorage.getItem("pending_amount") || 0);
+
+    const marketerCode =
+        localStorage.getItem("pending_referral") || referralCode;
 
     if (!fullName) {
         console.log("No user name found");
         return;
     }
 
-    localStorage.setItem("visitor_name", fullName);
-
-    let amount = Number(localStorage.getItem("pending_amount") || 0);
-
     const savedKey = "saved_" + reference;
     if (localStorage.getItem(savedKey)) return;
 
-    const code = referralCode;
+    /* =========================
+       SAVE VISIT
+    ========================= */
+    await client.from("portfolio_visits").insert([{
+        full_name: fullName,
+        referral_code: marketerCode,
+        visit_date: now.toISOString().split("T")[0],
+        visit_time: now.toLocaleTimeString("en-GB", { hour12: false }),
+        timestamp: now.toISOString(),
+        referrer: document.referrer || "Direct",
+        payment_ref: reference
+    }]);
 
     /* =========================
-       SAVE VISIT (OPTIONAL)
+       GET MARKETER
     ========================= */
-    const { error: visitError } = await client
-        .from("portfolio_visits")
-        .insert([{
-            full_name: fullName,
-            referral_code: code,
-            visit_date: now.toISOString().split("T")[0],
-            visit_time: now.toLocaleTimeString("en-GB", { hour12: false }),
-            timestamp: now.toISOString(),
-            referrer: document.referrer || "Direct",
-            payment_ref: reference
-        }]);
-
-    if (visitError) {
-        console.error("Visit error:", visitError);
-    }
-
-    /* =========================
-       GET MARKETER (IMPORTANT FIX)
-    ========================= */
-    const { data: marketerData, error: marketerError } = await client
+    const { data: marketerData } = await client
         .from("portfolio_marketers")
         .select("id")
-        .eq("code", referralCode)
+        .eq("code", marketerCode)
         .maybeSingle();
 
-    if (marketerError || !marketerData) {
+    if (!marketerData) {
         console.error("Marketer not found");
         return;
     }
@@ -324,41 +315,42 @@ async function handlePaystackReturn(reference) {
     const marketer_id = marketerData.id;
 
     /* =========================
-       SAVE PAYMENT (FIXED)
+       SAVE PAYMENT
     ========================= */
-    const { data: paymentData, error: paymentError } = await client
+    const { error: paymentError } = await client
         .from("portfolio_payments")
         .insert([{
             marketer_id: marketer_id,
-            referral_code: referralCode,
+            referral_code: marketerCode,
             customer_name: fullName,
             amount: amount,
             reference: reference,
             paid_at: now.toISOString()
-        }])
-        .select();
+        }]);
 
     if (paymentError) {
-        console.error("❌ PAYMENT FAILED:", paymentError);
+        console.error("PAYMENT ERROR:", paymentError);
         return;
     }
 
-    console.log("✅ PAYMENT SAVED:", paymentData);
+    console.log("PAYMENT SAVED SUCCESSFULLY");
 
     /* =========================
-       FINAL CLEANUP
+       CLEANUP
     ========================= */
     localStorage.setItem(savedKey, "1");
+
     localStorage.removeItem("pending_amount");
+    localStorage.removeItem("pending_name");
+    localStorage.removeItem("pending_referral");
 
     window.history.replaceState({}, document.title, window.location.pathname);
 
     document.getElementById("status").textContent =
         "Payment successful... redirecting";
 
-    redirectToPortfolio(code);
+    redirectToPortfolio(marketerCode);
 }
-
 /* =========================================
    REDIRECT FUNCTION
 ========================================= */
