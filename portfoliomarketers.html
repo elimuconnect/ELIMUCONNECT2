@@ -758,10 +758,13 @@ async function loadVisits() {
   const { data, error } = await client
     .from("portfolio_referral_visits")
     .select("*")
-    .eq("marketer_id", marketer.id)
-    .order("created_at", { ascending: false });
+    .eq("referral_code", marketer.code)
+    .order("timestamp", { ascending: false });
 
-  if (error) return console.log(error);
+  if (error) {
+    console.log(error);
+    return;
+  }
 
   document.getElementById("totalVisits").innerText = data?.length || 0;
 
@@ -770,7 +773,7 @@ async function loadVisits() {
   (data || []).forEach(v => {
     html += `
       <tr>
-        <td>${v.visitor_name || "-"}</td>
+        <td>${v.full_name || "-"}</td>
         <td>${v.visit_date || "-"}</td>
         <td>${v.visit_time || "-"}</td>
         <td>${v.referrer || "Direct"}</td>
@@ -780,7 +783,6 @@ async function loadVisits() {
 
   document.getElementById("visitsTable").innerHTML = html;
 }
-
 /*==========================
 PAYMENTS
 ==========================*/
