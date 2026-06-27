@@ -161,9 +161,21 @@ const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // Change this to your portfolio
 const PORTFOLIO_URL = "https://wisdomappweb.site";
 
-// GET REF OR PAYSTACK TRANSACTION REFERENCE
+// =========================================
+// 1. CAPTURE AND PERMANENTLY STORE MARKETER CODE IMMEDIATELY
+// =========================================
 const params = new URLSearchParams(window.location.search);
-const referralCode = params.get("ref") || "";
+
+// Check if there is a marketer code in the URL right now
+const urlReferral = params.get("ref") || "";
+
+// If found, lock it into localStorage immediately so we NEVER lose it
+if (urlReferral) {
+    localStorage.setItem("pending_referral", urlReferral);
+}
+
+// Always fallback to the safely stored code if the URL parameter disappears
+const referralCode = urlReferral || localStorage.getItem("pending_referral") || "";
 const paystackRef = params.get("reference") || params.get("trxref") || "";
 
 /* =========================================
