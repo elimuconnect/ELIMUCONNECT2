@@ -933,44 +933,45 @@ MARKETERS
 
 async function loadMarketers(){
 
-    const {data,error}=await client
-    .from("portfolio_marketers")
-    .select("*")
-    .order("name");
+    const { data, error } = await client
+        .from("portfolio_marketers")
+        .select("*")
+        .order("name");
 
     if(error){
-
         console.log(error);
-
         return;
-
     }
 
-   html += `
-<tr>
+    let html = "";
 
-<td>${m.name}</td>
+    data.forEach(m => {
 
-<td>${m.email || "-"}</td>
+        html += `
+        <tr>
 
-<td>${m.code}</td>
+            <td>${m.name || "-"}</td>
 
-<td>${m.phone || "-"}</td>
+            <td>${m.email || "-"}</td>
 
-<td>
-<button onclick="viewMarketer('${m.id}')">
-View
-</button>
-</td>
+            <td>${m.code || "-"}</td>
 
-</tr>
-`;
+            <td>${m.phone || "-"}</td>
+
+            <td>
+                <button onclick="viewMarketer('${m.id}')">
+                    View
+                </button>
+            </td>
+
+        </tr>
+        `;
 
     });
 
-    document.getElementById("marketersTable").innerHTML=html;
-}
+    document.getElementById("marketersTable").innerHTML = html;
 
+}
 
 /*=========================
 COMMISSIONS
