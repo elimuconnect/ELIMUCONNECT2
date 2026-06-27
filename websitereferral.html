@@ -265,33 +265,18 @@ async function handlePaystackReturn(reference) {
     localStorage.removeItem("pending_name");
     localStorage.removeItem("pending_referral");
 
- window.history.replaceState({}, document.title, window.location.pathname);
 
-document.getElementById("status").textContent =
-    "Payment successful! Opening WhatsApp...";
+window.history.replaceState({}, document.title, window.location.pathname);
 
-const whatsappNumber = "254769255782";
-
-const message =
-`Hello, my payment of KES ${amount} was successful!
-
-Name: ${fullName}
-Reference: ${reference}`;
-
-const appUrl =
-`whatsapp://send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}`;
-
-const webUrl =
-`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
-
-// Try opening the WhatsApp app
-window.location.href = appUrl;
-
-// If the app doesn't open, fall back to WhatsApp Web
-setTimeout(() => {
-    window.location.href = webUrl;
-}, 1500);
+    document.getElementById("status").textContent = "Payment successful! Opening WhatsApp...";
+    
+    const whatsappNumber = "254769255782"; 
+    const message = `Hello, my payment of KES ${amount} was successful!\n\nName: ${fullName}\nRef: ${reference}`;
+    
+    // 🚀 THE ULTIMATE DIRECT LINK: Bypasses the intermediate screen seamlessly on mobile devices
+    window.location.href = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}`;
 }
+    
 // Trigger Paystack execution immediately if a transaction reference is detected
 if (paystackRef) {
     handlePaystackReturn(paystackRef);
