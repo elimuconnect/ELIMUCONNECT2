@@ -828,25 +828,18 @@ money(average);
 VISITS
 =========================*/
 
-function toggleVisits(){
+async function toggleVisits(){
 
-    const box=document.getElementById("visitsBox");
+    const box = document.getElementById("visitsBox");
 
-    if(box.style.display==="none"){
+    if(box.classList.contains("hidden-box")){
 
-        box.style.display="block";
-
-        if(!visitsLoaded){
-
-            loadVisits();
-
-            visitsLoaded=true;
-
-        }
+        await loadVisits();
+        box.classList.remove("hidden-box");
 
     }else{
 
-        box.style.display="none";
+        box.classList.add("hidden-box");
 
     }
 
