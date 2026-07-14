@@ -216,10 +216,10 @@ if (school.status === "suspended") {
   await supabase.auth.signOut();
 
   alert(
-   "Your school's account is currently suspended.\n\n" +
-  "To continue accessing assessments, reports, and all other system features, please renew your subscription payment.\n\n" +
-  "Once payment is confirmed, your account will be reactivated immediately.\n\n" +
-  "For assistance, please contact the system administrator at 0769255782" 
+     "Your school's subscription has expired, and the account has been temporarily suspended.\n\n" +
+  "Please make your subscription payment to reactivate your account and continue using all system features.\n\n" +
+  "Once payment is confirmed, access will be restored immediately."
+   "For assistance, please contact the system administrator at 0769255782" 
   );
 
   return;
