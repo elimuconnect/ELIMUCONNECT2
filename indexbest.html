@@ -182,43 +182,69 @@ document.getElementById("loginBtn").onclick = async () => {
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("role, school_id")
-    .eq("auth_id", user.id)
-    .single();
+const { data: profile, error: profileError } = await supabase
+  .from("profiles")
+  .select("role, school_id")
+  .eq("auth_id", user.id)
+  .single();
 
-  if (profileError || !profile) {
-    alert("Profile not found");
-    return;
-  }
+if (profileError || !profile) {
+  alert("Profile not found");
+  return;
+}
 
-  if (profile.role === "superadmin") {
-    window.location.href = "superadmin.html";
-  } else if (profile.role === "teacher") {
-    const { data: school } = await supabase
-      .from("schools")
-      .select("package_type")
-      .eq("id", profile.school_id)
-      .single();
+// Superadmin is never suspended
+if (profile.role === "superadmin") {
+  window.location.href = "superadmin.html";
+  return;
+}
 
-    if (school.package_type === "A") {
-      window.location.href = "teacher2.html";
-    } else {
-      window.location.href = "teacher3.html";
-    }
+// Check school status and package
+const { data: school, error: schoolError } = await supabase
+  .from("schools")
+  .select("status, package_type")
+  .eq("id", profile.school_id)
+  .single();
 
-  } else if (profile.role === "parent") {
-    window.location.href = "parent.html";
+if (schoolError || !school) {
+  alert("School not found");
+  return;
+}
 
-  } else if (profile.role === "admin") {
-    window.location.href = "admin.html";
+// Block suspended schools
+if (school.status === "suspended") {
+  await supabase.auth.signOut();
 
+  alert(
+    "Your school's account has been suspended.\n\n" +
+    "Please contact the system administrator."
+  );
+
+  return;
+}
+
+// Redirect according to role
+if (profile.role === "teacher") {
+
+  if (school.package_type === "A") {
+    window.location.href = "teacher2.html";
   } else {
-    alert("Unknown role");
+    window.location.href = "teacher3.html";
   }
-};
 
+} else if (profile.role === "parent") {
+
+  window.location.href = "parent.html";
+
+} else if (profile.role === "admin") {
+
+  window.location.href = "admin.html";
+
+} else {
+
+  alert("Unknown role");
+
+}
 //
 // FORGOT PASSWORD
 //
