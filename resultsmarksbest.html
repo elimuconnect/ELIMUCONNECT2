@@ -2618,12 +2618,14 @@ function generateBroadsheet(records, avgMap, mode = "grade") {
 
     const ranked = Object.entries(students).map(([name, data]) => {
 
-      const scores = subjects
-        .map(sub => data.subjects[sub])
-        .filter(v => typeof v === "number");
+    const scores = subjects.map(sub =>
+  typeof data.subjects[sub] === "number" ? data.subjects[sub] : 0
+);
 
-      const total = scores.reduce((a, b) => a + b, 0);
-      const avg = scores.length ? total / scores.length : 0;
+const total = scores.reduce((a, b) => a + b, 0);
+
+// Always divide by 7
+const avg = total / 7;
 
       return {
         name,
