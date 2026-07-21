@@ -1443,11 +1443,10 @@ route.summary.totalDistance/1000
 .toFixed(2);
 
 
-const time=
+const time =
 Math.round(
-route.summary.totalTime/60
+(route.summary.totalTime / 60) * 1.2
 );
-
 
 
 document.getElementById(
@@ -1691,19 +1690,41 @@ const route=
 e.routes[0];
 
 
-const distance=
+
+const distance =
 (
-route.summary.totalDistance/1000
-)
-.toFixed(2);
-
-
-
-const minutes=
-Math.round(
-route.summary.totalTime/60
+route.summary.totalDistance / 1000
 );
 
+
+const displayDistance =
+distance.toFixed(2);
+
+
+const minutes =
+Math.round(
+(route.summary.totalTime / 60) * 1.2
+);
+  
+
+if(distance < 0.05){
+
+document.getElementById(
+"routeInfo"
+).innerHTML =
+
+`
+<b>✅ Arrived</b>
+
+<br><br>
+
+You have reached the school location.
+
+`;
+
+return;
+
+}
 
 
 document.getElementById(
@@ -1717,13 +1738,12 @@ document.getElementById(
 <br><br>
 
 📍 Distance remaining:
-${distance} km
+${displayDistance} km
 
 <br>
 
 ⏱ Time remaining:
 ${minutes} minutes
-
 
 `;
 
