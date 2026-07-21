@@ -269,7 +269,36 @@ padding:15px;
 }
 
 
+.product-selector{
 
+background:white;
+
+padding:20px;
+
+border-radius:16px;
+
+box-shadow:0 8px 25px rgba(0,0,0,.08);
+
+margin-bottom:25px;
+
+}
+
+
+select{
+
+width:100%;
+
+padding:14px;
+
+border-radius:10px;
+
+border:1px solid #cbd5e1;
+
+font-size:16px;
+
+margin-top:10px;
+
+}
 </style>
 
 
@@ -320,11 +349,28 @@ management and digital transformation.
 
 
 
+<div class="product-selector">
+
+<label>
+<b>Choose Product</b>
+</label>
+
+<select id="productSelect"
+onchange="showProduct()">
+
+<option value="">
+-- Select a product --
+</option>
+
+</select>
+
+</div>
+
 
 <div id="materials">
 
 <div class="loader">
-Loading products...
+Select a product to view details
 </div>
 
 </div>
@@ -376,6 +422,8 @@ SUPABASE_KEY
 
 
 
+let products=[];
+
 
 async function loadProducts(){
 
@@ -399,9 +447,73 @@ if(error){
 
 console.log(error);
 
-document.getElementById("materials").innerHTML=
+return;
 
-"<p>Unable to load products.</p>";
+}
+
+
+
+products=data;
+
+
+
+let dropdown=
+`
+<option value="">
+-- Select a product --
+</option>
+`;
+
+
+
+products.forEach((p,index)=>{
+
+
+dropdown += `
+
+<option value="${index}">
+
+${p.title}
+
+</option>
+
+`;
+
+});
+
+
+
+document.getElementById(
+"productSelect"
+).innerHTML=dropdown;
+
+
+}
+
+
+
+
+function showProduct(){
+
+
+const index =
+document.getElementById(
+"productSelect"
+).value;
+
+
+
+if(index===""){
+
+document.getElementById(
+"materials"
+).innerHTML=
+
+`
+<div class="loader">
+Select a product to view details
+</div>
+`;
 
 return;
 
@@ -410,11 +522,9 @@ return;
 
 
 
-let html="";
+const item =
+products[index];
 
-
-
-data.forEach(item=>{
 
 
 const type =
@@ -423,8 +533,8 @@ const type =
 
 
 
+let html = `
 
-html += `
 
 <div class="product">
 
@@ -439,119 +549,79 @@ ${item.description || ""}
 </p>
 
 
+`;
 
 
-${
-type.includes("image")
 
-?
 
-`
+
+if(type.includes("image")){
+
+
+html += `
 
 <img src="${item.file_url}">
 
-`
-
-:""
+`;
 
 }
 
 
 
 
-${
-type.includes("video")
+if(type.includes("video")){
 
-?
 
-`
+html += `
 
 <video controls>
 
-<source src="${item.file_url}" type="${item.file_type}">
+<source src="${item.file_url}" 
+type="${item.file_type}">
 
 </video>
 
-`
-
-:""
+`;
 
 }
 
 
 
 
-${
-type.includes("pdf")
+if(type.includes("pdf")){
 
-?
 
-`
+html += `
 
 <a href="${item.file_url}" target="_blank">
 
 <button>
-
-📄 View PDF
-
+📄 Open PDF
 </button>
 
 </a>
 
-`
-
-:""
+`;
 
 }
 
 
 
-
-${
-!type.includes("image")
-&&
-!type.includes("video")
-&&
-!type.includes("pdf")
-
-?
-
-`
-
-<a href="${item.file_url}" target="_blank">
-
-<button>
-
-📂 Open Document
-
-</button>
-
-</a>
-
-`
-
-:""
-
-}
-
-
+html += `
 
 </div>
-
 
 `;
 
 
-});
 
+document.getElementById(
+"materials"
+).innerHTML=html;
 
-
-document.getElementById("materials").innerHTML=html;
 
 
 }
-
-
 
 
 
