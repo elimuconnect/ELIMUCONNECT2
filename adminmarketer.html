@@ -195,6 +195,17 @@ src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js">
   #search {
     margin-bottom: 15px;
   }
+
+
+  select{
+padding:10px;
+width:100%;
+margin-bottom:10px;
+border-radius:10px;
+border:1px solid #e2e8f0;
+background:white;
+font-size:15px;
+}
 </style>
 
   
@@ -213,14 +224,68 @@ src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js">
 
   
 <div class="card">
-  <input id="title" placeholder="Title">
-  <input id="description" placeholder="Description">
-  <input type="file" id="file">
 
-  <button onclick="uploadMaterial()">Upload</button>
-  <p id="uploadStatus"></p>
+<input id="title" placeholder="Product / Material Title">
+
+<select id="category">
+
+<option value="">
+-- Select Category --
+</option>
+
+<option>
+CBC Assessment & Analytics
+</option>
+
+<option>
+Smart Academic Solutions
+</option>
+
+<option>
+Parent & Communication Solutions
+</option>
+
+<option>
+School Management Solutions
+</option>
+
+<option>
+STEM & Innovation Solutions
+</option>
+
+<option>
+Transport & Operations
+</option>
+
+<option>
+Tutor & Learning Marketplace
+</option>
+
+<option>
+Engagement & Growth
+</option>
+
+</select>
+
+
+<input 
+id="description" 
+placeholder="Short Description">
+
+
+<input 
+type="file" 
+id="file">
+
+
+<button onclick="uploadMaterial()">
+📤 Upload Material
+</button>
+
+
+<p id="uploadStatus"></p>
+
 </div>
-
 
 
 
@@ -817,6 +882,7 @@ function renderPayments() {
 async function uploadMaterial() {
 
   const title = document.getElementById("title").value;
+  const category = document.getElementById("category").value;
   const description = document.getElementById("description").value;
   const file = document.getElementById("file").files[0];
   const statusEl = document.getElementById("uploadStatus");
@@ -859,6 +925,7 @@ statusEl.innerHTML = '<span class="loader"></span> Uploading document...';
       .from("training_materials")
       .insert({
         title,
+         category,
         description,
         file_url,
         file_type: file.type
@@ -913,7 +980,14 @@ async function loadMaterials() {
       <div class="card">
 
         <h4>📘 ${m.title}</h4>
-        <p>${m.description || "No description"}</p>
+
+<p>
+<b>Category:</b> ${m.category || "Not set"}
+</p>
+
+<p>
+${m.description || "No description"}
+</p>
 
         <div style="display:flex; gap:10px; margin-top:10px;">
 
