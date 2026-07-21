@@ -13,7 +13,16 @@ href="https://unpkg.com/leaflet/dist/leaflet.css"
 src="https://unpkg.com/leaflet/dist/leaflet.js">
 </script>
 
+<link 
+rel="stylesheet" 
+href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"
+/>
 
+<script 
+src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js">
+</script>
+
+  
 <style>
   body {
     font-family: 'Segoe UI', sans-serif;
@@ -231,33 +240,69 @@ src="https://unpkg.com/leaflet/dist/leaflet.js">
   
 <div class="grid" id="stats"></div>
 
-<input id="search" placeholder="Search marketers..." oninput="renderMarketers()">
+
 
 <div id="detail"></div>
  <div id="marketerDocs"></div> 
 
-<div id="tables">
+
+
+ <div id="tables">
 
 
 <div class="card">
-  
-  <div id="marketers"></div>
+
+<button onclick="toggleSection('marketersBox')">
+👥 Marketers ▼
+</button>
+
+<div id="marketersBox" style="display:none; margin-top:15px;">
+
+<input 
+id="search" 
+placeholder="Search marketers..." 
+oninput="renderMarketers()">
+
+<div id="marketers"></div>
+
 </div>
+
+</div>
+
+
 
 <div class="card">
-  
-  <div id="schools"></div>
+
+<button onclick="toggleSection('schoolsBox')">
+🏫 Schools With Marketers ▼
+</button>
+
+<div id="schoolsBox" style="display:none; margin-top:15px;">
+
+<div id="schools"></div>
+
 </div>
+
+</div>
+
+
 
 <div class="card">
-  
-  <div id="payments"></div>
+
+<button onclick="toggleSection('paymentsBox')">
+💰 Payments ▼
+</button>
+
+<div id="paymentsBox" style="display:none; margin-top:15px;">
+
+<div id="payments"></div>
+
 </div>
 
-  
 </div>
 
 
+</div> 
 
 
 
@@ -265,19 +310,88 @@ src="https://unpkg.com/leaflet/dist/leaflet.js">
 <div id="schoolWebsites"></div>
 
 
+<h3>📍 School Visit Navigator</h3>
 
-<h3>📍 School Visit Locations</h3>
+<div class="card">
 
-<div id="visits"></div>
+<div style="display:grid;
+grid-template-columns:1fr 1fr;
+gap:15px;">
 
-<div
-id="map"
+<div>
+
+<label><b>Agent</b></label>
+
+<select id="agentSelect"
+style="width:100%;
+padding:10px;
+border-radius:8px;">
+</select>
+
+</div>
+
+<div>
+
+<label><b>School</b></label>
+
+<select id="schoolSelect"
+style="width:100%;
+padding:10px;
+border-radius:8px;">
+</select>
+
+</div>
+
+</div>
+
+<br>
+
+<div id="visitInfo"
 style="
-height:400px;
+padding:10px;
+background:#f8fafc;
+border-radius:8px;
+font-size:15px;
+">
+Choose an agent and school
+</div>
+
+<br>
+
+<div id="map"
+style="
+height:500px;
 border-radius:10px;
-margin-bottom:20px;
 ">
 </div>
+
+<br>
+
+<div id="routeInfo"
+style="
+background:white;
+padding:15px;
+border-radius:10px;
+line-height:1.8;
+">
+No route selected.
+</div>
+
+<br>
+
+<button id="navigateBtn"
+style="display:none;background:#16a34a;">
+🚗 Start Navigation
+</button>
+
+<button id="stopNavBtn"
+style="display:none;background:#ef4444;">
+⛔ Stop Navigation
+</button>
+</div>
+
+
+
 
 
 <h3>📚 Training Materials</h3>
@@ -1019,11 +1133,20 @@ async function deleteWebsite(id) {
 }
 
 
+let map;
+let schoolMarker;
+let adminMarker;
+let routingControl;
 
-async function loadVisits() {
+let visitData=[];
+let currentSchool=null;
 
-const { data, error } =
-await client
+let watchID=null;
+let currentPosition=null;
+
+async function loadVisits(){
+
+const {data,error}=await client
 .from("school_visits")
 .select(`
 latitude,
@@ -1031,127 +1154,719 @@ longitude,
 visited_at,
 
 schools(
+id,
 school_name
 ),
 
 marketers(
+id,
 name
 )
 `)
-.order(
-"visited_at",
-{
-ascending:false
-}
-);
+.order("visited_at",{ascending:false});
 
-if (error) {
+if(error){
 console.log(error);
 return;
 }
 
+visitData=data;
 
-// Create map
-const map =
-L.map("map")
-.setView([0,0],13);
+// create map once
+
+if(!map){
+
+map=L.map("map").setView([-1.267,36.821],7);
 
 L.tileLayer(
 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
 {
-attribution:
-'© OpenStreetMap contributors'
+attribution:'© OpenStreetMap'
 }
 ).addTo(map);
 
+}
 
-let html = "";
-let bounds = [];
+// AGENTS
+
+const agents=[
+...new Map(
+data.map(v=>[
+v.marketers.id,
+v.marketers
+])
+).values()
+];
+
+let html="<option value=''>Select Agent</option>";
+
+agents.forEach(a=>{
+
+html+=`
+<option value="${a.id}">
+${a.name}
+</option>
+`;
+
+});
+
+document.getElementById("agentSelect").innerHTML=html;
+
+document.getElementById("agentSelect").onchange=loadSchoolsDropdown;
+
+document.getElementById("schoolSelect").onchange=showSelectedSchool;
+
+}
 
 
-data.forEach(v => {
 
-html += `
+function loadSchoolsDropdown(){
 
-<div class="card">
+const id=
+document.getElementById(
+"agentSelect"
+).value;
 
+const schools=
+visitData.filter(v=>
+v.marketers.id===id
+);
+
+let html=
+"<option value=''>Select School</option>";
+
+schools.forEach((s,i)=>{
+
+html+=`
+
+<option value="${i}">
+
+${s.schools.school_name}
+
+</option>
+
+`;
+
+});
+
+document.getElementById(
+"schoolSelect"
+).innerHTML=html;
+
+}
+
+
+function showSelectedSchool(){
+
+const agent=
+document.getElementById(
+"agentSelect"
+).value;
+
+const index=
+document.getElementById(
+"schoolSelect"
+).value;
+
+
+const schools=
+visitData.filter(v=>
+v.marketers.id===agent
+);
+
+
+const school=
+schools[index];
+
+
+if(!school)return;
+
+
+currentSchool=school;
+
+
+// remove old marker
+
+if(schoolMarker){
+map.removeLayer(schoolMarker);
+}
+
+
+// add school marker
+
+schoolMarker=
+L.marker([
+school.latitude,
+school.longitude
+])
+.addTo(map)
+.bindPopup(
+"🏫 "+school.schools.school_name
+)
+.openPopup();
+
+
+
+map.setView(
+[
+school.latitude,
+school.longitude
+],
+15
+);
+
+
+
+document.getElementById(
+"visitInfo"
+).innerHTML=
+
+`
 <b>School:</b>
-${v.schools?.school_name || "Unknown"}
+${school.schools.school_name}
 
-<br><br>
+<br>
 
-<b>Marketer:</b>
-${v.marketers?.name || "Unknown"}
+<b>Agent:</b>
+${school.marketers.name}
 
-<br><br>
+<br>
 
-<b>Date:</b>
+<b>Visited:</b>
 ${new Date(
-v.visited_at
+school.visited_at
 ).toLocaleString()}
-
-</div>
 
 `;
 
 
+// start route
+
+getRoute(
+school.latitude,
+school.longitude
+);
+
+
+}
+
+
+ function getRoute(lat,lng){
+
+
+if(!navigator.geolocation){
+
+alert(
+"GPS not supported"
+);
+
+return;
+
+}
+
+
+navigator.geolocation.getCurrentPosition(
+
+(position)=>{
+
+
+const userLat=
+position.coords.latitude;
+
+const userLng=
+position.coords.longitude;
+
+
+
+// remove old GPS marker
+
+if(adminMarker){
+map.removeLayer(adminMarker);
+}
+
+
+// add admin location
+
+adminMarker=
 L.marker([
-v.latitude,
-v.longitude
-])
+userLat,
+userLng
+],
+{
+icon:L.icon({
 
+iconUrl:
+"https://cdn-icons-png.flaticon.com/512/64/64113.png",
+
+iconSize:[
+35,
+35
+]
+
+})
+})
 .addTo(map)
+.bindPopup(
+"📍 Your location"
+);
 
-.bindPopup(`
 
-<b>
-${v.schools?.school_name || "Unknown"}
-</b>
 
-<br>
+if(routingControl){
 
-Visited by:
+map.removeControl(
+routingControl
+);
 
-${v.marketers?.name || "Unknown"}
+}
+
+
+// create route
+
+
+routingControl=
+L.Routing.control({
+
+waypoints:[
+
+L.latLng(
+userLat,
+userLng
+),
+
+L.latLng(
+lat,
+lng
+)
+
+],
+
+
+routeWhileDragging:false,
+
+
+showAlternatives:true,
+
+show:true,
+
+collapsible:true,
+
+lineOptions:{
+styles:[
+{
+color:"#2563eb",
+weight:5
+}
+]
+}
+
+})
+
+
+.on(
+'routesfound',
+function(e){
+
+
+const route=
+e.routes[0];
+
+
+const distance=
+(
+route.summary.totalDistance/1000
+)
+.toFixed(2);
+
+
+const time =
+Math.round(
+(route.summary.totalTime / 60) * 1.2
+);
+
+
+document.getElementById(
+"routeInfo"
+).innerHTML=
+
+`
+
+<b>🚗 Route Found</b>
 
 <br><br>
 
-${new Date(
-v.visited_at
-).toLocaleString()}
+📏 Distance:
+${distance} km
 
-`);
+<br>
+
+⏱ Estimated Time:
+${time} minutes
 
 
-// save coordinates for zooming
-bounds.push([
-v.latitude,
-v.longitude
+`;
+
+
+document.getElementById(
+"navigateBtn"
+).style.display="inline-block";
+
+
+}
+
+)
+
+.addTo(map);
+
+
+
+},
+
+
+(error)=>{
+
+alert(
+"Please allow location access"
+);
+
+}
+
+
+);
+
+
+} 
+
+
+
+function startLiveTracking(){
+
+
+if(!currentSchool){
+
+alert(
+"Select school first"
+);
+
+return;
+
+}
+
+
+
+document.getElementById(
+"stopNavBtn"
+).style.display="inline-block";
+
+
+document.getElementById(
+"navigateBtn"
+).style.display="none";
+
+
+
+watchID=
+navigator.geolocation.watchPosition(
+
+
+(position)=>{
+
+
+const lat=
+position.coords.latitude;
+
+
+const lng=
+position.coords.longitude;
+
+
+currentPosition={
+lat,
+lng
+};
+
+
+
+// update moving marker
+
+if(adminMarker){
+
+adminMarker.setLatLng([
+lat,
+lng
 ]);
 
-});
-
-
-// auto zoom to exact visit locations
-if (bounds.length > 0) {
-
-map.fitBounds(
-bounds,
-{
-padding:[50,50]
 }
+
+else{
+
+
+adminMarker=
+L.marker([
+lat,
+lng
+])
+.addTo(map)
+.bindPopup(
+"🟢 Live Location"
+);
+
+
+}
+
+
+// update route
+
+updateRoute(
+lat,
+lng
+);
+
+
+
+},
+
+(error)=>{
+
+alert(
+"GPS tracking error"
+);
+
+},
+
+
+{
+enableHighAccuracy:true,
+maximumAge:0,
+timeout:10000
+}
+
+
+
+);
+
+
+
+}
+
+
+  
+function updateRoute(lat,lng){
+
+
+if(!currentSchool)
+return;
+
+
+
+if(routingControl){
+
+map.removeControl(
+routingControl
+);
+
+}
+
+
+
+routingControl=
+L.Routing.control({
+
+router: L.Routing.osrmv1({
+serviceUrl:
+'https://router.project-osrm.org/route/v1'
+}),
+
+waypoints:[
+
+L.latLng(
+lat,
+lng
+),
+
+
+L.latLng(
+currentSchool.latitude,
+currentSchool.longitude
+)
+
+
+],
+
+
+show:false,
+
+
+routeWhileDragging:false,
+
+
+lineOptions:{
+
+styles:[
+
+{
+color:"#16a34a",
+weight:6
+}
+
+]
+
+}
+
+
+})
+
+
+.on(
+'routesfound',
+function(e){
+
+
+const route=
+e.routes[0];
+
+
+
+const distance =
+(
+route.summary.totalDistance / 1000
+);
+
+
+const displayDistance =
+distance.toFixed(2);
+
+
+const minutes =
+Math.round(
+(route.summary.totalTime / 60) * 1.2
+);
+  
+
+if(distance < 0.05){
+
+document.getElementById(
+"routeInfo"
+).innerHTML =
+
+`
+<b>✅ Arrived</b>
+
+<br><br>
+
+You have reached the school location.
+
+`;
+
+return;
+
+}
+
+
+document.getElementById(
+"routeInfo"
+).innerHTML=
+
+`
+
+<b>🟢 Live Navigation</b>
+
+<br><br>
+
+📍 Distance remaining:
+${displayDistance} km
+
+<br>
+
+⏱ Time remaining:
+${minutes} minutes
+
+`;
+
+
+
+}
+
+)
+
+
+.addTo(map);
+
+
+}
+
+
+  function stopLiveTracking(){
+
+
+if(watchID){
+
+navigator.geolocation.clearWatch(
+watchID
+);
+
+}
+
+
+if(routingControl){
+
+map.removeControl(
+routingControl
 );
 
 }
 
 
 document.getElementById(
-"visits"
-).innerHTML =
-html;
+"stopNavBtn"
+).style.display="none";
+
+
+document.getElementById(
+"navigateBtn"
+).style.display="inline-block";
+
+
+document.getElementById(
+"routeInfo"
+).innerHTML=
+"Navigation stopped.";
+
 
 }
 
+  
+
+document.getElementById("navigateBtn")
+.onclick=function(){
+
+startLiveTracking();
+
+};
+
+
+document.getElementById("stopNavBtn")
+.onclick=function(){
+
+stopLiveTracking();
+
+};
+
+
+
+function toggleSection(id){
+
+const section=document.getElementById(id);
+
+if(section.style.display==="none"){
+section.style.display="block";
+}
+else{
+section.style.display="none";
+}
+
+}
+  
 /* ---------------- START ---------------- */
 init();
 </script>
