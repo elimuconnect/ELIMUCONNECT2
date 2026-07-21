@@ -1637,8 +1637,12 @@ routingControl
 routingControl=
 L.Routing.control({
 
-waypoints:[
+router: L.Routing.osrmv1({
+serviceUrl:
+'https://router.project-osrm.org/route/v1'
+}),
 
+waypoints:[
 
 L.latLng(
 lat,
