@@ -240,33 +240,69 @@ src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js">
   
 <div class="grid" id="stats"></div>
 
-<input id="search" placeholder="Search marketers..." oninput="renderMarketers()">
+
 
 <div id="detail"></div>
  <div id="marketerDocs"></div> 
 
-<div id="tables">
+
+
+ <div id="tables">
 
 
 <div class="card">
-  
-  <div id="marketers"></div>
+
+<button onclick="toggleSection('marketersBox')">
+👥 Marketers ▼
+</button>
+
+<div id="marketersBox" style="display:none; margin-top:15px;">
+
+<input 
+id="search" 
+placeholder="Search marketers..." 
+oninput="renderMarketers()">
+
+<div id="marketers"></div>
+
 </div>
+
+</div>
+
+
 
 <div class="card">
-  
-  <div id="schools"></div>
+
+<button onclick="toggleSection('schoolsBox')">
+🏫 Schools With Marketers ▼
+</button>
+
+<div id="schoolsBox" style="display:none; margin-top:15px;">
+
+<div id="schools"></div>
+
 </div>
+
+</div>
+
+
 
 <div class="card">
-  
-  <div id="payments"></div>
+
+<button onclick="toggleSection('paymentsBox')">
+💰 Payments ▼
+</button>
+
+<div id="paymentsBox" style="display:none; margin-top:15px;">
+
+<div id="payments"></div>
+
 </div>
 
-  
 </div>
 
 
+</div> 
 
 
 
@@ -1815,6 +1851,21 @@ document.getElementById("stopNavBtn")
 stopLiveTracking();
 
 };
+
+
+
+function toggleSection(id){
+
+const section=document.getElementById(id);
+
+if(section.style.display==="none"){
+section.style.display="block";
+}
+else{
+section.style.display="none";
+}
+
+}
   
 /* ---------------- START ---------------- */
 init();
