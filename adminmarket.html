@@ -1087,8 +1087,10 @@ async function deleteWebsite(id) {
 let map;
 let schoolMarker;
 let adminMarker;
+let routingControl;
 
 let visitData=[];
+let currentSchool=null;
 
 async function loadVisits(){
 
@@ -1202,7 +1204,6 @@ document.getElementById(
 }
 
 
-
 function showSelectedSchool(){
 
 const agent=
@@ -1215,41 +1216,54 @@ document.getElementById(
 "schoolSelect"
 ).value;
 
+
 const schools=
 visitData.filter(v=>
 v.marketers.id===agent
 );
 
+
 const school=
 schools[index];
 
+
 if(!school)return;
 
+
+currentSchool=school;
+
+
+// remove old marker
+
 if(schoolMarker){
-
-map.removeLayer(
-schoolMarker
-);
-
+map.removeLayer(schoolMarker);
 }
+
+
+// add school marker
 
 schoolMarker=
 L.marker([
 school.latitude,
 school.longitude
-]).addTo(map);
+])
+.addTo(map)
+.bindPopup(
+"🏫 "+school.schools.school_name
+)
+.openPopup();
 
-schoolMarker.bindPopup(
-school.schools.school_name
-).openPopup();
+
 
 map.setView(
 [
 school.latitude,
 school.longitude
 ],
-16
+15
 );
+
+
 
 document.getElementById(
 "visitInfo"
@@ -1267,15 +1281,207 @@ ${school.marketers.name}
 <br>
 
 <b>Visited:</b>
-
 ${new Date(
 school.visited_at
 ).toLocaleString()}
 
 `;
+
+
+// start route
+
+getRoute(
+school.latitude,
+school.longitude
+);
+
+
 }
 
 
+ function getRoute(lat,lng){
+
+
+if(!navigator.geolocation){
+
+alert(
+"GPS not supported"
+);
+
+return;
+
+}
+
+
+navigator.geolocation.getCurrentPosition(
+
+(position)=>{
+
+
+const userLat=
+position.coords.latitude;
+
+const userLng=
+position.coords.longitude;
+
+
+
+// remove old GPS marker
+
+if(adminMarker){
+map.removeLayer(adminMarker);
+}
+
+
+// add admin location
+
+adminMarker=
+L.marker([
+userLat,
+userLng
+],
+{
+icon:L.icon({
+
+iconUrl:
+"https://cdn-icons-png.flaticon.com/512/64/64113.png",
+
+iconSize:[
+35,
+35
+]
+
+})
+})
+.addTo(map)
+.bindPopup(
+"📍 Your location"
+);
+
+
+
+if(routingControl){
+
+map.removeControl(
+routingControl
+);
+
+}
+
+
+// create route
+
+
+routingControl=
+L.Routing.control({
+
+waypoints:[
+
+L.latLng(
+userLat,
+userLng
+),
+
+L.latLng(
+lat,
+lng
+)
+
+],
+
+
+routeWhileDragging:false,
+
+
+showAlternatives:true,
+
+
+lineOptions:{
+styles:[
+{
+color:"#2563eb",
+weight:5
+}
+]
+}
+
+})
+
+
+.on(
+'routesfound',
+function(e){
+
+
+const route=
+e.routes[0];
+
+
+const distance=
+(
+route.summary.totalDistance/1000
+)
+.toFixed(2);
+
+
+const time=
+Math.round(
+route.summary.totalTime/60
+);
+
+
+
+document.getElementById(
+"routeInfo"
+).innerHTML=
+
+`
+
+<b>🚗 Route Found</b>
+
+<br><br>
+
+📏 Distance:
+${distance} km
+
+<br>
+
+⏱ Estimated Time:
+${time} minutes
+
+
+`;
+
+
+document.getElementById(
+"navigateBtn"
+).style.display="inline-block";
+
+
+}
+
+)
+
+.addTo(map);
+
+
+
+},
+
+
+(error)=>{
+
+alert(
+"Please allow location access"
+);
+
+}
+
+
+);
+
+
+} 
 
 /* ---------------- START ---------------- */
 init();
