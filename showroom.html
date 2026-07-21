@@ -1,228 +1,352 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>SMART ELIMU CONNECT Products</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<title>SMART ELIMU CONNECT | Digital Learning Solutions</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-  body {
-    font-family: 'Segoe UI', sans-serif;
-    margin: 0;
-    background: #0f172a;
-    color: #1e293b;
-  }
 
-  /* ===== TOPBAR ===== */
-  .topbar {
-  background: linear-gradient(135deg, #2563eb, #4f46e5);
-  color: white;
-  padding: 15px 25px;
-  display: flex;
-  justify-content: center;   /* ✅ center content */
-  align-items: center;
-  position: relative;        /* ✅ allows absolute logout */
+
+<style>
+
+*{
+box-sizing:border-box;
 }
 
-.topbar h2 {
-  margin: 0;
-  font-weight: 600;
-  text-align: center;        /* ✅ ensure center */
+
+body{
+
+font-family:'Segoe UI',Arial,sans-serif;
+
+margin:0;
+
+background:#f8fafc;
+
+color:#1e293b;
+
 }
 
 
 
-.logout {
-  position: absolute;        /* ✅ move to right */
-  right: 20px;
-  
-  width: auto;               /* ✅ FIX BIG WIDTH */
-  padding: 6px 12px;         /* smaller */
-  
-  background: #ef4444;
-  border-radius: 8px;
-  font-weight: 500;
+/* HEADER */
+
+.hero{
+
+background:linear-gradient(135deg,#2563eb,#4f46e5);
+
+color:white;
+
+padding:40px 20px;
+
+text-align:center;
+
 }
 
-.logout:hover {
-  background: #dc2626;
-}
-    
 
-  /* ===== LAYOUT ===== */
-  .container {
-  padding: 15px;
-  width: 100%;
-  max-width: 1100px;
-  margin: auto;
-  box-sizing: border-box;
+.hero h1{
+
+margin:0;
+
+font-size:32px;
+
+font-weight:700;
+
 }
 
-  /* ===== CARDS ===== */
-  .card {
-  background: white;
-  border-radius: 16px;
-  padding: 18px;
-  margin-bottom: 15px;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
-  transition: 0.3s;
-  width: 100%;
-  box-sizing: border-box;
-  word-wrap: break-word;
+
+.hero p{
+
+margin-top:10px;
+
+font-size:18px;
+
+opacity:.9;
+
 }
 
-  .card:hover {
-    transform: translateY(-3px);
-  }
 
-  /* ===== INPUTS ===== */
-  input {
-    width: 100%;
-    padding: 10px;
-    border-radius: 8px;
-    border: 1px solid #ddd;
-    margin-bottom: 10px;
-    outline: none;
-    transition: 0.2s;
-  }
 
-  input:focus {
-    border-color: #4f46e5;
-    box-shadow: 0 0 0 2px rgba(79,70,229,0.2);
-  }
 
-  /* ===== BUTTONS ===== */
- button {
-  width: 100%;
-  max-width: 100%;
-  padding: 10px;
-  border-radius: 10px;
-  border: none;
-  background: linear-gradient(135deg, #2563eb, #4f46e5);
-  color: white;
-  font-weight: 600;
-  cursor: pointer;
+.container{
+
+max-width:1100px;
+
+margin:auto;
+
+padding:20px;
+
 }
 
-  button:hover {
-    opacity: 0.9;
-    transform: scale(1.02);
-  }
 
-  /* ===== GRID ===== */
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 12px;
+
+
+.intro{
+
+background:white;
+
+padding:25px;
+
+border-radius:16px;
+
+box-shadow:0 8px 25px rgba(0,0,0,.08);
+
+margin-bottom:25px;
+
+text-align:center;
+
 }
-  /* ===== BADGES ===== */
-  .status {
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: bold;
-  }
-
-  .paid {
-    background: #dcfce7;
-    color: #166534;
-  }
-
-  .not-paid {
-    background: #fee2e2;
-    color: #991b1b;
-  }
-
-  /* ===== MATERIAL SECTION ===== */
-  #materials .card {
-    border-left: 5px solid #4f46e5;
-  }
-
-  video {
-    border-radius: 10px;
-    margin-top: 10px;
-  }
 
 
-h3 {
+
+.intro h2{
+
 color:#3730a3;
-  border-left: 4px solid #4f46e5;
-  padding-left: 10px;
-  margin-bottom: 15px;
-}
 
+margin-top:0;
 
-html, body {
-  overflow-x: hidden;
 }
 
 
 
 
 
-@media (max-width: 768px) {
+/* PRODUCTS */
 
-  .topbar {
-    flex-direction: column;
-    text-align: center;
-  }
 
-  .logout {
-    position: static;
-    margin-top: 10px;
-    width: 100%;
-  }
+.product{
 
-  .container {
-    padding: 10px;
-  }
+background:white;
 
-  input, button {
-    font-size: 16px;
-  }
+border-radius:18px;
 
-  h2, h3 {
-    font-size: 18px;
-  }
+padding:20px;
 
-  .card {
-    padding: 12px;
-  }
+margin-bottom:25px;
+
+box-shadow:0 8px 25px rgba(0,0,0,.08);
+
+border-left:5px solid #4f46e5;
+
 }
-    
+
+
+
+.product h2{
+
+color:#2563eb;
+
+margin-top:0;
+
+}
+
+
+
+.product p{
+
+line-height:1.7;
+
+color:#475569;
+
+}
+
+
+
+
+img{
+
+width:100%;
+
+max-height:450px;
+
+object-fit:contain;
+
+border-radius:12px;
+
+margin-top:15px;
+
+}
+
+
+
+
+video{
+
+width:100%;
+
+border-radius:12px;
+
+margin-top:15px;
+
+}
+
+
+
+
+button{
+
+background:linear-gradient(135deg,#2563eb,#4f46e5);
+
+color:white;
+
+border:none;
+
+padding:12px 20px;
+
+border-radius:10px;
+
+cursor:pointer;
+
+font-weight:600;
+
+margin-top:15px;
+
+}
+
+
+
+button:hover{
+
+opacity:.9;
+
+}
+
+
+
+
+.footer{
+
+background:#0f172a;
+
+color:white;
+
+text-align:center;
+
+padding:25px;
+
+margin-top:40px;
+
+}
+
+
+
+
+.loader{
+
+text-align:center;
+
+padding:40px;
+
+font-size:18px;
+
+color:#64748b;
+
+}
+
+
+
+@media(max-width:600px){
+
+.hero h1{
+
+font-size:24px;
+
+}
+
+.hero p{
+
+font-size:15px;
+
+}
+
+.product{
+
+padding:15px;
+
+}
+
+}
+
+
+
 </style>
+
+
 </head>
 
 
 <body>
 
 
-<div class="topbar">
 
-<h2>
+<div class="hero">
+
+<h1>
 🚀 SMART ELIMU CONNECT
-</h2>
+</h1>
+
 
 <p>
-Digital Learning Solutions for Schools
+Smart ICT Solutions & Digital Learning Tools for Schools
 </p>
 
+
 </div>
+
+
 
 
 
 <div class="container">
 
 
-<div class="card">
+
+<div class="intro">
+
+
+<h2>
+🌟 Our Products & Demonstrations
+</h2>
+
+
+<p>
+Explore how SMART ELIMU CONNECT helps schools improve learning,
+management and digital transformation.
+</p>
+
+
+</div>
+
+
+
+
+<div id="materials">
+
+<div class="loader">
+Loading products...
+</div>
+
+</div>
+
+
+
+
+</div>
+
+
+
+
+<div class="footer">
+
 
 <h3>
-🌟 Our Products & How They Work
+SMART ELIMU CONNECT
 </h3>
 
 
 <p>
-Watch videos, view demonstrations and download product information.
+Empowering schools through technology and innovation.
 </p>
 
 
@@ -230,1168 +354,214 @@ Watch videos, view demonstrations and download product information.
 
 
 
-<div id="materials"></div>
 
-
-</div>
 <script>
-const SUPABASE_URL = "https://hhtplinfcdwgahlhurhx.supabase.co";
-const SUPABASE_KEY = "sb_publishable_cOXipkG4wSKIkIHwkP04JA_KunvG7T5";
-const PAID_KEY_BASE = "elimu_paid_ref";
 
 
- const term = "Term 1";
-const year = "2026";
-  
-// IMPORTANT: persistent auth client
-const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true
-  }
-});
+const SUPABASE_URL =
+"https://hhtplinfcdwgahlhurhx.supabase.co";
 
-let marketer = null;
 
-/* ---------------- INIT ---------------- */
+const SUPABASE_KEY =
+"sb_publishable_cOXipkG4wSKIkIHwkP04JA_KunvG7T5";
 
-async function init() {
 
-  const { data } = await client.auth.getSession();
-  const user = data?.session?.user;
 
-  if (!user) {
-    window.location.href = "login.html";
-    return;
-  }
-
-  const { data: marketerData, error } = await client
-    .from("marketers")
-    .select("*")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (error || !marketerData) {
-    alert("Marketer profile not found");
-    return;
-  }
-
-  marketer = marketerData;
-
-  // NOW safe to build key
-  const PAID_KEY = PAID_KEY_BASE + "_" + marketer.id;
-
-  // NOW safe to handle payment return
-  await handlePaymentReturn(PAID_KEY);
-
-  // status check
-  if (marketer.status !== "approved") {
-
-    let message = "";
-
-    if (marketer.status === "pending") message = "⏳ Awaiting approval";
-    if (marketer.status === "suspended") message = "⏸️ Suspended";
-    if (marketer.status === "blocked") message = "🚫 Blocked";
-
-    alert(message);
-
-    await client.auth.signOut();
-    window.location.href = "login.html";
-    return;
-  }
-
-  document.getElementById("code").innerText =
-    "Your Code: " + marketer.code;
-
-  loadSchools();
-  loadEarnings();
-   loadMaterials();
-  loadMyDocuments();
-  loadSchoolWebsites();
-loadLeaderboard();
-}
-
-const ref = new URLSearchParams(location.search).get("reference");
-
-
-  
-
-/* ---------------- ADD SCHOOL ---------------- */
-async function addSchool() {
-
-  if (!marketer) return;
-
-  const { error } = await client.from("schools").insert({
-    school_name: document.getElementById("school").value.trim(),
-    contact_person: document.getElementById("contact").value.trim(),
-    phone: document.getElementById("phone").value.trim(),
-    county: document.getElementById("county").value.trim(),
-    marketer_id: marketer.id, // IMPORTANT FIX (better than code)
- marketer_code:
-marketer.code,
-
-status:
-document.getElementById(
-"status"
-).value
-  });
-
-  if (error) {
-    alert(error.message);
-  } else {
-    alert("School added!");
-    loadSchools();
-  }
-}
-
-async function loadSchools() {
-
-  const { data: schoolsData } = await client
-    .from("schools")
-    .select("*")
-    .eq("marketer_id", marketer.id);
-
- 
-  const { data: commissions } = await client
-  .from("commissions")
-  .select("school_id, amount")
-  .eq("term", term)
-  .eq("year", year);
-   
-
-const { data: payments } = await client
-  .from("payments")
-  .select("school_id, reference")
-  .eq("term", term)
-  .eq("year", year);
-
-const { data: visits } =
-await client
-.from("school_visits")
-.select(
-"school_id, visited_at"
-)
-.eq(
-"marketer_id",
-marketer.id
-);
-  
-
-  // COMMISSION MAP
-  const commissionMap = {};
-  commissions?.forEach(c => {
-    commissionMap[c.school_id] =
-      (commissionMap[c.school_id] || 0) + Number(c.amount || 0);
-  });
-
-  // PAYMENT MAP
-  const paymentMap = {};
-  payments?.forEach(p => {
-    paymentMap[p.school_id] = p.reference;
-  });
-
-
-const visitMap = {};
-const lastVisitMap = {};
-
-visits?.forEach(v=>{
-
-visitMap[v.school_id] =
-(visitMap[v.school_id]||0)+1;
-
-lastVisitMap[
-v.school_id
-] =
-new Date(
-v.visited_at
-).toLocaleDateString();
-
-});
-  
-
- let html = "";
-
-schoolsData?.forEach(s => {
-
-const ref = paymentMap[s.id];
-
-const status =
-ref
-? "✅ PAID"
-: "❌ NOT PAID";
-
-const refText =
-ref
-? `Ref: ${ref}`
-: "";
-
-const schoolTotal =
-commissionMap[s.id] || 0;
-
-
-html += `
-
-<div class="card">
-
-<h3>${s.school_name}</h3>
-
-<span class="
-status
-${ref ? "paid":"not-paid"}
-">
-
-${status}
-
-</span>
-
-<p>${refText}</p>
-
-<p>
-<b>👤 Contact:</b>
-${s.contact_person}
-</p>
-
-<p>
-<b>📞 Phone:</b>
-${s.phone}
-</p>
-
-
-<p>
-
-<b>📍 Visits:</b>
-
-${visitMap[s.id] || 0}
-
-</p>
-
-<p>
-
-<b>🕒 Last Visit:</b>
-
-${lastVisitMap[s.id]
-|| "Never"}
-
-</p>
-
-<p>
-<b>Lead Status:</b>
-</p>
-
-<select
-onchange="
-updateStatus(
-'${s.id}',
-this.value
-)
-"
-
-style="
-width:100%;
-padding:8px;
-border-radius:8px;
-margin-bottom:10px;
-">
-
-<option
-${s.status==="Contacted"
-?"selected":""
-}>
-Contacted
-</option>
-
-<option
-${s.status==="Meeting Booked"
-?"selected":""
-}>
-Meeting Booked
-</option>
-
-<option
-${s.status==="Demo Done"
-?"selected":""
-}>
-Demo Done
-</option>
-
-<option
-${s.status==="Subscribed"
-?"selected":""
-}>
-Subscribed
-</option>
-
-<option
-${s.status==="Rejected"
-?"selected":""
-}>
-Rejected
-</option>
-
-</select>
-
-
-<p>
-
-<b>💰 Commission:</b>
-
-Ksh ${schoolTotal}
-
-</p>
-
-
-<button
-onclick="
-paySchool(
-'${s.id}'
-)
-">
-
-💳 Pay System Subscription
-
-</button>
-
-
-<button
-onclick="
-recordVisit(
-'${s.id}'
-)
-"
-
-style="
-margin-top:10px;
-background:#16a34a;
-">
-
-📍 Record School Visit
-
-</button>
-
-
-
-
-
-</div>
-
-`;
-
-});
-
-
-document.getElementById(
-"schools"
-).innerHTML = html;
-}
-
-
-
-
-
-
-
-async function updateStatus(
-schoolId,
-status
-){
-
-const {error}
-=
-await client
-.from("schools")
-.update({
-
-status
-
-})
-.eq(
-"id",
-schoolId
+const client =
+supabase.createClient(
+SUPABASE_URL,
+SUPABASE_KEY
 );
 
-if(error){
 
-alert(
-error.message
-);
 
-return;
 
-}
 
-loadSchools();
+async function loadProducts(){
 
-}
-
-
-
-
-
-async function recordVisit(
-schoolId
-){
-
-if(!navigator.geolocation){
-
-alert("GPS not supported");
-return;
-
-}
-
-navigator.geolocation.getCurrentPosition(
-
-async(position)=>{
-
-const lat =
-position.coords.latitude;
-
-const lng =
-position.coords.longitude;
-
-const accuracy =
-position.coords.accuracy;
-
-const {error}
-=
-await client
-.from("school_visits")
-.insert({
-
-school_id:
-schoolId,
-
-marketer_id:
-marketer.id,
-
-latitude:
-lat,
-
-longitude:
-lng,
-
-accuracy:
-accuracy,
-
-visited_at:
-new Date()
-.toISOString()
-
-});
-
-if(error){
-
-alert(error.message);
-return;
-
-}
-
-alert("✅ Visit Recorded");
-
-loadSchools();   // IMPORTANT
-
-},
-
-()=>{
-
-alert(
-"Allow location access"
-);
-
-},
-
-{
-enableHighAccuracy:true,
-timeout:10000
-}
-
-);
-
-}
-
-
-  
-async function loadEarnings() {
-
-
-const { data } = await client
-  .from("commissions")
-  .select("amount")
-  .eq("marketer_id", marketer.id)
-  .eq("term", term)
-  .eq("year", year);
-
-  
-  let total = 0;
-
-  if (data) {
-    data.forEach(c => {
-      total += Number(c.amount || 0);
-    });
-  }
-
-  document.getElementById("earnings").innerText =
-    "Earnings: Ksh " + total;
-}
-/* ---------------- LOGOUT ---------------- */
-async function logout() {
-  await client.auth.signOut();
-  window.location.href = "login.html";
-}
-
-function paySchool(schoolId) {
-
-  const pending = {
-    school_id: schoolId,
-    amount: 8000
-  };
-
-  localStorage.setItem("pending_payment", JSON.stringify(pending));
-
-  console.log("NEW PAYMENT:", pending);
-
-  window.location.href = "https://paystack.shop/pay/dqt-e-uc8j";
-}
-
-
-
-
-  async function handlePaymentReturn(PAID_KEY) {
-
-  const ref = new URLSearchParams(location.search).get("reference");
-  if (!ref) return;
-
-  const savedRef = localStorage.getItem(PAID_KEY);
-  if (savedRef === ref) return;
-
-  const pendingRaw = localStorage.getItem("pending_payment");
-
-  if (!pendingRaw) {
-    console.log("No pending payment found");
-    return;
-  }
-
-  let pending;
-
-  try {
-    pending = JSON.parse(pendingRaw);
-  } catch (e) {
-    console.log("Corrupt pending data");
-    localStorage.removeItem("pending_payment");
-    return;
-  }
-
-  const amount = Number(pending.amount);
-
-  if (!Number.isFinite(amount) || amount <= 0) {
-    console.log("Invalid amount:", pending);
-    localStorage.removeItem("pending_payment");
-    return;
-  }
-
-  // 1. CHECK DUPLICATE PAYMENT
-  const { data: existing } = await client
-    .from("payments")
-    .select("id")
-    .eq("school_id", pending.school_id)
-    .eq("term", term)
-    .eq("year", year)
-    .maybeSingle();
-
-  if (existing) {
-    alert("Already paid for this term!");
-    localStorage.removeItem("pending_payment");
-    return;
-  }
-
-  // 2. INSERT PAYMENT
-  const { data: payment, error: paymentError } = await client
-    .from("payments")
-    .insert({
-      school_id: pending.school_id,
-      amount: pending.amount,
-      reference: ref,
-      term,
-      year,
-      paid_at: new Date().toISOString()
-    })
-    .select()
-    .single();
-
-  if (paymentError) {
-    console.log("PAYMENT ERROR:", paymentError);
-    return;
-  }
-
-  // 3. GET MARKETER FROM SCHOOL
-  const { data: school } = await client
-    .from("schools")
-    .select("marketer_id")
-    .eq("id", pending.school_id)
-    .single();
-
-  const marketer_id = school?.marketer_id;
-
-  // 4. INSERT COMMISSION
-  const { error: commissionError } = await client
-    .from("commissions")
-    .insert({
-      school_id: pending.school_id,
-      marketer_id,
-      amount: pending.amount * 0.5,
-      term,
-    year
-    });
-
-  if (commissionError) {
-    console.log("COMMISSION ERROR:", commissionError);
-    return;
-  }
-
-  // 5. SAVE REF (ONLY AFTER EVERYTHING SUCCESSFUL)
-  localStorage.setItem(PAID_KEY, ref);
-
-  // 6. CLEAN LOCAL STORAGE
-  localStorage.removeItem("pending_payment");
-
-  // 7. CLEAN URL (ONLY NOW SAFE)
- window.history.replaceState(null, "", window.location.pathname);
-
-  // 8. REFRESH UI
-  await loadSchools();
-  await loadEarnings();
-
-  alert("Payment successful!");
-}
-
-async function loadMaterials() {
-
-  const { data, error } = await client
-    .from("training_materials")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.log(error);
-    return;
-  }
-
-  let html = "";
-
-  data.forEach(m => {
-
-    const type = (m.file_type || "").toLowerCase();
-
-    html += `
-      <div class="card">
-
-        <h4>📘 ${m.title}</h4>
-        <p>${m.description || "No description provided"}</p>
-
-        <!-- FILE TYPE BADGE -->
-        <div style="margin-bottom:10px;">
-          <span style="
-            background:#e0e7ff;
-            color:#3730a3;
-            padding:4px 10px;
-            border-radius:20px;
-            font-size:12px;
-            font-weight:bold;
-          ">
-            ${type.includes("pdf") ? "PDF Document" :
-              type.includes("video") ? "Video Training" :
-              type.includes("image") ? "Image File" :
-              "File"}
-          </span>
-        </div>
-
-        <!-- IMAGE PREVIEW -->
-        ${type.includes("image") ? `
-          <img 
-            src="${m.file_url}"
-            style="
-              max-width:100%;
-              max-height:250px;
-              object-fit:cover;
-              border-radius:10px;
-              margin-bottom:10px;
-            "
-          >
-
-          <a href="${m.file_url}" target="_blank" style="
-            color:#2563eb;
-            display:block;
-            margin-bottom:8px;
-          ">
-            🖼️ Open Image
-          </a>
-
-          <button onclick="downloadFile('${m.file_url}', '${m.title}')">
-            ⬇️ Download Image
-          </button>
-        ` : ""}
-
-        <!-- PDF -->
-        ${type.includes("pdf") ? `
-          <a href="${m.file_url}" target="_blank" style="
-            color:#2563eb;
-            display:block;
-            margin-bottom:8px;
-          ">
-            📄 Open PDF
-          </a>
-
-          <button onclick="downloadFile('${m.file_url}', '${m.title}.pdf')">
-            ⬇️ Download PDF
-          </button>
-        ` : ""}
-
-        <!-- VIDEO -->
-        ${type.includes("video") ? `
-          <video controls width="100%" style="margin-bottom:10px;">
-            <source src="${m.file_url}" type="${m.file_type}">
-          </video>
-
-          <a href="${m.file_url}" target="_blank" style="
-            color:#2563eb;
-            display:block;
-            margin-bottom:8px;
-          ">
-            🎥 Watch / Open Video
-          </a>
-
-          <button onclick="downloadFile('${m.file_url}', '${m.title}.mp4')">
-            ⬇️ Download Video
-          </button>
-        ` : ""}
-
-        <!-- OTHER FILES -->
-        ${!type.includes("pdf") &&
-          !type.includes("video") &&
-          !type.includes("image") ? `
-          <button onclick="downloadFile('${m.file_url}', '${m.title}')">
-            📁 Download File
-          </button>
-        ` : ""}
-
-      </div>
-    `;
-  });
-
-  document.getElementById("materials").innerHTML = html;
-}
-
-
-async function downloadFile(fileUrl, filename) {
-
-  try {
-
-    // get storage path
-    const path = fileUrl.split("/training-files/")[1];
-
-    const { data, error } = await client.storage
-      .from("training-files")
-      .download(path);
-
-    if (error) {
-      console.log(error);
-      alert("Download failed");
-      return;
-    }
-
-    // IMPORTANT:
-    // data is ALREADY a Blob
-    const url = window.URL.createObjectURL(data);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename || "file";
-
-    document.body.appendChild(a);
-    a.click();
-
-    a.remove();
-
-    window.URL.revokeObjectURL(url);
-
-  } catch (err) {
-    console.log(err);
-    alert("Download error");
-  }
-}
-
-
-
-async function uploadDocument() {
-
-  if (!marketer) return;
-
-  const title =
-    document.getElementById("docTitle").value.trim();
-
-  const type =
-    document.getElementById("docType").value;
-
-  const file =
-    document.getElementById("docFile").files[0];
-
-  const statusEl =
-    document.getElementById("docStatus");
-
-  if (!file) {
-    alert("Select file first");
-    return;
-  }
-
-  // ALLOWED FILE TYPES
-  const allowed = [
-    "image/png",
-    "image/jpeg",
-    "image/jpg",
-    "image/pjpeg",
-    "application/pdf",
-    "application/msword",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-  ];
-
-  // fallback using extension
-  const ext =
-    file.name.split(".").pop().toLowerCase();
-
-  const allowedExt =
-    ["png","jpg","jpeg","pdf","doc","docx"];
-
-  if (
-    !allowed.includes(file.type)
-    &&
-    !allowedExt.includes(ext)
-  ) {
-
-    alert(
-      "Only PNG, JPG, JPEG, PDF, DOC and DOCX allowed"
-    );
-
-    return;
-  }
-
-  const requiredDocs = [
-    "National ID",
-    "KCSE Certificate",
-    "Leaving Certificate"
-  ];
-
-  statusEl.innerHTML =
-    "Uploading...";
-
-  statusEl.style.color =
-    "#2563eb";
-
-  try {
-
-    const safeName =
-      file.name.replace(/\s/g,"_");
-
-    const filePath =
-      `marketer-documents/${marketer.id}_${Date.now()}_${safeName}`;
-
-    const { error: uploadError } =
-      await client.storage
-      .from("training-files")
-      .upload(
-        filePath,
-        file,
-        {
-          upsert:false,
-          contentType:
-            file.type ||
-            (
-              ext==="jpg" ||
-              ext==="jpeg"
-            )
-            ? "image/jpeg"
-            : "image/png"
-        }
-      );
-
-    if(uploadError)
-      throw uploadError;
-
-    const { data:urlData } =
-      client.storage
-      .from("training-files")
-      .getPublicUrl(filePath);
-
-    const file_url =
-      urlData.publicUrl;
-
-    const { error: dbError } =
-      await client
-      .from("marketer_documents")
-      .insert({
-
-        marketer_id:
-          marketer.id,
-
-        title:
-          title || type,
-
-        document_type:
-          type,
-
-        file_url,
-
-        file_type:
-          file.type || ext,
-
-        is_required:
-          requiredDocs.includes(type)
-
-      });
-
-    if(dbError)
-      throw dbError;
-
-    statusEl.innerHTML =
-      "✅ Upload successful";
-
-    statusEl.style.color =
-      "#16a34a";
-
-    document.getElementById(
-      "docTitle"
-    ).value="";
-
-    document.getElementById(
-      "docFile"
-    ).value="";
-
-    loadMyDocuments();
-
-  }
-  catch(err){
-
-    console.log(err);
-
-    statusEl.innerHTML =
-      "❌ Upload failed";
-
-    statusEl.style.color =
-      "#dc2626";
-
-  }
-
-}
-
-
-/* ===========================
-   LOAD MY DOCUMENTS
-=========================== */
-
-async function loadMyDocuments() {
-
-  const { data, error } = await client
-    .from("marketer_documents")
-    .select("*")
-    .eq("marketer_id", marketer.id)
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.log(error);
-    return;
-  }
-
-  let html = "";
-
-  data.forEach(doc => {
-
-    html += `
-      <div class="card">
-
-        <h4>${doc.title}</h4>
-
-        <p>
-          <b>Type:</b> ${doc.document_type}
-        </p>
-
-        <a href="${doc.file_url}" 
-           target="_blank"
-           style="color:#2563eb;">
-          📂 Open Document
-        </a>
-
-        <br><br>
-
-        <button 
-          onclick="deleteDocument('${doc.id}', '${doc.file_url}')"
-          style="
-            background:#ef4444;
-            width:auto;
-            padding:8px 14px;
-          ">
-          🗑 Delete
-        </button>
-
-      </div>
-    `;
-  });
-
-  document.getElementById("myDocuments").innerHTML = html;
-}
-
-
-
-/* ===========================
-   DELETE DOCUMENT
-=========================== */
-
-async function deleteDocument(id, fileUrl) {
-
-  const confirmDelete = confirm(
-    "Delete this document?"
-  );
-
-  if (!confirmDelete) return;
-
-  try {
-
-    // STORAGE PATH
-    const path =
-      fileUrl.split("/training-files/")[1];
-
-    // DELETE FROM STORAGE
-    await client.storage
-      .from("training-files")
-      .remove([path]);
-
-    // DELETE FROM DATABASE
-    const { error } = await client
-      .from("marketer_documents")
-      .delete()
-      .eq("id", id)
-      .eq("marketer_id", marketer.id);
-
-    if (error) throw error;
-
-    alert("✅ Document deleted");
-
-    loadMyDocuments();
-
-  } catch (err) {
-
-    console.log(err);
-
-    alert("❌ Delete failed");
-  }
-}
-
-
-async function loadSchoolWebsites() {
-
-  const { data, error } = await client
-    .from("school_websites")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.log(error);
-    return;
-  }
-
-  let html = "";
-
-  data.forEach(site => {
-
-    html += `
-      <div class="card">
-
-        <h4>🏫 ${site.school_name}</h4>
-
-        <p>
-          ${site.description || "School website developed by ELIMU CONNECT"}
-        </p>
-
-        <a 
-          href="${site.website_url}" 
-          target="_blank"
-          style="text-decoration:none;"
-        >
-          <button>
-            🌍 View Website
-          </button>
-        </a>
-
-      </div>
-    `;
-  });
-
-  document.getElementById("schoolWebsites").innerHTML = html;
-}
-  
-
-
-async function loadLeaderboard(){
 
 const {data,error}=await client
-.from("commissions")
-.select(`
-amount,
-marketers (
-name
-)
-`);
 
-if(error) return;
+.from("training_materials")
 
-const totals={};
+.select("*")
 
-data.forEach(c=>{
+.order(
+"created_at",
+{
+ascending:false
+}
+);
 
-const name =
-c.marketers?.name || "Unknown";
 
-totals[name] =
-(totals[name]||0)
-+ Number(c.amount);
 
-});
+if(error){
 
-let sorted=
-Object.entries(totals)
-.sort((a,b)=>b[1]-a[1]);
+console.log(error);
+
+document.getElementById("materials").innerHTML=
+
+"<p>Unable to load products.</p>";
+
+return;
+
+}
+
+
+
 
 let html="";
 
-sorted.slice(0,5)
-.forEach((m,i)=>{
+
+
+data.forEach(item=>{
+
+
+const type =
+(item.file_type || "")
+.toLowerCase();
+
+
+
 
 html += `
+
+<div class="product">
+
+
+<h2>
+📘 ${item.title}
+</h2>
+
+
 <p>
-
-${i+1}.
-${m[0]}
-
-—
-
-Ksh ${m[1]}
-
+${item.description || ""}
 </p>
-`;
 
-});
 
-document.getElementById(
-"leaderboard"
-).innerHTML=html;
+
+
+${
+type.includes("image")
+
+?
+
+`
+
+<img src="${item.file_url}">
+
+`
+
+:""
 
 }
 
 
 
-window.onload = async function () {
-  await init();              // loads marketer FIRST
-  
-};
+
+${
+type.includes("video")
+
+?
+
+`
+
+<video controls>
+
+<source src="${item.file_url}" type="${item.file_type}">
+
+</video>
+
+`
+
+:""
+
+}
+
+
+
+
+${
+type.includes("pdf")
+
+?
+
+`
+
+<a href="${item.file_url}" target="_blank">
+
+<button>
+
+📄 View PDF
+
+</button>
+
+</a>
+
+`
+
+:""
+
+}
+
+
+
+
+${
+!type.includes("image")
+&&
+!type.includes("video")
+&&
+!type.includes("pdf")
+
+?
+
+`
+
+<a href="${item.file_url}" target="_blank">
+
+<button>
+
+📂 Open Document
+
+</button>
+
+</a>
+
+`
+
+:""
+
+}
+
+
+
+</div>
+
+
+`;
+
+
+});
+
+
+
+document.getElementById("materials").innerHTML=html;
+
+
+}
+
+
+
+
+
+loadProducts();
+
 
 </script>
+
+
+
 </body>
+
 </html>
