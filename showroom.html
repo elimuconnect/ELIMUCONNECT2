@@ -180,17 +180,19 @@ display:block;
 
 width:100%;
 
-max-width:750px;
+max-width:650px;
 
 height:auto;
 
-aspect-ratio:16/9;
+max-height:365px;
 
-object-fit:cover;
+object-fit:contain;
 
-margin:20px auto 0;
+margin:20px auto;
 
 border-radius:16px;
+
+background:#000;
 
 box-shadow:0 5px 20px rgba(0,0,0,.15);
 
@@ -393,17 +395,30 @@ management and digital transformation.
 <div class="product-selector">
 
 <label>
-<b>Choose Product</b>
+<b>📂 Choose Product Category</b>
 </label>
 
-<select id="productSelect"
-onchange="showProduct()">
+<select id="categorySelect" onchange="loadCategoryProducts()">
 
 <option value="">
--- Select a product --
+-- Select Category --
 </option>
 
 </select>
+
+
+<label style="display:block;margin-top:20px;">
+<b>🚀 Choose Product Demonstration</b>
+</label>
+
+<select id="productSelect" onchange="showProduct()">
+
+<option value="">
+-- Select Product --
+</option>
+
+</select>
+
 
 </div>
 
@@ -440,18 +455,13 @@ Empowering schools through technology and innovation.
 </div>
 
 
-
-
-<script>
-
-
+<script> 
 const SUPABASE_URL =
 "https://hhtplinfcdwgahlhurhx.supabase.co";
 
 
 const SUPABASE_KEY =
 "sb_publishable_cOXipkG4wSKIkIHwkP04JA_KunvG7T5";
-
 
 
 const client =
@@ -461,9 +471,8 @@ SUPABASE_KEY
 );
 
 
-
-
 let products=[];
+
 
 
 async function loadProducts(){
@@ -487,7 +496,6 @@ ascending:false
 if(error){
 
 console.log(error);
-
 return;
 
 }
@@ -498,24 +506,97 @@ products=data;
 
 
 
-let dropdown=
-`
+loadCategories();
+
+}
+
+
+
+
+function loadCategories(){
+
+
+const categories = 
+[
+...new Set(
+products.map(
+p=>p.category
+).filter(Boolean)
+)
+];
+
+
+
+let html=`
+
 <option value="">
--- Select a product --
+-- Select Category --
 </option>
+
 `;
 
 
 
-products.forEach((p,index)=>{
+categories.forEach(c=>{
 
 
-dropdown += `
+html+=`
 
-<option value="${index}">
+<option value="${c}">
+${c}
+</option>
 
+`;
+
+});
+
+
+
+document.getElementById(
+"categorySelect"
+).innerHTML=html;
+
+
+}
+
+
+
+
+
+
+function loadCategoryProducts(){
+
+
+const category =
+document.getElementById(
+"categorySelect"
+).value;
+
+
+
+let dropdown=`
+
+<option value="">
+-- Select Product --
+</option>
+
+`;
+
+
+
+products
+
+.filter(
+p=>p.category===category
+)
+
+.forEach((p)=>{
+
+
+dropdown+=`
+
+<option value="${p.id}">
 ${p.title}
-
 </option>
 
 `;
@@ -529,7 +610,27 @@ document.getElementById(
 ).innerHTML=dropdown;
 
 
+
+document.getElementById(
+"materials"
+).innerHTML=
+
+`
+
+<div class="loader">
+
+Select a product to view details
+
+</div>
+
+`;
+
+
+
 }
+
+
+
 
 
 
@@ -537,24 +638,15 @@ document.getElementById(
 function showProduct(){
 
 
-const index =
+
+const id =
 document.getElementById(
 "productSelect"
 ).value;
 
 
 
-if(index===""){
-
-document.getElementById(
-"materials"
-).innerHTML=
-
-`
-<div class="loader">
-Select a product to view details
-</div>
-`;
+if(!id){
 
 return;
 
@@ -562,9 +654,10 @@ return;
 
 
 
-
 const item =
-products[index];
+products.find(
+p=>p.id==id
+);
 
 
 
@@ -586,7 +679,7 @@ let html = `
 
 
 <p>
-${item.description || ""}
+${item.description || "No description available"}
 </p>
 
 
@@ -599,7 +692,7 @@ ${item.description || ""}
 if(type.includes("image")){
 
 
-html += `
+html+=`
 
 <img src="${item.file_url}">
 
@@ -613,14 +706,19 @@ html += `
 if(type.includes("video")){
 
 
-html += `
+html+=`
 
-<video controls>
+<div class="video-container">
 
-<source src="${item.file_url}" 
+<video controls preload="metadata">
+
+<source 
+src="${item.file_url}"
 type="${item.file_type}">
 
 </video>
+
+</div>
 
 `;
 
@@ -629,15 +727,18 @@ type="${item.file_type}">
 
 
 
+
 if(type.includes("pdf")){
 
 
-html += `
+html+=`
 
 <a href="${item.file_url}" target="_blank">
 
 <button>
-📄 Open PDF
+
+📄 View Product Document
+
 </button>
 
 </a>
@@ -648,7 +749,9 @@ html += `
 
 
 
-html += `
+
+
+html+=`
 
 </div>
 
@@ -665,13 +768,8 @@ document.getElementById(
 }
 
 
-
 loadProducts();
-
-
-</script>
-
-
+</script> 
 
 </body>
 
