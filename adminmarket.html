@@ -339,6 +339,10 @@ style="display:none;background:#16a34a;">
 🚗 Start Navigation
 </button>
 
+<button id="stopNavBtn"
+style="display:none;background:#ef4444;">
+⛔ Stop Navigation
+</button>
 </div>
 
 
@@ -1092,6 +1096,9 @@ let routingControl;
 let visitData=[];
 let currentSchool=null;
 
+let watchID=null;
+let currentPosition=null;
+
 async function loadVisits(){
 
 const {data,error}=await client
@@ -1483,6 +1490,296 @@ alert(
 
 } 
 
+
+
+function startLiveTracking(){
+
+
+if(!currentSchool){
+
+alert(
+"Select school first"
+);
+
+return;
+
+}
+
+
+
+document.getElementById(
+"stopNavBtn"
+).style.display="inline-block";
+
+
+document.getElementById(
+"navigateBtn"
+).style.display="none";
+
+
+
+watchID=
+navigator.geolocation.watchPosition(
+
+
+(position)=>{
+
+
+const lat=
+position.coords.latitude;
+
+
+const lng=
+position.coords.longitude;
+
+
+currentPosition={
+lat,
+lng
+};
+
+
+
+// update moving marker
+
+if(adminMarker){
+
+adminMarker.setLatLng([
+lat,
+lng
+]);
+
+}
+
+else{
+
+
+adminMarker=
+L.marker([
+lat,
+lng
+])
+.addTo(map)
+.bindPopup(
+"🟢 Live Location"
+);
+
+
+}
+
+
+// update route
+
+updateRoute(
+lat,
+lng
+);
+
+
+
+},
+
+(error)=>{
+
+alert(
+"GPS tracking error"
+);
+
+},
+
+
+{
+enableHighAccuracy:true,
+maximumAge:0,
+timeout:10000
+}
+
+
+
+);
+
+
+
+}
+
+
+  
+function updateRoute(lat,lng){
+
+
+if(!currentSchool)
+return;
+
+
+
+if(routingControl){
+
+map.removeControl(
+routingControl
+);
+
+}
+
+
+
+routingControl=
+L.Routing.control({
+
+waypoints:[
+
+
+L.latLng(
+lat,
+lng
+),
+
+
+L.latLng(
+currentSchool.latitude,
+currentSchool.longitude
+)
+
+
+],
+
+
+show:false,
+
+
+routeWhileDragging:false,
+
+
+lineOptions:{
+
+styles:[
+
+{
+color:"#16a34a",
+weight:6
+}
+
+]
+
+}
+
+
+})
+
+
+.on(
+'routesfound',
+function(e){
+
+
+const route=
+e.routes[0];
+
+
+const distance=
+(
+route.summary.totalDistance/1000
+)
+.toFixed(2);
+
+
+
+const minutes=
+Math.round(
+route.summary.totalTime/60
+);
+
+
+
+document.getElementById(
+"routeInfo"
+).innerHTML=
+
+`
+
+<b>🟢 Live Navigation</b>
+
+<br><br>
+
+📍 Distance remaining:
+${distance} km
+
+<br>
+
+⏱ Time remaining:
+${minutes} minutes
+
+
+`;
+
+
+
+}
+
+)
+
+
+.addTo(map);
+
+
+}
+
+
+  function stopLiveTracking(){
+
+
+if(watchID){
+
+navigator.geolocation.clearWatch(
+watchID
+);
+
+}
+
+
+if(routingControl){
+
+map.removeControl(
+routingControl
+);
+
+}
+
+
+document.getElementById(
+"stopNavBtn"
+).style.display="none";
+
+
+document.getElementById(
+"navigateBtn"
+).style.display="inline-block";
+
+
+document.getElementById(
+"routeInfo"
+).innerHTML=
+"Navigation stopped.";
+
+
+}
+
+  
+
+document.getElementById("navigateBtn")
+.onclick=function(){
+
+startLiveTracking();
+
+};
+
+
+document.getElementById("stopNavBtn")
+.onclick=function(){
+
+stopLiveTracking();
+
+};
+  
 /* ---------------- START ---------------- */
 init();
 </script>
