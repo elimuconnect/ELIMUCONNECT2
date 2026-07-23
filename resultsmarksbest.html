@@ -1191,38 +1191,29 @@ break-inside:avoid;
 overflow:hidden;
 ">
 
+
+
 ${logo ? `
 
+<!-- School Logo -->
 <div style="
 flex-shrink:0;
-
-page-break-inside:avoid;
-break-inside:avoid;
-
-padding-top:2px;
+width:70px;
+text-align:center;
 ">
 
 <img
 src="${logo}"
-
 style="
 width:70px;
 height:70px;
-
 object-fit:contain;
-
 display:block;
-
 margin:auto;
-
-page-break-inside:avoid;
-break-inside:avoid;
-"
-
-onerror="
-this.style.display='none';
 "
 />
+
+
 
 </div>
 
@@ -1311,12 +1302,38 @@ ${year}
 
 </div>
 
+<!-- QR Code -->
+<div style="
+flex-shrink:0;
+width:70px;
+text-align:center;
+">
+
+<img
+src="https://res.cloudinary.com/dwvt4e9o2/image/upload/v1784785959/qr-code_to_parent_8_lfyluq.png"
+style="
+width:70px;
+height:70px;
+object-fit:contain;
+display:block;
+margin:auto;
+"
+/>
+
+<div style="
+font-size:9px;
+margin-top:2px;
+">
+Scan Me
+</div>
+
+</div>
+
 </div>
 
 `;
 
 }
-
 
 
 function calculateTermIntelligence(records, previousRecords, previousTerm) {
