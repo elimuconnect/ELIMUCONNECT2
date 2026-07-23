@@ -192,32 +192,12 @@ button { background: #2563eb; color: white; border: none; cursor: pointer; font-
 .class-table th:nth-child(4) { width: 15%; }  /* Score */
 .class-table th:nth-child(5) { width: 25%; }  /* Performance Level */
 
-/* Mobile stacking for controls */
-@media screen and (max-width: 768px) {
-  .controls div {
-    display: flex;
-    flex-direction: column;  /* stack items vertically */
-    gap: 10px;               /* space between items */
-  }
-
-  select, button {
-    width: 100%;             /* full width */
-    max-width: 100%;         /* ignore previous 250px limit */
-    font-size: 18px;         /* larger text */
-    padding: 14px;           /* easier to tap */
-  }
-
-  .controls h3 {
-    font-size: 22px;         /* heading larger */
-    text-align: center;      /* centered heading */
-  }
-}
 </style>
 
 </head>
 <body>
 <div class="controls">
-  <h3>School Report System</h3>
+  <h3>School Class Lists</h3>
   <div style="display: flex; gap: 10px; flex-wrap: wrap;">
     <select id="termSelect"></select>
     <select id="classSelect"></select>
