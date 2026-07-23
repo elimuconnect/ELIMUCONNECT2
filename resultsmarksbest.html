@@ -1162,6 +1162,7 @@ strandData?.forEach(row => {
 });
  
 
+
 function renderOverviewHeader({
   school, poBox, postal, town,
   phone, email,
@@ -1173,14 +1174,12 @@ return `
 
 <div class="report-overview"
 style="
-display:flex;
+display:grid;
+grid-template-columns:70px 1fr 70px;
 align-items:center;
-justify-content:space-between;
-flex-wrap:nowrap;
-gap:12px;
+column-gap:12px;
 
 border-bottom:2px solid #333;
-
 padding:10px 0 8px 0;
 margin-bottom:10px;
 
@@ -1190,11 +1189,7 @@ break-inside:avoid;
 
 ${logo ? `
 <!-- School Logo -->
-<div style="
-flex:0 0 70px;
-width:70px;
-text-align:center;
-">
+<div style="text-align:center;">
 
 <img
 src="${logo}"
@@ -1204,18 +1199,15 @@ height:70px;
 object-fit:contain;
 display:block;
 margin:auto;
-"
-/>
+"/>
 
 </div>
-` : ""}
+` : `<div></div>`}
 
 <!-- Centre -->
-<div style="
-flex:1;
-min-width:0;
+<div
+style="
 text-align:center;
-
 page-break-inside:avoid;
 break-inside:avoid;
 ">
@@ -1229,7 +1221,8 @@ font-weight:bold;
 ${school}
 </h2>
 
-<div style="
+<div
+style="
 font-size:11px;
 margin-top:3px;
 line-height:1.4;
@@ -1247,7 +1240,8 @@ ${email ? ` | <strong>Email:</strong> ${email}` : ""}
 
 </div>
 
-<div style="
+<div
+style="
 margin-top:8px;
 display:inline-block;
 padding:5px 12px;
@@ -1266,11 +1260,7 @@ TERM: ${term} - ${year}
 </div>
 
 <!-- QR Code -->
-<div style="
-flex:0 0 70px;
-width:70px;
-text-align:center;
-">
+<div style="text-align:center;">
 
 <img
 src="https://res.cloudinary.com/dwvt4e9o2/image/upload/v1784785959/qr-code_to_parent_8_lfyluq.png"
@@ -1280,8 +1270,7 @@ height:70px;
 object-fit:contain;
 display:block;
 margin:auto;
-"
-/>
+"/>
 
 <div style="
 font-size:9px;
@@ -1298,7 +1287,7 @@ Scan Me
 `;
 
 }
-
+	
 function calculateTermIntelligence(records, previousRecords, previousTerm) {
 
   if (!previousTerm || !previousRecords?.length) {
