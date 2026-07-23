@@ -18,6 +18,19 @@ const reportDiv = document.getElementById("report");
 
 let results = [];
 
+
+
+const {
+  data: { session }
+} = await supabase.auth.getSession();
+
+if (!session) {
+  alert("Please login first.");
+  window.location.href = "indexbest.html";
+  throw new Error("Not logged in");
+}
+  
+
 async function loadTerms() {
   const { data, error } = await supabase.from("terms").select("id, name").order("name");
   if (error) return;
