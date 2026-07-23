@@ -16,19 +16,51 @@ const termSelect = document.getElementById("termSelect");
 const classSelect = document.getElementById("classSelect");
 const reportDiv = document.getElementById("report");
 
+
 let results = [];
 
+// =========================
+// CHECK LOGIN
+// =========================
+const { data: { user } } = await supabase.auth.getUser();
+
+if (!user) {
+  alert("Please login first.");
+  window.location.href = "indexbest.html";
+  throw new Error("Not logged in");
+}
+
+// Get profile
+const { data: profile, error: profileError } = await supabase
+  .from("profiles")
+  .select("school_id, role")
+  .eq("auth_id", user.id)
+  .single();
+
+if (profileError || !profile) {
+  alert("Profile not found.");
+  window.location.href = "indexbest.html";
+  throw new Error("Profile not found");
+}
 
 
 
 async function loadTerms() {
-  const { data, error } = await supabase.from("terms").select("id, name").order("name");
+ const { data, error } = await supabase
+  .from("terms")
+  .select("id, name")
+  .eq("school_id", profile.school_id)
+  .order("name");
   if (error) return;
   termSelect.innerHTML = `<option value="">Select Term</option>` + data.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
 }
 
 async function loadClasses() {
-  const { data, error } = await supabase.from("classes").select("id, name").order("name");
+ const { data, error } = await supabase
+  .from("classes")
+  .select("id, name")
+  .eq("school_id", profile.school_id)
+  .order("name");
   if (error) return;
   classSelect.innerHTML = `<option value="">Select Class</option>` + data.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
 }
@@ -116,6 +148,9 @@ window.downloadPDF = function() {
 
 await loadTerms();
 await loadClasses();
+
+console.log("Logged in as:", user.email);
+console.log("School:", profile.school_id);
   
 termSelect.addEventListener("change", window.loadStudents);
 classSelect.addEventListener("change", window.loadStudents);
