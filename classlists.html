@@ -20,15 +20,34 @@ let results = [];
 
 
 
+
 const {
   data: { session }
 } = await supabase.auth.getSession();
 
 if (!session) {
-  alert("Please login first.");
   window.location.href = "indexbest.html";
   throw new Error("Not logged in");
 }
+
+const { data: profile, error: profileError } = await supabase
+  .from("profiles")
+  .select("role, school_id")
+  .eq("auth_id", session.user.id)
+  .single();
+
+if (profileError || !profile) {
+  await supabase.auth.signOut();
+  window.location.href = "indexbest.html";
+  throw new Error("Profile not found");
+}
+
+if (!["admin", "teacher"].includes(profile.role)) {
+  alert("Access denied.");
+  window.location.href = "indexbest.html";
+  throw new Error("Unauthorized");
+}
+  
   
 
 async function loadTerms() {
@@ -124,8 +143,9 @@ window.downloadPDF = function() {
   html2pdf().from(element).set(opt).save();
 }
 
-loadTerms();
-loadClasses();
+await loadTerms();
+await loadClasses();
+  
 termSelect.addEventListener("change", window.loadStudents);
 classSelect.addEventListener("change", window.loadStudents);
 </script>
