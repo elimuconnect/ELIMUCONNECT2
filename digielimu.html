@@ -33,13 +33,31 @@ body{margin:0;font-family:Arial,sans-serif;background:#062b4d;color:#fff}
     background:#1565c0;
 }
 .login{background:#1976d2;color:#fff;padding:20px 40px;border-radius:10px;text-decoration:none;font-weight:bold;font-size:28px}
-.wrap{
-    display:grid;
-    grid-template-columns:280px 1fr 280px;
-    gap:16px;
-    padding:16px;
-    align-items:start;
+
+
+@media (max-width:768px){
+
+    .wrap{
+        display:flex;
+        flex-direction:column;
+    }
+
+    /* Teacher tools first */
+    .side:first-of-type{
+        order:1;
+    }
+
+    /* Learning resources second */
+    .center{
+        order:2;
+    }
+
+    /* Administration last */
+    .side:last-of-type{
+        order:3;
+    }
 }
+    
 .side{padding:16px}
 .center{background:#fff;color:#123;border-radius:8px;padding:30px;text-align:center}
 
