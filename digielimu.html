@@ -37,25 +37,13 @@ body{margin:0;font-family:Arial,sans-serif;background:#062b4d;color:#fff}
 
 @media (max-width:768px){
 
-    .wrap{
-        display:flex;
-        flex-direction:column;
-    }
 
-    /* Teacher tools first */
-    .side:first-of-type{
-        order:1;
-    }
-
-    /* Learning resources second */
-    .center{
-        order:2;
-    }
-
-    /* Administration last */
-    .side:last-of-type{
-        order:3;
-    }
+.wrap{
+    display:grid;
+    grid-template-columns:280px 1fr 280px;
+    gap:16px;
+    padding:16px;
+    align-items:start;
 }
     
 .side{padding:16px}
@@ -292,6 +280,81 @@ body{margin:0;font-family:Arial,sans-serif;background:#062b4d;color:#fff}
         line-height:1.6;
     }
 
+
+
+.wrap{
+    display:flex;
+    flex-direction:column;
+    gap:15px;
+}
+
+/* Put the centre first */
+.center{
+    order:2;
+}
+
+.side:first-of-type{
+    order:1;
+}
+
+.side:last-of-type{
+    order:3;
+}
+
+/* Two-column grid for all small cards */
+.side{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:10px;
+    padding:0;
+}
+
+/* Large first card */
+.side:first-of-type .card:nth-child(3){
+    grid-column:1/-1;
+    min-height:90px;
+    font-size:18px;
+    font-weight:700;
+}
+
+/* Compact remaining cards */
+.card{
+    margin:0;
+    min-height:75px;
+    padding:12px 8px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+}
+
+/* 👇 ADD THIS RIGHT HERE */
+    .side:first-of-type .card:first-child{
+        grid-column:1 / -1;
+        min-height:100px;
+        font-size:18px;
+        font-weight:700;
+        border-radius:18px;
+    }
+
+
+    
+/* Learning features */
+.features{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:10px;
+}
+
+.row2{
+    display:contents;
+}
+
+/* Demo spans full width */
+.demo{
+    grid-column:1/-1;
+}
+    
     .side{
         grid-template-columns:repeat(3,1fr);
         gap:8px;
@@ -304,6 +367,10 @@ body{margin:0;font-family:Arial,sans-serif;background:#062b4d;color:#fff}
         border-radius:14px;
     }
 
+
+
+
+    
     .features{
         grid-template-columns:repeat(3,1fr);
         gap:8px;
@@ -353,14 +420,15 @@ body{margin:0;font-family:Arial,sans-serif;background:#062b4d;color:#fff}
 </div>
 
 <div class="wrap">
-<div class="side">
-<a class="card" href="#">ICT Tools</a>
-<a class="card" href="#">ICT Tools<br>(Extra Teachers)</a>
-<a class="card" href="#">Assess Learners</a>
-<a class="card " href="#">Teacher Reports<br>(4 Levels)</a>
-<a class="card" href="#">Parent Reports<br>(4 Levels)</a>
-</div>
 
+<div class="side">
+    <a class="card" href="#">Assess Learners</a>
+    <a class="card" href="#">Teacher Reports (4 Levels)</a>
+    <a class="card" href="#">Class Lists</a>
+    <a class="card" href="#">Parent Reports (4 Levels)</a>
+    <a class="card" href="#">ICT Tools</a>
+    <a class="card" href="#">ICT Tools (Extra Teachers)</a>
+</div>
 
 
 <div class="center">
