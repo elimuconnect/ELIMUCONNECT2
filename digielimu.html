@@ -33,19 +33,7 @@ body{margin:0;font-family:Arial,sans-serif;background:#062b4d;color:#fff}
     background:#1565c0;
 }
 .login{background:#1976d2;color:#fff;padding:20px 40px;border-radius:10px;text-decoration:none;font-weight:bold;font-size:28px}
-
-
-@media (max-width:768px){
-
-
-.wrap{
-    display:grid;
-    grid-template-columns:280px 1fr 280px;
-    gap:16px;
-    padding:16px;
-    align-items:start;
-}
-    
+.wrap{display:grid;grid-template-columns:300px 1fr 300px;gap:16px;padding:0}
 .side{padding:16px}
 .center{background:#fff;color:#123;border-radius:8px;padding:30px;text-align:center}
 
@@ -184,178 +172,6 @@ body{margin:0;font-family:Arial,sans-serif;background:#062b4d;color:#fff}
 
 .row2{grid-column:1/4;display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .demo{grid-column:1/4}
-/* ===========================
-   Responsive Design
-=========================== */
-
-@media (max-width:1200px){
-
-    .wrap{
-        grid-template-columns:250px 1fr 250px;
-    }
-
-}
-/* ===========================
-   Tablets
-=========================== */
-
-@media (max-width:900px){
-
-    .wrap{
-        grid-template-columns:1fr;
-        padding:10px;
-    }
-
-    .center{
-        order:1;
-        padding:20px;
-    }
-
-    .side{
-        order:2;
-        display:grid;
-        grid-template-columns:repeat(3,1fr);
-        gap:10px;
-        padding:10px;
-    }
-
-    .card{
-        margin:0;
-        min-height:80px;
-        padding:14px 8px;
-        display:flex;
-        justify-content:center;
-        align-items:center;
-        text-align:center;
-        font-size:14px;
-        line-height:1.3;
-    }
-
-    .features{
-        grid-template-columns:repeat(3,1fr);
-        gap:10px;
-    }
-
-    .features a{
-        padding:16px 8px;
-        font-size:14px;
-    }
-
-    .features i{
-        font-size:24px;
-        margin-bottom:8px;
-    }
-
-    .row2{
-        display:contents;
-    }
-
-    .demo{
-        grid-column:1 / -1;
-    }
-
-    .login{
-        font-size:18px;
-        padding:12px 18px;
-    }
-
-    .header-logo{
-        width:55px;
-        height:55px;
-    }
-
-}
-
-
-/* ===========================
-   Phones
-=========================== */
-
-
-@media (max-width:600px){
-
-    .wrap{
-        display:flex;
-        flex-direction:column;
-        gap:15px;
-        padding:12px;
-    }
-
-    /* Order sections */
-    .side:first-of-type{ order:1; }
-    .center{ order:2; }
-    .side:last-of-type{ order:3; }
-
-    /* Typography */
-    h1{font-size:28px !important;}
-    h2{font-size:18px !important;}
-
-    /* Teacher cards */
-    .side{
-        display:grid;
-        grid-template-columns:repeat(2,1fr);
-        gap:10px;
-        padding:0;
-    }
-
-    .card{
-        margin:0;
-        min-height:75px;
-        padding:12px 8px;
-        font-size:13px;
-        display:flex;
-        justify-content:center;
-        align-items:center;
-        text-align:center;
-        border-radius:16px;
-    }
-
-    /* Make ONLY Assess Learners (3rd card) large */
-    .side:first-of-type .card:nth-child(3){
-        grid-column:1 / -1;
-        min-height:100px;
-        font-size:18px;
-        font-weight:bold;
-    }
-
-    /* Learning features */
-    .features{
-        display:grid;
-        grid-template-columns:repeat(2,1fr);
-        gap:10px;
-    }
-
-    .features a{
-        padding:14px 8px;
-        font-size:13px;
-        border-radius:16px;
-    }
-
-    .features i{
-        font-size:22px;
-        margin-bottom:6px;
-    }
-
-    .row2{
-        display:contents;
-    }
-
-    .demo{
-        grid-column:1 / -1;
-    }
-
-    /* Header */
-    .login{
-        padding:10px 16px;
-        font-size:16px;
-    }
-
-    .header-logo{
-        width:45px;
-        height:45px;
-    }
-}
-    
 </style></head>
 <body>
 
@@ -370,15 +186,14 @@ body{margin:0;font-family:Arial,sans-serif;background:#062b4d;color:#fff}
 </div>
 
 <div class="wrap">
-
 <div class="side">
-    <a class="card" href="#">Assess Learners</a>
-    <a class="card" href="#">Teacher Reports (4 Levels)</a>
-    <a class="card" href="#">Class Lists</a>
-    <a class="card" href="#">Parent Reports (4 Levels)</a>
-    <a class="card" href="#">ICT Tools</a>
-    <a class="card" href="#">ICT Tools (Extra Teachers)</a>
+<a class="card" href="#">ICT Tools</a>
+<a class="card" href="#">ICT Tools<br>(Extra Teachers)</a>
+<a class="card" href="#">Assess Learners</a>
+<a class="card " href="#">Teacher Reports<br>(4 Levels)</a>
+<a class="card" href="#">Parent Reports<br>(4 Levels)</a>
 </div>
+
 
 
 <div class="center">
@@ -395,6 +210,22 @@ body{margin:0;font-family:Arial,sans-serif;background:#062b4d;color:#fff}
         Smart Digital Learning & School Management Platform
     </h2>
 
+    <p style="
+        max-width:850px;
+        margin:auto;
+        line-height:1.8;
+        font-size:20px;
+        color:#555;
+        margin-bottom:35px;
+    ">
+        DigiElimu is an all-in-one digital education platform designed for
+        schools, teachers, parents and learners. It combines CBC reporting,
+        ICT integration, digital learning resources, online assessments,
+        school administration, learner analytics and communication tools into
+        one easy-to-use platform. Our mission is to help schools embrace
+        technology, improve learner performance and simplify day-to-day school
+        management.
+    </p>
 
     <div class="features">
 
