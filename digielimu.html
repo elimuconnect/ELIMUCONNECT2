@@ -208,6 +208,252 @@ body{margin:0;font-family:Arial,sans-serif;background:#062b4d;color:#fff}
 
 }
 
+
+
+/* =========================================================
+   SHOW/HIDE LAYOUTS
+========================================================= */
+
+.desktop-layout{
+    display:block;
+}
+
+.tablet-layout,
+.phone-layout{
+    display:none;
+}
+
+/* =========================================================
+   TABLETS (601px - 1024px)
+========================================================= */
+
+@media (max-width:1024px){
+
+.desktop-layout{
+    display:none;
+}
+
+.tablet-layout{
+    display:block;
+    background:#eef4ff;
+    min-height:100vh;
+}
+
+.tablet-content{
+    padding:25px;
+}
+
+.tablet-content h1{
+    color:#0b2b5c;
+    text-align:center;
+    font-size:40px;
+    margin-bottom:8px;
+}
+
+.tablet-content p{
+    color:#555;
+    text-align:center;
+    font-size:18px;
+    margin-bottom:25px;
+}
+
+.tablet-content h2{
+    color:#0b2b5c;
+    margin:30px 0 15px;
+}
+
+.tablet-main{
+    margin-bottom:25px;
+}
+
+.tablet-feature.big{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+    text-decoration:none;
+    background:linear-gradient(135deg,#1565c0,#0d47a1);
+    color:white;
+    border-radius:20px;
+    min-height:150px;
+    font-size:26px;
+    font-weight:bold;
+    box-shadow:0 10px 25px rgba(0,0,0,.18);
+}
+
+.tablet-feature.big i{
+    font-size:42px;
+    margin-bottom:15px;
+}
+
+.tablet-grid,
+.tablet-grid2{
+
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:15px;
+
+}
+
+.tablet-grid a,
+.tablet-grid2 a{
+
+    background:white;
+    color:#0b2b5c;
+    text-decoration:none;
+    border-radius:18px;
+    min-height:110px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+    text-align:center;
+    font-weight:600;
+    box-shadow:0 5px 15px rgba(0,0,0,.12);
+
+}
+
+.tablet-grid i,
+.tablet-grid2 i{
+
+    font-size:30px;
+    margin-bottom:10px;
+    color:#1565c0;
+
+}
+
+}
+
+/* =========================================================
+   PHONES (0-600px)
+========================================================= */
+
+@media (max-width:600px){
+
+.tablet-layout{
+    display:none;
+}
+
+.phone-layout{
+
+    display:block;
+    background:#f6f8fc;
+    min-height:100vh;
+
+}
+
+.phone-content{
+
+    padding:18px;
+
+}
+
+.phone-content h1{
+
+    color:#0b2b5c;
+    text-align:center;
+    font-size:30px;
+    margin-bottom:5px;
+
+}
+
+.phone-content p{
+
+    color:#666;
+    text-align:center;
+    margin-bottom:20px;
+
+}
+
+.phone-main{
+
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    background:linear-gradient(135deg,#1565c0,#0d47a1);
+    color:white;
+    text-decoration:none;
+    min-height:120px;
+    border-radius:18px;
+    font-size:22px;
+    font-weight:bold;
+    margin-bottom:25px;
+    box-shadow:0 10px 20px rgba(0,0,0,.18);
+
+}
+
+.phone-main i{
+
+    font-size:38px;
+    margin-bottom:10px;
+
+}
+
+.phone-grid{
+
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:12px;
+
+}
+
+.phone-grid a{
+
+    background:white;
+    color:#0b2b5c;
+    text-decoration:none;
+    border-radius:16px;
+    min-height:90px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+    font-size:14px;
+    font-weight:600;
+    box-shadow:0 5px 12px rgba(0,0,0,.10);
+
+}
+
+.phone-grid a i{
+
+    font-size:24px;
+    margin-bottom:8px;
+    color:#1565c0;
+
+}
+
+.phone-grid a:hover,
+.phone-main:hover{
+
+    transform:translateY(-3px);
+
+}
+
+.phone-layout .header{
+
+    height:70px;
+
+}
+
+.phone-layout .header-logo{
+
+    width:50px;
+    height:50px;
+
+}
+
+.phone-layout .login{
+
+    font-size:16px;
+    padding:10px 16px;
+
+}
+
+}
+
+    
 </style></head>
 <body>
 
@@ -368,40 +614,77 @@ body{margin:0;font-family:Arial,sans-serif;background:#062b4d;color:#fff}
 </div>
 
 
-<div class="phone-layout">
+<div class="phone-grid">
 
-    <div class="header">
+<a href="#">
+<i class="fa-solid fa-chart-line"></i>
+Teacher Reports
+</a>
 
-        <img src="https://res.cloudinary.com/dwvt4e9o2/image/upload/v1785422312/COMPANY_LOGO_quq8qo.png"
-             class="header-logo">
+<a href="#">
+<i class="fa-solid fa-users"></i>
+Class Lists
+</a>
 
-        <a class="login" href="#">
-            <i class="fa fa-user"></i>
-        </a>
+<a href="#">
+<i class="fa-solid fa-user-group"></i>
+Parent Reports
+</a>
 
-    </div>
+<a href="#">
+<i class="fa-solid fa-laptop"></i>
+ICT Tools
+</a>
 
-    <div class="phone-content">
+<a href="#">
+<i class="fa-solid fa-chalkboard-user"></i>
+Extra ICT
+</a>
 
-        <h1>DigiElimu</h1>
+<a href="#">
+<i class="fa-solid fa-chart-column"></i>
+Teacher Reports 8
+</a>
 
-        <p>Smart Digital Learning Platform</p>
+<a href="#">
+<i class="fa-solid fa-people-roof"></i>
+Parent Reports 8
+</a>
 
-        <a class="phone-main" href="#">
+<a href="#">
+<i class="fa-solid fa-book-open-reader"></i>
+Schemes & Plans
+</a>
 
-            <i class="fa-solid fa-user-check"></i>
+<a href="#">
+<i class="fa-solid fa-book"></i>
+Library
+</a>
 
-            <span>Assess Learners</span>
+<a href="#">
+<i class="fa-solid fa-book-open"></i>
+Homework
+</a>
 
-        </a>
+<a href="#">
+<i class="fa-solid fa-bus"></i>
+Bus Tracking
+</a>
 
-        <div class="phone-grid">
+<a href="#">
+<i class="fa-solid fa-circle-play"></i>
+Videos
+</a>
 
-            <!-- Cards later -->
+<a href="#">
+<i class="fa-solid fa-circle-question"></i>
+Quizzes
+</a>
 
-        </div>
-
-    </div>
+<a href="#">
+<i class="fa-solid fa-video"></i>
+Demo
+</a>
 
 </div>
     
