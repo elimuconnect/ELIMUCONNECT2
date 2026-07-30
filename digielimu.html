@@ -223,6 +223,9 @@ body{margin:0;font-family:Arial,sans-serif;background:#062b4d;color:#fff}
     display:none;
 }
 
+
+
+
 /* =========================================================
    TABLETS (601px - 1024px)
 ========================================================= */
@@ -239,90 +242,224 @@ body{margin:0;font-family:Arial,sans-serif;background:#062b4d;color:#fff}
     min-height:100vh;
 }
 
+
+/* Header */
+
+.tablet-layout .header{
+    height:80px;
+    padding:0 20px;
+    background:#0b2b5c;
+}
+
+.tablet-layout .header-logo{
+    width:65px;
+    height:65px;
+}
+
+.tablet-layout .login{
+    font-size:18px;
+    padding:12px 22px;
+}
+
+
+/* Content */
+
 .tablet-content{
     padding:25px;
 }
 
+
+/* Title Card */
+
 .tablet-content h1{
+
+    background:#fff;
     color:#0b2b5c;
+
     text-align:center;
     font-size:40px;
+
+    padding:15px;
+    border-radius:18px;
+
+    box-shadow:0 5px 15px rgba(0,0,0,.08);
+
     margin-bottom:8px;
+
 }
+
 
 .tablet-content p{
-    color:#555;
+
+    background:white;
+
+    padding:12px;
+
+    border-radius:12px;
+
+    color:#344054;
+
     text-align:center;
+
     font-size:18px;
+
+    box-shadow:0 4px 12px rgba(0,0,0,.06);
+
     margin-bottom:25px;
+
 }
 
+
+
+/* Section Titles */
+
 .tablet-content h2{
+
+    background:white;
+
     color:#0b2b5c;
+
+    padding:12px 18px;
+
+    border-left:6px solid #1976d2;
+
+    border-radius:0 15px 15px 0;
+
+    font-size:22px;
+
     margin:30px 0 15px;
+
 }
+
+
+
+/* Main Card */
 
 .tablet-main{
     margin-bottom:25px;
 }
 
+
 .tablet-feature.big{
+
     display:flex;
     justify-content:center;
     align-items:center;
+
     flex-direction:column;
+
     text-decoration:none;
+
     background:linear-gradient(135deg,#1565c0,#0d47a1);
+
     color:white;
-    border-radius:20px;
+
+    border-radius:22px;
+
     min-height:150px;
+
     font-size:26px;
+
     font-weight:bold;
+
     box-shadow:0 10px 25px rgba(0,0,0,.18);
+
 }
 
+
 .tablet-feature.big i{
+
     font-size:42px;
+
     margin-bottom:15px;
+
 }
+
+
+
+/* Grids */
 
 .tablet-grid,
 .tablet-grid2{
 
     display:grid;
+
     grid-template-columns:repeat(3,1fr);
+
     gap:15px;
 
 }
+
+
+
+/* Cards */
 
 .tablet-grid a,
 .tablet-grid2 a{
 
     background:white;
+
     color:#0b2b5c;
+
     text-decoration:none;
-    border-radius:18px;
+
     min-height:110px;
+
     display:flex;
+
     justify-content:center;
+
     align-items:center;
+
     flex-direction:column;
+
     text-align:center;
+
     font-weight:600;
+
     box-shadow:0 5px 15px rgba(0,0,0,.12);
 
+    transition:.3s;
+
 }
+
+
+/* Rectangle Cards */
+
+.tablet-grid a,
+.tablet-grid2 a{
+
+    border-radius:12px;
+
+}
+
+
+.tablet-grid a:hover,
+.tablet-grid2 a:hover{
+
+    transform:translateY(-4px);
+
+}
+
+
+
+/* Icons */
 
 .tablet-grid i,
 .tablet-grid2 i{
 
     font-size:30px;
+
     margin-bottom:10px;
+
     color:#1565c0;
 
 }
 
+
 }
+
+    
 /* =========================================================
    PHONES (0-600px)
 ========================================================= */
@@ -614,55 +751,203 @@ body{margin:0;font-family:Arial,sans-serif;background:#062b4d;color:#fff}
 
 
     
+
 <div class="tablet-layout">
 
-    <!-- Tablet Header -->
-    <div class="header">
+<div class="header">
 
-        <img src="https://res.cloudinary.com/dwvt4e9o2/image/upload/v1785422312/COMPANY_LOGO_quq8qo.png"
-             class="header-logo">
+<img src="https://res.cloudinary.com/dwvt4e9o2/image/upload/v1785422312/COMPANY_LOGO_quq8qo.png"
+class="header-logo">
 
-        <a class="login" href="#">
-            <i class="fa fa-user"></i> LOGIN
-        </a>
-
-    </div>
-
-    <div class="tablet-content">
-
-        <h1>DigiElimu</h1>
-
-        <p>Smart Digital Learning & School Management Platform</p>
-
-        <div class="tablet-main">
-
-            <a href="#" class="tablet-feature big">
-                <i class="fa-solid fa-user-check"></i><br>
-                Assess Learners
-            </a>
-
-        </div>
-
-        <h2>Teacher Tools</h2>
-
-        <div class="tablet-grid">
-
-            <!-- We'll add the cards later -->
-
-        </div>
-
-        <h2>Learning</h2>
-
-        <div class="tablet-grid2">
-
-            <!-- Learning cards -->
-
-        </div>
-
-    </div>
+<a class="login" href="#">
+<i class="fa fa-user"></i> LOGIN
+</a>
 
 </div>
 
+
+<div class="tablet-content">
+
+    
+<div class="header">
+
+    <img src="https://res.cloudinary.com/dwvt4e9o2/image/upload/v1785422312/COMPANY_LOGO_quq8qo.png" class="header-logo" alt="DigiElimu Logo">
+
+    <a class="login" href="#">
+        <i class="fa fa-user"></i> LOGIN
+    </a>
+
+</div>
+
+
+
+
+    
+<div class="tablet-title">
+
+<h1>DigiElimu</h1>
+
+<p>
+Smart Digital Learning & School Management Platform
+</p>
+
+</div>
+
+
+
+<!-- MAIN -->
+
+<a href="#" class="tablet-feature big">
+
+<i class="fa-solid fa-user-check"></i>
+
+<span>Assess Learners</span>
+
+</a>
+
+
+
+
+<!-- REPORTS -->
+
+<h2>
+<i class="fa-solid fa-chart-line"></i>
+Reports
+</h2>
+
+
+<div class="tablet-grid">
+
+
+<a href="#">
+<i class="fa-solid fa-user-tie"></i>
+Teacher Reports<br>(4 Levels)
+</a>
+
+
+<a href="#">
+<i class="fa-solid fa-users"></i>
+Parent Reports<br>(4 Levels)
+</a>
+
+
+<a href="#">
+<i class="fa-solid fa-chart-column"></i>
+Teacher Reports<br>(8 Levels)
+</a>
+
+
+<a href="#">
+<i class="fa-solid fa-people-group"></i>
+Parent Reports<br>(8 Levels)
+</a>
+
+
+
+</div>
+
+
+
+
+
+<!-- SCHOOL MANAGEMENT -->
+
+<h2>
+<i class="fa-solid fa-school"></i>
+School Management
+</h2>
+
+
+<div class="tablet-grid">
+
+
+<a href="#">
+<i class="fa-solid fa-laptop"></i>
+ICT Tools
+</a>
+
+
+<a href="#">
+<i class="fa-solid fa-chalkboard-user"></i>
+ICT Tools<br>(Extra Teachers)
+</a>
+
+
+<a href="#">
+<i class="fa-solid fa-list"></i>
+Class Lists
+</a>
+
+
+<a href="#">
+<i class="fa-solid fa-book-open-reader"></i>
+Schemes of Work
+</a>
+
+
+</div>
+
+
+
+
+
+<!-- DIGITAL LEARNING LAST -->
+
+<h2>
+<i class="fa-solid fa-graduation-cap"></i>
+Digital Learning
+</h2>
+
+
+<div class="tablet-grid2">
+
+
+<a href="#">
+<i class="fa-solid fa-book-open"></i>
+Digital Library
+</a>
+
+
+<a href="#">
+<i class="fa-solid fa-book"></i>
+Smart Homework System
+</a>
+
+
+<a href="#">
+<i class="fa-solid fa-bus"></i>
+Bus Tracking
+</a>
+
+
+<a href="#">
+<i class="fa-solid fa-circle-play"></i>
+Video Lessons
+</a>
+
+
+<a href="#">
+<i class="fa-solid fa-circle-question"></i>
+Quizzes
+</a>
+
+
+<a href="#">
+<i class="fa-solid fa-desktop"></i>
+Demonstrations
+</a>
+
+
+
+</div>
+
+
+</div>
+
+</div>
+
+
+    
 <div class="phone-content">
 
 <div class="header">
