@@ -271,119 +271,69 @@ body{margin:0;font-family:Arial,sans-serif;background:#062b4d;color:#fff}
    Phones
 =========================== */
 
+
 @media (max-width:600px){
 
+    .wrap{
+        display:flex;
+        flex-direction:column;
+        gap:15px;
+        padding:12px;
+    }
+
+    /* Order sections */
+    .side:first-of-type{ order:1; }
+    .center{ order:2; }
+    .side:last-of-type{ order:3; }
+
+    /* Typography */
     h1{font-size:28px !important;}
     h2{font-size:18px !important;}
-    p{
-        font-size:14px !important;
-        line-height:1.6;
-    }
 
-
-
-.wrap{
-    display:flex;
-    flex-direction:column;
-    gap:15px;
-}
-
-/* Put the centre first */
-.center{
-    order:2;
-}
-
-.side:first-of-type{
-    order:1;
-}
-
-.side:last-of-type{
-    order:3;
-}
-
-/* Two-column grid for all small cards */
-.side{
-    display:grid;
-    grid-template-columns:repeat(2,1fr);
-    gap:10px;
-    padding:0;
-}
-
-/* Large first card */
-.side:first-of-type .card:nth-child(3){
-    grid-column:1/-1;
-    min-height:90px;
-    font-size:18px;
-    font-weight:700;
-}
-
-/* Compact remaining cards */
-.card{
-    margin:0;
-    min-height:75px;
-    padding:12px 8px;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    text-align:center;
-}
-
-/* 👇 ADD THIS RIGHT HERE */
-    .side:first-of-type .card:first-child{
-        grid-column:1 / -1;
-        min-height:100px;
-        font-size:18px;
-        font-weight:700;
-        border-radius:18px;
-    }
-
-
-    
-/* Learning features */
-.features{
-    display:grid;
-    grid-template-columns:repeat(2,1fr);
-    gap:10px;
-}
-
-.row2{
-    display:contents;
-}
-
-/* Demo spans full width */
-.demo{
-    grid-column:1/-1;
-}
-    
+    /* Teacher cards */
     .side{
-        grid-template-columns:repeat(3,1fr);
-        gap:8px;
+        display:grid;
+        grid-template-columns:repeat(2,1fr);
+        gap:10px;
+        padding:0;
     }
 
     .card{
-        min-height:72px;
-        padding:10px 6px;
+        margin:0;
+        min-height:75px;
+        padding:12px 8px;
         font-size:13px;
-        border-radius:14px;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        text-align:center;
+        border-radius:16px;
     }
 
+    /* Make ONLY Assess Learners (3rd card) large */
+    .side:first-of-type .card:nth-child(3){
+        grid-column:1 / -1;
+        min-height:100px;
+        font-size:18px;
+        font-weight:bold;
+    }
 
-
-
-    
+    /* Learning features */
     .features{
-        grid-template-columns:repeat(3,1fr);
-        gap:8px;
+        display:grid;
+        grid-template-columns:repeat(2,1fr);
+        gap:10px;
     }
 
     .features a{
-        padding:12px 6px;
+        padding:14px 8px;
         font-size:13px;
-        border-radius:14px;
+        border-radius:16px;
     }
 
     .features i{
         font-size:22px;
+        margin-bottom:6px;
     }
 
     .row2{
@@ -394,8 +344,9 @@ body{margin:0;font-family:Arial,sans-serif;background:#062b4d;color:#fff}
         grid-column:1 / -1;
     }
 
+    /* Header */
     .login{
-        padding:10px 14px;
+        padding:10px 16px;
         font-size:16px;
     }
 
@@ -403,7 +354,6 @@ body{margin:0;font-family:Arial,sans-serif;background:#062b4d;color:#fff}
         width:45px;
         height:45px;
     }
-
 }
     
 </style></head>
