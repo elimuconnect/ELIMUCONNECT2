@@ -175,14 +175,7 @@ body{margin:0;font-family:Arial,sans-serif;background:#062b4d;color:#fff}
 
 
 
-.desktop-layout{
-    display:block;
-}
 
-.tablet-layout,
-.phone-layout{
-    display:none;
-}
 
 @media (max-width:1024px){
 
@@ -262,6 +255,7 @@ body{margin:0;font-family:Arial,sans-serif;background:#062b4d;color:#fff}
 }
 
 
+
 /* Content */
 
 .tablet-content{
@@ -271,7 +265,7 @@ body{margin:0;font-family:Arial,sans-serif;background:#062b4d;color:#fff}
 
 /* Title Card */
 
-.tablet-content h1{
+.tablet-title h1{
 
     background:#fff;
     color:#0b2b5c;
@@ -280,22 +274,23 @@ body{margin:0;font-family:Arial,sans-serif;background:#062b4d;color:#fff}
     font-size:40px;
 
     padding:15px;
-    border-radius:18px;
+
+    border-radius:18px 18px 8px 8px;
 
     box-shadow:0 5px 15px rgba(0,0,0,.08);
 
-    margin-bottom:8px;
+    margin:0 0 8px;
 
 }
 
 
-.tablet-content p{
+.tablet-title p{
 
     background:white;
 
-    padding:12px;
+    padding:14px;
 
-    border-radius:12px;
+    border-radius:8px 8px 18px 18px;
 
     color:#344054;
 
@@ -305,7 +300,7 @@ body{margin:0;font-family:Arial,sans-serif;background:#062b4d;color:#fff}
 
     box-shadow:0 4px 12px rgba(0,0,0,.06);
 
-    margin-bottom:25px;
+    margin:0 0 25px;
 
 }
 
@@ -319,18 +314,29 @@ body{margin:0;font-family:Arial,sans-serif;background:#062b4d;color:#fff}
 
     color:#0b2b5c;
 
-    padding:12px 18px;
+    padding:14px 20px;
 
-    border-left:6px solid #1976d2;
+    border-left:7px solid #1976d2;
 
-    border-radius:0 15px 15px 0;
+    border-radius:0 18px 18px 0;
 
     font-size:22px;
 
     margin:30px 0 15px;
 
+    box-shadow:0 4px 12px rgba(0,0,0,.08);
+
 }
 
+
+.tablet-content h2 i{
+
+    color:#1976d2;
+
+    margin-right:10px;
+
+}
+    
 
 
 /* Main Card */
