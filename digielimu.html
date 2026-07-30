@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Elimu Connect Dashboard</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<style>
+body{margin:0;font-family:Arial,sans-serif;background:#062b4d;color:#fff}
+.header{
+    height:90px;
+    background:#07345c;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:0 20px;
+}
+
+.header-logo{
+    width:75px;
+    height:75px;
+    object-fit:contain;
+}
+
+.login{
+    background:#1976d2;
+    color:#fff;
+    padding:18px 40px;
+    border-radius:10px;
+    text-decoration:none;
+    font-weight:bold;
+    font-size:56px;
+}
+
+.login:hover{
+    background:#1565c0;
+}
+.login{background:#1976d2;color:#fff;padding:20px 40px;border-radius:10px;text-decoration:none;font-weight:bold;font-size:28px}
+.wrap{display:grid;grid-template-columns:300px 1fr 300px;gap:16px;padding:0}
+.side{padding:16px}
+.center{background:#fff;color:#123;border-radius:8px;padding:30px;text-align:center}
+
+.card{
+    display:block;
+    text-decoration:none;
+    padding:28px 22px;
+    margin:14px 0;
+    font-size:18px;
+    font-weight:600;
+    transition:.3s;
+    box-shadow:0 5px 15px rgba(0,0,0,.12);
+    position:relative;
+}
+
+.card:hover{
+    transform:translateY(-4px) scale(1.02);
+}
+
+/* 1st, 5th, 9th... */
+.side .card:nth-child(4n+1){
+    background:#1673d6;   /* Blue */
+    color:#fff;
+}
+
+/* 2nd, 6th, 10th... */
+.side .card:nth-child(4n+2){
+    background:#fff;
+    color:#0b2b5c;
+    border:2px solid #d9e2ec;
+}
+
+/* 3rd, 7th, 11th... */
+.side .card:nth-child(4n+3){
+    background:#16a34a;   /* Green */
+    color:#fff;
+}
+
+/* 4th, 8th, 12th... */
+.side .card:nth-child(4n){
+    background:#fff;
+    color:#0b2b5c;
+    border:2px solid #d9e2ec;
+}
+
+
+
+
+/* Shape 1 - Rounded Rectangle */
+.side .card:nth-child(4n+1){
+    border-radius:18px;
+}
+
+/* Shape 2 - Pill Shape */
+.side .card:nth-child(4n+2){
+    border-radius:50px;
+}
+
+/* Shape 3 - Cut Corner */
+.side .card:nth-child(4n+3){
+    border-radius:22px 6px 22px 6px;
+}
+
+/* Shape 4 - Soft Wave */
+.side .card:nth-child(4n){
+    border-radius:40px 12px 40px 12px;
+}
+
+
+
+
+
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:20px}
+
+
+
+.features a{
+    padding:22px;
+    border-radius:12px;
+    text-decoration:none;
+    font-weight:600;
+    transition:.3s;
+    box-shadow:0 3px 8px rgba(0,0,0,.08);
+}
+
+.features a:hover{
+    transform:translateY(-3px);
+}
+
+/* Blue */
+.features > a:nth-child(4n+1){
+    background:#1673d6;
+    color:#fff;
+}
+
+/* White */
+.features > a:nth-child(4n+2){
+    background:#fff;
+    color:#0b2b5c;
+    border:2px solid #d9e2ec;
+}
+
+/* Green */
+.features > a:nth-child(4n+3){
+    background:#16a34a;
+    color:#fff;
+}
+
+/* White */
+.features > a:nth-child(4n){
+    background:#fff;
+    color:#0b2b5c;
+    border:2px solid #d9e2ec;
+}
+
+
+
+
+/* Different professional shapes */
+
+.features > a:nth-child(4n+1){
+    border-radius:18px;
+}
+
+.features > a:nth-child(4n+2){
+    border-radius:50px;
+}
+
+.features > a:nth-child(4n+3){
+    border-radius:22px 6px 22px 6px;
+}
+
+.features > a:nth-child(4n){
+    border-radius:40px 12px 40px 12px;
+}
+
+.row2{grid-column:1/4;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.demo{grid-column:1/4}
+</style></head>
+<body>
+
+<div class="header">
+
+    <img src="https://res.cloudinary.com/dwvt4e9o2/image/upload/v1785422312/COMPANY_LOGO_quq8qo.png" class="header-logo" alt="DigiElimu Logo">
+
+    <a class="login" href="#">
+        <i class="fa fa-user"></i> LOGIN
+    </a>
+
+</div>
+
+<div class="wrap">
+<div class="side">
+<a class="card" href="#">ICT Tools</a>
+<a class="card" href="#">ICT Tools<br>(Extra Teachers)</a>
+<a class="card" href="#">Assess Learners</a>
+<a class="card " href="#">Teacher Reports<br>(4 Levels)</a>
+<a class="card" href="#">Parent Reports<br>(4 Levels)</a>
+</div>
+
+
+
+<div class="center">
+
+ 
+  
+  
+
+    <h1 style="font-size:42px;color:#0b2b5c;margin:10px 0;">
+        DigiElimu
+    </h1>
+
+    <h2 style="color:#173f7a;font-size:30px;margin-bottom:20px;">
+        Smart Digital Learning & School Management Platform
+    </h2>
+
+    <p style="
+        max-width:850px;
+        margin:auto;
+        line-height:1.8;
+        font-size:20px;
+        color:#555;
+        margin-bottom:35px;
+    ">
+        DigiElimu is an all-in-one digital education platform designed for
+        schools, teachers, parents and learners. It combines CBC reporting,
+        ICT integration, digital learning resources, online assessments,
+        school administration, learner analytics and communication tools into
+        one easy-to-use platform. Our mission is to help schools embrace
+        technology, improve learner performance and simplify day-to-day school
+        management.
+    </p>
+
+    <div class="features">
+
+        <a class="purple" href="#">
+            <i class="fa-solid fa-book-open"></i><br><br>
+            Digital Library
+        </a>
+
+        <a class="green" href="#">
+            <i class="fa-solid fa-book"></i><br><br>
+            Smart Homework System
+        </a>
+
+        <a class="orange" href="#">
+            <i class="fa-solid fa-bus"></i><br><br>
+            Bus Tracking
+        </a>
+
+        <div class="row2">
+
+            <a class="blue" href="#">
+                <i class="fa-solid fa-circle-play"></i><br><br>
+                Video Lessons
+            </a>
+
+            <a class="red" href="#">
+                <i class="fa-solid fa-circle-question"></i><br><br>
+                Quizzes
+            </a>
+
+        </div>
+
+        <a class="orange demo" href="#">
+            <i class="fa-solid fa-desktop"></i><br><br>
+            Demonstrations (How the System Works)
+        </a>
+
+    </div>
+
+</div>
+
+
+<div class="side">
+<a class="card " href="#">Teacher Reports<br>(8 Levels)</a>
+<a class="card " href="#">Parent Reports<br>(8 Levels)</a>
+<a class="card " href="#">Schemes of Works<br>& Lesson Plans</a>
+<a class="card " href="#">Class Lists</a>
+</div>
+</div>
+</body></html>
