@@ -172,9 +172,47 @@ body{margin:0;font-family:Arial,sans-serif;background:#062b4d;color:#fff}
 
 .row2{grid-column:1/4;display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .demo{grid-column:1/4}
+
+
+
+.desktop-layout{
+    display:block;
+}
+
+.tablet-layout,
+.phone-layout{
+    display:none;
+}
+
+@media (max-width:1024px){
+
+    .desktop-layout{
+        display:none;
+    }
+
+    .tablet-layout{
+        display:block;
+    }
+
+}
+
+@media (max-width:600px){
+
+    .tablet-layout{
+        display:none;
+    }
+
+    .phone-layout{
+        display:block;
+    }
+
+}
+
 </style></head>
 <body>
 
+<div class="desktop-layout">
+    
 <div class="header">
 
     <img src="https://res.cloudinary.com/dwvt4e9o2/image/upload/v1785422312/COMPANY_LOGO_quq8qo.png" class="header-logo" alt="DigiElimu Logo">
@@ -275,4 +313,97 @@ body{margin:0;font-family:Arial,sans-serif;background:#062b4d;color:#fff}
 <a class="card " href="#">Class Lists</a>
 </div>
 </div>
+
+</div>
+
+
+    
+<div class="tablet-layout">
+
+    <!-- Tablet Header -->
+    <div class="header">
+
+        <img src="https://res.cloudinary.com/dwvt4e9o2/image/upload/v1785422312/COMPANY_LOGO_quq8qo.png"
+             class="header-logo">
+
+        <a class="login" href="#">
+            <i class="fa fa-user"></i> LOGIN
+        </a>
+
+    </div>
+
+    <div class="tablet-content">
+
+        <h1>DigiElimu</h1>
+
+        <p>Smart Digital Learning & School Management Platform</p>
+
+        <div class="tablet-main">
+
+            <a href="#" class="tablet-feature big">
+                <i class="fa-solid fa-user-check"></i><br>
+                Assess Learners
+            </a>
+
+        </div>
+
+        <h2>Teacher Tools</h2>
+
+        <div class="tablet-grid">
+
+            <!-- We'll add the cards later -->
+
+        </div>
+
+        <h2>Learning</h2>
+
+        <div class="tablet-grid2">
+
+            <!-- Learning cards -->
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="phone-layout">
+
+    <div class="header">
+
+        <img src="https://res.cloudinary.com/dwvt4e9o2/image/upload/v1785422312/COMPANY_LOGO_quq8qo.png"
+             class="header-logo">
+
+        <a class="login" href="#">
+            <i class="fa fa-user"></i>
+        </a>
+
+    </div>
+
+    <div class="phone-content">
+
+        <h1>DigiElimu</h1>
+
+        <p>Smart Digital Learning Platform</p>
+
+        <a class="phone-main" href="#">
+
+            <i class="fa-solid fa-user-check"></i>
+
+            <span>Assess Learners</span>
+
+        </a>
+
+        <div class="phone-grid">
+
+            <!-- Cards later -->
+
+        </div>
+
+    </div>
+
+</div>
+    
+    
 </body></html>
