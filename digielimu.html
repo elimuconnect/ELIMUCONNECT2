@@ -661,7 +661,43 @@ body{margin:0;font-family:Arial,sans-serif;background:#062b4d;color:#fff}
     color:#1976d2;
 }
 
-/* Learning Card */
+
+  /* Privacy Policy */
+
+.privacy-link{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:10px;
+
+    margin:18px 0 5px;
+    padding:14px;
+
+    text-decoration:none;
+    background:#ffffff;
+    color:#0b2b5c;
+
+    border:2px solid #d8e4f5;
+    border-radius:14px;
+
+    font-size:15px;
+    font-weight:600;
+
+    box-shadow:0 3px 10px rgba(0,0,0,.08);
+    transition:.3s;
+}
+
+.privacy-link:hover{
+    background:#eef5ff;
+    transform:translateY(-2px);
+}
+
+.privacy-link i{
+    color:#1976d2;
+    font-size:20px;
+}  
+    
+    /* Learning Card */
 
 .phone-learning{
     margin-top:10px;
@@ -1170,10 +1206,9 @@ Demonstrations<br>
             <small>How the systems and tools works</small>
         </a>
 
-<a href="https://www.e-droid.net/privacy.php?ida=4135440&idl=en" target="_blank">
+<a href="privacy-policy.html" class="privacy-link">
     <i class="fa-solid fa-user-shield"></i>
-    Privacy Policy<br>
-    <small>How we collect and protect your data</small>
+    Privacy Policy
 </a>
         
     </div>
