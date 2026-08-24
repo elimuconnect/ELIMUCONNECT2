@@ -183,8 +183,9 @@ input[type="file"] {
 
 
 
-	
-<div class="card" id="termControlCard">
+
+
+	<div class="card" id="termControlCard">
   <h2>Academic Term Control</h2>
 
   <div class="form-grid">
@@ -199,9 +200,6 @@ input[type="file"] {
 
   <div id="termControlStatus" class="status"></div>
 </div>
-
-
-
 
 
 	
@@ -427,73 +425,101 @@ async function loadTeachers() {
 
 async function loadSystemTerms() {
 
-  const termSelect = document.getElementById("systemTermSelect");
+  // The Term IDs are manually controlled here.
+  // They do NOT need to come from the terms table.
 
-  // Get current system settings
-  const { data: settings, error: settingsError } =
-    await supabase
-      .from("system_settings")
-      .select("id, current_term_id, active_term_id, academic_year")
-      .eq("id", 1)
-      .single();
+  const terms = [
+    {
+      id: "2445e80f-678d-4b3f-9398-a70774217121",
+      name: "Term 1"
+    },
+    {
+      id: "a7b2c90f-bddb-4fde-9355-533c3b682d5f",
+      name: "Term 2"
+    },
+    {
+      id: "8152fed7-d6cd-4e99-a078-0a1743fe55da",
+      name: "Term 3"
+    }
+  ];
 
-  if (settingsError) {
-    console.error(settingsError);
-    termSelect.innerHTML =
-      `<option>Error loading system settings</option>`;
-    return;
-  }
+  const { data: settings, error } = await supabase
+    .from("system_settings")
+    .select("id, current_term_id, active_term_id, academic_year")
+    .eq("id", 1)
+    .single();
 
-  // Get terms from TERMS TABLE
-  const { data: terms, error: termsError } =
-    await supabase
-      .from("terms")
-      .select("id, name, academic_year")
-      .eq("academic_year", settings.academic_year)
-      .order("name");
+  if (error) {
 
-  if (termsError) {
-    console.error(termsError);
-    termSelect.innerHTML =
-      `<option>Error loading terms</option>`;
+    console.error("System settings error:", error);
+
+    activeTermSelect.innerHTML =
+      `<option value="">Error loading current term</option>`;
+
     return;
   }
 
   // Build dropdown
-  termSelect.innerHTML = terms.map(term => `
-    <option value="${term.id}">
-      ${term.name}
-    </option>
-  `).join("");
+  activeTermSelect.innerHTML =
+    `<option value="">Select Active Term</option>` +
+    terms.map(term => `
+      <option value="${term.id}">
+        ${term.name}
+      </option>
+    `).join("");
 
-  // Select currently active term
-  termSelect.value =
+  // Show currently active term
+  activeTermSelect.value =
     settings.active_term_id ||
-    settings.current_term_id;
+    settings.current_term_id ||
+    "";
+
+  // Display current status
+  if (activeTermSelect.value) {
+
+    const currentTerm =
+      terms.find(t => t.id === activeTermSelect.value);
+
+    if (currentTerm) {
+      termControlStatus.innerText =
+        `Current active term: ${currentTerm.name} (${settings.academic_year})`;
+    }
+
+  }
+
 }
+	
 
 
-document.getElementById("changeTermBtn").onclick =
+document.getElementById("setActiveTermBtn").onclick =
   async function () {
 
     const selectedTermId =
-      document.getElementById("systemTermSelect").value;
+      activeTermSelect.value;
 
     if (!selectedTermId) {
-      alert("Please select a term.");
+
+      termControlStatus.innerText =
+        "Please select a term.";
+
       return;
     }
 
     const selectedTermName =
-      document.getElementById("systemTermSelect")
-        .selectedOptions[0].textContent.trim();
+      activeTermSelect
+        .selectedOptions[0]
+        .textContent
+        .trim();
 
     if (!confirm(
       `Change the active term to ${selectedTermName}?\n\n` +
-      `This will affect all schools.`
+      `This will affect ALL schools.`
     )) {
       return;
     }
+
+    termControlStatus.innerText =
+      "Changing active term...";
 
     const { error } = await supabase
       .from("system_settings")
@@ -505,24 +531,22 @@ document.getElementById("changeTermBtn").onclick =
 
     if (error) {
 
-      console.error(error);
+      console.error("Error changing term:", error);
 
-      document.getElementById("termStatus").innerText =
+      termControlStatus.innerText =
         "Error changing term: " + error.message;
 
       return;
     }
 
-    document.getElementById("termStatus").innerText =
-      `Active term changed to ${selectedTermName}`;
+    termControlStatus.innerText =
+      `✅ Active term changed to ${selectedTermName}`;
 
     alert(
       `System term successfully changed to ${selectedTermName}.`
     );
+
   };
-
-
-	
 
 	
 	
