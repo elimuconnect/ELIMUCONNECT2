@@ -288,8 +288,9 @@
     <p><strong>Subject:</strong> <span id="subjectLabel"></span></p>
     <p id="assessmentStatus"></p>
 
+
     <label>Term:</label>
-    <select id="termSelect"></select>
+<select id="termSelect" disabled></select>
 
     <label>Assessment Type:</label>
     <select id="assessmentTypeSelect"></select>
@@ -446,10 +447,49 @@ const { data: subjectData } = await supabase.from("subjects").select("name").eq(
 document.getElementById("classLabel").innerText = classData?.name || "N/A";
 document.getElementById("subjectLabel").innerText = subjectData?.name || "N/A";
 
-// Load terms
-const { data: terms } = await supabase.from("terms").select("id, name");
-document.getElementById("termSelect").innerHTML = `<option value="" disabled selected>-- Select Term --</option>${terms.map(t => `<option value="${t.id}">${t.name}</option>`).join("")}`;
 
+// ==============================
+// LOAD ACTIVE SYSTEM TERM
+// ==============================
+
+const { data: systemSettings, error: settingsError } =
+  await supabase
+    .from("system_settings")
+    .select("current_term_id, academic_year")
+    .eq("id", 1)
+    .single();
+
+if (settingsError) {
+  console.error(settingsError);
+  alert("Unable to load current academic term.");
+} else {
+
+  const { data: activeTerm, error: termError } =
+    await supabase
+      .from("terms")
+      .select("id, name")
+      .eq("id", systemSettings.current_term_id)
+      .single();
+
+  if (termError) {
+    console.error(termError);
+    alert("Unable to load current term.");
+  } else {
+
+    document.getElementById("termSelect").innerHTML =
+      `<option value="${activeTerm.id}">
+        ${activeTerm.name}
+      </option>`;
+
+    document.getElementById("termSelect").value =
+      activeTerm.id;
+
+    document.getElementById("yearLabel").innerText =
+      systemSettings.academic_year;
+
+  }
+}
+  
 // Load assessment types
 const { data: assessmentTypes } = await supabase.from("assessment_types").select("id, name");
 document.getElementById("assessmentTypeSelect").innerHTML = `<option value="" disabled selected>-- Select Assessment Type --</option>${assessmentTypes.map(a => `<option value="${a.id}">${a.name}</option>`).join("")}`;
