@@ -361,8 +361,9 @@ if (adminProfile.role === "superadmin") {
 
   document.getElementById("schoolSelectorCard").style.display = "block";
 
-  await loadActiveTermControl();
 
+await loadSystemTerms();
+	
   const { data: schools, error } = await supabase
     .from("schools")
     .select("id, name, status")
@@ -424,90 +425,104 @@ async function loadTeachers() {
 }
 
 
-async function loadActiveTermControl() {
+async function loadSystemTerms() {
 
-  const { data: terms, error } = await supabase
-    .from("terms")
-    .select("id, name")
-    .order("name");
+  const termSelect = document.getElementById("systemTermSelect");
 
-  if (error) {
-    console.error(error);
-    termControlStatus.innerText = "Error loading terms";
+  // Get current system settings
+  const { data: settings, error: settingsError } =
+    await supabase
+      .from("system_settings")
+      .select("id, current_term_id, active_term_id, academic_year")
+      .eq("id", 1)
+      .single();
+
+  if (settingsError) {
+    console.error(settingsError);
+    termSelect.innerHTML =
+      `<option>Error loading system settings</option>`;
     return;
   }
 
-  activeTermSelect.innerHTML =
-    `<option value="">Select Active Term</option>` +
-    (terms || []).map(term =>
-      `<option value="${term.id}">${term.name}</option>`
-    ).join("");
+  // Get terms from TERMS TABLE
+  const { data: terms, error: termsError } =
+    await supabase
+      .from("terms")
+      .select("id, name, academic_year")
+      .eq("academic_year", settings.academic_year)
+      .order("name");
 
-  // Get current active term
-  const { data: settings, error: settingsError } = await supabase
-    .from("system_settings")
-    .select("active_term_id")
-    .eq("id", 1)
-    .maybeSingle();
-
-  if (!settingsError && settings?.active_term_id) {
-    activeTermSelect.value = settings.active_term_id;
-
-    const selectedTerm =
-      terms.find(t => t.id === settings.active_term_id);
-
-    termControlStatus.innerText =
-      `Current active term: ${selectedTerm?.name || "Unknown"}`;
+  if (termsError) {
+    console.error(termsError);
+    termSelect.innerHTML =
+      `<option>Error loading terms</option>`;
+    return;
   }
+
+  // Build dropdown
+  termSelect.innerHTML = terms.map(term => `
+    <option value="${term.id}">
+      ${term.name}
+    </option>
+  `).join("");
+
+  // Select currently active term
+  termSelect.value =
+    settings.active_term_id ||
+    settings.current_term_id;
 }
 
 
+document.getElementById("changeTermBtn").onclick =
+  async function () {
+
+    const selectedTermId =
+      document.getElementById("systemTermSelect").value;
+
+    if (!selectedTermId) {
+      alert("Please select a term.");
+      return;
+    }
+
+    const selectedTermName =
+      document.getElementById("systemTermSelect")
+        .selectedOptions[0].textContent.trim();
+
+    if (!confirm(
+      `Change the active term to ${selectedTermName}?\n\n` +
+      `This will affect all schools.`
+    )) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from("system_settings")
+      .update({
+        active_term_id: selectedTermId,
+        current_term_id: selectedTermId
+      })
+      .eq("id", 1);
+
+    if (error) {
+
+      console.error(error);
+
+      document.getElementById("termStatus").innerText =
+        "Error changing term: " + error.message;
+
+      return;
+    }
+
+    document.getElementById("termStatus").innerText =
+      `Active term changed to ${selectedTermName}`;
+
+    alert(
+      `System term successfully changed to ${selectedTermName}.`
+    );
+  };
 
 
-document.getElementById("setActiveTermBtn").onclick = async () => {
-
-  const termId = activeTermSelect.value;
-
-  if (!termId) {
-    alert("Select a term first.");
-    return;
-  }
-
-  const selectedTerm =
-    activeTermSelect.options[
-      activeTermSelect.selectedIndex
-    ].text;
-
-  if (!confirm(
-    `Change the active academic term to ${selectedTerm}?\n\n` +
-    `All schools and teachers will use this term.`
-  )) {
-    return;
-  }
-
-  const { error } = await supabase
-    .from("system_settings")
-    .upsert({
-      id: 1,
-      active_term_id: termId
-    });
-
-  if (error) {
-    console.error(error);
-    termControlStatus.style.color = "red";
-    termControlStatus.innerText =
-      "Error changing term: " + error.message;
-    return;
-  }
-
-  termControlStatus.style.color = "green";
-  termControlStatus.innerText =
-    `Active term changed to ${selectedTerm}.`;
-
-  alert(`Active term is now ${selectedTerm}.`);
-};
-
-
+	
 
 	
 	
