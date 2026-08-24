@@ -183,7 +183,28 @@ input[type="file"] {
 
 
 
+	
+<div class="card" id="termControlCard">
+  <h2>Academic Term Control</h2>
 
+  <div class="form-grid">
+    <select id="activeTermSelect">
+      <option value="">Select Active Term</option>
+    </select>
+
+    <button id="setActiveTermBtn">
+      Set Active Term
+    </button>
+  </div>
+
+  <div id="termControlStatus" class="status"></div>
+</div>
+
+
+
+
+
+	
 <div class="container">
 
   <!-- Teacher Assignment -->
@@ -300,7 +321,9 @@ const excelClass = document.getElementById("excelClass");
 const manageClass = document.getElementById("manageClass");
 const studentsTable = document.getElementById("studentsTable");
 const schoolSelect = document.getElementById("schoolSelect");
-
+const activeTermSelect = document.getElementById("activeTermSelect");
+const termControlStatus = document.getElementById("termControlStatus");
+	
 // Student inputs
 const studentName = document.getElementById("studentName");
 const studentGender = document.getElementById("studentGender");
@@ -336,14 +359,16 @@ if (!adminProfile) throw new Error("Profile not found");
 if (adminProfile.role === "superadmin") {
   isSuperadmin = true;
 
-
   document.getElementById("schoolSelectorCard").style.display = "block";
 
- const { data: schools, error } = await supabase
-  .from("schools")
-  .select("id, name, status")
-  .order("name");
+  await loadActiveTermControl();
 
+  const { data: schools, error } = await supabase
+    .from("schools")
+    .select("id, name, status")
+    .order("name");
+
+ 
   if (error) throw error;
 
  schoolSelect.innerHTML =
@@ -398,11 +423,97 @@ async function loadTeachers() {
   loadCurrentAssignments();
 }
 
+
+async function loadActiveTermControl() {
+
+  const { data: terms, error } = await supabase
+    .from("terms")
+    .select("id, name")
+    .order("name");
+
+  if (error) {
+    console.error(error);
+    termControlStatus.innerText = "Error loading terms";
+    return;
+  }
+
+  activeTermSelect.innerHTML =
+    `<option value="">Select Active Term</option>` +
+    (terms || []).map(term =>
+      `<option value="${term.id}">${term.name}</option>`
+    ).join("");
+
+  // Get current active term
+  const { data: settings, error: settingsError } = await supabase
+    .from("system_settings")
+    .select("active_term_id")
+    .eq("id", 1)
+    .maybeSingle();
+
+  if (!settingsError && settings?.active_term_id) {
+    activeTermSelect.value = settings.active_term_id;
+
+    const selectedTerm =
+      terms.find(t => t.id === settings.active_term_id);
+
+    termControlStatus.innerText =
+      `Current active term: ${selectedTerm?.name || "Unknown"}`;
+  }
+}
+
+
+
+
+document.getElementById("setActiveTermBtn").onclick = async () => {
+
+  const termId = activeTermSelect.value;
+
+  if (!termId) {
+    alert("Select a term first.");
+    return;
+  }
+
+  const selectedTerm =
+    activeTermSelect.options[
+      activeTermSelect.selectedIndex
+    ].text;
+
+  if (!confirm(
+    `Change the active academic term to ${selectedTerm}?\n\n` +
+    `All schools and teachers will use this term.`
+  )) {
+    return;
+  }
+
+  const { error } = await supabase
+    .from("system_settings")
+    .upsert({
+      id: 1,
+      active_term_id: termId
+    });
+
+  if (error) {
+    console.error(error);
+    termControlStatus.style.color = "red";
+    termControlStatus.innerText =
+      "Error changing term: " + error.message;
+    return;
+  }
+
+  termControlStatus.style.color = "green";
+  termControlStatus.innerText =
+    `Active term changed to ${selectedTerm}.`;
+
+  alert(`Active term is now ${selectedTerm}.`);
+};
+
+
+
+	
+	
 // --------------------
 // 2️⃣ Load Classes & Subjects
 // --------------------
-
-
 async function loadClasses() {
   let query = supabase
     .from("classes")
