@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>SMART ELIMU CONNECT | Digital Learning Solutions</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+<style>
+
+*{
+box-sizing:border-box;
+}
+
+
+body{
+
+font-family:'Segoe UI',Arial,sans-serif;
+
+margin:0;
+
+background:#f8fafc;
+
+color:#1e293b;
+
+}
+
+
+
+/* HEADER */
+
+.hero{
+
+background:linear-gradient(135deg,#2563eb,#4f46e5);
+
+color:white;
+
+padding:40px 20px;
+
+text-align:center;
+
+}
+
+
+.hero h1{
+
+margin:0;
+
+font-size:32px;
+
+font-weight:700;
+
+}
+
+
+.hero p{
+
+margin-top:10px;
+
+font-size:18px;
+
+opacity:.9;
+
+}
+
+
+
+
+.container{
+
+max-width:1100px;
+
+margin:auto;
+
+padding:20px;
+
+}
+
+
+
+
+.intro{
+
+background:white;
+
+padding:25px;
+
+border-radius:16px;
+
+box-shadow:0 8px 25px rgba(0,0,0,.08);
+
+margin-bottom:25px;
+
+text-align:center;
+
+}
+
+
+
+.intro h2{
+
+color:#3730a3;
+
+margin-top:0;
+
+}
+
+
+
+
+
+/* PRODUCTS */
+
+.product{
+
+background:white;
+
+max-width:900px;
+
+margin:0 auto 30px;
+
+border-radius:20px;
+
+padding:25px;
+
+box-shadow:0 10px 30px rgba(15,23,42,.12);
+
+border-top:5px solid #4f46e5;
+
+}
+  
+.product h2{
+
+color:#2563eb;
+
+margin-top:0;
+
+}
+
+
+
+.product p{
+
+line-height:1.7;
+
+color:#475569;
+
+}
+
+
+
+img{
+
+display:block;
+
+width:100%;
+
+max-width:750px;
+
+max-height:500px;
+
+object-fit:contain;
+
+margin:20px auto 0;
+
+border-radius:16px;
+
+box-shadow:0 5px 20px rgba(0,0,0,.12);
+
+}
+
+
+
+video{
+
+display:block;
+
+width:100%;
+
+max-width:650px;
+
+height:auto;
+
+max-height:365px;
+
+object-fit:contain;
+
+margin:20px auto;
+
+border-radius:16px;
+
+background:#000;
+
+box-shadow:0 5px 20px rgba(0,0,0,.15);
+
+}
+
+
+button{
+
+background:linear-gradient(135deg,#2563eb,#4f46e5);
+
+color:white;
+
+border:none;
+
+padding:12px 20px;
+
+border-radius:10px;
+
+cursor:pointer;
+
+font-weight:600;
+
+margin-top:15px;
+
+}
+
+
+
+button:hover{
+
+opacity:.9;
+
+}
+
+
+
+
+.footer{
+
+background:#0f172a;
+
+color:white;
+
+text-align:center;
+
+padding:25px;
+
+margin-top:40px;
+
+}
+
+
+
+
+.loader{
+
+text-align:center;
+
+padding:40px;
+
+font-size:18px;
+
+color:#64748b;
+
+}
+
+
+
+
+@media(max-width:600px){
+
+.hero{
+
+padding:30px 15px;
+
+}
+
+
+.hero h1{
+
+font-size:22px;
+
+}
+
+
+.hero p{
+
+font-size:14px;
+
+}
+
+
+.container{
+
+padding:12px;
+
+}
+
+
+.product{
+
+padding:15px;
+
+border-radius:15px;
+
+}
+
+
+video{
+
+border-radius:12px;
+
+}
+
+}
+  
+
+.product-selector{
+
+background:white;
+
+max-width:900px;
+
+margin:0 auto 30px;
+
+padding:25px;
+
+border-radius:18px;
+
+box-shadow:0 10px 30px rgba(15,23,42,.1);
+
+}
+
+
+select{
+
+width:100%;
+
+padding:14px;
+
+border-radius:10px;
+
+border:1px solid #cbd5e1;
+
+font-size:16px;
+
+margin-top:10px;
+
+}
+</style>
+
+
+</head>
+
+
+<body>
+
+
+
+<div class="hero">
+
+<h1>
+🚀 SMART ELIMU CONNECT
+</h1>
+
+
+<p>
+Smart ICT Solutions & Digital Learning Tools for Schools
+</p>
+
+
+</div>
+
+
+
+
+
+<div class="container">
+
+
+
+<div class="intro">
+
+
+<h2>
+🌟 Our Products & Demonstrations
+</h2>
+
+
+<p>
+Explore how SMART ELIMU CONNECT helps schools improve learning,
+management and digital transformation.
+</p>
+
+
+</div>
+
+
+
+<div class="product-selector">
+
+<label>
+<b>📂 Choose Product Category</b>
+</label>
+
+<select id="categorySelect" onchange="loadCategoryProducts()">
+
+<option value="">
+-- Select Category --
+</option>
+
+</select>
+
+
+<label style="display:block;margin-top:20px;">
+<b>🚀 Choose Product Demonstration</b>
+</label>
+
+<select id="productSelect" onchange="showProduct()">
+
+<option value="">
+-- Select Product --
+</option>
+
+</select>
+
+
+</div>
+
+
+<div id="materials">
+
+<div class="loader">
+Select a product to view details
+</div>
+
+</div>
+
+
+
+
+</div>
+
+
+
+
+<div class="footer">
+
+
+<h3>
+SMART ELIMU CONNECT
+</h3>
+
+
+<p>
+Empowering schools through technology and innovation.
+</p>
+
+
+</div>
+
+
+<script> 
+const SUPABASE_URL =
+"https://hhtplinfcdwgahlhurhx.supabase.co";
+
+
+const SUPABASE_KEY =
+"sb_publishable_cOXipkG4wSKIkIHwkP04JA_KunvG7T5";
+
+
+const client =
+supabase.createClient(
+SUPABASE_URL,
+SUPABASE_KEY
+);
+
+
+let products=[];
+
+
+
+async function loadProducts(){
+
+
+const {data,error}=await client
+
+.from("training_materials")
+
+.select("*")
+
+.order(
+"created_at",
+{
+ascending:false
+}
+);
+
+
+
+if(error){
+
+console.log(error);
+return;
+
+}
+
+
+
+products=data;
+
+
+
+loadCategories();
+
+}
+
+
+
+
+function loadCategories(){
+
+
+const categories = 
+[
+...new Set(
+products.map(
+p=>p.category
+).filter(Boolean)
+)
+];
+
+
+
+let html=`
+
+<option value="">
+-- Select Category --
+</option>
+
+`;
+
+
+
+categories.forEach(c=>{
+
+
+html+=`
+
+<option value="${c}">
+${c}
+</option>
+
+`;
+
+});
+
+
+
+document.getElementById(
+"categorySelect"
+).innerHTML=html;
+
+
+}
+
+
+
+
+
+
+function loadCategoryProducts(){
+
+
+const category =
+document.getElementById(
+"categorySelect"
+).value;
+
+
+
+let dropdown=`
+
+<option value="">
+-- Select Product --
+</option>
+
+`;
+
+
+
+products
+
+.filter(
+p=>p.category===category
+)
+
+.forEach((p)=>{
+
+
+dropdown+=`
+
+<option value="${p.id}">
+${p.title}
+</option>
+
+`;
+
+});
+
+
+
+document.getElementById(
+"productSelect"
+).innerHTML=dropdown;
+
+
+
+document.getElementById(
+"materials"
+).innerHTML=
+
+`
+
+<div class="loader">
+
+Select a product to view details
+
+</div>
+
+`;
+
+
+
+}
+
+
+
+
+
+
+
+function showProduct(){
+
+
+
+const id =
+document.getElementById(
+"productSelect"
+).value;
+
+
+
+if(!id){
+
+return;
+
+}
+
+
+
+const item =
+products.find(
+p=>p.id==id
+);
+
+
+
+const type =
+(item.file_type || "")
+.toLowerCase();
+
+
+
+let html = `
+
+
+<div class="product">
+
+
+<h2>
+📘 ${item.title}
+</h2>
+
+
+<p>
+${item.description || "No description available"}
+</p>
+
+
+`;
+
+
+
+
+
+if(type.includes("image")){
+
+
+html+=`
+
+<img src="${item.file_url}">
+
+`;
+
+}
+
+
+
+
+if(type.includes("video")){
+
+
+html+=`
+
+<div class="video-container">
+
+<video controls preload="metadata">
+
+<source 
+src="${item.file_url}"
+type="${item.file_type}">
+
+</video>
+
+</div>
+
+`;
+
+}
+
+
+
+
+
+if(type.includes("pdf")){
+
+
+html+=`
+
+<a href="${item.file_url}" target="_blank">
+
+<button>
+
+📄 View Product Document
+
+</button>
+
+</a>
+
+`;
+
+}
+
+
+
+
+
+html+=`
+
+</div>
+
+`;
+
+
+
+document.getElementById(
+"materials"
+).innerHTML=html;
+
+
+
+}
+
+
+loadProducts();
+</script> 
+
+</body>
+
+</html>
