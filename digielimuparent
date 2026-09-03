@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Smart Elimu Connect Parent Dashboard</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<style>
+body{margin:0;font-family:Arial,sans-serif;background:#062b4d;color:#fff}
+.header{
+    height:90px;
+    background:#07345c;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:0 20px;
+}
+
+.header-logo{
+    width:75px;
+    height:75px;
+    object-fit:contain;
+}
+
+.login{
+    background:#1976d2;
+    color:#fff;
+    padding:18px 40px;
+    border-radius:10px;
+    text-decoration:none;
+    font-weight:bold;
+    font-size:56px;
+}
+
+.login:hover{
+    background:#1565c0;
+}
+.login{background:#1976d2;color:#fff;padding:20px 40px;border-radius:10px;text-decoration:none;font-weight:bold;font-size:28px}
+.wrap{display:grid;grid-template-columns:300px 1fr 300px;gap:16px;padding:0}
+.side{padding:16px}
+.center{background:#fff;color:#123;border-radius:8px;padding:30px;text-align:center}
+
+.card{
+    display:block;
+    text-decoration:none;
+    padding:28px 22px;
+    margin:14px 0;
+    font-size:18px;
+    font-weight:600;
+    transition:.3s;
+    box-shadow:0 5px 15px rgba(0,0,0,.12);
+    position:relative;
+}
+
+.card:hover{
+    transform:translateY(-4px) scale(1.02);
+}
+
+/* 1st, 5th, 9th... */
+.side .card:nth-child(4n+1){
+    background:#1673d6;   /* Blue */
+    color:#fff;
+}
+
+/* 2nd, 6th, 10th... */
+.side .card:nth-child(4n+2){
+    background:#fff;
+    color:#0b2b5c;
+    border:2px solid #d9e2ec;
+}
+
+/* 3rd, 7th, 11th... */
+.side .card:nth-child(4n+3){
+    background:#16a34a;   /* Green */
+    color:#fff;
+}
+
+/* 4th, 8th, 12th... */
+.side .card:nth-child(4n){
+    background:#fff;
+    color:#0b2b5c;
+    border:2px solid #d9e2ec;
+}
+
+
+
+
+/* Shape 1 - Rounded Rectangle */
+.side .card:nth-child(4n+1){
+    border-radius:18px;
+}
+
+/* Shape 2 - Pill Shape */
+.side .card:nth-child(4n+2){
+    border-radius:50px;
+}
+
+/* Shape 3 - Cut Corner */
+.side .card:nth-child(4n+3){
+    border-radius:22px 6px 22px 6px;
+}
+
+/* Shape 4 - Soft Wave */
+.side .card:nth-child(4n){
+    border-radius:40px 12px 40px 12px;
+}
+
+
+
+
+
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:20px}
+
+
+
+.features a{
+    padding:22px;
+    border-radius:12px;
+    text-decoration:none;
+    font-weight:600;
+    transition:.3s;
+    box-shadow:0 3px 8px rgba(0,0,0,.08);
+}
+
+.features a:hover{
+    transform:translateY(-3px);
+}
+
+/* Blue */
+.features > a:nth-child(4n+1){
+    background:#1673d6;
+    color:#fff;
+}
+
+/* White */
+.features > a:nth-child(4n+2){
+    background:#fff;
+    color:#0b2b5c;
+    border:2px solid #d9e2ec;
+}
+
+/* Green */
+.features > a:nth-child(4n+3){
+    background:#16a34a;
+    color:#fff;
+}
+
+/* White */
+.features > a:nth-child(4n){
+    background:#fff;
+    color:#0b2b5c;
+    border:2px solid #d9e2ec;
+}
+
+
+
+
+/* Different professional shapes */
+
+.features > a:nth-child(4n+1){
+    border-radius:18px;
+}
+
+.features > a:nth-child(4n+2){
+    border-radius:50px;
+}
+
+.features > a:nth-child(4n+3){
+    border-radius:22px 6px 22px 6px;
+}
+
+.features > a:nth-child(4n){
+    border-radius:40px 12px 40px 12px;
+}
+
+.row2{grid-column:1/4;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.demo{grid-column:1/4}
+
+
+
+
+
+.header{
+    height:90px;
+    background:#07345c;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:0 20px;
+}
+
+.header-contact{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-left:auto;
+    margin-right:20px;
+}
+
+.header-contact a{
+    width:42px;
+    height:42px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    text-decoration:none;
+    border-radius:50%;
+    background:rgba(255,255,255,.12);
+    transition:.3s;
+}
+
+.header-contact a:hover{
+    background:rgba(255,255,255,.22);
+    transform:scale(1.08);
+}
+
+.header-contact .fa-whatsapp{
+    color:#25D366;
+    font-size:22px;
+}
+
+.header-contact .fa-envelope{
+    color:#FFD54F;
+    font-size:20px;
+}
+
+
+
+
+    
+@media (max-width:1024px){
+
+    .desktop-layout{
+        display:none;
+    }
+
+    .tablet-layout{
+        display:block;
+    }
+
+}
+
+@media (max-width:600px){
+
+    .tablet-layout{
+        display:none;
+    }
+
+    .phone-layout{
+        display:block;
+    }
+
+}
+
+
+
+/* =========================================================
+   SHOW/HIDE LAYOUTS
+========================================================= */
+
+.desktop-layout{
+    display:block;
+}
+
+.tablet-layout,
+.phone-layout{
+    display:none;
+}
+
+
+
+
+/* =========================================================
+   TABLETS (601px - 1024px)
+========================================================= */
+
+@media (max-width:1024px){
+
+.desktop-layout{
+    display:none;
+}
+
+.tablet-layout{
+    display:block;
+    background:#eef4ff;
+    min-height:100vh;
+}
+
+
+/* Header */
+
+.tablet-layout .header{
+    height:80px;
+    padding:0 20px;
+    background:#0b2b5c;
+}
+
+.tablet-layout .header-logo{
+    width:65px;
+    height:65px;
+}
+
+.tablet-layout .login{
+    font-size:18px;
+    padding:12px 22px;
+}
+
+
+
+/* Content */
+
+.tablet-content{
+    padding:25px;
+}
+
+
+/* Title Card */
+
+.tablet-title h1{
+
+    background:#fff;
+    color:#0b2b5c;
+
+    text-align:center;
+    font-size:40px;
+
+    padding:15px;
+
+    border-radius:18px 18px 8px 8px;
+
+    box-shadow:0 5px 15px rgba(0,0,0,.08);
+
+    margin:0 0 8px;
+
+}
+
+
+.tablet-title p{
+
+    background:white;
+
+    padding:14px;
+
+    border-radius:8px 8px 18px 18px;
+
+    color:#344054;
+
+    text-align:center;
+
+    font-size:18px;
+
+    box-shadow:0 4px 12px rgba(0,0,0,.06);
+
+    margin:0 0 25px;
+
+}
+
+
+
+/* Section Titles */
+
+.tablet-content h2{
+
+    background:white;
+
+    color:#0b2b5c;
+
+    padding:14px 20px;
+
+    border-left:7px solid #1976d2;
+
+    border-radius:0 18px 18px 0;
+
+    font-size:22px;
+
+    margin:30px 0 15px;
+
+    box-shadow:0 4px 12px rgba(0,0,0,.08);
+
+}
+
+
+.tablet-content h2 i{
+
+    color:#1976d2;
+
+    margin-right:10px;
+
+}
+    
+
+
+/* Main Card */
+
+.tablet-main{
+    margin-bottom:25px;
+}
+
+
+.tablet-feature.big{
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    flex-direction:column;
+
+    text-decoration:none;
+
+    background:linear-gradient(135deg,#1565c0,#0d47a1);
+
+    color:white;
+
+    border-radius:22px;
+
+    min-height:150px;
+
+    font-size:26px;
+
+    font-weight:bold;
+
+    box-shadow:0 10px 25px rgba(0,0,0,.18);
+
+}
+
+
+.tablet-feature.big i{
+
+    font-size:42px;
+
+    margin-bottom:15px;
+
+}
+
+
+
+/* Grids */
+
+.tablet-grid,
+.tablet-grid2{
+
+    display:grid;
+
+    grid-template-columns:repeat(3,1fr);
+
+    gap:15px;
+
+}
+
+
+
+/* Cards */
+
+.tablet-grid a,
+.tablet-grid2 a{
+
+    background:white;
+
+    color:#0b2b5c;
+
+    text-decoration:none;
+
+    min-height:110px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    flex-direction:column;
+
+    text-align:center;
+
+    font-weight:600;
+
+    box-shadow:0 5px 15px rgba(0,0,0,.12);
+
+    transition:.3s;
+
+}
+
+
+/* Rectangle Cards */
+
+.tablet-grid a,
+.tablet-grid2 a{
+
+    border-radius:12px;
+
+}
+
+
+.tablet-grid a:hover,
+.tablet-grid2 a:hover{
+
+    transform:translateY(-4px);
+
+}
+
+
+
+/* Icons */
+
+.tablet-grid i,
+.tablet-grid2 i{
+
+    font-size:30px;
+
+    margin-bottom:10px;
+
+    color:#1565c0;
+
+}
+
+
+}
+
+    
+/* =========================================================
+   PHONES (0-600px)
+========================================================= */
+
+@media (max-width:600px){
+
+.desktop-layout{
+    display:none;
+}
+
+.tablet-layout{
+    display:none;
+}
+
+.phone-layout{
+    display:block;
+    min-height:100vh;
+    background:#f4f7fc;
+}
+
+/* Header */
+
+.phone-layout .header{
+    height:70px;
+    padding:0 15px;
+    background:#0b2b5c;
+}
+
+.phone-layout .header-logo{
+    width:50px;
+    height:50px;
+}
+
+.phone-layout .login{
+    padding:10px 16px;
+    font-size:16px;
+}
+
+/* Content */
+
+.phone-content{
+    padding:18px;
+}
+
+.phone-title{
+    background:#fff;
+    border-radius:18px;
+    padding:18px;
+    margin:15px 0 20px;
+    box-shadow:0 4px 12px rgba(0,0,0,.08);
+}
+
+.phone-title h1{
+    color:#0b2b5c;
+    margin:0;
+    text-align:center;
+}
+
+.phone-title p{
+    margin:8px 0 0;
+    text-align:center;
+    color:#4b5563;
+}
+
+/* Main Card */
+
+.phone-main{
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    text-decoration:none;
+    color:#fff;
+    background:linear-gradient(135deg,#1976d2,#0b4ea2);
+    border-radius:20px;
+    min-height:130px;
+    font-size:22px;
+    font-weight:bold;
+    box-shadow:0 10px 20px rgba(0,0,0,.15);
+    margin-bottom:25px;
+}
+
+.phone-main i{
+    font-size:40px;
+    margin-bottom:12px;
+}
+
+/* Sections */
+
+.phone-section{
+    margin-bottom:28px;
+}
+
+.phone-section h3{
+    margin:25px 0 15px;
+    padding:10px 15px;
+    border-left:6px solid #1976d2;
+    background:#ffffff;
+    color:#0b2b5c;
+    font-size:18px;
+    font-weight:700;
+    border-radius:0 12px 12px 0;
+    box-shadow:0 3px 10px rgba(0,0,0,.08);
+}
+
+.phone-section h3 i{
+    color:#1976d2;
+    margin-right:8px;
+}
+
+
+    /* Grid */
+
+.phone-grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:12px;
+}
+
+.phone-grid a{
+    background:#fff;
+    color:#0b2b5c;
+    text-decoration:none;
+    border-radius:16px;
+    min-height:95px;
+    padding:12px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+    font-size:13px;
+    font-weight:600;
+    box-shadow:0 4px 12px rgba(0,0,0,.08);
+    transition:.3s;
+}
+
+.phone-grid a:hover{
+    transform:translateY(-3px);
+}
+
+.phone-grid i{
+    font-size:24px;
+    margin-bottom:8px;
+    color:#1976d2;
+}
+
+
+  /* Privacy Policy */
+
+.privacy-link{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:10px;
+
+    margin:18px 0 5px;
+    padding:14px;
+
+    text-decoration:none;
+    background:#ffffff;
+    color:#0b2b5c;
+
+    border:2px solid #d8e4f5;
+    border-radius:14px;
+
+    font-size:15px;
+    font-weight:600;
+
+    box-shadow:0 3px 10px rgba(0,0,0,.08);
+    transition:.3s;
+}
+
+.privacy-link:hover{
+    background:#eef5ff;
+    transform:translateY(-2px);
+}
+
+.privacy-link i{
+    color:#1976d2;
+    font-size:20px;
+}  
+    
+    /* Learning Card */
+
+.phone-learning{
+    margin-top:10px;
+    background:#fff;
+    border-radius:20px;
+    padding:18px;
+    box-shadow:0 6px 18px rgba(0,0,0,.10);
+}
+
+.phone-learning h3{
+    margin:0 0 18px;
+    color:#0b2b5c;
+    text-align:center;
+    font-size:20px;
+}
+
+.phone-learning a{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:14px;
+    margin-bottom:10px;
+    text-decoration:none;
+    color:#0b2b5c;
+    background:#f5f8fd;
+    border-radius:14px;
+    font-weight:600;
+    transition:.3s;
+}
+
+.phone-learning a:last-child{
+    margin-bottom:0;
+}
+
+.phone-learning a:hover{
+    background:#e8f1ff;
+    transform:translateX(4px);
+}
+
+.phone-learning i{
+    width:28px;
+    text-align:center;
+    color:#1976d2;
+    font-size:22px;
+}
+
+}
+    
+</style></head>
+<body>
+
+<div class="desktop-layout">
+    
+
+<div class="header">
+
+    <img src="https://res.cloudinary.com/dwvt4e9o2/image/upload/v1785422312/COMPANY_LOGO_quq8qo.png"
+         class="header-logo"
+         alt="DigiElimu Logo">
+
+    <div class="header-contact">
+
+        <a href="https://wa.me/254769255782" title="WhatsApp">
+            <i class="fa-brands fa-whatsapp"></i>
+        </a>
+
+        <a href="mailto:wamithisolomon@gmail.com" title="Email">
+            <i class="fa-solid fa-envelope"></i>
+        </a>
+
+    </div>
+
+
+</div>
+
+
+
+    
+<div class="wrap">
+<div class="side">
+<a class="card" href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin">ICT Tools</a>
+<a class="card" href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin2">ICT Tools<br>(Extra Teachers)</a>
+<a class="card" https://elimuconnect.github.io/ELIMU-CONNECT-/homeworklearner.html">Smart homework system</a>
+<a class="card "href="https://elimuconnect.github.io/ELIMUCONNECT2/reportnew">Teacher Reports<br>(4 Levels)</a>
+<a class="card" href="https://elimuconnect.github.io/ELIMUCONNECT2/parent2">Parent Reports<br>(4 Levels)</a>
+</div>
+
+
+
+<div class="center">
+
+ 
+  
+  
+
+    <h1 style="font-size:42px;color:#0b2b5c;margin:10px 0;">
+        DigiElimu
+    </h1>
+
+    <h2 style="color:#173f7a;font-size:30px;margin-bottom:20px;">
+        Smart Digital Learning & School Management Platform
+    </h2>
+
+    
+
+    <div class="features">
+
+        <a class="purple" href="https://www.socialcreator.com/pastpapersandquizes">
+            <i class="fa-solid fa-book-open"></i><br><br>
+            Digital Library
+        </a>
+
+        <a class="green" href="https://elimuconnect.github.io/ELIMU-CONNECT-/parents">
+            <i class="fa-solid fa-bus"></i><br><br>
+            Bus Tracking(Parent)
+        </a>
+
+        <a class="orange" href="https://elimuconnect.github.io/ELIMU-CONNECT-/driver">
+            <i class="fa-solid fa-bus"></i><br><br>
+            Bus Tracking(Driver)
+        </a>
+
+        <div class="row2">
+
+            <a class="blue" href="https://sobentonlineschool-157865.learnyst.com/learn">
+                <i class="fa-solid fa-circle-play"></i><br><br>
+                Video Lessons(KCSE AND CBC)
+            </a>
+
+
+  <a class="blue" href="https://elimuconnect.github.io/ELIMU-CONNECT-/videolessonbestapp">
+                <i class="fa-solid fa-circle-play"></i><br><br>
+                Video Lessons(CBC)
+            </a>
+            
+
+
+   <a class="blue" href="https://elimuconnect.github.io/designcharts/g1math">
+                <i class="fa-solid fa-circle-play"></i><br><br>
+                Math grade 1 game activities
+            </a>
+
+ <a class="blue" href="https://elimuconnect.github.io/designcharts/g2math">
+                <i class="fa-solid fa-circle-play"></i><br><br>
+                Math grade 2 game activities
+            </a>
+
+
+
+   <a class="blue" href="https://elimuconnect.github.io/designcharts/g3math">
+                <i class="fa-solid fa-circle-play"></i><br><br>
+                Math grade 3 game activities
+            </a>
+            
+        </div>
+
+<a class="blue" href="https://elimuconnect.github.io/designcharts/1">
+  <i class="fa-solid fa-circle-play"></i><br><br>
+                Digestive system simulation
+            </a>
+            
+
+<a class="blue" href="https://elimuconnect.github.io/designcharts/2">
+  <i class="fa-solid fa-circle-play"></i><br><br>
+                Digestive system simulation
+            </a>
+            
+
+        <a class="orange demo" href="https://elimuconnect.github.io/ELIMUCONNECT2/showroom">
+            <i class="fa-solid fa-desktop"></i><br><br>
+            EVIDENCE-Demonstrations (How the System Works)
+        </a>
+
+        
+    </div>
+
+</div>
+
+
+<div class="side">
+<a class="card " href="https://elimuconnect.github.io/ELIMUCONNECT2/resultsmarksbest">Teacher Reports<br>(8 Levels)</a>
+<a class="card " href="https://elimuconnect.github.io/ELIMUCONNECT2/parent">Parent Reports<br>(8 Levels)</a>
+<a class="card " href="https://drive.google.com/drive/folders/1GA_mWAMJjmWRUaleRZyGYqMHPYMDv_ki">Schemes of Works<br>& Lesson Plans</a>
+<a class="card " href="https://elimuconnect.github.io/ELIMUCONNECT2/classlists">Class Lists</a>
+<a class="card " href="https://elimuconnect.github.io/ELIMUCONNECT2/classlists"> Let Your School Go Live<br><small>Request a School Website</small></a> 
+</div>
+</div>
+
+</div>
+
+
+    
+
+
+<div class="tablet-layout">
+
+  
+<div class="header">
+
+    <img src="https://res.cloudinary.com/dwvt4e9o2/image/upload/v1785422312/COMPANY_LOGO_quq8qo.png"
+         class="header-logo"
+         alt="DigiElimu Logo">
+
+    <div class="header-contact">
+
+        <a href="https://wa.me/254769255782" title="WhatsApp">
+            <i class="fa-brands fa-whatsapp"></i>
+        </a>
+
+        <a href="mailto:wamithisolomon@gmail.com" title="Email">
+            <i class="fa-solid fa-envelope"></i>
+        </a>
+
+    </div>
+
+    <a class="login" href="https://elimuconnect.github.io/ELIMUCONNECT2/indexbest">
+        <i class="fa fa-user"></i> LOGIN
+    </a>
+
+</div>
+
+
+    <div class="tablet-content">
+<div class="tablet-title">
+
+<h1>DigiElimu</h1>
+
+<p>
+Smart Digital Learning & School Management Platform
+</p>
+
+</div>
+
+
+
+<!-- MAIN -->
+
+<a href="https://elimuconnect.github.io/ELIMUCONNECT2/indexbest" class="tablet-feature big">
+
+<i class="fa-solid fa-user-check"></i>
+
+<span>Assess Learners</span>
+
+</a>
+
+
+
+
+<!-- REPORTS -->
+
+<h2>
+<i class="fa-solid fa-chart-line"></i>
+Reports
+</h2>
+
+
+<div class="tablet-grid">
+
+
+<a href="https://elimuconnect.github.io/ELIMUCONNECT2/reportnew">
+<i class="fa-solid fa-user-tie"></i>
+Teacher Reports<br>(4 Levels)
+</a>
+
+
+<a href="https://elimuconnect.github.io/ELIMUCONNECT2/parent2">
+<i class="fa-solid fa-users"></i>
+Parent Reports<br>(4 Levels)
+</a>
+
+
+<a href="https://elimuconnect.github.io/ELIMUCONNECT2/resultsmarksbest">
+<i class="fa-solid fa-chart-column"></i>
+Teacher Reports<br>(8 Levels)
+</a>
+
+
+<a href="https://elimuconnect.github.io/ELIMUCONNECT2/parent">
+<i class="fa-solid fa-people-group"></i>
+Parent Reports<br>(8 Levels)
+</a>
+
+
+
+</div>
+
+
+
+
+
+<!-- SCHOOL MANAGEMENT -->
+
+<h2>
+<i class="fa-solid fa-school"></i>
+School Management
+</h2>
+
+
+<div class="tablet-grid">
+
+
+<a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin">
+<i class="fa-solid fa-laptop"></i>
+ICT Tools
+</a>
+
+
+<a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin2">
+<i class="fa-solid fa-chalkboard-user"></i>
+ICT Tools<br>(Extra Teachers)
+</a>
+
+
+<a href="https://elimuconnect.github.io/ELIMUCONNECT2/classlists">
+<i class="fa-solid fa-list"></i>
+Class Lists
+</a>
+
+
+<a href="https://drive.google.com/drive/folders/1GA_mWAMJjmWRUaleRZyGYqMHPYMDv_ki">
+<i class="fa-solid fa-book-open-reader"></i>
+Schemes of Work
+</a>
+
+
+</div>
+
+
+
+
+
+<!-- DIGITAL LEARNING LAST -->
+
+<h2>
+<i class="fa-solid fa-graduation-cap"></i>
+Digital Learning
+</h2>
+
+
+<div class="tablet-grid2">
+
+
+<a href="https://www.socialcreator.com/pastpapersandquizes">
+<i class="fa-solid fa-book-open"></i>
+Digital Library
+</a>
+
+
+<a href="https://elimuconnect.github.io/ELIMU-CONNECT-/parents">
+<i class="fa-solid fa-bus"></i>
+Bus Tracking(Parent)
+</a>
+
+
+<a href="https://elimuconnect.github.io/ELIMU-CONNECT-/driver">
+<i class="fa-solid fa-bus"></i>
+Bus Tracking(Driver)
+</a>
+
+
+<a href="https://sobentonlineschool-157865.learnyst.com/learn">
+<i class="fa-solid fa-circle-play"></i>
+Video Lessons(KCSE & CBC)
+</a>
+
+
+
+  <a class="blue" href="https://elimuconnect.github.io/ELIMU-CONNECT-/videolessonbestapp">
+                <i class="fa-solid fa-circle-play"></i><br><br>
+                Video Lessons(CBC)
+            </a>
+    
+
+
+   <a class="blue" href="https://elimuconnect.github.io/designcharts/g1math">
+                <i class="fa-solid fa-circle-play"></i><br><br>
+                Math grade 1 game activities
+            </a>
+
+ <a class="blue" href="https://elimuconnect.github.io/designcharts/g2math">
+                <i class="fa-solid fa-circle-play"></i><br><br>
+                Math grade 2 game activities
+            </a>
+
+
+
+   <a class="blue" href="https://elimuconnect.github.io/designcharts/g3math">
+                <i class="fa-solid fa-circle-play"></i><br><br>
+                Math grade 3 game activities
+            </a>
+
+<a class="blue" href="https://elimuconnect.github.io/designcharts/1">
+  <i class="fa-solid fa-circle-play"></i><br><br>
+                Digestive system simulation
+            </a>
+            
+
+<a class="blue" href="https://elimuconnect.github.io/designcharts/2">
+  <i class="fa-solid fa-circle-play"></i><br><br>
+                Digestive system simulation
+            </a>
+    
+<a class="red" href="https://wisdomappweb.site/" target="_blank">
+    <i class="fa-solid fa-globe"></i><br><br>
+    Let Your School Go Live<br>
+    <small>Request a School Website</small>
+</a>
+
+<a href="https://elimuconnect.github.io/ELIMUCONNECT2/showroom">
+<i class="fa-solid fa-desktop"></i>
+EVIDENCE-Demonstrations<br>
+<small>How the systems and tools works</small>
+</a>
+
+
+
+</div>
+
+
+</div>
+
+</div>
+
+
+
+<div class="phone-layout">
+
+<div class="phone-content">
+    
+
+
+<div class="header">
+
+    <img src="https://res.cloudinary.com/dwvt4e9o2/image/upload/v1785422312/COMPANY_LOGO_quq8qo.png"
+         class="header-logo"
+         alt="DigiElimu Logo">
+
+    <div class="header-contact">
+
+        <a href="https://wa.me/254769255782" title="WhatsApp">
+            <i class="fa-brands fa-whatsapp"></i>
+        </a>
+
+        <a href="mailto:wamithisolomon@gmail.com" title="Email">
+            <i class="fa-solid fa-envelope"></i>
+        </a>
+
+    </div>
+
+    <a class="login" href="https://elimuconnect.github.io/ELIMUCONNECT2/indexbest">
+        <i class="fa fa-user"></i> LOGIN
+    </a>
+
+</div>
+    
+  <div class="phone-title">
+    <h1>DigiElimu</h1>
+    <p>Smart Digital Learning & School Management Platform</p>
+</div>
+
+    <!-- Main Action -->
+    <a class="phone-main" href="https://elimuconnect.github.io/ELIMUCONNECT2/indexbest">
+        <i class="fa-solid fa-user-check"></i>
+        <span>Assess Learners</span>
+    </a>
+
+    <!-- Reports -->
+    <div class="phone-section">
+
+        <h3><i class="fa-solid fa-chart-line"></i> Reports</h3>
+
+        <div class="phone-grid">
+
+            <a href="https://elimuconnect.github.io/ELIMUCONNECT2/reportnew">
+                <i class="fa-solid fa-user-tie"></i>
+                Teacher Reports<br>(4 Levels)
+            </a>
+
+            <a href="https://elimuconnect.github.io/ELIMUCONNECT2/parent2">
+                <i class="fa-solid fa-users"></i>
+                Parent Reports<br>(4 Levels)
+            </a>
+
+            <a href="https://elimuconnect.github.io/ELIMUCONNECT2/resultsmarksbest">
+                <i class="fa-solid fa-chart-column"></i>
+                Teacher Reports<br>(8 Levels)
+            </a>
+
+            <a href="https://elimuconnect.github.io/ELIMUCONNECT2/parent">
+                <i class="fa-solid fa-people-group"></i>
+                Parent Reports<br>(8 Levels)
+            </a>
+
+        </div>
+
+    </div>
+
+    <!-- School Management -->
+    <div class="phone-section">
+
+        <h3><i class="fa-solid fa-school"></i> School Management</h3>
+
+        <div class="phone-grid">
+
+            <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin">
+                <i class="fa-solid fa-laptop"></i>
+                ICT Tools
+            </a>
+
+            <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin2">
+                <i class="fa-solid fa-chalkboard-user"></i>
+                ICT Tools<br>(Extra Teachers)
+            </a>
+
+            <a href="https://elimuconnect.github.io/ELIMUCONNECT2/classlists">
+                <i class="fa-solid fa-list"></i>
+                Class Lists
+            </a>
+
+            <a href="https://drive.google.com/drive/folders/1GA_mWAMJjmWRUaleRZyGYqMHPYMDv_ki">
+                <i class="fa-solid fa-book-open-reader"></i>
+                Schemes of Work
+            </a>
+
+        </div>
+
+    </div>
+
+    <!-- Digital Learning -->
+    <div class="phone-learning">
+
+        <h3>
+            <i class="fa-solid fa-graduation-cap"></i>
+            Digital Learning
+        </h3>
+
+        <a href="https://www.socialcreator.com/pastpapersandquizes">
+            <i class="fa-solid fa-book-open"></i>
+            Digital Library
+        </a>
+
+        <a href="https://elimuconnect.github.io/ELIMU-CONNECT-/parents">
+            <i class="fa-solid fa-bus"></i>
+           Bus Tracking(parent)
+        </a>
+
+<a href="https://elimuconnect.github.io/ELIMU-CONNECT-/driver">
+            <i class="fa-solid fa-bus"></i>
+            Bus Tracking
+        </a>
+
+        
+        <a href="https://sobentonlineschool-157865.learnyst.com/learn">
+            <i class="fa-solid fa-circle-play"></i>
+            Video Lessons(KCSE & CBC)
+        </a>
+
+
+  <a class="blue" href="https://elimuconnect.github.io/ELIMU-CONNECT-/videolessonbestapp">
+                <i class="fa-solid fa-circle-play"></i><br><br>
+                Video Lessons(CBC)
+            </a>
+
+
+
+
+   <a class="blue" href="https://elimuconnect.github.io/designcharts/g1math">
+                <i class="fa-solid fa-circle-play"></i><br><br>
+                Math grade 1 game activities
+            </a>
+
+ <a class="blue" href="https://elimuconnect.github.io/designcharts/g2math">
+                <i class="fa-solid fa-circle-play"></i><br><br>
+                Math grade 2 game activities
+            </a>
+
+
+
+   <a class="blue" href="https://elimuconnect.github.io/designcharts/g3math">
+                <i class="fa-solid fa-circle-play"></i><br><br>
+                Math grade 3 game activities
+            </a>
+
+
+<a class="blue" href="https://elimuconnect.github.io/designcharts/1">
+  <i class="fa-solid fa-circle-play"></i><br><br>
+                Digestive system simulation
+            </a>
+            
+
+<a class="blue" href="https://elimuconnect.github.io/designcharts/2">
+  <i class="fa-solid fa-circle-play"></i><br><br>
+                Digestive system simulation
+            </a>
+        
+        
+<a class="red" href="https://wisdomappweb.site/" target="_blank">
+    <i class="fa-solid fa-globe"></i><br><br>
+    Let Your School Go Live<br>
+    <small>Request a School Website</small>
+</a>
+
+
+        <a href="https://elimuconnect.github.io/ELIMUCONNECT2/showroom">
+            <i class="fa-solid fa-desktop"></i>
+           EVIDENCE- Demonstrations<br>
+            <small>How the systems and tools works</small>
+        </a>
+
+<a href="https://www.e-droid.net/privacy.php?ida=4135440&idl=en" class="privacy-link">
+    <i class="fa-solid fa-user-shield"></i>
+    Privacy Policy
+</a>
+        
+    </div>
+
+</div>
+    
+    
+</body>
+</html>
