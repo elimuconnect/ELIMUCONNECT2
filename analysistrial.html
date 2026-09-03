@@ -567,6 +567,37 @@ button {
   }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@media print {
+  body {
+    background: white;
+    color: black;
+  }
+  .cbc-analytics-panel {
+    page-break-before: always;
+    border: none !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
+
+
+	
 </style>
 
 </head>
@@ -2457,8 +2488,99 @@ ${trendArrow}
 
 
 
+// =====================================================
+// DATA PROCESSOR & ANALYTICS HELPER
+// =====================================================
+function buildGradeClassMap(records, avgMap) {
+  let gradeClassMap = {};
+
+  records.forEach(r => {
+    const grade = r.grade_name
+      ? (String(r.grade_name).startsWith("Grade")
+          ? r.grade_name
+          : `Grade ${r.grade_name}`)
+      : "Unknown";
+
+    gradeClassMap[grade] ??= {};
+    gradeClassMap[grade][r.className] ??= {};
+    gradeClassMap[grade][r.className][r.student] ??= {
+      admission: r.admission,
+      subjects: {}
+    };
+
+    const subjectData = avgMap?.[r.student]?.[r.subject];
+    if (!subjectData) return;
+
+    const score = levelToScore(subjectData.achievement_level);
+    if (typeof score !== "number" || isNaN(score)) return;
+
+    gradeClassMap[grade][r.className][r.student].subjects[r.subject] = score;
+  });
+
+  return gradeClassMap;
+}
+
+function generateCBCAnalytics(gradeClassMap) {
+  let analysisResults = [];
+
+  Object.entries(gradeClassMap).forEach(([grade, classes]) => {
+    Object.entries(classes).forEach(([cls, students]) => {
+      let totalScore = 0;
+      let studentCount = 0;
+      let subjectPerformances = {};
+      let strugglingStudents = [];
+
+      Object.entries(students).forEach(([name, data]) => {
+        const scores = Object.values(data.subjects);
+        const studentTotal = scores.reduce((a, b) => a + b, 0);
+        const studentAvg = scores.length > 0 ? studentTotal / 7 : 0;
+
+        totalScore += studentAvg;
+        studentCount++;
+
+        if (studentAvg < 2.5) {
+          strugglingStudents.push({ name, admission: data.admission, avg: studentAvg });
+        }
+
+        Object.entries(data.subjects).forEach(([sub, score]) => {
+          subjectPerformances[sub] ??= { total: 0, count: 0 };
+          subjectPerformances[sub].total += score;
+          subjectPerformances[sub].count += 1;
+        });
+      });
+
+      const classMean = studentCount > 0 ? totalScore / studentCount : 0;
+
+      let weakSubjects = [];
+      Object.entries(subjectPerformances).forEach(([sub, stats]) => {
+        const subAvg = stats.total / stats.count;
+        if (subAvg < 2.5) weakSubjects.push({ subject: sub, avg: subAvg });
+      });
+
+      analysisResults.push({
+        grade,
+        className: cls,
+        classMean,
+        risks: strugglingStudents.length > (studentCount * 0.2) 
+          ? "High risk of cohort underperformance across core learning outcomes." 
+          : "Cohort stability aligns with formative CBC thresholds.",
+        weakSubjects,
+        strugglingStudents,
+        remediations: [
+          weakSubjects.length > 0 ? `Targeted formative re-teaching for: ${weakSubjects.map(w => w.subject).join(", ")}.` : null,
+          strugglingStudents.length > 0 ? `Establish peer-support frameworks and individualized learning plans for ${strugglingStudents.length} identified learners.` : null
+        ].filter(Boolean)
+      });
+    });
+  });
+
+  return analysisResults;
+}
 
 
+// =====================================================
+// RENDER & EXPORT CONTROLLER
+// =====================================================
 function renderBroadsheet() {
   if (viewMode.value !== "broadsheet") return;
 
@@ -2469,7 +2591,43 @@ function renderBroadsheet() {
     return;
   }
 
-reportDiv.innerHTML = generateBroadsheet(records, avgMap, mode);
+  // 1. Build structured data map
+  const gradeClassMap = buildGradeClassMap(records, avgMap);
+
+  // 2. Generate Broadsheet HTML (using your original generator logic)
+  const broadsheetHtml = generateBroadsheetHTMLFromMap(gradeClassMap, mode);
+
+  // 3. Generate CBC Analytics & Remediations
+  const analyticsData = generateCBCAnalytics(gradeClassMap);
+
+  const analyticsHtml = `
+    <div class="cbc-analytics-panel" style="margin-top: 40px; padding: 20px; background: #fff; border: 1px solid #ccc; border-radius: 6px;">
+      <h3 style="margin-bottom: 15px; border-bottom: 2px solid #007bff; padding-bottom: 5px;">📊 CBC Performance Insights, Risks & Remediations</h3>
+      ${analyticsData.map(item => `
+        <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #ddd;">
+          <h4>Class: ${item.className} (${item.grade})</h4>
+          <p><strong>Class Mean Score:</strong> ${item.classMean.toFixed(2)}</p>
+          <p><strong>Risk Assessment:</strong> ${item.risks}</p>
+          <p><strong>Areas of Concern:</strong> ${item.weakSubjects.map(w => `${w.subject} (${w.avg.toFixed(2)})`).join(", ") || "None identified"}</p>
+          <p><strong>Recommended Remediations:</strong></p>
+          <ul style="margin: 5px 0 0 20px;">
+            ${item.remediations.map(r => `<li>${r}</li>`).join("")}
+          </ul>
+        </div>
+      `).join("")}
+    </div>
+  `;
+
+  // 4. Export / Print Action Button
+  const exportButtonHtml = `
+    <div class="no-print" style="margin: 20px 0; text-align: right;">
+      <button onclick="window.print()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+        🖨️ Export / Print Broadsheet & Analytics Report
+      </button>
+    </div>
+  `;
+
+  reportDiv.innerHTML = exportButtonHtml + broadsheetHtml + analyticsHtml;
 }
 
 
@@ -2481,11 +2639,10 @@ reportDiv.innerHTML = generateBroadsheet(records, avgMap, mode);
 
 viewMode.addEventListener("change", () => {
   loadReport();
-  renderBroadsheet(); // important
+  renderBroadsheet();
 });
 
 broadsheetMode.addEventListener("change", renderBroadsheet);
-	
 
 
 
@@ -2533,8 +2690,6 @@ const SUBJECT_SHORT = {
   "Physical Education": "P.E"
 };
 
-	
-
 
 
 
@@ -2542,10 +2697,8 @@ function shortSubject(name) {
   if (!name) return "";
 
   const n = name.toLowerCase();
-
   let short = "";
 
-  // ===== MATH VARIANTS =====
   if (n.includes("math")) {
     if (n.includes("core")) short = "Core Math";
     else if (n.includes("essential")) short = "Ess Math";
@@ -2553,73 +2706,33 @@ function shortSubject(name) {
     else if (n.includes("applied")) short = "App Math";
     else short = "Math";
   }
-  // ===== DIRECT MAP =====
   else if (SUBJECT_SHORT[name]) {
     short = SUBJECT_SHORT[name];
   }
-  // ===== FALLBACK =====
   else {
-    short = name
-      .split(" ")
-      .map(w => w.substring(0, 3))
-      .join(" ");
+    short = name.split(" ").map(w => w.substring(0, 3)).join(" ");
   }
 
-  // 🔥 KEY PART: SPLIT INTO MULTIPLE ROWS
- return short
-  .split(" ")
-  .map(w => `<div style="line-height:1;">${w}</div>`)
-  .join("");
+  return short.split(" ").map(w => `<div style="line-height:1;">${w}</div>`).join("");
 }
 	
-	
-function generateBroadsheet(records, avgMap, mode = "grade") {
 
-  let gradeClassMap = {};
-
-  // ===== BUILD STRUCTURE =====
-  records.forEach(r => {
-
-    const grade = r.grade_name
-      ? (String(r.grade_name).startsWith("Grade")
-          ? r.grade_name
-          : `Grade ${r.grade_name}`)
-      : "Unknown";
-
-    gradeClassMap[grade] ??= {};
-    gradeClassMap[grade][r.className] ??= {};
-    gradeClassMap[grade][r.className][r.student] ??= {
-      admission: r.admission,
-      subjects: {}
-    };
-
-    const subjectData = avgMap?.[r.student]?.[r.subject];
-    if (!subjectData) return;
-
-    const score = levelToScore(subjectData.achievement_level);
-    if (typeof score !== "number" || isNaN(score)) return;
-
-    gradeClassMap[grade][r.className][r.student].subjects[r.subject] = score;
-  });
-
-
+// Refactored to accept pre-built map for efficiency
+function generateBroadsheetHTMLFromMap(gradeClassMap, mode = "grade") {
   let html = `
-  ${renderOverviewHeader({
-    school: schoolDetail.name,
-    poBox: schoolDetail.po_box,
-    postal: schoolDetail.postal_code,
-    town: schoolDetail.town,
-    phone: schoolDetail.phone,
-   
-    className: mode === "grade" ? "GRADE BROADSHEET" : "CLASS BROADSHEET",
-    term: termName,
-    year: SYSTEM_YEAR,
-    logo: schoolLogo
-  })}
-`;
+    ${renderOverviewHeader({
+      school: schoolDetail.name,
+      poBox: schoolDetail.po_box,
+      postal: schoolDetail.postal_code,
+      town: schoolDetail.town,
+      phone: schoolDetail.phone,
+      className: mode === "grade" ? "GRADE BROADSHEET" : "CLASS BROADSHEET",
+      term: termName,
+      year: SYSTEM_YEAR,
+      logo: schoolLogo
+    })}
+  `;
 
-
-  // ===== GET SUBJECTS =====
   const getSubjects = (students) => {
     const set = new Set();
     Object.values(students).forEach(s => {
@@ -2628,32 +2741,14 @@ function generateBroadsheet(records, avgMap, mode = "grade") {
     return Array.from(set);
   };
 
-
-  // ===== BUILD TABLE =====
   const buildTable = (title, students, subjects) => {
-
     const ranked = Object.entries(students).map(([name, data]) => {
+      const scores = subjects.map(sub => typeof data.subjects[sub] === "number" ? data.subjects[sub] : 0);
+      const total = scores.reduce((a, b) => a + b, 0);
+      const avg = total / 7;
 
-    const scores = subjects.map(sub =>
-  typeof data.subjects[sub] === "number" ? data.subjects[sub] : 0
-);
-
-const total = scores.reduce((a, b) => a + b, 0);
-
-// Always divide by 7
-const avg = total / 7;
-
-      return {
-        name,
-        admission: data.admission,
-        subjects: data.subjects,
-        total,
-        avg
-      };
-
-    })
-    .sort((a, b) => b.avg - a.avg); // ✅ rank by average
-
+      return { name, admission: data.admission, subjects: data.subjects, total, avg };
+    }).sort((a, b) => b.avg - a.avg);
 
     return `
       <h3 style="margin-top:15px;">${title}</h3>
@@ -2661,94 +2756,37 @@ const avg = total / 7;
       <table>
         <thead>
           <tr>
-
-<th style="width:30px;">#</th>
-
-<th style="
-  width:110px;
-  text-align:center;
-">
-  Name
-</th>
-
-<th style="
-  width:90px;
-  text-align:center;
-">
-  ADM
-</th>
-
-			
-
-
-${subjects.map(s => `
-
-
-<th title="${s}" style="
-  font-size:14px;
-  word-wrap:break-word;
-  white-space:normal;
-  text-align:center;
-">
-  ${shortSubject(s)}
-</th>
-
-		  
-`).join("")}
-
-
-
-<th style="width:60px;">Tot</th>
-<th style="width:70px;">Avg</th>
-<th style="width:70px;">Lvl</th>
-
-		  
+            <th style="width:30px;">#</th>
+            <th style="width:110px; text-align:center;">Name</th>
+            <th style="width:90px; text-align:center;">ADM</th>
+            ${subjects.map(s => `
+              <th title="${s}" style="font-size:14px; word-wrap:break-word; white-space:normal; text-align:center;">
+                ${shortSubject(s)}
+              </th>
+            `).join("")}
+            <th style="width:60px;">Tot</th>
+            <th style="width:70px;">Avg</th>
+            <th style="width:70px;">Lvl</th>
           </tr>
         </thead>
         <tbody>
           ${ranked.map((s, i) => `
             <tr>
-             <td style="width:35px;">${i + 1}</td>
-
-<td style="
-  width:110px;
-  max-width:110px;
-  white-space:normal;        /* ✅ allow wrapping */
-  word-break:break-word;     /* ✅ break long words */
-  line-height:1.1;           /* ✅ compact lines */
-  text-align:left;
-">
-  ${s.name}
-</td>
-
-<td style="
-  max-width:90px;
-  font-size:11px;
-  word-break:break-all;
-  white-space:normal;
-  line-height:1.2;
-">
-  ${s.admission ?? "-"}
-</td>
-
-   ${subjects.map(sub => `
-
-
-<td style="
-  font-size:15px;
-  text-align:center;
-">
-  ${s.subjects[sub] ?? "-"}
-</td>
-			   
+              <td style="width:35px;">${i + 1}</td>
+              <td style="width:110px; max-width:110px; white-space:normal; word-break:break-word; line-height:1.1; text-align:left;">
+                ${s.name}
+              </td>
+              <td style="max-width:90px; font-size:11px; word-break:break-all; white-space:normal; line-height:1.2;">
+                ${s.admission ?? "-"}
+              </td>
+              ${subjects.map(sub => `
+                <td style="font-size:15px; text-align:center;">
+                  ${s.subjects[sub] ?? "-"}
+                </td>
               `).join("")}
-
-
-<td style="width:70px;">${Math.round(s.total)}</td>
- <td>${s.avg.toFixed(2)}</td>
-<td style="width:80px;">${getAchievementLabel(s.avg)}</td>
-
-
+              <td style="width:70px;">${Math.round(s.total)}</td>
+              <td>${s.avg.toFixed(2)}</td>
+              <td style="width:80px;">${getAchievementLabel(s.avg)}</td>
             </tr>
           `).join("")}
         </tbody>
@@ -2757,76 +2795,56 @@ ${subjects.map(s => `
     `;
   };
 
+  if (mode === "grade") {
+    Object.entries(gradeClassMap).forEach(([grade, classes]) => {
+      let mergedStudents = {};
+      Object.values(classes).forEach(students => {
+        Object.entries(students).forEach(([name, data]) => {
+          mergedStudents[name] = data;
+        });
+      });
 
-  // =====================================================
-  // MODE SWITCH
-  // =====================================================
-// =====================================================
-// MODE SWITCH (FIXED HEADERS ONLY)
-// =====================================================
-
-if (mode === "grade") {
-
-  Object.entries(gradeClassMap).forEach(([grade, classes]) => {
-
-    let mergedStudents = {};
-
-    Object.values(classes).forEach(students => {
-      Object.entries(students).forEach(([name, data]) => {
-        mergedStudents[name] = data;
+      const subjects = getSubjects(mergedStudents);
+      html += `<h2>📘 ${grade} Broadsheet (All Classes)</h2>`;
+      html += buildTable(grade, mergedStudents, subjects);
+    });
+  } 
+  else if (mode === "class") {
+    html = "";
+    Object.entries(gradeClassMap).forEach(([grade, classes]) => {
+      Object.entries(classes).forEach(([cls, students]) => {
+        const subjects = getSubjects(students).sort();
+        html += `
+          <div style="page-break-before: always;">
+            ${renderOverviewHeader({
+              school: schoolDetail.name,
+              poBox: schoolDetail.po_box,
+              postal: schoolDetail.postal_code,
+              town: schoolDetail.town,
+              phone: schoolDetail.phone,
+              className: `Class ${cls} (${grade})`,
+              term: termName,
+              year: SYSTEM_YEAR,
+              logo: schoolLogo
+            })}
+        `;
+        html += buildTable(`Class ${cls}`, students, subjects);
+        html += `</div>`;
       });
     });
-
-    const subjects = getSubjects(mergedStudents);
-
-    html += `<h2>📘 ${grade} Broadsheet (All Classes)</h2>`;
-    html += buildTable(grade, mergedStudents, subjects);
-  });
-
-}
-
-else if (mode === "class") {
-
-  // ❌ REMOVE global header for class mode
-  html = "";
-
-  Object.entries(gradeClassMap).forEach(([grade, classes]) => {
-
-    Object.entries(classes).forEach(([cls, students]) => {
-
-      const subjects = getSubjects(students).sort();
-
-      // ✅ FULL HEADER PER CLASS
-      html += `
-        <div style="page-break-before: always;">
-          ${renderOverviewHeader({
-            school: schoolDetail.name,
-            poBox: schoolDetail.po_box,
-            postal: schoolDetail.postal_code,
-            town: schoolDetail.town,
-            phone: schoolDetail.phone,
-            className: `Class ${cls} (${grade})`,
-            term: termName,
-            year: SYSTEM_YEAR,
-            logo: schoolLogo
-          })}
-      `;
-
-      html += buildTable(`Class ${cls}`, students, subjects);
-
-      html += `</div>`;
-    });
-
-  });
-
-}
- 
+  }
+  
   return html;
 }
+
+// Wrapper to match your original invocation signature if called directly elsewhere
+function generateBroadsheet(records, avgMap, mode = "grade") {
+  const gradeClassMap = buildGradeClassMap(records, avgMap);
+  return generateBroadsheetHTMLFromMap(gradeClassMap, mode);
+}
+
 const mode = document.getElementById("broadsheetMode").value;
-
 generateBroadsheet(records, avgMap, mode);
-
 
 
 
