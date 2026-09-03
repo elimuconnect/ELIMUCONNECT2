@@ -778,11 +778,11 @@ body{margin:0;font-family:Arial,sans-serif;background:#062b4d;color:#fff}
     
 <div class="wrap">
 <div class="side">
-<a class="card" href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin">ICT Tools</a>
-<a class="card" href="https://elimuconnect.github.io/ELIMU-CONNECT-/schooladmin2">ICT Tools<br>(Extra Teachers)</a>
+
+
 <a class="card" https://elimuconnect.github.io/ELIMU-CONNECT-/homeworklearner.html">Smart homework system</a>
-<a class="card "href="https://elimuconnect.github.io/ELIMUCONNECT2/reportnew">Teacher Reports<br>(4 Levels)</a>
-<a class="card" href="https://elimuconnect.github.io/ELIMUCONNECT2/parent2">Parent Reports<br>(4 Levels)</a>
+<a class="card" href="https://elimuconnect.github.io/ELIMUCONNECT2/parent">Parent Reports<br>(8 Levels)</a>
+
 </div>
 
 
@@ -805,54 +805,27 @@ body{margin:0;font-family:Arial,sans-serif;background:#062b4d;color:#fff}
 
     <div class="features">
 
-        <a class="purple" href="https://www.socialcreator.com/pastpapersandquizes">
+        <a class="purple" href="https://elimuconnect.github.io/ELIMU-CONNECT-/homeworklearner.html">
             <i class="fa-solid fa-book-open"></i><br><br>
-            Digital Library
+            homework system
         </a>
 
-        <a class="green" href="https://elimuconnect.github.io/ELIMU-CONNECT-/parents">
+
+
+<a class="card" href="https://elimuconnect.github.io/ELIMUCONNECT2/parent2">
+        <i class="fa-solid fa-book-open"></i><br><br>
+            parent report 4 levels
+        </a>
+
+
+
+        <a class="green" https://elimuconnect.github.io/ELIMUCONNECT2/parent">
             <i class="fa-solid fa-bus"></i><br><br>
             Bus Tracking(Parent)
         </a>
 
-        <a class="orange" href="https://elimuconnect.github.io/ELIMU-CONNECT-/driver">
-            <i class="fa-solid fa-bus"></i><br><br>
-            Bus Tracking(Driver)
-        </a>
+       
 
-        <div class="row2">
-
-            <a class="blue" href="https://sobentonlineschool-157865.learnyst.com/learn">
-                <i class="fa-solid fa-circle-play"></i><br><br>
-                Video Lessons(KCSE AND CBC)
-            </a>
-
-
-  <a class="blue" href="https://elimuconnect.github.io/ELIMU-CONNECT-/videolessonbestapp">
-                <i class="fa-solid fa-circle-play"></i><br><br>
-                Video Lessons(CBC)
-            </a>
-            
-
-
-   <a class="blue" href="https://elimuconnect.github.io/designcharts/g1math">
-                <i class="fa-solid fa-circle-play"></i><br><br>
-                Math grade 1 game activities
-            </a>
-
- <a class="blue" href="https://elimuconnect.github.io/designcharts/g2math">
-                <i class="fa-solid fa-circle-play"></i><br><br>
-                Math grade 2 game activities
-            </a>
-
-
-
-   <a class="blue" href="https://elimuconnect.github.io/designcharts/g3math">
-                <i class="fa-solid fa-circle-play"></i><br><br>
-                Math grade 3 game activities
-            </a>
-            
-        </div>
 
 <a class="blue" href="https://elimuconnect.github.io/designcharts/1">
   <i class="fa-solid fa-circle-play"></i><br><br>
@@ -878,11 +851,23 @@ body{margin:0;font-family:Arial,sans-serif;background:#062b4d;color:#fff}
 
 
 <div class="side">
-<a class="card " href="https://elimuconnect.github.io/ELIMUCONNECT2/resultsmarksbest">Teacher Reports<br>(8 Levels)</a>
-<a class="card " href="https://elimuconnect.github.io/ELIMUCONNECT2/parent">Parent Reports<br>(8 Levels)</a>
-<a class="card " href="https://drive.google.com/drive/folders/1GA_mWAMJjmWRUaleRZyGYqMHPYMDv_ki">Schemes of Works<br>& Lesson Plans</a>
-<a class="card " href="https://elimuconnect.github.io/ELIMUCONNECT2/classlists">Class Lists</a>
-<a class="card " href="https://elimuconnect.github.io/ELIMUCONNECT2/classlists"> Let Your School Go Live<br><small>Request a School Website</small></a> 
+   <a class="blue" href="https://elimuconnect.github.io/designcharts/g1math">
+                <i class="fa-solid fa-circle-play"></i><br><br>
+                Math grade 1 game activities
+            </a>
+
+ <a class="blue" href="https://elimuconnect.github.io/designcharts/g2math">
+                <i class="fa-solid fa-circle-play"></i><br><br>
+                Math grade 2 game activities
+            </a>
+
+
+   <a class="blue" href="https://elimuconnect.github.io/designcharts/g3math">
+                <i class="fa-solid fa-circle-play"></i><br><br>
+                Math grade 3 game activities
+            </a>
+            
+        </div>
 </div>
 </div>
 
