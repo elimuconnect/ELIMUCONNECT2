@@ -905,9 +905,6 @@ async function loadReport() {
     email: school?.email || "—"
   };
 
-  const manualLogos = {
-    "SHANZU SENIOR SECONDARY SCHOOL": "https://res.cloudinary.com/dwvt4e9o2/image/upload/v1773573305/schoollogo1_rnpce8.jpg"
-  };
   
   schoolLogo =
     school?.logo_url ||
@@ -1575,30 +1572,27 @@ document.addEventListener("click", async (e) => {
     const termName = terms.find(t => t.id === term_id)?.name;
 
     const { data: resultsData, error } = await supabase
-      .from("public_parent_results_view")
-      .select("*")
-      .eq("admission_number", adm)
-      .eq("academic_year", SYSTEM_YEAR)
-      .eq("term", termName)
-      .eq("assessment_category", selectedCategory);
+  .from("public_parent_results_view")
+  .select("*")
+  .eq("admission_number", adm)
+  .ilike("parent_name", parentName)
+  .eq("parent_phone", parentPhone)
+  .eq("academic_year", SYSTEM_YEAR)
+  .eq("term", termName)
+  .eq("assessment_category", selectedCategory);
 
-    if (error || !resultsData || resultsData.length === 0) {
-      reportDiv.innerHTML = "<p style='color:red'>No results found</p>";
-      return;
-    }
+if (error) {
+  console.error("Parent verification error:", error);
+  reportDiv.innerHTML =
+    "<p style='color:red'>Unable to verify details. Please try again.</p>";
+  return;
+}
 
-    const first = resultsData[0];
-
-    const matchName =
-      (first.parent_name || "").trim().toLowerCase() === parentName;
-
-    const matchPhone =
-      (first.parent_phone || "").trim() === parentPhone;
-
-    if (!matchName || !matchPhone) {
-      reportDiv.innerHTML = "<p style='color:red'>❌ Parent details do not match</p>";
-      return;
-    }
+if (!resultsData || resultsData.length === 0) {
+  reportDiv.innerHTML =
+    "<p style='color:red'>❌ Admission number, parent name or parent phone does not match.</p>";
+  return;
+}
 
     const grouped = {};
     resultsData.forEach(r => {
