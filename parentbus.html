@@ -12,6 +12,8 @@
   <style>
     * { box-sizing: border-box; }
 
+    [hidden] { display: none !important; }
+
     body {
       margin: 0;
       font-family: Arial, sans-serif;
@@ -83,6 +85,17 @@
       overflow-wrap: anywhere;
     }
 
+    #selectedSchoolPanel {
+      padding: 12px;
+      margin: 8px 0 14px;
+      background: #eff6ff;
+      border-radius: 8px;
+    }
+
+    #selectedSchoolPanel p {
+      margin: 0 0 8px;
+    }
+
     #busList {
       display: grid;
       gap: 12px;
@@ -130,10 +143,22 @@
 
       <button id="savePhone">Save Phone Number</button>
 
-      <label for="schoolFilter">Select school</label>
-      <select id="schoolFilter">
-        <option value="">All schools</option>
-      </select>
+      <div id="schoolChooser">
+        <label for="schoolFilter">Choose your school</label>
+        <select id="schoolFilter">
+          <option value="">Loading schools...</option>
+        </select>
+      </div>
+
+      <div id="selectedSchoolPanel" hidden>
+        <p>
+          Your school:
+          <strong id="selectedSchoolName"></strong>
+        </p>
+        <button type="button" id="changeSchoolBtn">
+          Change School
+        </button>
+      </div>
 
       <button id="enableAlerts">Enable Distance Alerts</button>
 
@@ -143,7 +168,7 @@
       </p>
 
       <div id="status" role="status" aria-live="polite">
-        Loading active buses...
+        Loading schools and active buses...
       </div>
     </section>
 
@@ -175,6 +200,8 @@
 
     const $ = id => document.getElementById(id);
 
+    const PARENT_SCHOOL_KEY = "school_bus_parent_school_id";
+
     const map = L.map("map").setView([-3.969988, 39.735031], 12);
 
     L.tileLayer(
@@ -183,20 +210,21 @@
     ).addTo(map);
 
     const busMarkers = new Map();
+    const alertedBuses = new Set();
 
     let buses = [];
+    let schools = [];
     let parentPosition = null;
     let locationWatchId = null;
     let audioContext = null;
     let alertsEnabled = false;
     let loading = false;
     let lastLoadSucceeded = false;
+    let schoolSelectionInitialized = false;
 
-    const alertedBuses = new Set();
     const ALERT_DISTANCE_METRES = 200;
     const STALE_AFTER_MS = 2 * 60 * 1000;
 
-    // Parent phone number is stored only on this device.
     $("parentPhone").value =
       localStorage.getItem("school_bus_parent_phone") || "";
 
@@ -341,7 +369,6 @@
         }
 
         alertsEnabled = true;
-
         $("enableAlerts").textContent = "Distance Alerts Enabled";
 
         $("status").textContent =
@@ -365,48 +392,103 @@
       const select = $("schoolFilter");
       const previous = select.value;
 
-      const schoolMap = new Map();
-
-      buses.forEach(bus => {
-        if (bus.school_id && bus.school_name) {
-          schoolMap.set(bus.school_id, bus.school_name);
-        }
-      });
-
       select.replaceChildren();
 
-      const allOption = document.createElement("option");
-      allOption.value = "";
-      allOption.textContent = "All schools";
-      select.appendChild(allOption);
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = "Choose your school";
+      select.appendChild(placeholder);
 
-      [...schoolMap.entries()]
-        .sort((a, b) => a[1].localeCompare(b[1]))
-        .forEach(([schoolId, schoolName]) => {
+      [...schools]
+        .sort((a, b) =>
+          (a.school_name || a.name || "").localeCompare(
+            b.school_name || b.name || ""
+          )
+        )
+        .forEach(school => {
           const option = document.createElement("option");
-          option.value = schoolId;
-          option.textContent = schoolName;
+          option.value = school.id;
+          option.textContent =
+            school.school_name || school.name || "School";
           select.appendChild(option);
         });
 
-      if ([...select.options].some(option => option.value === previous)) {
-        select.value = previous;
+      const savedSchoolId = localStorage.getItem(PARENT_SCHOOL_KEY);
+      const preferredId = schoolSelectionInitialized
+        ? (previous || savedSchoolId)
+        : savedSchoolId;
+
+      if (
+        preferredId &&
+        [...select.options].some(option => option.value === preferredId)
+      ) {
+        select.value = preferredId;
+      } else {
+        select.value = "";
+        if (savedSchoolId) {
+          localStorage.removeItem(PARENT_SCHOOL_KEY);
+        }
+      }
+
+      schoolSelectionInitialized = true;
+      updateSchoolSelectionUI();
+    }
+
+    function updateSchoolSelectionUI() {
+      const schoolId = $("schoolFilter").value;
+      const selectedSchool = schools.find(
+        school => school.id === schoolId
+      );
+
+      if (schoolId && selectedSchool) {
+        $("selectedSchoolName").textContent =
+          selectedSchool.school_name ||
+          selectedSchool.name ||
+          "Selected school";
+
+        $("schoolChooser").hidden = true;
+        $("selectedSchoolPanel").hidden = false;
+      } else {
+        $("schoolChooser").hidden = false;
+        $("selectedSchoolPanel").hidden = true;
       }
     }
 
-    function getVisibleBuses() {
-      const selectedSchool = $("schoolFilter").value;
+    $("schoolFilter").addEventListener("change", () => {
+      const selectedSchoolId = $("schoolFilter").value;
 
-      return buses.filter(bus =>
-        !selectedSchool || bus.school_id === selectedSchool
+      if (!selectedSchoolId) return;
+
+      localStorage.setItem(PARENT_SCHOOL_KEY, selectedSchoolId);
+
+      updateSchoolSelectionUI();
+      updateMarkers();
+      updateBusList();
+      checkDistances();
+
+      $("status").textContent =
+        "Showing buses for " + $("selectedSchoolName").textContent + ".";
+    });
+
+    $("changeSchoolBtn").addEventListener("click", () => {
+      $("selectedSchoolPanel").hidden = true;
+      $("schoolChooser").hidden = false;
+      $("schoolFilter").focus();
+    });
+
+    function getVisibleBuses() {
+      const selectedSchoolId = $("schoolFilter").value;
+
+      if (!selectedSchoolId) return [];
+
+      return buses.filter(
+        bus => bus.school_id === selectedSchoolId
       );
     }
 
     function updateMarkers() {
       const visible = getVisibleBuses();
-      const visibleIds = new Set(
-        visible.map(bus => bus.driver_id)
-      );
+      const visibleIds = new Set(visible.map(bus => bus.driver_id));
 
       for (const [driverId, marker] of busMarkers.entries()) {
         if (!visibleIds.has(driverId)) {
@@ -442,6 +524,13 @@
 
         marker.bindPopup(popup);
       });
+
+      if (visible.length === 1 && validCoordinates(visible[0])) {
+        map.setView(
+          [Number(visible[0].lat), Number(visible[0].lng)],
+          14
+        );
+      }
     }
 
     function updateBusList() {
@@ -449,6 +538,11 @@
       const list = $("busList");
 
       list.replaceChildren();
+
+      if (!$("schoolFilter").value) {
+        list.textContent = "Choose your school to view its buses.";
+        return;
+      }
 
       if (!visible.length) {
         list.textContent =
@@ -515,7 +609,16 @@
       loading = true;
 
       try {
-        // Fetch active bus GPS positions.
+        // Load the school list independently of active buses.
+        const { data: schoolData, error: schoolError } =
+          await db.rpc("get_bus_schools");
+
+        if (schoolError) throw schoolError;
+
+        schools = schoolData || [];
+        renderSchoolOptions();
+
+        // Load active bus locations.
         const { data: locations, error } = await db
           .from("school_bus_locations")
           .select("driver_id,school_id,lat,lng,is_active,updated_at")
@@ -531,7 +634,6 @@
             Date.now() - updated <= STALE_AFTER_MS;
         });
 
-        // Only fetch display names for drivers currently on the map.
         const driverIds = [
           ...new Set(freshLocations.map(location => location.driver_id))
         ];
@@ -548,18 +650,12 @@
           drivers = data || [];
         }
 
-        // Use the existing school-list RPC from the driver page.
-        const { data: schoolData, error: schoolError } =
-          await db.rpc("get_bus_schools");
-
-        if (schoolError) throw schoolError;
-
         const driverMap = new Map(
           drivers.map(driver => [driver.id, driver])
         );
 
         const schoolMap = new Map(
-          (schoolData || []).map(school => [
+          schools.map(school => [
             school.id,
             school.school_name || school.name || "School"
           ])
@@ -576,7 +672,6 @@
           };
         });
 
-        renderSchoolOptions();
         updateMarkers();
         updateBusList();
         checkDistances();
@@ -584,17 +679,23 @@
         lastLoadSucceeded = true;
 
         if (!alertsEnabled || !parentPosition) {
-          $("status").textContent = buses.length
-            ? buses.length + " active bus(es) found."
-            : "No active buses found right now.";
+          if (!$("schoolFilter").value) {
+            $("status").textContent =
+              "Choose your school to view its active buses.";
+          } else {
+            const count = getVisibleBuses().length;
+            $("status").textContent = count
+              ? count + " active bus(es) found for your school."
+              : "No active buses found for your school right now.";
+          }
         }
       } catch (error) {
         console.error("Failed to load buses:", error);
 
         if (!lastLoadSucceeded) {
           $("status").textContent =
-            "Could not load buses. Check the Supabase connection, " +
-            "school-list RPC, and table permissions.";
+            "Could not load schools or buses. Check Supabase permissions " +
+            "and the get_bus_schools RPC.";
           $("busList").textContent = "Unable to load buses.";
         } else {
           $("status").textContent =
@@ -605,15 +706,7 @@
       }
     }
 
-    $("schoolFilter").addEventListener("change", () => {
-      updateMarkers();
-      updateBusList();
-      checkDistances();
-    });
-
     loadBuses();
-
-    // Refresh GPS positions every 10 seconds.
     setInterval(loadBuses, 10000);
   </script>
 </body>
