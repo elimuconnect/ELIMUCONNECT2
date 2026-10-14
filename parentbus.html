@@ -198,12 +198,9 @@
     <section class="card">
       <h2>Find Your Bus</h2>
 
-      <label for="parentPhone">Your phone number (optional)</label>
-      <input id="parentPhone" type="tel"
-        placeholder="Enter your phone number"
-        autocomplete="tel">
+     
 
-      <button id="savePhone">Save Phone Number</button>
+     
 
       <div id="schoolChooser">
         <label for="schoolFilter">Choose your school</label>
@@ -445,20 +442,7 @@ const schoolBusIcon = L.divIcon({
     // SAVE PHONE NUMBER
     // =========================================================
 
-    $("savePhone").addEventListener("click", () => {
-      const phone = $("parentPhone").value.trim();
-
-      if (phone) {
-        localStorage.setItem(PARENT_PHONE_KEY, phone);
-        $("status").textContent =
-          "Phone number saved on this device.";
-      } else {
-        localStorage.removeItem(PARENT_PHONE_KEY);
-        $("status").textContent =
-          "Saved phone number cleared.";
-      }
-    });
-
+  
     // =========================================================
     // SAFE HTML
     // =========================================================
