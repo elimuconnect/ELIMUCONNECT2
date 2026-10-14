@@ -377,67 +377,111 @@
     // DRIVER LOGIN
     // ------------------------------------------
 
-    async function loginDriver() {
-      const email = $("loginEmail").value.trim().toLowerCase();
-      const schoolId = $("loginSchool").value;
+    
+async function loginDriver() {
+  const email = $("loginEmail").value.trim().toLowerCase();
+  const schoolId = $("loginSchool").value.trim();
 
-      if (!email || !schoolId) {
-        setAuthStatus(
-          "loginStatus",
-          "Enter your email and select your school."
-        );
-        return;
-      }
+  if (!email || !schoolId) {
+    setAuthStatus(
+      "loginStatus",
+      "Enter your email and select your school."
+    );
+    return;
+  }
 
-      $("loginBtn").disabled = true;
-      setAuthStatus("loginStatus", "Checking your driver record...");
-
-      try {
-        const { data, error } = await db
-          .from("drivers")
-          .select("id,name,email,phone,school_id")
-          .eq("email", email)
-          .eq("school_id", schoolId)
-          .maybeSingle();
-
-        if (error) throw error;
-
-       if (!data) {
-  setAuthStatus(
-    "loginStatus",
-    "No matching driver found. Check that you selected the same school used during signup."
-  );
+  $("loginBtn").disabled = true;
+  setAuthStatus("loginStatus", "Checking your driver record...");
 
   console.log("Login email:", email);
   console.log("Selected school ID:", schoolId);
 
-  return;
-}
+  try {
+    // First, find records matching the email.
+    const { data: drivers, error } = await db
+      .from("drivers")
+      .select("id, name, email, phone, school_id")
+      .ilike("email", email)
+      .limit(10);
 
-        driver = data;
+    if (error) {
+      console.error("Supabase driver lookup error:", error);
 
-        const school = schools.find(
-          item => item.id === driver.school_id
-        );
-
-        $("driverName").textContent = driver.name;
-        $("driverPhone").textContent = driver.phone || "Not provided";
-        $("schoolName").textContent =
-          school?.school_name || "School name unavailable";
-        $("schoolId").textContent = driver.school_id;
-
-        $("startBtn").disabled = false;
-        $("endBtn").disabled = true;
-
-        showPanel("driver");
-        setStatus("Welcome! You can now start your journey.");
-      } catch (error) {
-        console.error(error);
-        setAuthStatus("loginStatus", "Login failed: " + error.message);
-      } finally {
-        $("loginBtn").disabled = false;
-      }
+      setAuthStatus(
+        "loginStatus",
+        "Database error: " + error.message +
+        (error.code ? " (Code: " + error.code + ")" : "")
+      );
+      return;
     }
+
+    console.log("Drivers matching email:", drivers);
+
+    if (!drivers || drivers.length === 0) {
+      setAuthStatus(
+        "loginStatus",
+        "Supabase returned no driver for this email. " +
+        "Check the email stored in the database."
+      );
+      return;
+    }
+
+    // Check whether the email belongs to the selected school.
+    const driverMatch = drivers.find(
+      item =>
+        item.school_id &&
+        item.school_id.toLowerCase() === schoolId.toLowerCase()
+    );
+
+    if (!driverMatch) {
+      const registeredSchools = drivers
+        .map(item => item.school_id)
+        .join(", ");
+
+      console.warn("School ID mismatch.", {
+        selectedSchoolId: schoolId,
+        registeredSchoolIds: registeredSchools
+      });
+
+      setAuthStatus(
+        "This email exists, but its registered school ID does not " +
+        "match your selection. Registered school ID: " +
+        registeredSchools
+      );
+      return;
+    }
+
+    // Login succeeded: display driver details.
+    driver = driverMatch;
+
+    const school = schools.find(
+      item =>
+        item.id.toLowerCase() === driver.school_id.toLowerCase()
+    );
+
+    $("driverName").textContent = driver.name;
+    $("driverPhone").textContent = driver.phone || "Not provided";
+    $("schoolName").textContent =
+      school?.school_name || "School name unavailable";
+    $("schoolId").textContent = driver.school_id;
+
+    $("startBtn").disabled = false;
+    $("endBtn").disabled = true;
+
+    showPanel("driver");
+    setStatus("Welcome! You can now start your journey.");
+
+  } catch (error) {
+    console.error("Unexpected login error:", error);
+
+    setAuthStatus(
+      "loginStatus",
+      "Login error: " + (error.message || String(error))
+    );
+  } finally {
+    $("loginBtn").disabled = false;
+  }
+}
 
     // ------------------------------------------
     // GPS LOCATION
