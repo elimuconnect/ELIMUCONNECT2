@@ -449,9 +449,11 @@ async function loginDriver() {
       return;
     }
 
+   
     // Login succeeded: display driver details.
     driver = driverMatch;
-localStorage.setItem("busDriverId", driver.id);
+    localStorage.setItem("busDriverId", driver.id);
+
     const school = schools.find(
       item =>
         item.id.toLowerCase() === driver.school_id.toLowerCase()
@@ -461,7 +463,6 @@ localStorage.setItem("busDriverId", driver.id);
     $("driverPhone").textContent = driver.phone || "Not provided";
     $("schoolName").textContent =
       school?.school_name || "School name unavailable";
-    $("schoolId").textContent = driver.school_id;
 
     $("startBtn").disabled = false;
     $("endBtn").disabled = true;
@@ -480,6 +481,7 @@ localStorage.setItem("busDriverId", driver.id);
     $("loginBtn").disabled = false;
   }
 }
+
 
 
 
