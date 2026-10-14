@@ -4,12 +4,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Track School Bus</title>
+  <title>School Bus Tracker</title>
 
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  >
+  <link rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
   <style>
     * { box-sizing: border-box; }
@@ -27,6 +25,9 @@
       color: white;
       background: #123b70;
     }
+
+    header h1 { margin: 0 0 8px; }
+    header p { margin: 0; }
 
     main {
       max-width: 950px;
@@ -63,9 +64,15 @@
       color: white;
     }
 
+    button:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
+
     #map {
       height: 430px;
       border-radius: 12px;
+      z-index: 1;
     }
 
     #status {
@@ -73,6 +80,7 @@
       padding: 12px;
       border-radius: 8px;
       line-height: 1.5;
+      overflow-wrap: anywhere;
     }
 
     #busList {
@@ -88,9 +96,19 @@
 
     .bus h3 { margin: 0 0 8px; }
 
+    .active {
+      color: #15803d;
+      font-weight: bold;
+    }
+
     .muted {
       font-size: 13px;
       color: #64748b;
+    }
+
+    @media (max-width: 600px) {
+      #map { height: 350px; }
+      .card { padding: 14px; }
     }
   </style>
 </head>
@@ -105,25 +123,28 @@
     <section class="card">
       <h2>Find Your Bus</h2>
 
-      <label for="parentPhone">Your phone number</label>
-      <input
-        id="parentPhone"
-        type="tel"
+      <label for="parentPhone">Your phone number (optional)</label>
+      <input id="parentPhone" type="tel"
         placeholder="Enter your phone number"
-        autocomplete="tel"
-      >
+        autocomplete="tel">
+
       <button id="savePhone">Save Phone Number</button>
 
-      <label for="schoolFilter">Filter by school</label>
+      <label for="schoolFilter">Select school</label>
       <select id="schoolFilter">
         <option value="">All schools</option>
       </select>
 
       <button id="enableAlerts">Enable Distance Alerts</button>
+
       <p class="muted">
-        Keep this page open and allow location access to calculate distance.
+        Allow location access to calculate the distance between you and
+        an active bus. Keep this page open for alerts.
       </p>
-      <div id="status">Loading active buses...</div>
+
+      <div id="status" role="status" aria-live="polite">
+        Loading active buses...
+      </div>
     </section>
 
     <section class="card">
@@ -133,7 +154,7 @@
 
     <section class="card">
       <h2>Active Buses</h2>
-      <div id="busList">Loading...</div>
+      <div id="busList">Loading buses...</div>
     </section>
   </main>
 
@@ -154,11 +175,12 @@
 
     const $ = id => document.getElementById(id);
 
-    const map = L.map("map").setView([-1.2864, 36.8172], 6);
+    const map = L.map("map").setView([-3.969988, 39.735031], 12);
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "&copy; OpenStreetMap contributors"
-    }).addTo(map);
+    L.tileLayer(
+      "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      { attribution: "&copy; OpenStreetMap contributors" }
+    ).addTo(map);
 
     const busMarkers = new Map();
 
@@ -167,19 +189,48 @@
     let locationWatchId = null;
     let audioContext = null;
     let alertsEnabled = false;
-    const alertedBuses = new Set();
+    let loading = false;
+    let lastLoadSucceeded = false;
 
+    const alertedBuses = new Set();
+    const ALERT_DISTANCE_METRES = 200;
+    const STALE_AFTER_MS = 2 * 60 * 1000;
+
+    // Parent phone number is stored only on this device.
     $("parentPhone").value =
       localStorage.getItem("school_bus_parent_phone") || "";
 
     $("savePhone").addEventListener("click", () => {
       const phone = $("parentPhone").value.trim();
 
-      localStorage.setItem("school_bus_parent_phone", phone);
-      $("status").textContent = phone
-        ? "Phone number saved on this device."
-        : "Phone number cleared.";
+      if (phone) {
+        localStorage.setItem("school_bus_parent_phone", phone);
+        $("status").textContent = "Phone number saved on this device.";
+      } else {
+        localStorage.removeItem("school_bus_parent_phone");
+        $("status").textContent = "Saved phone number cleared.";
+      }
     });
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      })[character]);
+    }
+
+    function validCoordinates(bus) {
+      const lat = Number(bus.lat);
+      const lng = Number(bus.lng);
+
+      return Number.isFinite(lat) &&
+        Number.isFinite(lng) &&
+        lat >= -90 && lat <= 90 &&
+        lng >= -180 && lng <= 180;
+    }
 
     function distanceMetres(a, b) {
       const rad = degrees => degrees * Math.PI / 180;
@@ -187,7 +238,6 @@
 
       const dLat = rad(b.lat - a.lat);
       const dLng = rad(b.lng - a.lng);
-
       const lat1 = rad(a.lat);
       const lat2 = rad(b.lat);
 
@@ -201,20 +251,28 @@
     }
 
     function distanceText(bus) {
-      if (!parentPosition) return "Enable location to see distance.";
+      if (!parentPosition) {
+        return "Enable location to see distance.";
+      }
+
+      if (!validCoordinates(bus)) {
+        return "Location unavailable.";
+      }
 
       const distance = distanceMetres(parentPosition, {
         lat: Number(bus.lat),
         lng: Number(bus.lng)
       });
 
-      if (distance < 1000) return Math.round(distance) + " metres away";
+      if (distance < 1000) {
+        return Math.round(distance) + " metres away";
+      }
 
       return (distance / 1000).toFixed(2) + " km away";
     }
 
     function playBell() {
-      if (!audioContext) return;
+      if (!audioContext || !alertsEnabled) return;
 
       const oscillator = audioContext.createOscillator();
       const gain = audioContext.createGain();
@@ -239,7 +297,7 @@
     $("enableAlerts").addEventListener("click", async () => {
       if (!navigator.geolocation) {
         $("status").textContent =
-          "Your browser does not support location services.";
+          "This browser does not support location services.";
         return;
       }
 
@@ -248,11 +306,12 @@
           window.AudioContext || window.webkitAudioContext;
 
         if (AudioContextClass) {
-          audioContext = new AudioContextClass();
+          if (!audioContext) {
+            audioContext = new AudioContextClass();
+          }
+
           await audioContext.resume();
         }
-
-        alertsEnabled = true;
 
         if (locationWatchId === null) {
           locationWatchId = navigator.geolocation.watchPosition(
@@ -263,13 +322,15 @@
               };
 
               updateBusList();
+              updateMarkers();
               checkDistances();
             },
             error => {
+              console.error("Parent location error:", error);
+
               $("status").textContent =
                 "Could not get your location. Allow location permission " +
-                "and use HTTPS.";
-              console.error(error);
+                "and open this page using HTTPS.";
             },
             {
               enableHighAccuracy: true,
@@ -279,31 +340,37 @@
           );
         }
 
+        alertsEnabled = true;
+
+        $("enableAlerts").textContent = "Distance Alerts Enabled";
+
         $("status").textContent =
-          "Distance alerts enabled. You will hear an alert when a bus " +
+          "Distance alerts enabled. An alert will sound when a bus " +
           "comes within 200 metres.";
+
+        checkDistances();
       } catch (error) {
-        console.error(error);
+        console.error("Could not enable alerts:", error);
+
         $("status").textContent =
-          "Could not enable sound alerts in this browser.";
+          "Could not enable sound alerts. Please try again.";
       }
     });
 
     function getSchoolName(bus) {
-      return bus.school_name || bus.school_id || "School unavailable";
+      return bus.school_name || "School unavailable";
     }
 
     function renderSchoolOptions() {
       const select = $("schoolFilter");
       const previous = select.value;
 
-      const schools = new Map();
+      const schoolMap = new Map();
 
       buses.forEach(bus => {
-        schools.set(
-          bus.school_id,
-          getSchoolName(bus)
-        );
+        if (bus.school_id && bus.school_name) {
+          schoolMap.set(bus.school_id, bus.school_name);
+        }
       });
 
       select.replaceChildren();
@@ -313,16 +380,18 @@
       allOption.textContent = "All schools";
       select.appendChild(allOption);
 
-      [...schools.entries()]
+      [...schoolMap.entries()]
         .sort((a, b) => a[1].localeCompare(b[1]))
-        .forEach(([id, name]) => {
+        .forEach(([schoolId, schoolName]) => {
           const option = document.createElement("option");
-          option.value = id;
-          option.textContent = name;
+          option.value = schoolId;
+          option.textContent = schoolName;
           select.appendChild(option);
         });
 
-      select.value = previous;
+      if ([...select.options].some(option => option.value === previous)) {
+        select.value = previous;
+      }
     }
 
     function getVisibleBuses() {
@@ -335,7 +404,9 @@
 
     function updateMarkers() {
       const visible = getVisibleBuses();
-      const visibleIds = new Set(visible.map(bus => bus.driver_id));
+      const visibleIds = new Set(
+        visible.map(bus => bus.driver_id)
+      );
 
       for (const [driverId, marker] of busMarkers.entries()) {
         if (!visibleIds.has(driverId)) {
@@ -345,18 +416,18 @@
       }
 
       visible.forEach(bus => {
+        if (!validCoordinates(bus)) return;
+
         const lat = Number(bus.lat);
         const lng = Number(bus.lng);
 
-        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-
         const popup = `
           <strong>${escapeHtml(bus.driver_name || "School Bus")}</strong><br>
-          Phone: ${escapeHtml(bus.driver_phone || "Not provided")}<br>
           School: ${escapeHtml(getSchoolName(bus))}<br>
+          Status: Active<br>
           Distance: ${escapeHtml(distanceText(bus))}<br>
           Last update: ${escapeHtml(
-            new Date(bus.updated_at).toLocaleTimeString()
+            new Date(bus.updated_at).toLocaleString()
           )}
         `;
 
@@ -373,16 +444,6 @@
       });
     }
 
-    function escapeHtml(value) {
-      return String(value).replace(/[&<>"']/g, character => ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#039;"
-      })[character]);
-    }
-
     function updateBusList() {
       const visible = getVisibleBuses();
       const list = $("busList");
@@ -390,7 +451,8 @@
       list.replaceChildren();
 
       if (!visible.length) {
-        list.textContent = "No active buses found for this selection.";
+        list.textContent =
+          "No active buses found for this school right now.";
         return;
       }
 
@@ -401,22 +463,23 @@
         const heading = document.createElement("h3");
         heading.textContent = bus.driver_name || "School Bus";
 
+        const status = document.createElement("p");
+        status.className = "active";
+        status.textContent = "Journey active";
+
         const school = document.createElement("p");
         school.textContent = "School: " + getSchoolName(bus);
-
-        const phone = document.createElement("p");
-        phone.textContent = "Driver phone: " +
-          (bus.driver_phone || "Not provided");
 
         const distance = document.createElement("p");
         distance.textContent = "Distance: " + distanceText(bus);
 
         const updated = document.createElement("p");
         updated.className = "muted";
-        updated.textContent = "Last update: " +
+        updated.textContent =
+          "Last GPS update: " +
           new Date(bus.updated_at).toLocaleString();
 
-        card.append(heading, school, phone, distance, updated);
+        card.append(heading, status, school, distance, updated);
         list.appendChild(card);
       });
     }
@@ -424,19 +487,21 @@
     function checkDistances() {
       if (!parentPosition || !alertsEnabled) return;
 
-      buses.forEach(bus => {
+      getVisibleBuses().forEach(bus => {
+        if (!validCoordinates(bus)) return;
+
         const distance = distanceMetres(parentPosition, {
           lat: Number(bus.lat),
           lng: Number(bus.lng)
         });
 
-        if (distance <= 200) {
+        if (distance <= ALERT_DISTANCE_METRES) {
           if (!alertedBuses.has(bus.driver_id)) {
             alertedBuses.add(bus.driver_id);
             playBell();
 
             $("status").textContent =
-              "Alert: " + (bus.driver_name || "A bus") +
+              "Alert: " + (bus.driver_name || "A school bus") +
               " is within 200 metres.";
           }
         } else {
@@ -446,8 +511,11 @@
     }
 
     async function loadBuses() {
+      if (loading) return;
+      loading = true;
+
       try {
-        // Fetch active bus positions.
+        // Fetch active bus GPS positions.
         const { data: locations, error } = await db
           .from("school_bus_locations")
           .select("driver_id,school_id,lat,lng,is_active,updated_at")
@@ -455,70 +523,97 @@
 
         if (error) throw error;
 
-        // Fetch driver display details.
-        const { data: drivers, error: driverError } = await db
-          .from("drivers")
-          .select("id,name,phone,school_id");
+        const freshLocations = (locations || []).filter(location => {
+          const updated = new Date(location.updated_at).getTime();
 
-        if (driverError) throw driverError;
+          return Number.isFinite(updated) &&
+            Date.now() - updated >= 0 &&
+            Date.now() - updated <= STALE_AFTER_MS;
+        });
 
-        // Only request the public school fields needed for display.
-        const { data: schools, error: schoolError } = await db
-          .from("school_tool_accounts")
-          .select("id,school_name");
+        // Only fetch display names for drivers currently on the map.
+        const driverIds = [
+          ...new Set(freshLocations.map(location => location.driver_id))
+        ];
+
+        let drivers = [];
+
+        if (driverIds.length) {
+          const { data, error: driverError } = await db
+            .from("drivers")
+            .select("id,name,school_id")
+            .in("id", driverIds);
+
+          if (driverError) throw driverError;
+          drivers = data || [];
+        }
+
+        // Use the existing school-list RPC from the driver page.
+        const { data: schoolData, error: schoolError } =
+          await db.rpc("get_bus_schools");
 
         if (schoolError) throw schoolError;
 
         const driverMap = new Map(
-          (drivers || []).map(driver => [driver.id, driver])
+          drivers.map(driver => [driver.id, driver])
         );
 
         const schoolMap = new Map(
-          (schools || []).map(school => [school.id, school.school_name])
+          (schoolData || []).map(school => [
+            school.id,
+            school.school_name || school.name || "School"
+          ])
         );
 
-        buses = (locations || [])
-          .filter(location => {
-            // Ignore stale GPS positions older than 2 minutes.
-            const updated = new Date(location.updated_at).getTime();
-            return Number.isFinite(updated) &&
-              Date.now() - updated <= 2 * 60 * 1000;
-          })
-          .map(location => {
-            const driver = driverMap.get(location.driver_id) || {};
+        buses = freshLocations.map(location => {
+          const driver = driverMap.get(location.driver_id) || {};
 
-            return {
-              ...location,
-              driver_name: driver.name || "School Bus",
-              driver_phone: driver.phone || "",
-              school_name: schoolMap.get(location.school_id) ||
-                "School unavailable"
-            };
-          });
+          return {
+            ...location,
+            driver_name: driver.name || "School Bus",
+            school_name: schoolMap.get(location.school_id) ||
+              "School unavailable"
+          };
+        });
 
         renderSchoolOptions();
         updateMarkers();
         updateBusList();
         checkDistances();
 
-        $("status").textContent = buses.length
-          ? buses.length + " active bus(es) found."
-          : "No active buses found right now.";
+        lastLoadSucceeded = true;
+
+        if (!alertsEnabled || !parentPosition) {
+          $("status").textContent = buses.length
+            ? buses.length + " active bus(es) found."
+            : "No active buses found right now.";
+        }
       } catch (error) {
-        console.error(error);
-        $("status").textContent =
-          "Could not load buses. Check Supabase permissions and connection.";
+        console.error("Failed to load buses:", error);
+
+        if (!lastLoadSucceeded) {
+          $("status").textContent =
+            "Could not load buses. Check the Supabase connection, " +
+            "school-list RPC, and table permissions.";
+          $("busList").textContent = "Unable to load buses.";
+        } else {
+          $("status").textContent =
+            "Could not refresh bus locations. Retrying shortly.";
+        }
+      } finally {
+        loading = false;
       }
     }
 
     $("schoolFilter").addEventListener("change", () => {
       updateMarkers();
       updateBusList();
+      checkDistances();
     });
 
     loadBuses();
 
-    // Poll as a simple fallback for live refresh.
+    // Refresh GPS positions every 10 seconds.
     setInterval(loadBuses, 10000);
   </script>
 </body>
