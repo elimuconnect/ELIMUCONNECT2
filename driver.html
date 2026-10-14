@@ -402,13 +402,17 @@
 
         if (error) throw error;
 
-        if (!data) {
-          setAuthStatus(
-            "loginStatus",
-            "No matching driver account. Check your details or sign up first."
-          );
-          return;
-        }
+       if (!data) {
+  setAuthStatus(
+    "loginStatus",
+    "No matching driver found. Check that you selected the same school used during signup."
+  );
+
+  console.log("Login email:", email);
+  console.log("Selected school ID:", schoolId);
+
+  return;
+}
 
         driver = data;
 
