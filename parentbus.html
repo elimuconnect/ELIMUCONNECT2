@@ -11,7 +11,6 @@
 
   <style>
     * { box-sizing: border-box; }
-
     [hidden] { display: none !important; }
 
     body {
@@ -71,6 +70,10 @@
       cursor: not-allowed;
     }
 
+    #locateMe {
+      background: #0f766e;
+    }
+
     #map {
       height: 430px;
       border-radius: 12px;
@@ -117,6 +120,65 @@
     .muted {
       font-size: 13px;
       color: #64748b;
+      line-height: 1.5;
+    }
+
+    .map-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      margin: 12px 0 0;
+      font-size: 14px;
+      color: #334155;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .legend-parent {
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background: #2563eb;
+      border: 3px solid white;
+      box-shadow: 0 0 0 2px #2563eb;
+    }
+
+    .legend-bus { font-size: 23px; }
+
+    /* Custom SVG school bus marker */
+    .bus-div-icon {
+      background: transparent;
+      border: none;
+    }
+
+    .bus-pin {
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      filter: drop-shadow(0 3px 3px #00000040);
+      transition: transform .2s ease;
+    }
+
+    .bus-pin svg {
+      width: 48px;
+      height: 48px;
+      overflow: visible;
+    }
+
+    /* Parent's own GPS marker */
+    .parent-location-dot {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #2563eb;
+      border: 4px solid white;
+      box-shadow: 0 0 0 3px #2563eb, 0 2px 8px #00000055;
     }
 
     @media (max-width: 600px) {
@@ -129,7 +191,7 @@
 <body>
   <header>
     <h1>School Bus Tracker</h1>
-    <p>Find your school bus in real time</p>
+    <p>See your location and watch your school bus approach</p>
   </header>
 
   <main>
@@ -160,11 +222,18 @@
         </button>
       </div>
 
-      <button id="enableAlerts">Enable Distance Alerts</button>
+      <button id="enableAlerts">
+        Enable My Location & Voice Alerts
+      </button>
+
+      <button type="button" id="locateMe">
+        Find My Location
+      </button>
 
       <p class="muted">
-        Allow location access to calculate the distance between you and
-        an active bus. Keep this page open for alerts.
+        Allow GPS access to see your position on the map. Voice alerts
+        announce when a bus comes within 200 metres. Keep this page open
+        for regular updates and alerts.
       </p>
 
       <div id="status" role="status" aria-live="polite">
@@ -175,6 +244,17 @@
     <section class="card">
       <h2>Live Bus Map</h2>
       <div id="map"></div>
+
+      <div class="map-legend">
+        <div class="legend-item">
+          <span class="legend-parent"></span>
+          <span>Your location</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-bus">🚌</span>
+          <span>School bus</span>
+        </div>
+      </div>
     </section>
 
     <section class="card">
@@ -201,12 +281,18 @@
     const $ = id => document.getElementById(id);
 
     const PARENT_SCHOOL_KEY = "school_bus_parent_school_id";
+    const PARENT_PHONE_KEY = "school_bus_parent_phone";
+
+    const ALERT_DISTANCE_METRES = 200;
+    const STALE_AFTER_MS = 2 * 60 * 1000;
 
     const map = L.map("map").setView([-3.969988, 39.735031], 12);
 
     L.tileLayer(
       "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-      { attribution: "&copy; OpenStreetMap contributors" }
+      {
+        attribution: "&copy; OpenStreetMap contributors"
+      }
     ).addTo(map);
 
     const busMarkers = new Map();
@@ -215,30 +301,113 @@
     let buses = [];
     let schools = [];
     let parentPosition = null;
+    let parentMarker = null;
     let locationWatchId = null;
-    let audioContext = null;
     let alertsEnabled = false;
     let loading = false;
     let lastLoadSucceeded = false;
     let schoolSelectionInitialized = false;
-
-    const ALERT_DISTANCE_METRES = 200;
-    const STALE_AFTER_MS = 2 * 60 * 1000;
+    let firstLocationReceived = false;
 
     $("parentPhone").value =
-      localStorage.getItem("school_bus_parent_phone") || "";
+      localStorage.getItem(PARENT_PHONE_KEY) || "";
+
+    // =========================================================
+    // CUSTOM SCHOOL BUS SVG ICON
+    // =========================================================
+
+    const schoolBusIcon = L.divIcon({
+      className: "bus-div-icon",
+      html: `
+        <div class="bus-pin">
+          <svg viewBox="0 0 64 64"
+               xmlns="http://www.w3.org/2000/svg"
+               role="img"
+               aria-label="School bus">
+            <rect x="7" y="12" width="50" height="38"
+                  rx="8" fill="#facc15"
+                  stroke="#854d0e" stroke-width="2.5"/>
+
+            <path d="M12 17 Q12 15 16 15 H48 Q52 15 52 19 V24 H12 Z"
+                  fill="#f59e0b"/>
+
+            <rect x="13" y="19" width="15" height="12"
+                  rx="2" fill="#bfdbfe"
+                  stroke="#1e3a8a" stroke-width="1.5"/>
+
+            <rect x="31" y="19" width="17" height="12"
+                  rx="2" fill="#bfdbfe"
+                  stroke="#1e3a8a" stroke-width="1.5"/>
+
+            <path d="M9 35 H55 V40 H9 Z" fill="#1f2937"/>
+
+            <rect x="12" y="35" width="5" height="4"
+                  rx="1" fill="#ffffff"/>
+
+            <rect x="47" y="35" width="5" height="4"
+                  rx="1" fill="#ef4444"/>
+
+            <rect x="24" y="35" width="16" height="4"
+                  rx="1" fill="#ffffff"/>
+
+            <circle cx="19" cy="49" r="7"
+                    fill="#1f2937" stroke="#ffffff"
+                    stroke-width="2"/>
+
+            <circle cx="19" cy="49" r="2.5"
+                    fill="#cbd5e1"/>
+
+            <circle cx="45" cy="49" r="7"
+                    fill="#1f2937" stroke="#ffffff"
+                    stroke-width="2"/>
+
+            <circle cx="45" cy="49" r="2.5"
+                    fill="#cbd5e1"/>
+
+            <rect x="24" y="7" width="16" height="5"
+                  rx="2" fill="#facc15"
+                  stroke="#854d0e" stroke-width="1.5"/>
+          </svg>
+        </div>
+      `,
+      iconSize: [48, 48],
+      iconAnchor: [24, 24],
+      popupAnchor: [0, -22]
+    });
+
+    // =========================================================
+    // PARENT LOCATION ICON
+    // =========================================================
+
+    const parentLocationIcon = L.divIcon({
+      className: "",
+      html: '<div class="parent-location-dot"></div>',
+      iconSize: [22, 22],
+      iconAnchor: [11, 11],
+      popupAnchor: [0, -12]
+    });
+
+    // =========================================================
+    // SAVE PHONE NUMBER
+    // =========================================================
 
     $("savePhone").addEventListener("click", () => {
       const phone = $("parentPhone").value.trim();
 
       if (phone) {
-        localStorage.setItem("school_bus_parent_phone", phone);
-        $("status").textContent = "Phone number saved on this device.";
+        localStorage.setItem(PARENT_PHONE_KEY, phone);
+        $("status").textContent =
+          "Phone number saved on this device.";
       } else {
-        localStorage.removeItem("school_bus_parent_phone");
-        $("status").textContent = "Saved phone number cleared.";
+        localStorage.removeItem(PARENT_PHONE_KEY);
+        $("status").textContent =
+          "Saved phone number cleared.";
       }
     });
+
+    // =========================================================
+    // SAFE HTML
+    // =========================================================
 
     function escapeHtml(value) {
       return String(value ?? "").replace(/[&<>"']/g, character => ({
@@ -250,15 +419,23 @@
       })[character]);
     }
 
-    function validCoordinates(bus) {
-      const lat = Number(bus.lat);
-      const lng = Number(bus.lng);
+    // =========================================================
+    // COORDINATE VALIDATION
+    // =========================================================
+
+    function validCoordinates(item) {
+      const lat = Number(item.lat);
+      const lng = Number(item.lng);
 
       return Number.isFinite(lat) &&
         Number.isFinite(lng) &&
         lat >= -90 && lat <= 90 &&
         lng >= -180 && lng <= 180;
     }
+
+    // =========================================================
+    // DISTANCE CALCULATION
+    // =========================================================
 
     function distanceMetres(a, b) {
       const rad = degrees => degrees * Math.PI / 180;
@@ -274,17 +451,19 @@
         Math.cos(lat1) * Math.cos(lat2) *
         Math.sin(dLng / 2) ** 2;
 
+      const safeX = Math.max(0, Math.min(1, x));
+
       return 2 * earthRadius *
-        Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
+        Math.atan2(Math.sqrt(safeX), Math.sqrt(1 - safeX));
     }
 
     function distanceText(bus) {
       if (!parentPosition) {
-        return "Enable location to see distance.";
+        return "Waiting for your location.";
       }
 
       if (!validCoordinates(bus)) {
-        return "Location unavailable.";
+        return "Bus location unavailable.";
       }
 
       const distance = distanceMetres(parentPosition, {
@@ -299,94 +478,207 @@
       return (distance / 1000).toFixed(2) + " km away";
     }
 
-    function playBell() {
-      if (!audioContext || !alertsEnabled) return;
+    // =========================================================
+    // TEXT-TO-SPEECH
+    // =========================================================
 
-      const oscillator = audioContext.createOscillator();
-      const gain = audioContext.createGain();
-
-      oscillator.type = "sine";
-      oscillator.frequency.value = 880;
-      gain.gain.value = 0.18;
-
-      oscillator.connect(gain);
-      gain.connect(audioContext.destination);
-
-      oscillator.start();
-
-      gain.gain.exponentialRampToValueAtTime(
-        0.001,
-        audioContext.currentTime + 0.7
-      );
-
-      oscillator.stop(audioContext.currentTime + 0.7);
-    }
-
-    $("enableAlerts").addEventListener("click", async () => {
-      if (!navigator.geolocation) {
+    function speakMessage(message) {
+      if (!("speechSynthesis" in window) ||
+          !("SpeechSynthesisUtterance" in window)) {
         $("status").textContent =
-          "This browser does not support location services.";
+          "Your browser does not support spoken alerts. " + message;
         return;
       }
 
-      try {
-        const AudioContextClass =
-          window.AudioContext || window.webkitAudioContext;
+      // Do not let multiple bus alerts speak over one another.
+      window.speechSynthesis.cancel();
 
-        if (AudioContextClass) {
-          if (!audioContext) {
-            audioContext = new AudioContextClass();
+      const utterance = new SpeechSynthesisUtterance(message);
+
+      utterance.lang = "en-KE";
+      utterance.rate = 0.92;
+      utterance.pitch = 1;
+      utterance.volume = 1;
+
+      utterance.onerror = event => {
+        console.warn("Speech alert error:", event.error);
+      };
+
+      window.speechSynthesis.speak(utterance);
+    }
+
+    // =========================================================
+    // SHOW THE PARENT'S LIVE LOCATION
+    // =========================================================
+
+    function updateParentMarker() {
+      if (!parentPosition) return;
+
+      const point = [
+        parentPosition.lat,
+        parentPosition.lng
+      ];
+
+      if (!parentMarker) {
+        parentMarker = L.marker(point, {
+          icon: parentLocationIcon,
+          zIndexOffset: 1000,
+          title: "Your current location"
+        }).addTo(map);
+
+        parentMarker.bindPopup(
+          "<strong>You are here</strong><br>Your current GPS location"
+        );
+      } else {
+        parentMarker.setLatLng(point);
+      }
+    }
+
+    // Fit the map to your location and the selected school's buses.
+    function fitMapToRelevantPoints() {
+      const points = [];
+
+      if (parentPosition) {
+        points.push([
+          parentPosition.lat,
+          parentPosition.lng
+        ]);
+      }
+
+      getVisibleBuses().forEach(bus => {
+        if (validCoordinates(bus)) {
+          points.push([
+            Number(bus.lat),
+            Number(bus.lng)
+          ]);
+        }
+      });
+
+      if (points.length >= 2) {
+        map.fitBounds(L.latLngBounds(points), {
+          padding: [45, 45],
+          maxZoom: 15
+        });
+      } else if (points.length === 1) {
+        map.setView(points[0], 15);
+      }
+    }
+
+    function startLocationTracking() {
+      if (!navigator.geolocation) {
+        $("status").textContent =
+          "This browser does not support GPS location.";
+        return;
+      }
+
+      if (locationWatchId !== null) return;
+
+      locationWatchId = navigator.geolocation.watchPosition(
+        position => {
+          parentPosition = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+
+          updateParentMarker();
+
+          if (!firstLocationReceived) {
+            firstLocationReceived = true;
+            fitMapToRelevantPoints();
           }
 
-          await audioContext.resume();
+          updateBusList();
+          updateMarkers();
+          checkDistances();
+
+          $("locateMe").textContent = "My Location Found";
+
+          if (alertsEnabled) {
+            $("status").textContent =
+              "Your location is active. Voice alerts are enabled.";
+          } else {
+            $("status").textContent =
+              "Your location is shown on the map. Enable voice alerts " +
+              "to hear when the bus comes within 200 metres.";
+          }
+        },
+        error => {
+          console.error("Parent GPS error:", error);
+
+          const messages = {
+            1: "Location permission was denied. Allow location access " +
+               "in your browser settings.",
+            2: "Your location is currently unavailable. Check your GPS.",
+            3: "Getting your location timed out. Try again."
+          };
+
+          $("status").textContent =
+            (messages[error.code] || "Could not get your location.") +
+            " Open this page using HTTPS.";
+        },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 5000,
+          timeout: 20000
         }
+      );
+    }
 
-        if (locationWatchId === null) {
-          locationWatchId = navigator.geolocation.watchPosition(
-            position => {
-              parentPosition = {
-                lat: position.coords.latitude,
-                lng: position.coords.longitude
-              };
+    // =========================================================
+    // ENABLE LOCATION AND SPOKEN ALERTS
+    // =========================================================
 
-              updateBusList();
-              updateMarkers();
-              checkDistances();
-            },
-            error => {
-              console.error("Parent location error:", error);
+    $("enableAlerts").addEventListener("click", () => {
+      alertsEnabled = true;
 
-              $("status").textContent =
-                "Could not get your location. Allow location permission " +
-                "and open this page using HTTPS.";
-            },
-            {
-              enableHighAccuracy: true,
-              maximumAge: 5000,
-              timeout: 20000
-            }
-          );
+      $("enableAlerts").textContent =
+        "Voice Alerts Enabled";
+
+      startLocationTracking();
+
+      $("status").textContent =
+        "Voice alerts enabled. Waiting for your GPS location.";
+
+      // Speak a confirmation following the user's button click.
+      speakMessage(
+        "Voice alerts are enabled. " +
+        "You will be notified when the school bus is within 200 metres."
+      );
+
+      checkDistances();
+    });
+
+    // =========================================================
+    // FIND MY LOCATION BUTTON
+    // =========================================================
+
+    $("locateMe").addEventListener("click", () => {
+      if (!navigator.geolocation) {
+        $("status").textContent =
+          "This browser does not support GPS location.";
+        return;
+      }
+
+      startLocationTracking();
+
+      if (parentPosition) {
+        map.setView([
+          parentPosition.lat,
+          parentPosition.lng
+        ], 16);
+
+        if (parentMarker) {
+          parentMarker.openPopup();
         }
-
-        alertsEnabled = true;
-        $("enableAlerts").textContent = "Distance Alerts Enabled";
-
+      } else {
         $("status").textContent =
-          "Distance alerts enabled. An alert will sound when a bus " +
-          "comes within 200 metres.";
-
-        checkDistances();
-      } catch (error) {
-        console.error("Could not enable alerts:", error);
-
-        $("status").textContent =
-          "Could not enable sound alerts. Please try again.";
+          "Getting your location. Please allow GPS access if asked.";
       }
     });
 
-    function getSchoolName(bus) {
-      return bus.school_name || "School unavailable";
-    }
+    // =========================================================
+    // SCHOOL SELECTION
+    // =========================================================
 
     function renderSchoolOptions() {
       const select = $("schoolFilter");
@@ -413,18 +705,23 @@
           select.appendChild(option);
         });
 
-      const savedSchoolId = localStorage.getItem(PARENT_SCHOOL_KEY);
+      const savedSchoolId =
+        localStorage.getItem(PARENT_SCHOOL_KEY);
+
       const preferredId = schoolSelectionInitialized
         ? (previous || savedSchoolId)
         : savedSchoolId;
 
       if (
         preferredId &&
-        [...select.options].some(option => option.value === preferredId)
+        [...select.options].some(
+          option => option.value === preferredId
+        )
       ) {
         select.value = preferredId;
       } else {
         select.value = "";
+
         if (savedSchoolId) {
           localStorage.removeItem(PARENT_SCHOOL_KEY);
         }
@@ -436,6 +733,7 @@
 
     function updateSchoolSelectionUI() {
       const schoolId = $("schoolFilter").value;
+
       const selectedSchool = schools.find(
         school => school.id === schoolId
       );
@@ -459,15 +757,20 @@
 
       if (!selectedSchoolId) return;
 
-      localStorage.setItem(PARENT_SCHOOL_KEY, selectedSchoolId);
+      localStorage.setItem(
+        PARENT_SCHOOL_KEY,
+        selectedSchoolId
+      );
 
       updateSchoolSelectionUI();
       updateMarkers();
       updateBusList();
       checkDistances();
+      fitMapToRelevantPoints();
 
       $("status").textContent =
-        "Showing buses for " + $("selectedSchoolName").textContent + ".";
+        "Showing buses for " +
+        $("selectedSchoolName").textContent + ".";
     });
 
     $("changeSchoolBtn").addEventListener("click", () => {
@@ -486,9 +789,19 @@
       );
     }
 
+    // =========================================================
+    // BUS MAP MARKERS
+    // =========================================================
+
     function updateMarkers() {
+      // Ensure the parent's marker is always displayed.
+      updateParentMarker();
+
       const visible = getVisibleBuses();
-      const visibleIds = new Set(visible.map(bus => bus.driver_id));
+
+      const visibleIds = new Set(
+        visible.map(bus => bus.driver_id)
+      );
 
       for (const [driverId, marker] of busMarkers.entries()) {
         if (!visibleIds.has(driverId)) {
@@ -504,10 +817,10 @@
         const lng = Number(bus.lng);
 
         const popup = `
-          <strong>${escapeHtml(bus.driver_name || "School Bus")}</strong><br>
-          School: ${escapeHtml(getSchoolName(bus))}<br>
+          <strong>🚌 ${escapeHtml(bus.driver_name || "School Bus")}</strong><br>
+          School: ${escapeHtml(bus.school_name || "School unavailable")}<br>
           Status: Active<br>
-          Distance: ${escapeHtml(distanceText(bus))}<br>
+          Distance from you: ${escapeHtml(distanceText(bus))}<br>
           Last update: ${escapeHtml(
             new Date(bus.updated_at).toLocaleString()
           )}
@@ -516,22 +829,25 @@
         let marker = busMarkers.get(bus.driver_id);
 
         if (!marker) {
-          marker = L.marker([lat, lng]).addTo(map);
+          marker = L.marker([lat, lng], {
+            icon: schoolBusIcon,
+            title: "School bus",
+            zIndexOffset: 500
+          }).addTo(map);
+
           busMarkers.set(bus.driver_id, marker);
         } else {
+          // Move the same bus icon to its latest GPS coordinates.
           marker.setLatLng([lat, lng]);
         }
 
         marker.bindPopup(popup);
       });
-
-      if (visible.length === 1 && validCoordinates(visible[0])) {
-        map.setView(
-          [Number(visible[0].lat), Number(visible[0].lng)],
-          14
-        );
-      }
     }
+
+    // =========================================================
+    // ACTIVE BUS LIST
+    // =========================================================
 
     function updateBusList() {
       const visible = getVisibleBuses();
@@ -540,7 +856,8 @@
       list.replaceChildren();
 
       if (!$("schoolFilter").value) {
-        list.textContent = "Choose your school to view its buses.";
+        list.textContent =
+          "Choose your school to view its buses.";
         return;
       }
 
@@ -555,17 +872,20 @@
         card.className = "bus";
 
         const heading = document.createElement("h3");
-        heading.textContent = bus.driver_name || "School Bus";
+        heading.textContent =
+          "🚌 " + (bus.driver_name || "School Bus");
 
         const status = document.createElement("p");
         status.className = "active";
         status.textContent = "Journey active";
 
         const school = document.createElement("p");
-        school.textContent = "School: " + getSchoolName(bus);
+        school.textContent =
+          "School: " + (bus.school_name || "School unavailable");
 
         const distance = document.createElement("p");
-        distance.textContent = "Distance: " + distanceText(bus);
+        distance.textContent =
+          "Distance from you: " + distanceText(bus);
 
         const updated = document.createElement("p");
         updated.className = "muted";
@@ -573,10 +893,21 @@
           "Last GPS update: " +
           new Date(bus.updated_at).toLocaleString();
 
-        card.append(heading, status, school, distance, updated);
+        card.append(
+          heading,
+          status,
+          school,
+          distance,
+          updated
+        );
+
         list.appendChild(card);
       });
     }
+
+    // =========================================================
+    // 200-METRE SPOKEN ALERT
+    // =========================================================
 
     function checkDistances() {
       if (!parentPosition || !alertsEnabled) return;
@@ -592,42 +923,62 @@
         if (distance <= ALERT_DISTANCE_METRES) {
           if (!alertedBuses.has(bus.driver_id)) {
             alertedBuses.add(bus.driver_id);
-            playBell();
+
+            const message =
+              "Attention parent. The school bus is within " +
+              "200 metres. Please prepare to bring your child out.";
 
             $("status").textContent =
-              "Alert: " + (bus.driver_name || "A school bus") +
-              " is within 200 metres.";
+              "VOICE ALERT: The bus is within 200 metres. " +
+              "Please prepare to bring your child out.";
+
+            speakMessage(message);
           }
         } else {
+          // Allow a new alert if the bus leaves the zone and returns.
           alertedBuses.delete(bus.driver_id);
         }
       });
     }
 
+    // =========================================================
+    // LOAD SCHOOLS AND BUS GPS LOCATIONS
+    // =========================================================
+
     async function loadBuses() {
       if (loading) return;
+
       loading = true;
 
       try {
-        // Load the school list independently of active buses.
-        const { data: schoolData, error: schoolError } =
-          await db.rpc("get_bus_schools");
+        // Load all available schools.
+        const {
+          data: schoolData,
+          error: schoolError
+        } = await db.rpc("get_bus_schools");
 
         if (schoolError) throw schoolError;
 
         schools = schoolData || [];
         renderSchoolOptions();
 
-        // Load active bus locations.
-        const { data: locations, error } = await db
+        // Get active bus locations.
+        const {
+          data: locations,
+          error
+        } = await db
           .from("school_bus_locations")
-          .select("driver_id,school_id,lat,lng,is_active,updated_at")
+          .select(
+            "driver_id,school_id,lat,lng,is_active,updated_at"
+          )
           .eq("is_active", true);
 
         if (error) throw error;
 
+        // Ignore bus locations that have not been updated recently.
         const freshLocations = (locations || []).filter(location => {
-          const updated = new Date(location.updated_at).getTime();
+          const updated =
+            new Date(location.updated_at).getTime();
 
           return Number.isFinite(updated) &&
             Date.now() - updated >= 0 &&
@@ -635,18 +986,24 @@
         });
 
         const driverIds = [
-          ...new Set(freshLocations.map(location => location.driver_id))
+          ...new Set(
+            freshLocations.map(location => location.driver_id)
+          )
         ];
 
         let drivers = [];
 
         if (driverIds.length) {
-          const { data, error: driverError } = await db
+          const {
+            data,
+            error: driverError
+          } = await db
             .from("drivers")
             .select("id,name,school_id")
             .in("id", driverIds);
 
           if (driverError) throw driverError;
+
           drivers = data || [];
         }
 
@@ -667,7 +1024,8 @@
           return {
             ...location,
             driver_name: driver.name || "School Bus",
-            school_name: schoolMap.get(location.school_id) ||
+            school_name:
+              schoolMap.get(location.school_id) ||
               "School unavailable"
           };
         });
@@ -684,18 +1042,20 @@
               "Choose your school to view its active buses.";
           } else {
             const count = getVisibleBuses().length;
+
             $("status").textContent = count
               ? count + " active bus(es) found for your school."
               : "No active buses found for your school right now.";
           }
         }
       } catch (error) {
-        console.error("Failed to load buses:", error);
+        console.error("Failed to load schools or buses:", error);
 
         if (!lastLoadSucceeded) {
           $("status").textContent =
-            "Could not load schools or buses. Check Supabase permissions " +
-            "and the get_bus_schools RPC.";
+            "Could not load schools or buses. Check Supabase " +
+            "permissions and the get_bus_schools RPC.";
+
           $("busList").textContent = "Unable to load buses.";
         } else {
           $("status").textContent =
@@ -706,8 +1066,14 @@
       }
     }
 
+    // Initial load and refresh bus GPS positions every 10 seconds.
     loadBuses();
     setInterval(loadBuses, 10000);
+
+    // Correct Leaflet sizing if the map loads before the page settles.
+    window.addEventListener("load", () => {
+      setTimeout(() => map.invalidateSize(), 250);
+    });
   </script>
 </body>
 </html>
