@@ -453,7 +453,7 @@ async function loginDriver() {
 
     // Login succeeded: display driver details.
     driver = driverMatch;
-
+localStorage.setItem("busDriverId", driver.id);
     const school = schools.find(
       item =>
         item.id.toLowerCase() === driver.school_id.toLowerCase()
@@ -483,6 +483,62 @@ async function loginDriver() {
   }
 }
 
+
+
+async function restoreDriverSession() {
+  const savedDriverId = localStorage.getItem("busDriverId");
+
+  if (!savedDriverId) {
+    showPanel("login");
+    return;
+  }
+
+  try {
+    setStatus("Restoring your driver session...");
+
+    const { data, error } = await db
+      .from("drivers")
+      .select("id, name, email, phone, school_id")
+      .eq("id", savedDriverId)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    if (!data) {
+      localStorage.removeItem("busDriverId");
+      showPanel("login");
+      setStatus("Please log in to continue.");
+      return;
+    }
+
+    driver = data;
+
+    const school = schools.find(
+      item => item.id === driver.school_id
+    );
+
+    $("driverName").textContent = driver.name;
+    $("driverPhone").textContent = driver.phone || "Not provided";
+    $("schoolName").textContent =
+      school?.school_name || "School name unavailable";
+    $("schoolId").textContent = driver.school_id;
+
+    $("startBtn").disabled = false;
+    $("endBtn").disabled = true;
+
+    showPanel("driver");
+    setStatus("Welcome back! You are logged in.");
+
+  } catch (error) {
+    console.error("Session restoration failed:", error);
+    showPanel("login");
+    setStatus("Could not restore your session. Please log in.");
+  }
+}
+
+
+
+    
     // ------------------------------------------
     // GPS LOCATION
     // ------------------------------------------
@@ -661,6 +717,7 @@ async function loginDriver() {
       }
 
       driver = null;
+      localStorage.removeItem("busDriverId");
       currentLocationId = null;
 
       showPanel("login");
@@ -681,8 +738,11 @@ async function loginDriver() {
       if (event.key === "Enter") loginDriver();
     });
 
-    loadSchools();
     showPanel("login");
+
+loadSchools().then(() => {
+  restoreDriverSession();
+});
   </script>
 </body>
 </html>
