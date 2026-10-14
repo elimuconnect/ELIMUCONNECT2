@@ -1,0 +1,405 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>School Bus Driver</title>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  >
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f1f5f9;
+      color: #172033;
+    }
+
+    .header {
+      background: #123b70;
+      color: white;
+      padding: 22px 16px;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 650px;
+      margin: 22px auto;
+      padding: 0 14px;
+    }
+
+    .card {
+      background: white;
+      padding: 22px;
+      border-radius: 15px;
+      box-shadow: 0 5px 18px #0000000d;
+      margin-bottom: 16px;
+    }
+
+    h2 { margin-top: 0; }
+
+    input {
+      width: 100%;
+      padding: 13px;
+      margin: 8px 0 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      border: 0;
+      border-radius: 9px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 9px;
+    }
+
+    button:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+
+    .start { background: #15803d; color: white; }
+    .end { background: #b91c1c; color: white; }
+    .secondary { background: #e2e8f0; color: #172033; }
+
+    #map {
+      height: 300px;
+      border-radius: 12px;
+      margin-top: 14px;
+    }
+
+    #status {
+      padding: 12px;
+      border-radius: 8px;
+      background: #eff6ff;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .muted {
+      color: #64748b;
+      font-size: 14px;
+    }
+
+    .value {
+      overflow-wrap: anywhere;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+  <header class="header">
+    <h1>School Bus Tracking</h1>
+    <p>Driver Portal</p>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h2>Driver Details</h2>
+
+      <label for="email">Driver email</label>
+      <input
+        id="email"
+        type="email"
+        placeholder="Enter your registered email"
+        autocomplete="email"
+        required
+      >
+
+      <button id="lookupBtn" class="secondary">
+        Find My Driver Record
+      </button>
+
+      <div id="driverDetails" hidden>
+        <p>Name: <span id="driverName" class="value"></span></p>
+        <p>Phone: <span id="driverPhone" class="value"></span></p>
+        <p>School: <span id="schoolName" class="value"></span></p>
+        <p class="muted">
+          School ID: <span id="schoolId"></span>
+        </p>
+
+        <button id="startBtn" class="start">
+          Start Journey
+        </button>
+
+        <button id="endBtn" class="end" disabled>
+          End Journey
+        </button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Journey Status</h2>
+      <div id="status">Enter your registered email to begin.</div>
+      <div id="map"></div>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script>
+    // Your Supabase project
+    const SUPABASE_URL =
+      "https://hhtplinfcdwgahlhurhx.supabase.co";
+
+    const SUPABASE_ANON_KEY =
+      "sb_publishable_cOXipkG4wSKIkIHwkP04JA_KunvG7T5";
+
+    const db = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY
+    );
+
+    let driver = null;
+    let watchId = null;
+    let currentLocationId = null;
+    let lastPosition = null;
+    let journeyStarting = false;
+    let journeyEnding = false;
+
+    const $ = id => document.getElementById(id);
+
+    const map = L.map("map").setView([-1.2864, 36.8172], 6);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(map);
+
+    const marker = L.marker([-1.2864, 36.8172]).addTo(map);
+
+    function setStatus(message) {
+      $("status").textContent = message;
+    }
+
+    async function lookupDriver() {
+      const email = $("email").value.trim().toLowerCase();
+
+      if (!email) {
+        setStatus("Please enter your registered email.");
+        return;
+      }
+
+      $("lookupBtn").disabled = true;
+      setStatus("Looking up driver record...");
+
+      try {
+        const { data, error } = await db
+          .from("drivers")
+          .select("id,name,email,phone,school_id")
+          .eq("email", email)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (!data) {
+          driver = null;
+          $("driverDetails").hidden = true;
+          setStatus(
+            "No driver record found for that email. " +
+            "Check the email or ask your school administrator."
+          );
+          return;
+        }
+
+        driver = data;
+
+        // Retrieve the school name using the same school ID.
+        const { data: school, error: schoolError } = await db
+          .from("school_tool_accounts")
+          .select("id,school_name")
+          .eq("id", driver.school_id)
+          .maybeSingle();
+
+        if (schoolError) throw schoolError;
+
+        $("driverName").textContent = driver.name;
+        $("driverPhone").textContent = driver.phone || "Not provided";
+        $("schoolName").textContent =
+          school?.school_name || "School name unavailable";
+        $("schoolId").textContent = driver.school_id;
+
+        $("driverDetails").hidden = false;
+        setStatus("Driver record found. Ready to start your journey.");
+      } catch (error) {
+        console.error(error);
+        setStatus("Could not load driver details: " + error.message);
+      } finally {
+        $("lookupBtn").disabled = false;
+      }
+    }
+
+    function showPosition(position) {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+
+      lastPosition = { lat, lng };
+
+      marker.setLatLng([lat, lng]);
+      map.setView([lat, lng], 16);
+
+      setStatus(
+        "Journey active. GPS: " +
+        lat.toFixed(6) + ", " + lng.toFixed(6)
+      );
+    }
+
+    async function saveLocation(position) {
+      if (!driver || !currentLocationId) return;
+
+      const payload = {
+        driver_id: driver.id,
+        school_id: driver.school_id,
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+        is_active: true,
+        updated_at: new Date().toISOString()
+      };
+
+      try {
+        const { error } = await db
+          .from("school_bus_locations")
+          .upsert(payload, { onConflict: "driver_id" });
+
+        if (error) throw error;
+
+        showPosition(position);
+      } catch (error) {
+        console.error(error);
+        setStatus("GPS received, but saving the location failed: " +
+          error.message);
+      }
+    }
+
+    function gpsError(error) {
+      const messages = {
+        1: "Location permission was denied. Please allow location access.",
+        2: "Your current location is unavailable.",
+        3: "Getting your location timed out."
+      };
+
+      setStatus(messages[error.code] || "Unable to get GPS location.");
+    }
+
+    async function startJourney() {
+      if (!driver || journeyStarting || watchId !== null) return;
+
+      if (!navigator.geolocation) {
+        setStatus("This browser does not support GPS tracking.");
+        return;
+      }
+
+      journeyStarting = true;
+      $("startBtn").disabled = true;
+      setStatus("Getting your location...");
+
+      try {
+        const position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(
+            resolve,
+            reject,
+            {
+              enableHighAccuracy: true,
+              timeout: 20000,
+              maximumAge: 0
+            }
+          );
+        });
+
+        const payload = {
+          driver_id: driver.id,
+          school_id: driver.school_id,
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          is_active: true,
+          updated_at: new Date().toISOString()
+        };
+
+        const { error } = await db
+          .from("school_bus_locations")
+          .upsert(payload, { onConflict: "driver_id" });
+
+        if (error) throw error;
+
+        currentLocationId = driver.id;
+        showPosition(position);
+        $("endBtn").disabled = false;
+
+        watchId = navigator.geolocation.watchPosition(
+          saveLocation,
+          gpsError,
+          {
+            enableHighAccuracy: true,
+            maximumAge: 5000,
+            timeout: 20000
+          }
+        );
+
+        setStatus("Journey started. Your location is being updated.");
+      } catch (error) {
+        console.error(error);
+        setStatus("Could not start journey: " +
+          (error.message || "Check GPS permission and database settings."));
+        $("startBtn").disabled = false;
+      } finally {
+        journeyStarting = false;
+      }
+    }
+
+    async function endJourney() {
+      if (!driver || journeyEnding) return;
+
+      journeyEnding = true;
+      $("endBtn").disabled = true;
+
+      try {
+        // Stop sending GPS updates first.
+        if (watchId !== null) {
+          navigator.geolocation.clearWatch(watchId);
+          watchId = null;
+        }
+
+        const { error } = await db
+          .from("school_bus_locations")
+          .update({
+            is_active: false,
+            updated_at: new Date().toISOString()
+          })
+          .eq("driver_id", driver.id);
+
+        if (error) throw error;
+
+        currentLocationId = null;
+        $("startBtn").disabled = false;
+        setStatus("Journey ended. Live tracking has stopped.");
+      } catch (error) {
+        console.error(error);
+        setStatus("Could not update journey status: " + error.message);
+        $("endBtn").disabled = false;
+      } finally {
+        journeyEnding = false;
+      }
+    }
+
+    $("lookupBtn").addEventListener("click", lookupDriver);
+    $("startBtn").addEventListener("click", startJourney);
+    $("endBtn").addEventListener("click", endJourney);
+
+    $("email").addEventListener("keydown", event => {
+      if (event.key === "Enter") lookupDriver();
+    });
+  </script>
+</body>
+</html>
