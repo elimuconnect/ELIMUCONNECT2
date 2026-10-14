@@ -521,7 +521,6 @@ async function restoreDriverSession() {
     $("driverPhone").textContent = driver.phone || "Not provided";
     $("schoolName").textContent =
       school?.school_name || "School name unavailable";
-    $("schoolId").textContent = driver.school_id;
 
     $("startBtn").disabled = false;
     $("endBtn").disabled = true;
@@ -535,6 +534,8 @@ async function restoreDriverSession() {
     setStatus("Could not restore your session. Please log in.");
   }
 }
+
+  
 
 
 
